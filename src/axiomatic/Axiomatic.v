@@ -188,7 +188,7 @@ Module ALocal.
                  alocal1.(exbank))
   | step_read
       ex ord vloc res
-      (EVENT: event = Event.read ex ord vloc (ValA.mk _ res (eq (next_eid alocal1))))
+      (EVENT: event = Event.read ex false ord vloc (ValA.mk _ res (eq (next_eid alocal1))))
       (ALOCAL: alocal2 =
                mk
                  (alocal1.(labels) ++ [Label.read ex ord vloc.(ValA.val) res])

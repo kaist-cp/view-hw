@@ -1120,14 +1120,14 @@ Proof.
       inv STEP. eexists (ExecUnit.mk _ _ _). esplits.
       + econs 1. econs. econs; ss; cycle 1.
         * econs 5; eauto. econs; eauto.
-        * econs 5.
+        * econs 7.
       + econs; ss. inv LOCAL. econs; eauto using sim_view_join.
         s. i. apply COH. rewrite <- VRN0. apply join_l.
     - (* dmb *)
       inv STEP. eexists (ExecUnit.mk _ _ _). esplits.
       + econs 1. econs. econs; ss; cycle 1.
         * econs 6; eauto. econs; eauto.
-        * econs 5.
+        * econs 7.
       + econs; ss. inv LOCAL. econs; eauto 10 using sim_view_join, sim_view_ifc, sim_view_bot.
         s. i. apply COH. rewrite <- VRN0. apply join_l.
     - (* if *)
@@ -1146,7 +1146,7 @@ Proof.
       eexists (ExecUnit.mk _ _ _). esplits.
       + econs 1. econs. econs; ss; cycle 1.
         * econs 1; eauto.
-        * econs 7. ss.
+        * econs 9. ss.
       + econs; ss.
   }
 Qed.

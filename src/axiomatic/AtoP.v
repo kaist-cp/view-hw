@@ -1201,7 +1201,7 @@ Proof.
     intro LABEL_LEN. eexists (ExecUnit.mk _ _ _).
     esplits.
     { econs. econs; ss.
-      - econs 6; ss.
+      - econs 8; ss.
       - econs 7; ss.
     }
     generalize (sim_rmap_expr cond RMAP). intro X. inv X.

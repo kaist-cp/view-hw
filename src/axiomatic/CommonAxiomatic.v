@@ -126,13 +126,13 @@ Inductive sim_event: forall (e1: Event.t (A:=View.t (A:=unit))) (e2: Event.t (A:
 | sim_event_internal:
     sim_event Event.internal Event.internal
 | sim_event_read
-    ex1 ord1 vloc1 val1
-    ex2 ord2 vloc2 val2
+    ex1 rmw_fail1 ord1 vloc1 val1
+    ex2 rmw_fail2 ord2 vloc2 val2
     (EX: ex1 = ex2)
     (ORD: ord1 = ord2)
     (VLOC: sim_val_weak vloc1 vloc2)
     (VAL: sim_val_weak val1 val2):
-    sim_event (Event.read ex1 ord1 vloc1 val1) (Event.read ex2 ord2 vloc2 val2)
+    sim_event (Event.read ex1 rmw_fail1 ord1 vloc1 val1) (Event.read ex2 rmw_fail2 ord2 vloc2 val2)
 | sim_event_write
     ex1 ord1 vloc1 vval1 res1
     ex2 ord2 vloc2 vval2 res2
