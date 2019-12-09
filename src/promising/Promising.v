@@ -570,16 +570,19 @@ Section Eqts.
   | eqts_event_internal:
       eqts_event Event.internal Event.internal
   | eqts_event_read
-      ex ord vloc1 vloc2 res1 res2
+      ex rmw_fail ord vloc1 vloc2 res1 res2
       (VLOC: eqts_val vloc1 vloc2)
       (RES: eqts_val res1 res2):
-      eqts_event (Event.read ex ord vloc1 res1) (Event.read ex ord vloc2 res2)
+      eqts_event (Event.read ex rmw_fail ord vloc1 res1) (Event.read ex rmw_fail ord vloc2 res2)
   | eqts_event_write
       ex ord vloc1 vloc2 vval1 vval2 res1 res2
       (VLOC: eqts_val vloc1 vloc2)
       (VVAL: eqts_val vval1 vval2)
       (RES: eqts_val res1 res2):
       eqts_event (Event.write ex ord vloc1 vval1 res1) (Event.write ex ord vloc2 vval2 res2)
+  | eqts_event_rmw
+      ordr ordw vloc1 vloc2 old1 old2 new1 new2:
+      eqts_event (Event.rmw ordr ordw vloc1 old1 new1) (Event.rmw ordr ordw vloc2 old2 new2)
   | eqts_event_barrier
       b:
       eqts_event (Event.barrier b) (Event.barrier b)
@@ -961,7 +964,7 @@ Section Local.
       (LC: lc2 = lc1)
   | step_read
       ex ord vloc res ts
-      (EVENT: event = Event.read ex ord vloc res)
+      (EVENT: event = Event.read ex false ord vloc res)
       (STEP: read ex ord vloc res ts lc1 mem lc2)
   | step_fulfill
       ex ord vloc vval res ts view_pre

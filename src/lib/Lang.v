@@ -124,11 +124,18 @@ Module Barrier.
     end.
 End Barrier.
 
+Inductive rmwT :=
+| rmw_cas (old new:exprT)
+| rmw_fetch_op (op:opT2) (ammount:exprT)
+.
+Hint Constructors rmwT.
+
 Inductive instrT :=
 | instr_skip
 | instr_assign (lhs:Id.t) (rhs:exprT)
 | instr_load (ex:bool) (ord:OrdR.t) (res:Id.t) (eloc:exprT)
 | instr_store (ex:bool) (ord:OrdW.t) (res:Id.t) (eloc:exprT) (eval:exprT)
+| instr_rmw (ordr:OrdR.t) (ordw:OrdW.t) (res:Id.t) (eloc:exprT) (rmw:rmwT)
 | instr_barrier (b:Barrier.t)
 .
 Hint Constructors instrT.
@@ -212,14 +219,34 @@ Section SEM.
     | expr_op1 op e1 => sem_op1 op (sem_expr rmap e1)
     | expr_op2 op e1 e2 => sem_op2 op (sem_expr rmap e1) (sem_expr rmap e2)
     end.
+
+  Inductive sem_rmw (rmap:RMap.t (A:=A)): forall (rmw:rmwT) (old new:ValA.t), Prop :=
+  | sem_rmw_cas
+      eold enew vold vnew
+      (OLD: vold = sem_expr rmap eold)
+      (NEW: vnew = sem_expr rmap enew):
+      sem_rmw rmap (rmw_cas eold enew) vold vnew
+  | sem_rmw_fetch_op
+      op eammount vammount vold vnew
+      (AMMOUNT: vammount = sem_expr rmap eammount)
+      (OP: sem_op2 op vold vammount = vnew):
+      sem_rmw rmap (rmw_fetch_op op eammount) vold vnew
+  .
+
+  Inductive sem_rmw_fail (rmap:RMap.t (A:=A)): forall (rmw:rmwT) (vres:ValA.t), Prop :=
+  | sem_rmw_fail_cas
+      eold enew vres:
+      sem_rmw_fail rmap (rmw_cas eold enew) vres
+  .
 End SEM.
 
 Module Event.
   Inductive t A `{_: orderC A} :=
   | internal
   | control (ctrl:A)
-  | read (ex:bool) (ord:OrdR.t) (vloc:ValA.t (A:=A)) (res:ValA.t (A:=A))
+  | read (ex:bool) (rmw_fail:bool) (ord:OrdR.t) (vloc:ValA.t (A:=A)) (res:ValA.t (A:=A))
   | write (ex:bool) (ord:OrdW.t) (vloc:ValA.t (A:=A)) (vval:ValA.t (A:=A)) (res:ValA.t (A:=A))
+  | rmw (ordr:OrdR.t) (ordw:OrdW.t) (vloc:ValA.t (A:=A)) (old new:ValA.t (A:=A))
   | barrier (b:Barrier.t)
   .
 End Event.
@@ -255,7 +282,7 @@ Section State.
       ex o res eloc stmts rmap vloc vres rmap'
       (LOC: vloc = sem_expr rmap eloc)
       (RMAP: rmap' = RMap.add res vres rmap):
-      step (Event.read ex o vloc vres)
+      step (Event.read ex false o vloc vres)
            (mk ((stmt_instr (instr_load ex o res eloc))::stmts) rmap)
            (mk stmts rmap')
   | step_store
@@ -266,6 +293,22 @@ Section State.
       step (Event.write ex o vloc vval vres)
            (mk ((stmt_instr (instr_store ex o res eloc eval))::stmts) rmap)
            (mk stmts rmap')
+  | step_rmw
+      ordr ordw res eloc rmw stmts rmap vloc old new rmap'
+      (LOC: vloc = sem_expr rmap eloc)
+      (RMW: sem_rmw rmap rmw old new)
+      (RMAP: rmap' = RMap.add res old rmap):
+      step (Event.rmw ordr ordw vloc old new)
+           (mk ((stmt_instr (instr_rmw ordr ordw res eloc rmw))::stmts) rmap)
+           (mk stmts rmap)
+  | step_rmw_fail
+      ordr ordw res eloc rmw stmts rmap vloc vres rmap'
+      (LOC: vloc = sem_expr rmap eloc)
+      (RMW: sem_rmw_fail rmap rmw vres)
+      (RMAP: rmap' = RMap.add res vres rmap):
+      step (Event.read false true ordr vloc vres)
+           (mk ((stmt_instr (instr_rmw ordr ordw res eloc rmw))::stmts) rmap)
+           (mk stmts rmap)
   | step_barrier
       b stmts rmap:
       step (Event.barrier b)

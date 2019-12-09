@@ -54,7 +54,7 @@ Inductive sim_trace (p: program) (mem: Memory.t) (tid: Id.t):
              | _ => w1
              end)
     (R: r2 = match e with
-               | Event.read _ _ vloc _ =>
+               | Event.read _ _ _ vloc _ =>
                  (fun eid => if Nat.eqb eid (ALocal.next_eid aeu1.(AExecUnit.local))
                             then Some (vloc.(ValA.val),
                                        Memory.latest_ts
@@ -65,7 +65,7 @@ Inductive sim_trace (p: program) (mem: Memory.t) (tid: Id.t):
                | _ => r1
                end)
     (COV: cov2 = match e with
-                 | Event.read _ _ vloc _
+                 | Event.read _ _ _ vloc _
                  | Event.write _ _ vloc _ (ValA.mk _ 0 _) =>
                    (fun eid => if Nat.eqb eid (ALocal.next_eid aeu1.(AExecUnit.local))
                               then Memory.latest_ts
@@ -76,7 +76,7 @@ Inductive sim_trace (p: program) (mem: Memory.t) (tid: Id.t):
                  | _ => cov1
                  end)
     (VEXT: vext2 = match e with
-                   | Event.read _ _ _ res =>
+                   | Event.read _ _ _ _ res =>
                      (fun eid => if Nat.eqb eid (ALocal.next_eid aeu1.(AExecUnit.local))
                                 then res.(ValA.annot).(View.ts)
                                 else vext1 eid)
@@ -247,7 +247,7 @@ Proof.
     + eauto.
   - inv STEP.
     eexists _, (AExecUnit.mk (State.mk _ _) _). splits; ss.
-    + econs 5; ss.
+    + econs 7; ss.
     + econs 5; ss.
     + econs; ss.
     + econs; ss.
@@ -256,7 +256,7 @@ Proof.
       eapply List.nth_error_Some. ii. congr.
   - inv STEP.
     eexists _, (AExecUnit.mk (State.mk _ _) _). splits; ss.
-    + econs 5; ss.
+    + econs 7; ss.
     + econs 5; ss.
     + econs; ss.
     + econs; ss.
@@ -265,7 +265,7 @@ Proof.
       eapply List.nth_error_Some. ii. congr.
   - inv LC.
     eexists _, (AExecUnit.mk (State.mk _ _) _). splits; ss.
-    + econs 6; ss.
+    + econs 8; ss.
     + econs 6; ss.
     + econs; ss.
       exploit sim_rmap_weak_expr; eauto. intro X. inv X.
@@ -274,7 +274,7 @@ Proof.
       rewrite List.nth_error_app1; eauto.
       eapply List.nth_error_Some. ii. congr.
   - eexists _, (AExecUnit.mk (State.mk _ _) _). splits; ss.
-    + econs 7. ss.
+    + econs 9. ss.
     + econs; ss.
     + ss.
     + ss.
@@ -552,7 +552,9 @@ Proof.
   { (* read *)
     inv LOCAL; ss. generalize IH.(EU_WF). i. inv H.
     specialize (Local.read_spec LOCAL STEP). intro READ_SPEC. guardH READ_SPEC.
-    inv STEP. inv STATE0. inv ASTATE_STEP. ss. inv EVENT.
+    inv STEP. inv STATE0; cycle 1.
+    { i. unfold ALocal.next_eid in *. s. i. des_ifs. }
+    inv ASTATE_STEP. ss. inv EVENT.
     exploit sim_trace_sim_state_weak; eauto. s. intro Y. inv Y. ss. inv STMTS.
     exploit sim_rmap_weak_expr; eauto. intro Y. inv Y.
 
@@ -827,6 +829,6 @@ Proof.
       { subst. inv REL. inv Y. }
       eapply IH.(PO); eauto.
   }
-Grab Existential Variables.
-all: auto. (* tid *)
+  Grab Existential Variables.
+  all: auto. (* tid *)
 Qed.
