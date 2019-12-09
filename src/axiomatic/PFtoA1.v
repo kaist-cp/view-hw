@@ -552,7 +552,9 @@ Proof.
   { (* read *)
     inv LOCAL; ss. generalize IH.(EU_WF). i. inv H.
     specialize (Local.read_spec LOCAL STEP). intro READ_SPEC. guardH READ_SPEC.
-    inv STEP. inv STATE0. inv ASTATE_STEP. ss. inv EVENT.
+    inv STEP. inv STATE0; cycle 1.
+    { i. unfold ALocal.next_eid in *. s. i. des_ifs. }
+    inv ASTATE_STEP. ss. inv EVENT.
     exploit sim_trace_sim_state_weak; eauto. s. intro Y. inv Y. ss. inv STMTS.
     exploit sim_rmap_weak_expr; eauto. intro Y. inv Y.
 
@@ -635,7 +637,6 @@ Proof.
           rewrite x3. apply Memory.latest_ts_mon. apply join_l.
       + subst. repeat condtac; ss.
         all: try apply Nat.eqb_eq in X; ss; try lia.
-    - admit.
   }
   { (* write *)
     inv LOCAL; ss; inv EVENT; inv RES; inv STEP; ss. inv STATE. ss.
@@ -830,5 +831,4 @@ Proof.
   }
   Grab Existential Variables.
   all: auto. (* tid *)
-  - admit.
-Admitted.
+Qed.
