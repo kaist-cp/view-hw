@@ -18,6 +18,7 @@ pipeline {
                         }
                     }
                     steps {
+                        sh "git submodule update --init"
                         sh "make -j"
                     }
                 }
@@ -28,6 +29,7 @@ pipeline {
                         }
                     }
                     steps {
+                        sh "git submodule update --init"
                         sh "./build.sh"
                     }
                 }
