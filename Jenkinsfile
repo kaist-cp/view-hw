@@ -19,7 +19,7 @@ pipeline {
                     }
                     steps {
                         sh "git submodule update --init"
-                        sh "PATH=~/.opam/bin:$PATH make -j"
+                        sh "eval `opam config env`; make -j"
                     }
                 }
                 stage('Full') {
@@ -30,7 +30,7 @@ pipeline {
                     }
                     steps {
                         sh "git submodule update --init"
-                        sh "PATH=~/.opam/bin:$PATH ./build.sh"
+                        sh "eval `opam config env`; ./build.sh"
                     }
                 }
             }
