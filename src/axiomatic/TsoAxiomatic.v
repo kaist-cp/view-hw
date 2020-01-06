@@ -48,31 +48,6 @@ Module Label.
     | _ => false
     end.
 
-  (* CHECK: 불필요한 것 처럼 보임 *)
-  (* Definition is_acquire_pc (label:t): bool := *)
-  (*   match label with *)
-  (*   | read _ ord _ _ => OrdR.ge ord OrdR.acquire_pc *)
-  (*   | _ => false *)
-  (*   end. *)
-
-  (* Definition is_acquire (label:t): bool := *)
-  (*   match label with *)
-  (*   | read _ ord _ _ => OrdR.ge ord OrdR.acquire *)
-  (*   | _ => false *)
-  (*   end. *)
-
-  (* Definition is_release_pc (label:t): bool := *)
-  (*   match label with *)
-  (*   | write _ ord _ _ => OrdW.ge ord OrdW.release_pc *)
-  (*   | _ => false *)
-  (*   end. *)
-
-  (* Definition is_release (label:t): bool := *)
-  (*   match label with *)
-  (*   | write _ ord _ _ => OrdW.ge ord OrdW.release *)
-  (*   | _ => false *)
-  (*   end. *)
-
   Definition is_write (label:t): bool :=
     match label with
     | write _ _ _ => true
@@ -212,17 +187,6 @@ Module ALocal.
                  alocal1.(ctrl)
                  (alocal1.(rmw) ∪ (if ex then (fun n => alocal1.(exbank) = Some n) × (eq (next_eid alocal1)) else bot))
                  (if ex then None else alocal1.(exbank)))
-  | step_write_failure
-      ord vloc vval
-      (EVENT: event = Event.write true ord vloc vval (ValA.mk _ 1 bot))
-      (ALOCAL: alocal2 =
-               mk
-                 alocal1.(labels)
-                 alocal1.(addr)
-                 alocal1.(data)
-                 alocal1.(ctrl)
-                 alocal1.(rmw)
-                 None)
   | step_barrier
       b
       (EVENT: event = Event.barrier b)
@@ -232,17 +196,6 @@ Module ALocal.
                  alocal1.(addr)
                  alocal1.(data)
                  alocal1.(ctrl)
-                 alocal1.(rmw)
-                 alocal1.(exbank))
-  | step_control
-      ctrl_e
-      (EVENT: event = (Event.control ctrl_e))
-      (ALOCAL: alocal2 =
-               mk
-                 (alocal1.(labels) ++ [Label.ctrl])
-                 alocal1.(addr)
-                 alocal1.(data)
-                 (alocal1.(ctrl) ∪ (ctrl_e × (eq (next_eid alocal1))))
                  alocal1.(rmw)
                  alocal1.(exbank))
   .
@@ -548,11 +501,6 @@ Module AExecUnit.
         * left. ss.
     - splits.
       + inv WF. econs; ss.
-        ii. revert N. unfold RMap.find, RMap.add. rewrite IdMap.add_spec. condtac; eauto.
-        inversion e. subst. i. inv N.
-      + econs; ss. eexists. rewrite List.app_nil_r. ss.
-    - splits.
-      + inv WF. econs; ss.
         all: try rewrite List.app_length; s.
         all: unfold ALocal.next_eid in *.
         * ii. apply label_is_mon. exploit REG; eauto.
@@ -578,46 +526,6 @@ Module AExecUnit.
         * ii. apply nth_error_snoc_inv in H. des; ss.
           eapply EXBANK; eauto.
       + econs; ss. eexists; eauto.
-    - splits.
-      + inv WF. econs; ss.
-        all: try rewrite List.app_length; s.
-        all: unfold ALocal.next_eid in *.
-        * ii. apply label_is_mon. exploit REG; eauto.
-        * i. exploit ADDR_LIMIT; eauto. lia.
-        * ii. eapply times_mon; [| |by apply ADDR_LABEL].
-          { apply label_is_mon. }
-          { apply label_is_mon. }
-        * i. exploit DATA_LIMIT; eauto. lia.
-        * ii. eapply times_mon; [| |by apply DATA_LABEL].
-          { apply label_is_mon. }
-          { apply label_is_mon. }
-        * ii. inv H.
-          { exploit CTRL_LIMIT; eauto. }
-          { inv H0. splits; eauto using label_is_lt, wf_rmap_expr. }
-        * i. inv REL.
-          { exploit CTRL_LIMIT; eauto. lia. }
-          { inv H. lia. }
-        * ii. inv H.
-          { eapply times_mon; [| |by apply CTRL_LABEL].
-            - apply label_is_mon.
-            - apply label_is_mon.
-          }
-          { inv H0. econs.
-            - apply label_is_mon. eapply wf_rmap_expr; eauto.
-            - econs.
-              + unfold ALocal.next_eid. rewrite List.nth_error_app2, Nat.sub_diag; ss.
-              + ss.
-          }
-        * i. exploit RMW_LIMIT; eauto. lia.
-        * i. apply nth_error_snoc_inv in LABEL. des; eauto. inv LABEL0.
-        * i. exploit RMW2; eauto. i. des. esplits.
-          { apply nth_error_app_mon. eauto. }
-          { apply nth_error_app_mon. eauto. }
-          { i. rewrite List.nth_error_app1; eauto. etrans; [apply C|]. apply List.nth_error_Some. congr. }
-        * i. exploit EXBANK'; eauto. lia.
-        * ii. apply nth_error_snoc_inv in H. des; ss.
-          eapply EXBANK; eauto.
-      + econs; ss; eauto. left. ss.
     - splits.
       + inv WF. econs; ss.
       + destruct local1. refl.
@@ -755,7 +663,7 @@ Module Execution.
 
   (* let dob = ([W U U U R]; po; [W U U U R]) \ (W * R) *)
 
-  (* let bob = [E]; po; [MF]; po; [E] *)
+  (* let bob = [E]; po; [MF]; po; [E] ~~~> [W]; po; [dmb wr]; po; [R]*)
 
   (* let ob = obs | dob | bob *)
 
@@ -826,21 +734,16 @@ Module Execution.
     ((ex.(label_rel) label_loc) ∩
      ((ex.(label_is) Label.is_read) \₁ codom_rel ex.(rf)) × (ex.(label_is) Label.is_write)).
 
-  (* TODO: rfi 삭제? *)
-  Definition rfi (ex:t): relation eidT := ex.(rf) ∩ i.
-
   Definition rfe (ex:t): relation eidT := ex.(rf) ∩ e.
 
   (* TODO: fre, coe 삭제? *)
   Definition fre (ex:t): relation eidT := (fr ex) ∩ e.
   Definition coe (ex:t): relation eidT := ex.(co) ∩ e.
 
-  (* TODO: internal 공리에서 co, rf 제거 *)
-  Definition internal (ex:t): relation eidT := (po_loc ex) ∪ (fr ex) ∪ ex.(co) ∪ ex.(rf).
+  Definition internal (ex:t): relation eidT := (po_loc ex) ∪ (fr ex).
 
   Definition obs (ex:t): relation eidT := (rfe ex) ∪ (fr ex) ∪ ex.(co).
 
-  (* CHECK: dob를 TSO에 맞게 수정 *)
   Definition dob (ex:t): relation eidT :=
     (⦗ex.(label_is) Label.is_access⦘ ⨾
      po ⨾
@@ -848,11 +751,6 @@ Module Execution.
     \
     (ex.(label_is) Label.is_write) × (ex.(label_is) Label.is_read).
 
-  (* CHECK: aob는 TSO에 없는? *)
-  (* Definition aob (ex:t): relation eidT := *)
-  (*   ⦗codom_rel ex.(rmw)⦘ ⨾ (rfi ex) ⨾ ⦗fun eid => arch = riscv \/ ex.(label_is) Label.is_acquire_pc eid⦘. *)
-
-  (* CHECK: RAW or E;M;E ?? *)
   Definition bob (ex:t): relation eidT :=
     (⦗ex.(label_is) Label.is_write⦘ ⨾
      po ⨾
@@ -860,7 +758,6 @@ Module Execution.
      po ⨾
      ⦗ex.(label_is) Label.is_read⦘).
 
-  (* CHECK: aob는 삭제됨. *)
   Definition ob (ex:t): relation eidT :=
     (obs ex) ∪ (dob ex) ∪ (bob ex).
 End Execution.
@@ -1127,16 +1024,21 @@ Module Valid.
     { rewrite EID0, EID1. esplits; eauto. }
     i. des.
     - subst. exfalso. eapply EX.(INTERNAL). econs 2; econs.
-      + left. left. left. econs; eauto. econs; eauto.
+      + left. econs; eauto. econs; eauto.
         econs; eauto using Label.read_is_accessing, Label.write_is_accessing.
-      + right. eauto.
+      + admit.
+      (* + left. econs; eauto. *)
+      (*   *  *)
+      (*   * econs; eauto using Label.read_is_accessing, Label.write_is_accessing. *)
     - exfalso. eapply EX.(INTERNAL). econs 2; [econs|econs 2; econs].
-      + left. left. left. econs; eauto. econs; eauto.
+      + left. econs; eauto. econs; eauto.
         econs; eauto using Label.read_is_accessing, Label.write_is_accessing.
-      + left. right. eauto.
-      + right. eauto.
+      + admit.
+      (* + left. right. eauto. *)
+      + admit.
+      (* + right. eauto. *)
     - ss.
-  Qed.
+  Admitted.
 
   Lemma coherence_ww
         p exec
@@ -1155,10 +1057,11 @@ Module Valid.
     - subst. inv PO. lia.
     - ss.
     - exfalso. eapply EX.(INTERNAL). econs 2; econs.
-      + left. left. left. econs; eauto. econs; eauto.
+      + left. econs; eauto. econs; eauto.
         econs; eauto using Label.read_is_accessing, Label.write_is_accessing.
-      + left. right. eauto.
-  Qed.
+      + admit.
+      (* + left. right. eauto. *)
+  Admitted.
 
   Lemma coherence_rr
         p exec
@@ -1178,12 +1081,13 @@ Module Valid.
     inv EID3. apply Label.is_writing_inv in LABEL. des. subst.
     exploit EX.(RF1); eauto. i. des.
     { exfalso. eapply EX.(INTERNAL). econs 2; [econs|econs 2; econs].
-      - left. left. right. econs 2. econs; cycle 1.
-        + econs; eauto. econs; eauto.
-        + econs; eauto. econs; eauto using Label.read_is_accessing, Label.write_is_accessing.
-      - right. eauto.
-      - left. left. left. econs; eauto. econs; eauto.
+      - left. econs; eauto. econs; eauto.
         econs; eauto using Label.read_is_accessing, Label.write_is_accessing.
+      - admit.
+        (* - right. eauto. *)
+      - admit.
+      (* - left. left. left. econs; eauto. econs; eauto. *)
+      (*   econs; eauto using Label.read_is_accessing, Label.write_is_accessing. *)
     }
     esplits; eauto.
     exploit EX.(CO1).
@@ -1192,11 +1096,13 @@ Module Valid.
     - subst. eauto.
     - econs 2. ss.
     - exfalso. eapply EX.(INTERNAL). econs 2; [econs|econs 2; econs].
-      + left. left. left. econs; eauto. econs; eauto.
+      + left. econs; eauto. econs; eauto.
         econs; eauto using Label.read_is_accessing, Label.write_is_accessing.
-      + left. left. right. left. econs; eauto.
-      + right. ss.
-  Qed.
+      + admit.
+        (* + left. left. right. left. econs; eauto. *)
+      + admit.
+      (* + right. ss. *)
+  Admitted.
 
   Lemma coherence_wr
         p exec
@@ -1213,11 +1119,11 @@ Module Valid.
     inv EID2. apply Label.is_reading_inv in LABEL. des. subst.
     exploit EX.(RF1); eauto. i. des.
     { exfalso. eapply EX.(INTERNAL). econs 2; econs.
-      - left. left. right. econs 2. econs; cycle 1.
-        + econs; eauto. econs; eauto.
-        + econs; eauto. econs; eauto using Label.read_is_accessing, Label.write_is_accessing.
-      - left. left. left. econs; eauto. econs; eauto.
+      - left. econs; eauto.
         econs; eauto using Label.read_is_accessing, Label.write_is_accessing.
+      - admit.
+      (* - left. left. left. econs; eauto. econs; eauto. *)
+      (*   econs; eauto using Label.read_is_accessing, Label.write_is_accessing. *)
     }
     esplits; eauto.
     exploit EX.(CO1).
@@ -1226,10 +1132,11 @@ Module Valid.
     - subst. eauto.
     - econs 2. ss.
     - exfalso. eapply EX.(INTERNAL). econs 2; econs.
-      + left. left. left. econs; eauto. econs; eauto.
+      + left. econs; eauto. econs; eauto.
         econs; eauto using Label.read_is_accessing, Label.write_is_accessing.
-      + left. left. right. left. econs; eauto.
-  Qed.
+      + admit.
+      (* + left. left. right. left. econs; eauto. *)
+  Admitted.
 
   Lemma rf_inv_write
         p exec
@@ -1254,7 +1161,6 @@ Module Valid.
            | [H: Execution.bob _ _ _ |- _] => inv H
            | [H: Execution.fr _ _ _ |- _] => inv H
            | [H: Execution.rfe _ _ _ |- _] => inv H
-           | [H: Execution.rfi _ _ _ |- _] => inv H
            | [H: (_⨾ _) _ _ |- _] => inv H
            | [H: ⦗_⦘ _ _ |- _] => inv H
            | [H: (_ ∪ _) _ _ |- _] => inv H
@@ -1377,7 +1283,6 @@ Module Valid.
     - exploit RF2; eauto. i. des. congr.
     - destruct l1; try congr; ss.
     - exploit CO2; eauto. i. des. congr.
-    (* CHECK: ob 규칙이 사라져서 그런지 뭔가 증명이 많이 필요없어짐 *)
   Qed.
 
   Lemma ob_barrier_ob
@@ -1400,7 +1305,6 @@ Module Valid.
     - exploit RF2; eauto. i. des. congr.
     - exploit CO2; eauto. i. des. congr.
     - exploit CO2; eauto. i. des. congr.
-    (* CHECK: ob 규칙이 사라져서 그런지 뭔가 증명이 많이 필요없어짐 *)
   Qed.
 
   Lemma ctrl_ob_po
@@ -1420,7 +1324,6 @@ Module Valid.
     - exploit RF2; eauto. i. des. congr.
     - destruct l1; try congr; ss.
     - exploit CO2; eauto. i. des. congr.
-    (* CHECK: ob 규칙이 사라져서 그런지 뭔가 증명이 많이 필요없어짐 *)
   Qed.
 
   Lemma ob_ctrl_ob
@@ -1443,7 +1346,6 @@ Module Valid.
     - exploit RF2; eauto. i. des. congr.
     - exploit CO2; eauto. i. des. congr.
     - exploit CO2; eauto. i. des. congr.
-    (* CHECK: ob 규칙이 사라져서 그런지 뭔가 증명이 많이 필요없어짐 *)
   Qed.
 
   Lemma ob_label
@@ -1461,7 +1363,6 @@ Module Valid.
     all: try congr.
     all: try by exploit RF2; eauto; i; des; congr.
     all: try by exploit CO2; eauto; i; des; congr.
-    (* CHECK: ob 규칙이 사라져서 그런지 뭔가 증명이 많이 필요없어짐 *)
   Qed.
 
   Lemma ob_cycle
@@ -1511,10 +1412,6 @@ Module Valid.
     - splits.
       + destruct l1; ss; econs; eauto.
       + destruct l2; ss; econs; eauto.
-    - exploit CO2; eauto. i. des.
-      splits; econs; eauto.
-    - exploit RF2; eauto. i. des.
-      splits; econs; eauto.
   Qed.
 
   Lemma internal_read_read_po
@@ -1533,10 +1430,6 @@ Module Valid.
     - exploit CO2; eauto. i. des.
       destruct l; ss. congr.
     - rewrite EID in EID0. inv EID0. destruct l0; ss.
-    - exploit CO2; eauto. i. des.
-      destruct l; ss. congr.
-    - exploit RF2; eauto. i. des.
-      destruct l0; ss. congr.
   Qed.
 
   Lemma ob_read_read_po
@@ -1560,31 +1453,6 @@ Module Valid.
     all: try by exploit RF2; eauto; i; des; congr.
     all: try by exploit CO2; eauto; i; des; congr.
     - inv H. rewrite EID0 in EID1. inv EID1. inv LABEL1.
-    (* CHECK: ob 규칙이 사라져서 그런지 뭔가 증명이 많이 필요없어짐 *)
-  Qed.
-
-  Lemma rfi_is_po
-        ex eid1 eid2
-        (RF2: Valid.rf2 ex)
-        (INTERNAL: acyclic (Execution.internal ex))
-        (RFI: Execution.rfi ex eid1 eid2):
-    Execution.po eid1 eid2.
-  Proof.
-    destruct eid1 as [tid1 eid1], eid2 as [tid2 eid2].
-    inv RFI. inv H0. ss. subst.
-    exploit RF2; eauto. i. des.
-    generalize (Nat.lt_trichotomy eid1 eid2). i. des.
-    - econs; ss.
-    - subst. congr.
-    - exfalso. eapply INTERNAL. econs 2.
-      + econs 1. right. eauto.
-      + econs 1. left. left. left. econs; eauto.
-        econs; eauto. econs; unfold Label.is_accessing; eauto.
-        * instantiate (1 := loc).
-          destruct (equiv_dec loc loc); ss.
-          exfalso. apply c. ss.
-        * destruct (equiv_dec loc loc); ss.
-          exfalso. apply c. ss.
   Qed.
 
   Lemma po_loc_write_is_co
@@ -1606,13 +1474,14 @@ Module Valid.
     i. des; eauto.
     - inv x. inv PO. ss. lia.
     - exfalso. eapply INTERNAL. econs 2.
-      + econs 1. left. left. left. econs; eauto.
+      + econs 1. left. econs; eauto.
         econs; eauto. econs; unfold Label.is_accessing; eauto.
         * instantiate (1 := loc).
           destruct (equiv_dec loc loc); ss.
         * destruct (equiv_dec loc loc); ss.
-      + econs 1. left. right. eauto.
-  Qed.
+      + admit.
+      (* + econs 1. left. right. eauto. *)
+  Admitted.
 End Valid.
 
 Coercion Valid.PRE: Valid.ex >-> Valid.pre_ex.
