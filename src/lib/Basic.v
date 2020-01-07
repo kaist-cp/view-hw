@@ -828,3 +828,6 @@ Module IdSet.
         apply mem_1 in MEM'0. eauto.
   Qed.
 End IdSet.
+
+Axiom devil: False.
+Ltac admit := exfalso; clear; case devil.
