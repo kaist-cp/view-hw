@@ -7,6 +7,7 @@ Require Import RelationClasses.
 Require Import EquivDec.
 Require Import List.
 Require Import sflib.
+Require Import HahnRelationsBasic.
 
 Require Import PromisingArch.lib.Basic.
 
@@ -434,4 +435,12 @@ Qed.
 Next Obligation.
   unfold unit_le, unit_join, unit_bot in *.
   ss.
+Qed.
+
+Global Program Instance clos_refl_trans_preorder A R: PreOrder (@clos_refl_trans A R).
+Next Obligation.
+  ii. eapply rt_refl.
+Qed.
+Next Obligation.
+  eapply transitive_rt.
 Qed.
