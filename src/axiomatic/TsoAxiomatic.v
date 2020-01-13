@@ -32,24 +32,42 @@ Module Label.
   Definition is_read (label:t): bool :=
     match label with
     | read _ _ => true
+    | update _ _ _ => true
     | _ => false
     end.
 
   Definition is_reading (loc:Loc.t) (label:t): bool :=
     match label with
     | read loc' _ => loc' == loc
+    | update loc' _ _ => loc' == loc
+    | _ => false
+    end.
+
+  Definition is_reading_val (loc:Loc.t) (val:Val.t) (label:t): bool :=
+    match label with
+    | read loc' val' => (loc' == loc) && (val' == val)
+    | update loc' val' _ => (loc' == loc) && (val' == val)
     | _ => false
     end.
 
   Definition is_write (label:t): bool :=
     match label with
     | write _ _ => true
+    | update _ _ _ => true
     | _ => false
     end.
 
   Definition is_writing (loc:Loc.t) (label:t): bool :=
     match label with
     | write loc' _ => loc' == loc
+    | update loc' _ _ => loc' == loc
+    | _ => false
+    end.
+
+  Definition is_writing_val (loc:Loc.t) (val:Val.t) (label:t): bool :=
+    match label with
+    | write loc' val' => (loc' == loc) && (val' == val)
+    | update loc' _ val' => (loc' == loc) && (val' == val)
     | _ => false
     end.
 
@@ -81,16 +99,80 @@ Module Label.
     | _ => false
     end.
 
+  Lemma reading_is_read
+        loc l
+        (RD: is_reading loc l):
+    is_read l.
+  Proof.
+    destruct l; ss.
+  Qed.
+
+  Lemma reading_is_access
+        loc l
+        (RD: is_reading loc l):
+    is_access l.
+  Proof.
+    destruct l; ss.
+  Qed.
+
+  Lemma reading_is_accessing
+        loc l
+        (RD: is_reading loc l):
+    is_accessing loc l.
+  Proof.
+    destruct l; ss.
+  Qed.
+
   Lemma read_is_reading loc val:
     is_reading loc (read loc val).
   Proof.
     s. destruct (equiv_dec loc loc); ss. exfalso. apply c. ss.
   Qed.
 
+  Lemma reading_val_is_reading
+        loc val l
+        (RDING: is_reading_val loc val l):
+    is_reading loc l.
+  Proof.
+    destruct l; ss; destruct (equiv_dec loc0 loc); ss.
+  Qed.
+
+  Lemma writing_is_write
+        loc l
+        (WR: is_writing loc l):
+    is_write l.
+  Proof.
+    destruct l; ss.
+  Qed.
+
+  Lemma writing_is_access
+        loc l
+        (WR: is_writing loc l):
+    is_access l.
+  Proof.
+    destruct l; ss.
+  Qed.
+
+  Lemma writing_is_accessing
+        loc l
+        (WR: is_writing loc l):
+    is_accessing loc l.
+  Proof.
+    destruct l; ss.
+  Qed.
+
   Lemma write_is_writing loc val:
     is_writing loc (write loc val).
   Proof.
     s. destruct (equiv_dec loc loc); ss. exfalso. apply c. ss.
+  Qed.
+
+  Lemma writing_val_is_writing
+        loc val l
+        (RDING: is_writing_val loc val l):
+    is_writing loc l.
+  Proof.
+    destruct l; ss; destruct (equiv_dec loc0 loc); ss.
   Qed.
 
   Lemma read_is_accessing loc val:
@@ -105,23 +187,30 @@ Module Label.
     s. destruct (equiv_dec loc loc); ss. exfalso. apply c. ss.
   Qed.
 
-  Lemma is_writing_inv
-        loc l
-        (WRITING: is_writing loc l):
-    exists val,
-      l = write loc val.
+  Lemma update_is_accessing loc vold vnew:
+    is_accessing loc (update loc vold vnew).
   Proof.
-    destruct l; ss. destruct (equiv_dec loc0 loc); ss. inv e. eauto.
+    s. destruct (equiv_dec loc loc); ss. exfalso. apply c. ss.
   Qed.
 
-  Lemma is_reading_inv
-        loc l
-        (READING: is_reading loc l):
-    exists val,
-      l = read loc val.
-  Proof.
-    destruct l; ss. destruct (equiv_dec loc0 loc); ss. inv e. eauto.
-  Qed.
+  (* TODO: how to migrate these lemmas? *)
+  (* Lemma is_writing_inv *)
+  (*       loc l *)
+  (*       (WRITING: is_writing loc l): *)
+  (*   exists val, *)
+  (*     l = write loc val. *)
+  (* Proof. *)
+  (*   destruct l; ss. destruct (equiv_dec loc0 loc); ss. inv e. eauto. *)
+  (* Qed. *)
+
+  (* Lemma is_reading_inv *)
+  (*       loc l *)
+  (*       (READING: is_reading loc l): *)
+  (*   exists val, *)
+  (*     l = read loc val. *)
+  (* Proof. *)
+  (*   destruct l; ss. destruct (equiv_dec loc0 loc); ss. inv e. eauto. *)
+  (* Qed. *)
 End Label.
 
 Module ALocal.
