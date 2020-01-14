@@ -834,42 +834,79 @@ Module Valid.
     (* (1): exploit EX.(RF1) *)
     (* (2): exploit EX.(CO1) *)
     (* (3): contradiction of po; fr; rf
-            case rfe => ob "eid3 --rfe--> eid1 --co(from po)--> eid2 --fr--> eid3"
+            case rfe => ob "eid3 --rfe--> eid1 --dob(from r;po;r)--> eid2 --fr--> eid3"
             case rfi => cowr "eid3 --po(from rfi)--> eid1 --po--> eid2 --fr--> eid3"
-            *)
-    admit.
-  Qed.
+     *)
 
-  (*   inv EID1. apply Label.is_reading_inv in LABEL. des. subst. *)
-  (*   inv EID2. apply Label.is_reading_inv in LABEL. des. subst. *)
-  (*   inv EID3. apply Label.is_writing_inv in LABEL. des. subst. *)
-  (*   exploit EX.(RF1); eauto. i. des. *)
-  (*   { exfalso. eapply EX.(INTERNAL). econs 2; [econs|econs 2; econs]. *)
-  (*     - left. econs; eauto. econs; eauto. *)
-  (*       econs; eauto using Label.read_is_accessing, Label.write_is_accessing. *)
-  (*     - admit. *)
-  (*       (* - right. eauto. *) *)
-  (*     - admit. *)
-  (*     (* - left. left. left. econs; eauto. econs; eauto. *) *)
-  (*     (*   econs; eauto using Label.read_is_accessing, Label.write_is_accessing. *) *)
-  (*   } *)
-  (*   esplits; eauto. *)
-  (*   exploit EX.(CO1). *)
-  (*   { rewrite EID1, LABEL. esplits; eauto. } *)
-  (*   i. des. *)
-  (*   - subst. eauto. *)
-  (*   - econs 2. ss. *)
-  (*   - exfalso. eapply EX.(INTERNAL). econs 2; [econs|econs 2; econs]. *)
-  (*     + left. econs; eauto. econs; eauto. *)
-  (*       econs; eauto using Label.read_is_accessing, Label.write_is_accessing. *)
-  (*     + admit. *)
-  (*       (* + left. left. right. left. econs; eauto. *) *)
-  (*     + admit. *)
-  (*     (* + right. ss. *) *)
-  (* Grab Existential Variables. *)
-  (* { admit. (* will be gone automatically.. *) } *)
-  (* { admit. (* will be gone automatically.. *) } *)
-  (* Qed. *)
+    inv EID1. inv EID2. inv EID3.
+    inversion LABEL0. apply Label.reading_exists_val in H0. des.
+    exploit EX.(RF1). instantiate (1 := eid2). eauto.
+    i. destruct x0.
+    { destruct (fst eid1 == fst eid3).
+      - exfalso. exploit EX.(COWR); eauto. instantiate (1 := eid3). econs; esplits.
+        + instantiate (1 := eid2). apply Execution.po_chain.
+          econs. instantiate (1 := eid1). esplits; eauto.
+          (* TODO: prove that "eid3 --po(from rf) --> eid1" *)
+          admit.
+        + right. econs.
+          * econs; eauto.
+            { econs. instantiate (1 := loc).
+              - eauto using Label.reading_is_accessing.
+              - eauto using Label.writing_is_accessing. }
+          * econs.
+            { econs.
+              - econs; eauto using Label.reading_is_read.
+              - inv H; eauto. }
+            econs; eauto using Label.writing_is_write.
+      - exfalso. exploit EX.(EXTERNAL); eauto. instantiate (1 := eid3).
+        apply t_step_rt. econs; eauto. esplits.
+        + left. left. left. left. econs; eauto.
+      + etrans.
+        * econs. left. right. left. econs.
+          { esplits.
+            - econs; eauto. econs; eauto using Label.reading_is_read.
+            - econs. esplits; eauto. econs; eauto.
+              econs; eauto using Label.reading_is_accessing, Label.accessing_is_access. }
+        * econs. left. left. left. right. right.
+          { econs.
+            - econs; eauto.
+              { econs. instantiate (1 := loc).
+              - eauto using Label.reading_is_accessing.
+              - eauto using Label.writing_is_accessing. }
+            - econs.
+              { econs.
+              - econs; eauto using Label.reading_is_read.
+              - inv H; eauto. }
+              econs; eauto using Label.writing_is_write. }
+    }
+    destruct H as [eid4]. des. inv LABEL2. eexists eid4. esplits; eauto.
+    exploit EX.(CO1). econs.
+    instantiate (2 := loc). instantiate (1 := eid4). instantiate (1 := eid3). esplits.
+    { econs; eauto using Label.writing_val_is_writing. }
+    { econs; eauto using Label.writing_val_is_writing. }
+    i. des.
+    { econs; eauto. }
+    { right; eauto. }
+    destruct (fst eid1 == fst eid3).
+    - (* rfi *)
+      exfalso. exploit EX.(COWR); eauto. instantiate (2 := eid3). econs; esplits.
+      + instantiate (1 := eid2). apply Execution.po_chain.
+        econs. instantiate (1 := eid1). esplits; eauto.
+        (* TODO: prove that "eid3 --po(from rf) --> eid1" *)
+        admit.
+      + left. econs. instantiate (1 := eid4). esplits; eauto.
+    - (* rfe *)
+      exfalso. exploit EX.(EXTERNAL); eauto. instantiate (1 := eid3).
+      apply t_step_rt. econs; eauto. esplits.
+      + left. left. left. left. econs; eauto.
+      + etrans.
+        * econs. left. right. left. econs.
+          { esplits.
+            - econs; eauto. econs; eauto using Label.reading_is_read.
+            - econs. esplits; eauto. econs; eauto.
+              econs; eauto using Label.reading_is_accessing, Label.accessing_is_access. }
+        * econs. left. left. left. right. left. econs. esplits; eauto.
+  Qed.
 
   Lemma coherence_rw
         p exec
