@@ -107,14 +107,6 @@ Module Label.
     destruct l; ss.
   Qed.
 
-  Lemma reading_is_access
-        loc l
-        (RD: is_reading loc l):
-    is_access l.
-  Proof.
-    destruct l; ss.
-  Qed.
-
   Lemma reading_is_accessing
         loc l
         (RD: is_reading loc l):
@@ -156,14 +148,6 @@ Module Label.
     destruct l; ss.
   Qed.
 
-  Lemma writing_is_access
-        loc l
-        (WR: is_writing loc l):
-    is_access l.
-  Proof.
-    destruct l; ss.
-  Qed.
-
   Lemma writing_is_accessing
         loc l
         (WR: is_writing loc l):
@@ -184,6 +168,14 @@ Module Label.
     is_writing loc l.
   Proof.
     destruct l; ss; destruct (equiv_dec loc0 loc); ss.
+  Qed.
+
+  Lemma accessing_is_access
+        loc l
+        (RD: is_accessing loc l):
+    is_access l.
+  Proof.
+    destruct l; ss.
   Qed.
 
   Lemma read_is_accessing loc val:
@@ -784,7 +776,7 @@ Module Valid.
     - exfalso. eapply EX.(EXTERNAL). apply t_step_rt. esplits.
       + left. left. right. eauto.
       + econs. left. right. right. econs. esplits.
-        * econs; eauto. econs; eauto using Label.writing_is_access.
+        * econs; eauto. econs; eauto using Label.writing_is_accessing, Label.accessing_is_access.
         * econs. esplits; eauto. econs; eauto. econs; eauto using Label.writing_is_write.
   Qed.
 
@@ -908,7 +900,8 @@ Module Valid.
       { left. left. right. eauto. }
       destruct s.
       + econs 1. left. right. right. econs. esplits.
-        * econs; eauto. econs; eauto using Label.writing_is_access.
+        * econs; eauto.
+          econs; eauto using Label.writing_is_accessing, Label.accessing_is_access.
         * econs. esplits; cycle 1.
           { econs; eauto. econs; eauto using Label.writing_is_write. }
           eauto.
@@ -922,7 +915,8 @@ Module Valid.
       etrans.
       + instantiate (1 := eid2). econs. left. right. left. econs. econs.
         * econs; eauto. econs; eauto using Label.reading_is_read.
-        * econs; eauto. econs; eauto. econs; eauto. econs; eauto using Label.writing_is_access.
+        * econs; eauto. econs; eauto. econs; eauto.
+          econs; eauto using Label.writing_is_accessing, Label.accessing_is_access.
       + econs. inversion H.
         * exfalso. inv PO. eauto.
         * left. left. right. eauto.
