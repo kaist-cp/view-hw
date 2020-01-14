@@ -129,6 +129,17 @@ Module Label.
     s. destruct (equiv_dec loc loc); ss. exfalso. apply c. ss.
   Qed.
 
+  Lemma reading_exists_val
+        loc l
+        (RDING: is_reading loc l):
+    exists val,
+      is_reading_val loc val l.
+  Proof.
+    destruct l; ss; destruct (equiv_dec loc0 loc); ss.
+    - eexists val. destruct (equiv_dec val val); ss. exfalso. apply c. ss.
+    - eexists vold. destruct (equiv_dec vold vold); ss. exfalso. apply c. ss.
+  Qed.
+
   Lemma reading_val_is_reading
         loc val l
         (RDING: is_reading_val loc val l):
@@ -536,7 +547,7 @@ Module Execution.
   (* let dob = ([R]; po; [E]) U ([E]; po; [W]) *)
   (* let bob = [E]; po; [MF]; po; [E] ~~~> [W]; po; [dmb wr]; po; [R] *)
   (* let ob = obs | dob | bob *)
-  (* irrefl po; rf as corw*)
+  (* irrefl po; rf as corw *)
   (* irrefl po; fr as cowr *)
   (* acyclic ob as external *)
 
@@ -750,8 +761,6 @@ Module Valid.
     inv EX. eapply po_label_pre; eauto.
   Qed.
 
-  Global Program Instance clos_refl_reflexive A R: Reflexive (@clos_refl A R).
-
   Lemma po_irrefl:
     forall eid,
       ~ Execution.po eid eid.
@@ -790,12 +799,10 @@ Module Valid.
       <<RF: exec.(Execution.rf) eid3 eid2>> /\
       <<CO: exec.(Execution.co)^? eid1 eid3>>.
   Proof.
-    inv EID1. inv EID2. (* TODO: 기존에는 여기서 is_reading_inv를 사용하여 val을 얻었습니다 *)
+    inv EID1. inv EID2.
+    inversion LABEL0. apply Label.reading_exists_val in H0. des.
     exploit EX.(RF1).
-    { instantiate (1 := eid2). econs; eauto. instantiate (2 := loc).
-      (* TODO: is_reading으로부터 is_reading_val을 얻어야 하는데
-               여기서 val을 instantiate 할 수가 없습니다. *)
-      admit. }
+    { instantiate (1 := eid2). econs; eauto. }
     i. des.
     { exfalso. eapply EX.(COWR). econs; econs.
       - eauto.
@@ -816,8 +823,6 @@ Module Valid.
     exfalso. eapply EX.(COWR). econs; econs.
     - eauto.
     - econs; eauto. econs; eauto.
-  Grab Existential Variables.
-    { admit. }
   Qed.
 
   Lemma coherence_rr

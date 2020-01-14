@@ -444,3 +444,5 @@ Qed.
 Next Obligation.
   eapply transitive_rt.
 Qed.
+
+Global Program Instance clos_refl_reflexive A R: Reflexive (@clos_refl A R).
