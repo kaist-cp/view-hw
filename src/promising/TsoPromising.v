@@ -519,7 +519,7 @@ Section FwdItem.
   Definition init: t := mk bot bot false.
 
   Definition read_view (fwd:t) (tsx:Time.t) (ord:OrdR.t): View.t (A:=A) :=
-    if andb (fwd.(ts) == tsx) (negb (andb fwd.(ex) (orb (arch == riscv) (OrdR.ge ord OrdR.acquire_pc))))
+    if andb (fwd.(ts) == tsx) (negb (andb fwd.(ex) (OrdR.ge ord OrdR.acquire_pc)))
     then fwd.(view)
     else View.mk tsx bot.
 End FwdItem.
