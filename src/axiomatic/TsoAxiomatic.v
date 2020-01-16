@@ -28,7 +28,7 @@ Module Label.
   | update (loc:Loc.t) (vold vnew:Val.t)
   | barrier (b:Barrier.t)
   .
-  Hint Constructors t.
+  Hint Constructors t : tso.
 
   Definition is_read (label:t): bool :=
     match label with
@@ -219,7 +219,7 @@ Module ALocal.
   Inductive t := mk {
     labels: list Label.t;
   }.
-  Hint Constructors t.
+  Hint Constructors t : tso.
 
   Definition init: t := mk [].
 
@@ -257,13 +257,13 @@ Module ALocal.
                mk
                  (alocal1.(labels) ++ [Label.barrier b]))
   .
-  Hint Constructors step.
+  Hint Constructors step : tso.
 
   Inductive le (alocal1 alocal2:t): Prop :=
   | le_intro
       (LABELS: exists l, alocal2.(labels) = alocal1.(labels) ++ l)
   .
-  Hint Constructors le.
+  Hint Constructors le : tso.
 
   Global Program Instance le_preorder: PreOrder le.
   Next Obligation.
@@ -283,7 +283,7 @@ Module AExecUnit.
     state: State.t (A:=unit);
     local: ALocal.t;
   }.
-  Hint Constructors t.
+  Hint Constructors t : tso.
 
   Inductive step (eu1 eu2:t): Prop :=
   | step_intro
@@ -291,7 +291,7 @@ Module AExecUnit.
       (STATE: State.step e eu1.(state) eu2.(state))
       (LOCAL: ALocal.step e eu1.(local) eu2.(local))
   .
-  Hint Constructors step.
+  Hint Constructors step : tso.
 
   Inductive label_is (labels:list Label.t) (pred:Label.t -> Prop) (iid:nat): Prop :=
   | label_is_intro
@@ -299,16 +299,16 @@ Module AExecUnit.
       (EID: List.nth_error labels iid = Some l)
       (LABEL: pred l)
   .
-  Hint Constructors label_is.
+  Hint Constructors label_is : tso.
 
   Definition wf_rmap (rmap: RMap.t (A:=unit)) (labels:list Label.t): Prop := True.
-  Hint Unfold wf_rmap.
+  Hint Unfold wf_rmap : tso.
 
   Inductive wf (aeu:t): Prop :=
   | wf_intro
       (REG: wf_rmap aeu.(state).(State.rmap) aeu.(local).(ALocal.labels))
   .
-  Hint Constructors wf.
+  Hint Constructors wf : tso.
 
   Lemma label_is_lt
         labels pred iid
@@ -426,7 +426,7 @@ Module Execution.
     co: relation eidT;
     rf: relation eidT;
   }.
-  Hint Constructors t.
+  Hint Constructors t : tso.
 
   Definition label (eid:eidT) (ex:t): option Label.t :=
     match IdMap.find (fst eid) ex.(labels) with
@@ -496,7 +496,7 @@ Module Execution.
       (EID: label eid ex = Some l)
       (LABEL: pred l)
   .
-  Hint Constructors label_is.
+  Hint Constructors label_is : tso.
 
   Inductive label_rel (ex:t) (rel:relation Label.t) (eid1 eid2:eidT): Prop :=
   | label_rel_intro
@@ -505,7 +505,7 @@ Module Execution.
       (EID2: label eid2 ex = Some l2)
       (LABEL: rel l1 l2)
   .
-  Hint Constructors label_rel.
+  Hint Constructors label_rel : tso.
 
   Inductive label_is_rel (ex: t) (pred: Label.t -> Prop) (eid1 eid2: eidT): Prop :=
   | label_is_rel_intro
@@ -515,7 +515,7 @@ Module Execution.
       (LABEL1: pred l1)
       (LABEL2: pred l2)
   .
-  Hint Constructors label_is_rel.
+  Hint Constructors label_is_rel : tso.
 
   Inductive label_loc (x y:Label.t): Prop :=
   | label_loc_intro
@@ -523,7 +523,7 @@ Module Execution.
       (X: Label.is_accessing loc x)
       (Y: Label.is_accessing loc y)
   .
-  Hint Constructors label_loc.
+  Hint Constructors label_loc : tso.
 
   Lemma label_is_mon
         exec p1 p2 eid
@@ -531,7 +531,7 @@ Module Execution.
         (P1: label_is exec p1 eid):
     label_is exec p2 eid.
   Proof.
-    destruct P1; eauto.
+    destruct P1; eauto with tso.
   Qed.
 
   (* let obs = rfe | fr | co *)
@@ -547,7 +547,7 @@ Module Execution.
       (TID: fst eid1 = fst eid2)
       (N: snd eid1 < snd eid2)
   .
-  Hint Constructors po.
+  Hint Constructors po : tso.
 
   Global Program Instance po_trans: Transitive po.
   Next Obligation.
@@ -559,7 +559,7 @@ Module Execution.
       (TID: fst eid1 = fst eid2)
       (N: snd eid2 = S (snd eid1))
   .
-  Hint Constructors po_adj.
+  Hint Constructors po_adj : tso.
 
   Lemma po_adj_po:
     po_adj ⊆ po.
@@ -573,7 +573,7 @@ Module Execution.
     funext. i. funext. i. propext. econs; i.
     - inv H. destruct x, x0. ss. subst.
       destruct n0; [lia|].
-      exists (t1, n0). splits; ss. inv N; [left|right]; eauto.
+      exists (t1, n0). splits; ss. inv N; [left|right]; eauto with tso.
     - inv H. des. inv H0.
       + apply po_adj_po. ss.
       + etrans; eauto. apply po_adj_po. ss.
@@ -596,13 +596,13 @@ Module Execution.
   | i_intro
       (TID: fst eid1 = fst eid2)
   .
-  Hint Constructors i.
+  Hint Constructors i : tso.
 
   Inductive e (eid1 eid2:eidT): Prop :=
   | e_intro
       (TID: fst eid1 <> fst eid2)
   .
-  Hint Constructors e.
+  Hint Constructors e : tso.
 
   Definition fr (ex:t): relation eidT :=
     (ex.(rf)⁻¹ ⨾ ex.(co)) ∪
@@ -641,7 +641,7 @@ Inductive tid_lift (tid:Id.t) (rel:relation nat) (eid1 eid2:eidT): Prop :=
     (TID1: fst eid2 = tid)
     (REL: rel (snd eid1) (snd eid2))
 .
-Hint Constructors tid_lift.
+Hint Constructors tid_lift : tso.
 
 Lemma tid_lift_incl
       tid rel1 rel2
@@ -657,7 +657,7 @@ Inductive tid_join (rels: IdMap.t (relation nat)) (eid1 eid2:eidT): Prop :=
     (RELS: IdMap.find tid rels = Some rel)
     (REL: tid_lift tid rel eid1 eid2)
 .
-Hint Constructors tid_join.
+Hint Constructors tid_join : tso.
 
 
 Module Valid.
@@ -672,7 +672,7 @@ Module Valid.
             p aeus;
     LABELS: ex.(Execution.labels) = IdMap.map (fun aeu => aeu.(AExecUnit.local).(ALocal.labels)) aeus;
   }.
-  Hint Constructors pre_ex.
+  Hint Constructors pre_ex : tso.
 
   Definition co1 (ex: Execution.t) :=
     forall eid1 eid2,
@@ -715,7 +715,7 @@ Module Valid.
     CORW: irreflexive (Execution.corw ex);
     EXTERNAL: acyclic (Execution.ob ex);
   }.
-  Hint Constructors ex.
+  Hint Constructors ex : tso.
   Coercion PRE: ex >-> pre_ex.
 
   Definition is_terminal
@@ -778,7 +778,7 @@ Module Valid.
       * econs; eauto with tso.
       * econs. esplits; cycle 1.
         { econs; eauto with tso. }
-        eauto.
+        eauto with tso.
     + subst. econs 2.
   Qed.
 
@@ -843,7 +843,7 @@ Module Valid.
     }
     esplits; eauto.
     exploit EX.(CO1).
-    { esplits; [by eauto|].
+    { esplits; [by eauto with tso|].
       eapply Execution.label_is_mon; eauto. s. i.
       eapply Label.writing_val_is_writing. eauto.
     }
@@ -867,14 +867,6 @@ Module Valid.
       <<RF: exec.(Execution.rf) eid4 eid2>> /\
       <<CO: exec.(Execution.co)^? eid3 eid4>>.
   Proof.
-    (* TODO *)
-    (* (1): exploit EX.(RF1) *)
-    (* (2): exploit EX.(CO1) *)
-    (* (3): contradiction of po; fr; rf
-            case rfe => ob "eid3 --rfe--> eid1 --dob(from r;po;r)--> eid2 --fr--> eid3"
-            case rfi => cowr "eid3 --po(from rfi)--> eid1 --po--> eid2 --fr--> eid3"
-     *)
-
     inv EID1. inv EID2. inv EID3.
     destruct eid1 as [tid1 iid1].
     destruct eid2 as [tid2 iid2].
@@ -882,9 +874,9 @@ Module Valid.
     inversion PO. ss. subst.
     inv LABEL0. apply Label.reading_exists_val in H0. des.
     destruct (tid2 == tid3).
-    - inv e. exploit rfi_is_po; eauto. intro X. inv X. ss. subst.
+    - inv e. exploit rfi_is_po; eauto with tso. intro X. inv X. ss. subst.
       (* po-wr -> co?; rf *)
-      exploit EX.(RF1); eauto. i. des.
+      exploit EX.(RF1); eauto with tso. i. des.
       + exfalso. exploit EX.(COWR); eauto. instantiate (1 := (tid3, iid3)). econs; esplits.
         * etrans; eauto. econs; ss.
         * right. econs.
@@ -897,10 +889,10 @@ Module Valid.
         { etrans; eauto. econs; ss. }
         left. econs; eauto.
     - (* ob-wr -> co?; rf *)
-      exploit EX.(RF1); eauto. i. des.
+      exploit EX.(RF1); eauto with tso. i. des.
       + exfalso. exploit EX.(EXTERNAL); eauto. instantiate (1 := (tid3, iid3)).
         apply t_step_rt. econs; eauto. esplits; [|etrans; [econs|econs]].
-        * left. left. left. left. econs; eauto.
+        * left. left. left. left. econs; eauto with tso.
         * left. right. left. econs. esplits.
           -- econs; eauto with tso.
           -- econs. esplits; eauto. econs; eauto with tso.
@@ -912,7 +904,7 @@ Module Valid.
         intro X. rewrite <- or_assoc in X. destruct X; [by esplits; eauto|].
         exfalso. exploit EX.(EXTERNAL); eauto. instantiate (1 := (tid3, iid3)).
         apply t_step_rt. econs; eauto. esplits; [|etrans; [econs|econs]].
-        * left. left. left. left. econs; eauto.
+        * left. left. left. left. econs; eauto with tso.
         * left. right. left. econs. esplits.
           -- econs; eauto with tso.
           -- econs. esplits; eauto. econs; eauto with tso.
@@ -937,12 +929,12 @@ Module Valid.
     { exfalso. eapply EX.(CORW). econs; eauto. }
     destruct (fst eid1 == fst eid3).
     - (* rfi *)
-      exfalso. eapply EX.(CORW). econs; eauto. instantiate (1 := eid1). esplits; [|by eauto].
+      exfalso. eapply EX.(CORW). econs. instantiate (1 := eid1). esplits; [|by eauto].
       right. apply Execution.po_chain. econs. splits; eauto.
-      inv PO. inv e. rewrite TID in H1. eapply coi_is_po in H0; eauto.
+      inv PO. inv e. rewrite TID in H1. eapply coi_is_po in H0; eauto with tso.
     - (* rfe *)
       exfalso. eapply EX.(EXTERNAL). apply t_step_rt. esplits.
-      { left. left. left. left. econs; eauto. }
+      { left. left. left. left. econs; eauto with tso. }
       etrans.
       + instantiate (1 := eid2). econs. left. right. left. econs. econs.
         * econs; eauto with tso.
@@ -1020,7 +1012,7 @@ Module Valid.
         (OB2: Execution.ob exec eid2 eid3):
     <<OB: Execution.ob exec eid1 eid3>>.
   Proof.
-    inv EID2. destruct l; ss. exploit barrier_ob_po; eauto. i.
+    inv EID2. destruct l; ss. exploit barrier_ob_po; eauto with tso. i.
     unfold co2, rf2 in *. clear OB2.
     obtac.
     all: try by rewrite EID in EID1; inv EID1; ss.
@@ -1074,7 +1066,7 @@ Module Valid.
     { instantiate (1 := Execution.label_is exec Label.is_access).
       i. destruct (Execution.label b exec) eqn:LABEL.
       - destruct t; try by contradict H1; econs; eauto.
-        eapply ob_barrier_ob; eauto.
+        eapply ob_barrier_ob; eauto with tso.
       - exfalso. eapply ob_label; eauto.
     }
     i. des.
@@ -1082,7 +1074,7 @@ Module Valid.
       econs; ss. inv H0. inv H1. econs; eauto.
     - destruct (Execution.label a exec) eqn:LABEL.
       + destruct t; try by contradict x0; econs; eauto.
-        exploit barrier_ob_po; eauto. i. inv x2. lia.
+        exploit barrier_ob_po; eauto with tso. i. inv x2. lia.
       + exfalso. eapply ob_label; eauto.
   Qed.
 End Valid.
