@@ -165,7 +165,7 @@ Section Local.
   Hint Constructors read.
 
   Inductive write (ex:bool) (ord:OrdW.t) (vloc vval res:ValA.t (A:=View.t (A:=A))) (ts:Time.t) (tid:Id.t) (view_pre:View.t (A:=A)) (lc1:t) (mem1: Memory.t) (lc2:t) (mem2: Memory.t): Prop :=
-  | fulfill_intro
+  | write_intro
       loc val
       view_loc view_val
       (LOC: loc = vloc.(ValA.val))
@@ -186,21 +186,57 @@ Section Local.
   .
   Hint Constructors write.
 
-  Inductive write_failure (ex:bool) (res: ValA.t (A:=View.t (A:=A))) (lc1:t) (lc2:t): Prop :=
-  | write_failure_intro
-      (EX: ex)
-      (RES: res = ValA.mk _ 1 bot)
+  (* writable *)
+      (* (EX: ex -> exists eb, *)
+      (*      <<TSX: lc1.(exbank) = Some eb>> /\ *)
+      (*      <<EX: eb.(Exbank.loc) = loc -> Memory.exclusive tid loc eb.(Exbank.ts) ts mem1>>) *)
+
+  Inductive rmw (ordr:OrdR.t) (ordw:OrdW.t) (vloc vold vnew:ValA.t (A:=View.t (A:=A))) (ts:Time.t) (tid:Id.t) (view_pre:View.t (A:=A)) (lc1:t) (mem1: Memory.t) (lc2:t) (mem2: Memory.t): Prop :=
+  | rmw_intro
+      loc val prev_ts prev_val (* CHECK: 파라미터로 prev_ts가 필요하지 않은가? *)
+      view_loc view_val
+      view_post
+      (LOC: loc = vloc.(ValA.val))
+      (VIEW: view_loc = vloc.(ValA.annot))
+
+      (* pre = addr \/ rnew \/ (rk >= acq ? ts.rel) *)
+      (VIEW_PRE: view_pre = joins [view_loc; lc1.(vrn); (ifc (OrdR.ge ordr OrdR.acquire) lc1.(vrel))])
+
+      (* writable *)
+      (COH: lt (lc1.(coh) loc).(View.ts) ts)
+      (EXT: lt view_pre.(View.ts) ts)
+
+      (* forall t', prev_t < t' <= t --> M(t').loc != l *)
+      (LATEST: Memory.latest loc prev_ts ts mem1)
+
+      (* CHECK: read(M,l,prev_t) = v = vold ? *)
+      (MSG: Memory.read loc prev_ts mem1 = Some prev_val)
+      (OLD: vold.(ValA.val) = prev_val)
+
+      (* CHECK: post = t ? *)
+      (VIEW_POST: view_post = (View.mk ts bot))
+
+      (* [e2] = v@data *)
+      (VAL: val = vnew.(ValA.val))
+      (VIEW_VAL: view_val = vnew.(ValA.annot))
+
+      (MEM: Memory.append (Msg.mk loc val tid) mem1 = (ts, mem2))
+
+      (* CHECK: regs view는 사라지는 것? *)
+      (* (RES: res = ValA.mk _ 0 (View.mk bot view_pre.(View.annot))) *)
+
       (LC2: lc2 =
             mk
-              lc1.(coh)
-              lc1.(vrn)
-              lc1.(vwn)
-              lc1.(vro)
-              lc1.(vwo)
-              lc1.(vrel)
-              lc1.(fwdbank))
+              (fun_add loc view_post lc1.(coh)) (* read *)
+              (join lc1.(vrn) (ifc (OrdR.ge ordr OrdR.acquire_pc) view_post)) (* read *)
+              (join lc1.(vwn) (ifc (OrdR.ge ordr OrdR.acquire_pc) view_post)) (* read *)
+              (join lc1.(vro) view_post) (* read *)
+              (join lc1.(vwo) view_post) (* write *)
+              (join lc1.(vrel) ((ifc (OrdW.ge ordw OrdW.release) view_post))) (* write *)
+              (* CHECK: addr view와 data view가 둘 다 필요한가? *)
+              (fun_add loc (FwdItem.mk ts (join view_loc view_val) false) lc1.(fwdbank))) (* write *)
   .
-  Hint Constructors write_failure.
+  Hint Constructors rmw.
 
   (* CHECK: dmb 처리 *)
   Inductive dmb (rr rw wr ww:bool) (lc1 lc2:t): Prop :=
@@ -223,19 +259,18 @@ Section Local.
       (LC: lc2 = lc1)
       (MEM: mem2 = mem1)
   | step_read
-      ex ord vloc res ts
-      (EVENT: event = Event.read ex false ord vloc res)
-      (STEP: read ex ord vloc res ts lc1 mem1 lc2)
+      ord vloc res ts
+      (EVENT: event = Event.read false false ord vloc res)
+      (STEP: read false ord vloc res ts lc1 mem1 lc2)
       (MEM: mem2 = mem1)
   | step_write
-      ex ord vloc vval res ts view_pre
-      (EVENT: event = Event.write ex ord vloc vval res)
-      (STEP: write ex ord vloc vval res ts tid view_pre lc1 mem1 lc2 mem2)
-  | step_write_failure (* TODO: update *)
-      ex ord vloc vval res
-      (EVENT: event = Event.write ex ord vloc vval res)
-      (STEP: write_failure ex res lc1 lc2)
-      (MEM: mem2 = mem1)
+      ord vloc vval res ts view_pre
+      (EVENT: event = Event.write false ord vloc vval res)
+      (STEP: write false ord vloc vval res ts tid view_pre lc1 mem1 lc2 mem2)
+  | step_rmw
+      ordr ordw vloc vold vnew ts view_pre
+      (EVENT: event = Event.rmw ordr ordw vloc vold vnew)
+      (STEP: rmw ordr ordw vloc vold vnew ts tid view_pre lc1 mem1 lc2 mem2)
   | step_dmb (* TODO: check it *)
       rr rw wr ww
       (EVENT: event = Event.barrier (Barrier.dmb rr rw wr ww))
@@ -384,12 +419,17 @@ Section Local.
     admit.
   Qed.
 
-  Lemma write_failure_incr
-        ex res lc1 lc2
-        (LC: write_failure ex res lc1 lc2):
+  (* TODO *)
+  Lemma rmw_incr
+        ordr ordw vloc vold vnew ts tid view_pre lc1 mem1 lc2 mem2
+        (LC: rmw ordr ordw vloc vold vnew ts tid view_pre lc1 mem1 lc2 mem2):
     le lc1 lc2.
   Proof.
     inv LC. econs; ss; try refl; try apply join_l.
+    i. rewrite fun_add_spec. condtac; try refl.
+    clear X. inv e. s.
+    (* TODO: fulfill should update COH's taint, too. *)
+    admit.
   Qed.
 
   Lemma dmb_incr
@@ -408,7 +448,7 @@ Section Local.
     inv LC; try refl.
     - eapply read_incr. eauto.
     - eapply write_incr. eauto.
-    - eapply write_failure_incr. eauto.
+    - eapply rmw_incr. eauto.
     - eapply dmb_incr. eauto.
   Qed.
 End Local.
@@ -584,8 +624,10 @@ Section ExecUnit.
       (*     { eapply PROMISES0; eauto. revert TS2. condtac; ss. i. *)
       (*       inversion e. rewrite H2. rewrite COH0. ss. *)
       (*     } *)
-    - inv STEP. econs; ss. apply rmap_add_wf; viewtac.
-      inv RES. inv VIEW. rewrite TS. s. apply bot_spec.
+    - admit.
+      (* inv STEP. econs; ss. *)
+    (* apply rmap_add_wf; viewtac. *)
+    (* inv RES. inv VIEW. rewrite TS. s. apply bot_spec. *)
     - inv STEP. econs; ss. econs; viewtac.
     (* - inv STEP. econs; ss. econs; viewtac. *)
     (* - inv LC. econs; ss. econs; viewtac. *)
