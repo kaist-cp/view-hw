@@ -36,8 +36,7 @@ Section Local.
   Inductive read (vloc res:ValA.t (A:=unit)) (ts:Time.t) (lc1:t) (mem1: Memory.t) (lc2:t): Prop :=
   | read_intro
       loc val
-      view_pre view_msg
-      view_post
+      view_pre view_msg view_post
       (LOC: loc = vloc.(ValA.val))
       (VIEW_PRE: view_pre = lc1.(vrn))
       (COH: Memory.latest loc ts (lc1.(coh) loc).(View.ts) mem1)
@@ -59,12 +58,9 @@ Section Local.
   Inductive write (vloc vval res:ValA.t (A:=unit)) (ts:Time.t) (tid:Id.t) (lc1:t) (mem1: Memory.t) (lc2:t) (mem2: Memory.t): Prop :=
   | write_intro
       loc val
-      view_loc view_val
       view_post
       (LOC: loc = vloc.(ValA.val))
-      (VIEW_LOC: view_loc = vloc.(ValA.annot))
       (VAL: val = vval.(ValA.val))
-      (VIEW_VAL: view_val = vval.(ValA.annot))
       (VIEW_POST: view_post = View.mk ts bot)
       (MEM: Memory.append (Msg.mk loc val tid) mem1 = (ts, mem2))
       (RES: res = ValA.mk _ 0 bot)
@@ -192,7 +188,6 @@ Section Local.
       (VWO: Order.le lhs.(vwo).(View.ts) rhs.(vwo).(View.ts))
   .
 
-  (* CHECK: move? *)
   Global Program Instance le_partial_order: PreOrder le.
   Next Obligation. econs; refl. Qed.
   Next Obligation. ii. inv H. inv H0. econs; etrans; eauto. Qed.
@@ -216,7 +211,6 @@ Section Local.
     inv LC. econs; ss; try refl; try apply join_l.
     i. rewrite fun_add_spec. condtac; try refl.
     clear X. inv e. s.
-    (* TODO: fulfill should update COH's taint, too. *)
     unfold Order.le. inv WF. inv MEM. eauto.
   Qed.
 
@@ -229,7 +223,6 @@ Section Local.
     inv LC. econs; ss; try refl; try apply join_l.
     i. rewrite fun_add_spec. condtac; try refl.
     clear X. inv e. s.
-    (* TODO: fulfill should update COH's taint, too. *)
     unfold Order.le. inv WF. inv MEM. eauto.
   Qed.
 
@@ -331,17 +324,6 @@ Section ExecUnit.
       all: try by eapply read_wf; eauto.
     - (* write *)
       inv STEP. inv MEM.
-
-      (* TODO: any simple lemma? *)
-      Set Nested Proofs Allowed.
-      Lemma app_some_not_eq : forall (A : Type) (l : list A) (x : A),
-        l ++ [x] <> l.
-      Proof.
-        ii. induction l.
-        - ss.
-        - ss. injection H. eauto.
-      Qed.
-
       eapply app_some_not_eq in H1; ss.
     - (* rmw *)
       inv STEP. inv MEM.
@@ -503,39 +485,6 @@ Module Machine.
       eapply ExecUnit.step_wf; eauto. econs; eauto.
     - inv STEP. ss. i. subst. exploit WF0; eauto.
   Qed.
-
-  (* TODO: necessary? *)
-  (* Lemma step_promise_step_wf *)
-  (*       m1 m2 *)
-  (*       (STEP: step ExecUnit.promise_step m1 m2) *)
-  (*       (WF: wf m1): *)
-  (*   wf m2. *)
-  (* Proof. *)
-  (*   destruct m1 as [tpool1 mem1]. *)
-  (*   destruct m2 as [tpool2 mem2]. *)
-  (*   inv STEP. inv STEP0. inv LOCAL. inv MEM2. inv WF. econs. ss. subst. *)
-  (*   i. revert FIND0. rewrite IdMap.add_spec. condtac. *)
-  (*   - inversion e. i. inv FIND0. *)
-  (*     eapply ExecUnit.promise_step_wf; eauto. econs; eauto. econs; eauto. *)
-  (*     + econs; eauto. *)
-  (*     + refl. *)
-  (*   - i. exploit WF0; eauto. i. inv x. ss. econs; ss. *)
-  (*     + apply ExecUnit.rmap_append_wf. ss. *)
-  (*     + inv LOCAL. econs; eauto. *)
-  (*       all: try rewrite List.app_length; s; try lia. *)
-  (*       * i. rewrite COH. lia. *)
-  (*       * i. destruct (FWDBANK loc0). des. econs; esplits; ss. *)
-  (*         { rewrite TS. apply Memory.latest_ts_append. } *)
-  (*         { apply Memory.read_mon; eauto. } *)
-  (*       * i. exploit EXBANK; eauto. intro Y. inv Y. des. *)
-  (*         econs; esplits; ss. *)
-  (*         { rewrite TS. apply Memory.latest_ts_append. } *)
-  (*         { apply Memory.read_mon. eauto. } *)
-  (*       * i. exploit PROMISES; eauto. lia. *)
-  (*       * i. apply Memory.get_msg_snoc_inv in MSG. des. *)
-  (*         { eapply PROMISES0; eauto. } *)
-  (*         { subst. ss. congr. } *)
-  (* Qed. *)
 
   Lemma rtc_step_step_wf
         m1 m2
