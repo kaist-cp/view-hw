@@ -236,7 +236,6 @@ Section Local.
 
   Lemma step_incr
         e tid mem1 mem2 lc1 lc2
-        (* CHECK: add WF condition *)
         (WF: Local.wf tid mem1 lc1)
         (LC: step e tid mem1 mem2 lc1 lc2):
     le lc1 lc2.
@@ -279,7 +278,6 @@ Section ExecUnit.
   | step0_intro
       (STATE: State.step e1 eu1.(state) eu2.(state))
       (LOCAL: Local.step e2 tid eu1.(mem) eu2.(mem) eu1.(local) eu2.(local))
-      (MEM: eu2.(mem) = eu1.(mem))
   .
   Hint Constructors step0.
 
@@ -323,11 +321,15 @@ Section ExecUnit.
       i. rewrite fun_add_spec. condtac; viewtac.
       all: try by eapply read_wf; eauto.
     - (* write *)
-      inv STEP. inv MEM.
-      eapply app_some_not_eq in H1; ss.
+      inv STEP. inv MEM. econs; ss. econs; rewrite app_length.
+      all: try by viewtac; ss; lia.
+      + i. viewtac. rewrite fun_add_spec.
+        condtac; viewtac; [ ss | rewrite COH ]; lia.
     - (* rmw *)
-      inv STEP. inv MEM.
-      eapply app_some_not_eq in H1; ss.
+      inv STEP. inv MEM. econs; ss. econs; rewrite app_length.
+      all: try by viewtac; ss; lia.
+      + i. viewtac. rewrite fun_add_spec.
+        condtac; viewtac; [ ss | rewrite COH ]; lia.
     - (* dmb *)
       inv STEP. econs; ss. econs; viewtac.
   Qed.
@@ -339,36 +341,6 @@ Section ExecUnit.
   Proof.
     inv STEP. eapply step0_wf; eauto.
   Qed.
-
-  (* TODO: move above.. *)
-  (* Lemma promise_step_wf tid eu1 eu2 *)
-  (*       (STEP: promise_step tid eu1 eu2) *)
-  (*       (WF: wf tid eu1): *)
-  (*   wf tid eu2. *)
-  (* Proof. *)
-  (*   destruct eu1 as [state1 local1 mem1]. *)
-  (*   destruct eu2 as [state2 local2 mem2]. *)
-  (*   inv WF. inv STEP. ss. subst. *)
-  (*   inv LOCAL. inv LOCAL0. inv MEM2. econs; ss. *)
-  (*   - apply rmap_append_wf. ss. *)
-  (*   - econs; eauto. *)
-  (*     all: try rewrite List.app_length; s; try lia. *)
-  (*     + i. rewrite COH. lia. *)
-  (*     + i. destruct (FWDBANK loc0). des. econs; esplits; ss. *)
-  (*       * rewrite TS. apply Memory.latest_ts_append. *)
-  (*       * apply Memory.read_mon; eauto. *)
-  (*     + i. exploit EXBANK; eauto. intro Y. inv Y. des. *)
-  (*       econs; esplits; ss. *)
-  (*       * rewrite TS. apply Memory.latest_ts_append. *)
-  (*       * apply Memory.read_mon. eauto. *)
-  (*     + i. revert IN. rewrite Promises.set_o. condtac. *)
-  (*       * inversion e. i. inv IN. lia. *)
-  (*       * i. exploit PROMISES; eauto. lia. *)
-  (*     + i. rewrite Promises.set_o. apply Memory.get_msg_snoc_inv in MSG. des. *)
-  (*       * destruct ts; ss. condtac; ss. *)
-  (*         eapply PROMISES0; eauto. *)
-  (*       * subst. condtac; ss. congr. *)
-  (* Qed. *)
 
   Inductive le (eu1 eu2:t): Prop :=
   | le_intro
@@ -389,14 +361,15 @@ Section ExecUnit.
   Qed.
 
   Lemma step_incr tid eu1 eu2
-        (* CHECK: add WF condition *)
         (WF: wf tid eu1)
         (STEP: step tid eu1 eu2):
     le eu1 eu2.
   Proof.
-    inv STEP. inv STEP0. inv WF. econs.
-    - eapply Local.step_incr; eauto.
-    - rewrite MEM, app_nil_r. ss.
+    inv STEP. inv STEP0. inv WF. inversion LOCAL; econs.
+    all: try by eapply Local.step_incr; eauto.
+    all: try by rewrite app_nil_r; ss.
+    - inv STEP. inv MEM. eauto.
+    - inv STEP. inv MEM. eauto.
   Qed.
 End ExecUnit.
 End ExecUnit.
@@ -483,7 +456,15 @@ Module Machine.
     i. revert FIND0. rewrite IdMap.add_spec. condtac.
     - inversion e0. i. inv FIND0.
       eapply ExecUnit.step_wf; eauto. econs; eauto.
-    - inv STEP. ss. i. subst. exploit WF0; eauto.
+    - i. inv STEP. exploit WF0; eauto. i. inv x. ss. econs; ss.
+      inv LOCAL0. inv LOCAL. econs; eauto.
+      all: try by ss; lia.
+      + inv STEP. inv MEM. econs; rewrite app_length.
+        all: try by ss; lia.
+        * i. rewrite COH. lia.
+      + inv STEP. inv MEM. econs; rewrite app_length.
+        all: try by ss; lia.
+        * i. rewrite COH. lia.
   Qed.
 
   Lemma rtc_step_step_wf
@@ -550,8 +531,11 @@ Module Machine.
     destruct y as [tpool2 mem2].
     destruct z as [tpool3 mem3].
     inv H. ss.
-    assert (mem2 = mem1).
-    { inv STEP. inv STEP0. ss. }
+    (* assert (mem2 = mem1). *)
+    (* { inv STEP. inv STEP0. simpl in *.  ss. inv STATE. *)
+    (*   - inv STATE. inv STEP. inv MEM. admit. *)
+    (*   - admit. *)
+    (* } *)
     subst. exploit IHSTEPS.
     { rewrite IdMap.add_spec, TPOOL.
       instantiate (1 := if equiv_dec tid tid0 then lc2 else lc1).
@@ -559,8 +543,11 @@ Module Machine.
       condtac; ss.
     }
     i. des.
-    esplits; eauto. rewrite <- STEPS0. condtac; eauto.
-    inversion e. subst. rewrite TPOOL in FIND. inv FIND. econs; eauto.
+    esplits; eauto. rewrite <- STEPS0. condtac.
+    - inversion e. subst. rewrite TPOOL in FIND. inv FIND. econs; eauto.
+    - destruct (mem1 == mem2).
+      { inv e. eauto. }
+      admit.
   Qed.
 
   Lemma step_get_msg_tpool
@@ -577,6 +564,10 @@ Module Machine.
     destruct z as [tpool2 mem2].
     ss. inv H. ss. i. inv STEP.
     rewrite IdMap.add_spec. condtac; eauto.
-    inv STEP0. ss. subst. eauto.
+    inv STEP0. ss. inv LOCAL; eauto.
+    - inv STEP. inv MEM. apply Memory.get_msg_snoc_inv in MSG. des; eauto. subst.
+      ss. congr.
+    - inv STEP. inv MEM. apply Memory.get_msg_snoc_inv in MSG. des; eauto. subst.
+      ss. congr.
   Qed.
 End Machine.
