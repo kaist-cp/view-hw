@@ -423,6 +423,13 @@ Proof.
   rewrite List.rev_app_distr. s. i. inv LASTN. ss.
 Qed.
 
+Lemma app_some_not_eq A x
+      (l : list A):
+  l ++ [x] <> l.
+Proof.
+  ii. induction l; ss. injection H. eauto.
+Qed.
+
 Fixpoint List_find_pos A (pred:A -> bool) (l:list A): option nat :=
   match l with
   | [] => None

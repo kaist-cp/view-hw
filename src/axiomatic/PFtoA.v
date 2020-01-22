@@ -18,6 +18,7 @@ Require Import PromisingArch.lib.Order.
 Require Import PromisingArch.lib.Time.
 Require Import PromisingArch.lib.Lang.
 Require Import PromisingArch.promising.Promising.
+Require Import PromisingArch.promising.CommonPromising.
 Require Import PromisingArch.promising.StateExecFacts.
 Require Import PromisingArch.promising.PtoPF.
 Require Import PromisingArch.axiomatic.Axiomatic.

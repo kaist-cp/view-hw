@@ -9,7 +9,6 @@ Require Import PArith.
 Require Import ZArith.
 Require Import FMapPositive.
 Require Import FSetPositive.
-Require Import EquivDec.
 Require Import sflib.
 
 Require Import PromisingArch.lib.Basic.

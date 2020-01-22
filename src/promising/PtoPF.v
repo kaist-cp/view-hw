@@ -9,7 +9,6 @@ Require Import PArith.
 Require Import ZArith.
 Require Import FMapPositive.
 Require Import FSetPositive.
-Require Import EquivDec.
 Require Import sflib.
 
 Require Import PromisingArch.lib.Basic.
@@ -17,6 +16,7 @@ Require Import PromisingArch.lib.Order.
 Require Import PromisingArch.lib.Time.
 Require Import PromisingArch.lib.Lang.
 Require Import PromisingArch.promising.Promising.
+Require Import PromisingArch.promising.CommonPromising.
 Require Import PromisingArch.promising.StateExecFacts.
 
 Set Implicit Arguments.
