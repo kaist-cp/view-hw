@@ -499,56 +499,11 @@ Module Machine.
   .
   Hint Constructors exec.
 
-  Inductive state_exec (m1 m2:t): Prop :=
-  | state_exec_intro
-      (TPOOL: IdMap.Forall2
-                (fun tid sl1 sl2 =>
-                   rtc (ExecUnit.step tid)
-                       (ExecUnit.mk (fst sl1) (snd sl1) m1.(mem))
-                       (ExecUnit.mk (fst sl2) (snd sl2) m1.(mem)))
-                m1.(tpool) m2.(tpool))
-      (MEM: m1.(mem) = m2.(mem))
-  .
-
   Inductive equiv (m1 m2:t): Prop :=
   | equiv_intro
       (TPOOL: IdMap.Equal m1.(tpool) m2.(tpool))
       (MEM: m1.(mem) = m2.(mem))
   .
-
-  Lemma unlift_step_step
-        m1 m2 tid st1 lc1
-        (STEPS: rtc (step ExecUnit.step) m1 m2)
-        (TPOOL: IdMap.find tid m1.(tpool) = Some (st1, lc1)):
-    exists st2 lc2,
-      <<TPOOL: IdMap.find tid m2.(tpool) = Some (st2, lc2)>> /\
-      <<STEPS: rtc (ExecUnit.step tid)
-                   (ExecUnit.mk st1 lc1 m1.(mem))
-                   (ExecUnit.mk st2 lc2 m2.(mem))>>.
-  Proof.
-    revert st1 lc1 TPOOL. induction STEPS; eauto. i.
-    destruct x as [tpool1 mem1].
-    destruct y as [tpool2 mem2].
-    destruct z as [tpool3 mem3].
-    inv H. ss.
-    (* assert (mem2 = mem1). *)
-    (* { inv STEP. inv STEP0. simpl in *.  ss. inv STATE. *)
-    (*   - inv STATE. inv STEP. inv MEM. admit. *)
-    (*   - admit. *)
-    (* } *)
-    subst. exploit IHSTEPS.
-    { rewrite IdMap.add_spec, TPOOL.
-      instantiate (1 := if equiv_dec tid tid0 then lc2 else lc1).
-      instantiate (1 := if equiv_dec tid tid0 then st2 else st1).
-      condtac; ss.
-    }
-    i. des.
-    esplits; eauto. rewrite <- STEPS0. condtac.
-    - inversion e. subst. rewrite TPOOL in FIND. inv FIND. econs; eauto.
-    - destruct (mem1 == mem2).
-      { inv e. eauto. }
-      admit.
-  Qed.
 
   Lemma step_get_msg_tpool
         p m ts msg
