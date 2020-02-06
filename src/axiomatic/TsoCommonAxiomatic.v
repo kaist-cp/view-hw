@@ -268,21 +268,19 @@ Lemma sim_local_vwn_step ex:
    (⦗ex.(Execution.label_is) Label.is_write⦘))) ⨾
   Execution.po_adj.
 Proof.
-  (* TODO: vwn 남겨두는 여부에 따라 *)
-  admit.
-  (* unfold sim_local_vwn. rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc. *)
-  (* rewrite Execution.po_po_adj at 1 2. *)
-  (* rewrite (clos_refl_union Execution.po), union_seq, eq_seq. *)
-  (* rewrite ? (seq_union' (Execution.po ⨾ Execution.po_adj) Execution.po_adj), ? seq_assoc, ? union_assoc. *)
-  (* funext. i. funext. i. propext. econs; i. *)
-  (* - repeat match goal with *)
-  (*          | [H: (_ ∪ _) _ _ |- _] => inv H *)
-  (*          end; *)
-  (*     eauto 10 using union_l, union_r. *)
-  (* - repeat match goal with *)
-  (*          | [H: (_ ∪ _) _ _ |- _] => inv H *)
-  (*          end; *)
-  (*     eauto 10 using union_l, union_r. *)
+  unfold sim_local_vwn. rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
+  rewrite Execution.po_po_adj at 1 2.
+  rewrite (clos_refl_union Execution.po), union_seq, eq_seq.
+  rewrite ? (seq_union' (Execution.po ⨾ Execution.po_adj) Execution.po_adj), ? seq_assoc, ? union_assoc.
+  funext. i. funext. i. propext. econs; i.
+  - repeat match goal with
+           | [H: (_ ∪ _) _ _ |- _] => inv H
+           end;
+      eauto 10 using union_l, union_r.
+  - repeat match goal with
+           | [H: (_ ∪ _) _ _ |- _] => inv H
+           end;
+      eauto 10 using union_l, union_r.
 Qed.
 
 Lemma sim_local_vwn_spec
@@ -292,22 +290,28 @@ Lemma sim_local_vwn_spec
       (VWN: sim_local_vwn ex eid1 eid2):
   <<OB: Execution.ob ex eid1 eid2>>.
 Proof.
-  (* TODO: vwn 남겨두는 여부에 따라 *)
-  admit.
-  (* inv EID2. destruct l; inv LABEL. unfold sim_local_vwn in VWN. *)
-  (* repeat match goal with *)
-  (*        | [H: (_ ∪ _) _ _ |- _] => inv H *)
-  (*        end. *)
-  (* - right. left. left. left. left. left. left. right. *)
-  (*   inv H0. des. econs. splits; eauto. *)
-  (*   rewrite ? seq_assoc. econs. splits; [|by econs; eauto]. *)
-  (*   rewrite <- ? seq_assoc. ss. *)
-  (* - right. left. left. left. left. right. *)
-  (*   inv H0. des. econs. splits; eauto. *)
-  (*   rewrite ? seq_assoc. econs. splits; [|by econs; eauto]. *)
-  (*   rewrite <- ? seq_assoc. ss. *)
-  (* - right. left. left. right. *)
-  (*   inv H. des. econs. splits; eauto. *)
+  inv EID2. destruct l; inv LABEL. unfold sim_local_vwn in VWN.
+  repeat match goal with
+         | [H: (_ ∪ _) _ _ |- _] => inv H
+         end.
+  - left. right. right.
+    inv H. des. inv H0. inv H2. econs. splits; cycle 1.
+    { econs; eauto. econs; eauto. econs; eauto with tso. }
+    econs; eauto. destruct l; econs; eauto with tso.
+  - left. right. right.
+    inv H. des. inv H0. inv H2. econs. splits; cycle 1.
+    { econs; eauto. econs; eauto. econs; eauto with tso. }
+    econs; eauto. destruct l; econs; eauto with tso.
+  - left. right. right.
+    inv VWN; inv H; inv H0; inv H; inv H2.
+    + rewrite seq_assoc. econs. splits; cycle 1.
+      { econs; eauto. econs; eauto. }
+      econs. econs; eauto. econs; eauto with tso.
+      destruct l; ss; econs; eauto with tso.
+    + rewrite seq_assoc. econs. splits; cycle 1.
+      { econs; eauto. econs; eauto. }
+      econs. splits; eauto. econs; eauto.
+      destruct l; ss; econs; eauto with tso.
 Qed.
 
 Definition sim_local_vro ex :=
@@ -318,7 +322,6 @@ Lemma sim_local_vro_step ex:
   (sim_local_vro ex ∪ ⦗ex.(Execution.label_is) (Label.is_read)⦘) ⨾
   Execution.po_adj.
 Proof.
-  (* TODO: vro 남겨두는 여부? *)
   unfold sim_local_vro. rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
   rewrite Execution.po_po_adj at 1.
   rewrite (clos_refl_union Execution.po), union_seq, eq_seq.
