@@ -619,7 +619,7 @@ Module Execution.
   Definition dob (ex:t): relation eidT :=
     (⦗ex.(label_is) Label.is_read⦘ ⨾
      po ⨾
-     ⦗ex.(label_is) Label.is_access⦘) ∪
+     ⦗ex.(label_is) Label.is_read⦘) ∪
     (⦗ex.(label_is) Label.is_access⦘ ⨾
      po ⨾
      ⦗ex.(label_is) Label.is_write⦘).
@@ -936,7 +936,7 @@ Module Valid.
       exfalso. eapply EX.(EXTERNAL). apply t_step_rt. esplits.
       { left. left. left. left. econs; eauto with tso. }
       etrans.
-      + instantiate (1 := eid2). econs. left. right. left. econs. econs.
+      + instantiate (1 := eid2). econs. left. right. right. econs. econs.
         * econs; eauto with tso.
         * econs; eauto. econs; eauto. econs; eauto with tso.
       + econs. left. left. right. eauto.
