@@ -16,10 +16,10 @@ Require Import PromisingArch.lib.HahnRelationsMore.
 Require Import PromisingArch.lib.Order.
 Require Import PromisingArch.lib.Time.
 Require Import PromisingArch.lib.Lang.
-Require Import PromisingArch.promising.Promising.
+Require Import PromisingArch.promising.TsoPromising.
 Require Import PromisingArch.promising.CommonPromising.
-Require Import PromisingArch.axiomatic.Axiomatic.
-Require Import PromisingArch.axiomatic.CommonAxiomatic.
+Require Import PromisingArch.axiomatic.TsoAxiomatic.
+Require Import PromisingArch.axiomatic.TsoCommonAxiomatic.
 
 Set Implicit Arguments.
 
@@ -31,7 +31,8 @@ Definition mem_of_ex
   filter_map
     (fun eid =>
        match Execution.label eid ex with
-       | Some (Label.write ex ord loc val) => Some (Msg.mk loc val (fst eid))
+       | Some (Label.write loc val) => Some (Msg.mk loc val (fst eid))
+       | Some (Label.update loc vold vnew) => Some (Msg.mk loc vnew (fst eid))
        | _ => None
        end)
     ob.
@@ -88,25 +89,63 @@ Proof.
   exploit view_of_eid_inv; try exact VIEW2; eauto. i. des.
   inv WRITE1. destruct l; try done.
   inv WRITE2. destruct l; try done.
-  destruct (Nat.compare_spec n n0).
-  - subst. congr.
-  - rewrite (@List_firstn_le (S n) (S n0)) in VIEW0; [|lia].
-    rewrite mem_of_ex_app, List.app_length in VIEW0.
-    apply plus_minus in VIEW0. rewrite Nat.sub_diag, Nat.sub_succ in VIEW0.
-    exploit List_nth_error_skipn; eauto. i.
-    exploit @List_nth_error_firstn; [eauto| |i].
-    { instantiate (1 := (n0 - n)). lia. }
-    exploit List.nth_error_In; eauto. i.
-    exfalso. eapply mem_of_ex_in_length; eauto.
-  - symmetry in VIEW0.
-    rewrite (@List_firstn_le (S n0) (S n)) in VIEW0; [|lia].
-    rewrite mem_of_ex_app, List.app_length in VIEW0.
-    apply plus_minus in VIEW0. rewrite Nat.sub_diag, Nat.sub_succ in VIEW0.
-    exploit List_nth_error_skipn; try exact N; eauto. i.
-    exploit @List_nth_error_firstn; [eauto| |i].
-    { instantiate (1 := (n - n0)). lia. }
-    exploit List.nth_error_In; eauto. i.
-    exfalso. eapply mem_of_ex_in_length; eauto.
+  - destruct (Nat.compare_spec n n0).
+    + subst. congr.
+    + rewrite (@List_firstn_le (S n) (S n0)) in VIEW0; [|lia].
+      rewrite mem_of_ex_app, List.app_length in VIEW0.
+      apply plus_minus in VIEW0. rewrite Nat.sub_diag, Nat.sub_succ in VIEW0.
+      exploit List_nth_error_skipn; eauto. i.
+      exploit @List_nth_error_firstn; [eauto| |i].
+      { instantiate (1 := (n0 - n)). lia. }
+      exploit List.nth_error_In; eauto. i.
+      exfalso. eapply mem_of_ex_in_length; eauto with tso.
+    + symmetry in VIEW0.
+      rewrite (@List_firstn_le (S n0) (S n)) in VIEW0; [|lia].
+      rewrite mem_of_ex_app, List.app_length in VIEW0.
+      apply plus_minus in VIEW0. rewrite Nat.sub_diag, Nat.sub_succ in VIEW0.
+      exploit List_nth_error_skipn; try exact N; eauto. i.
+      exploit @List_nth_error_firstn; [eauto| |i].
+      { instantiate (1 := (n - n0)). lia. }
+      exploit List.nth_error_In; eauto. i.
+      exfalso. eapply mem_of_ex_in_length; eauto with tso.
+  - destruct (Nat.compare_spec n n0).
+    + subst. congr.
+    + rewrite (@List_firstn_le (S n) (S n0)) in VIEW0; [|lia].
+      rewrite mem_of_ex_app, List.app_length in VIEW0.
+      apply plus_minus in VIEW0. rewrite Nat.sub_diag, Nat.sub_succ in VIEW0.
+      exploit List_nth_error_skipn; eauto. i.
+      exploit @List_nth_error_firstn; [eauto| |i].
+      { instantiate (1 := (n0 - n)). lia. }
+      exploit List.nth_error_In; eauto. i.
+      exfalso. eapply mem_of_ex_in_length; eauto with tso.
+    + symmetry in VIEW0.
+      rewrite (@List_firstn_le (S n0) (S n)) in VIEW0; [|lia].
+      rewrite mem_of_ex_app, List.app_length in VIEW0.
+      apply plus_minus in VIEW0. rewrite Nat.sub_diag, Nat.sub_succ in VIEW0.
+      exploit List_nth_error_skipn; try exact N; eauto. i.
+      exploit @List_nth_error_firstn; [eauto| |i].
+      { instantiate (1 := (n - n0)). lia. }
+      exploit List.nth_error_In; eauto. i.
+      exfalso. eapply mem_of_ex_in_length; eauto with tso.
+  - destruct (Nat.compare_spec n n0).
+    + subst. congr.
+    + rewrite (@List_firstn_le (S n) (S n0)) in VIEW0; [|lia].
+      rewrite mem_of_ex_app, List.app_length in VIEW0.
+      apply plus_minus in VIEW0. rewrite Nat.sub_diag, Nat.sub_succ in VIEW0.
+      exploit List_nth_error_skipn; eauto. i.
+      exploit @List_nth_error_firstn; [eauto| |i].
+      { instantiate (1 := (n0 - n)). lia. }
+      exploit List.nth_error_In; eauto. i.
+      exfalso. eapply mem_of_ex_in_length; eauto with tso.
+    + symmetry in VIEW0.
+      rewrite (@List_firstn_le (S n0) (S n)) in VIEW0; [|lia].
+      rewrite mem_of_ex_app, List.app_length in VIEW0.
+      apply plus_minus in VIEW0. rewrite Nat.sub_diag, Nat.sub_succ in VIEW0.
+      exploit List_nth_error_skipn; try exact N; eauto. i.
+      exploit @List_nth_error_firstn; [eauto| |i].
+      { instantiate (1 := (n - n0)). lia. }
+      exploit List.nth_error_In; eauto. i.
+      exfalso. eapply mem_of_ex_in_length; eauto with tso.
 Qed.
 
 Lemma view_of_eid_ob
@@ -143,8 +182,7 @@ Proof.
   { instantiate (1 := (S n0 - S n)). lia. }
   exploit List.nth_error_In; eauto. i.
   apply neq_0_lt. ii. eapply mem_of_ex_in_length; eauto.
-  inv WRITE2. apply Label.is_writing_inv in LABEL. des. subst.
-  econs; eauto.
+  inv WRITE2. eauto with tso.
 Qed.
 
 Inductive sim_view (ex:Execution.t) (ob: list eidT) (eids:eidT -> Prop) (view:Time.t): Prop :=
@@ -243,7 +281,7 @@ Proof.
       * s. i. des. subst. esplits; eauto. right. ss.
 Qed.
 
-Inductive sim_local (tid:Id.t) (ex:Execution.t) (ob: list eidT) (alocal:ALocal.t) (local:Local.t (A:=unit)): Prop := mk_sim_local {
+Inductive sim_local (tid:Id.t) (ex:Execution.t) (ob: list eidT) (alocal:ALocal.t) (local:Local.t): Prop := mk_sim_local {
   COH: forall loc,
         sim_view
           ex ob
@@ -265,61 +303,22 @@ Inductive sim_local (tid:Id.t) (ex:Execution.t) (ob: list eidT) (alocal:ALocal.t
          ex ob
          (inverse (sim_local_vwo ex) (eq (tid, List.length (alocal.(ALocal.labels)))))
          local.(Local.vwo).(View.ts);
-  VCAP:
-       sim_view
-         ex ob
-         (inverse (sim_local_vcap ex) (eq (tid, List.length (alocal.(ALocal.labels)))))
-         local.(Local.vcap).(View.ts);
-  VREL: sim_view
-          ex ob
-          (inverse (sim_local_vrel ex) (eq (tid, List.length (alocal.(ALocal.labels)))))
-          local.(Local.vrel).(View.ts);
-  FWDBANK: forall loc,
-      (exists eid,
-          <<TS_NONZERO: (local.(Local.fwdbank) loc).(FwdItem.ts) > 0>> /\
-          <<WRITE: sim_local_fwd ex loc eid (tid, List.length (alocal.(ALocal.labels)))>> /\
-          <<TS: view_of_eid ex ob eid = Some (local.(Local.fwdbank) loc).(FwdItem.ts)>> /\
-          <<VIEW: sim_view
-                    ex ob
-                    (inverse (ex.(Execution.addr) ∪ ex.(Execution.data)) (eq eid))
-                    (local.(Local.fwdbank) loc).(FwdItem.view).(View.ts)>> /\
-          <<EX: (local.(Local.fwdbank) loc).(FwdItem.ex) <-> ex.(Execution.label_is) (Label.is_ex) eid>>) \/
-      ((local.(Local.fwdbank) loc) = FwdItem.init /\
-       forall eid, ~ (inverse (sim_local_fwd_none ex loc) (eq (tid, List.length (alocal.(ALocal.labels)))) eid));
-  EXBANK: opt_rel
-            (fun aeb eb =>
-               ex.(Execution.label_is) (Label.is_reading eb.(Exbank.loc)) (tid, aeb) /\
-               (forall eid v, ex.(Execution.rf) eid (tid, aeb) -> view_of_eid ex ob eid = Some v -> le v eb.(Exbank.ts)) /\
-               sim_view
-                 ex ob
-                 (inverse ex.(Execution.rf) (eq (tid, aeb)))
-                 eb.(Exbank.ts) /\
-               sim_view
-                 ex ob
-                 (eq (tid, aeb))
-                 eb.(Exbank.view).(View.ts))
-            alocal.(ALocal.exbank) local.(Local.exbank);
-  PROMISES: forall view,
-      Promises.lookup view local.(Local.promises) <->
-      (exists n,
-          <<N: (length alocal.(ALocal.labels)) <= n>> /\
-          <<WRITE: ex.(Execution.label_is) Label.is_write (tid, n)>> /\
-          <<VIEW: view_of_eid ex ob (tid, n) = Some view>>);
 }.
 Hint Constructors sim_local.
 
-Inductive sim_eu (tid:Id.t) (ex:Execution.t) (ob: list eidT) (aeu:AExecUnit.t) (eu:ExecUnit.t (A:=unit)): Prop :=
-| sim_eu_intro
-    (STATE: sim_state tid ex ob aeu.(AExecUnit.state) eu.(ExecUnit.state))
-    (LOCAL: sim_local tid ex ob aeu.(AExecUnit.local) eu.(ExecUnit.local))
-    (MEM: eu.(ExecUnit.mem) = mem_of_ex ex ob)
-.
-Hint Constructors sim_eu.
+(* TODO: sim_state AExecUnit.state Type 정리 *)
+(* Inductive sim_eu (tid:Id.t) (ex:Execution.t) (ob: list eidT) (aeu:AExecUnit.t) (eu:ExecUnit.t): Prop := *)
+(* | sim_eu_intro *)
+(*     (STATE: sim_state tid ex ob aeu.(AExecUnit.state) eu.(ExecUnit.state)) *)
+(*     (LOCAL: sim_local tid ex ob aeu.(AExecUnit.local) eu.(ExecUnit.local)) *)
+(*     (MEM: eu.(ExecUnit.mem) = mem_of_ex ex ob) *)
+(* . *)
+(* Hint Constructors sim_eu. *)
 
 Lemma label_read_mem_of_ex
-      eid ex ob exm ord loc val
+      eid ex ob loc val
       (OB: Permutation ob (Execution.eids ex))
-      (LABEL: Execution.label eid ex = Some (Label.read exm ord loc val)):
+      (LABEL: Execution.label eid ex = Some (Label.read loc val)):
   exists view,
     <<VIEW: view_of_eid ex ob eid = Some view>>.
 Proof.
@@ -333,9 +332,9 @@ Proof.
 Qed.
 
 Lemma label_write_mem_of_ex_msg
-      eid ex ob exm ord loc val
+      eid ex ob loc val
       (OB: Permutation ob (Execution.eids ex))
-      (LABEL: Execution.label eid ex = Some (Label.write exm ord loc val)):
+      (LABEL: Execution.label eid ex = Some (Label.write loc val)):
   exists n,
     <<VIEW: view_of_eid ex ob eid = Some (S n)>> /\
     <<MSG: List.nth_error (mem_of_ex ex ob) n = Some (Msg.mk loc val (fst eid))>>.
@@ -360,9 +359,9 @@ Proof.
 Qed.
 
 Lemma label_write_mem_of_ex
-      eid ex ob exm ord loc val
+      eid ex ob loc val
       (OB: Permutation ob (Execution.eids ex))
-      (LABEL: Execution.label eid ex = Some (Label.write exm ord loc val)):
+      (LABEL: Execution.label eid ex = Some (Label.write loc val)):
   exists n,
     <<VIEW: view_of_eid ex ob eid = Some (S n)>> /\
     <<READ: Memory.read loc (S n) (mem_of_ex ex ob) = Some val>> /\
@@ -373,22 +372,27 @@ Proof.
   unfold Memory.read. s. rewrite MSG. s. condtac; [|congr]. ss.
 Qed.
 
+(* CHECK: union update case *)
 Lemma in_mem_of_ex
       ex ob view msg
       (NODUP: List.NoDup ob)
       (IN: List.nth_error (mem_of_ex ex ob) view = Some msg):
-  exists n ex1 ord1,
-    <<LABEL: Execution.label (msg.(Msg.tid), n) ex = Some (Label.write ex1 ord1 msg.(Msg.loc) msg.(Msg.val))>> /\
-    <<VIEW: view_of_eid ex ob (msg.(Msg.tid), n) = Some (S view)>>.
+  (exists n,
+     <<LABEL: Execution.label (msg.(Msg.tid), n) ex = Some (Label.write msg.(Msg.loc) msg.(Msg.val))>> /\
+     <<VIEW: view_of_eid ex ob (msg.(Msg.tid), n) = Some (S view)>>) \/
+  (exists n vold,
+     <<LABEL: Execution.label (msg.(Msg.tid), n) ex = Some (Label.update msg.(Msg.loc) vold msg.(Msg.val))>> /\
+     <<VIEW: view_of_eid ex ob (msg.(Msg.tid), n) = Some (S view)>>).
 Proof.
   unfold mem_of_ex in IN. exploit nth_error_filter_map_inv; eauto. i. des.
-  destruct (Execution.label a ex) eqn:LABEL; ss. destruct t; inv FA. destruct a. ss.
-  esplits.
-  - eauto.
-  - unfold view_of_eid.
+  destruct (Execution.label a ex) eqn:LABEL; ss. destruct t; inv FA; destruct a; ss.
+  - left. esplits; eauto. unfold view_of_eid.
     erewrite List_nth_error_find_pos; eauto. s. f_equal. ss.
+  - right. esplits; eauto.
+    unfold view_of_eid. erewrite List_nth_error_find_pos; eauto. s. f_equal. ss.
 Qed.
 
+(* TODO: sim_eu 정의 후 계속 *)
 Lemma sim_eu_step
       p ex ob tid aeu1 eu1 aeu2
       (EX: Valid.ex p ex)
