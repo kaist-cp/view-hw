@@ -83,6 +83,7 @@ Section Local.
       (MSG: Memory.read loc old_ts mem1 = Some old)
       (OLD: vold.(ValA.val) = old)
       (NEW: new = vnew.(ValA.val))
+      (VIEW_MSG: view_msg = View.mk old_ts bot)
       (VIEW_POST: view_post = View.mk ts bot)
       (MEM: Memory.append (Msg.mk loc new tid) mem1 = (ts, mem2))
       (LC: lc2 =
@@ -90,7 +91,7 @@ Section Local.
               (fun_add loc view_post lc1.(coh))
               (join lc1.(vrn) view_post)
               (join lc1.(vwn) view_post)
-              (join lc1.(vro) view_post)
+              (join lc1.(vro) view_msg)
               (join lc1.(vwo) view_post))
   .
   Hint Constructors rmw.
