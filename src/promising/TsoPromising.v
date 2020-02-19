@@ -77,12 +77,13 @@ Section Local.
   Inductive rmw (vloc vold vnew:ValA.t (A:=unit)) (ts:Time.t) (tid:Id.t) (lc1:t) (mem1:Memory.t) (lc2:t) (mem2:Memory.t): Prop :=
   | rmw_intro
       loc old new old_ts
-      view_post
+      view_post view_msg
       (LOC: loc = vloc.(ValA.val))
       (LATEST: Memory.latest loc old_ts ts mem1)
       (MSG: Memory.read loc old_ts mem1 = Some old)
       (OLD: vold.(ValA.val) = old)
       (NEW: new = vnew.(ValA.val))
+      (VIEW_MSG: view_msg = View.mk old_ts bot)
       (VIEW_POST: view_post = View.mk ts bot)
       (MEM: Memory.append (Msg.mk loc new tid) mem1 = (ts, mem2))
       (LC: lc2 =
@@ -90,7 +91,7 @@ Section Local.
               (fun_add loc view_post lc1.(coh))
               (join lc1.(vrn) view_post)
               (join lc1.(vwn) view_post)
-              (join lc1.(vro) view_post)
+              (join lc1.(vro) view_msg)
               (join lc1.(vwo) view_post))
   .
   Hint Constructors rmw.
@@ -314,10 +315,9 @@ Section ExecUnit.
     inv WF. inv STEP. ss. subst.
     generalize LOCAL. intro WF_LOCAL1.
     inv STATE; inv LOCAL0; inv EVENT; inv LOCAL; ss.
+    exploit Local.read_spec; eauto. intro READ_SPEC. guardH READ_SPEC.
     - (* read *)
-      exploit Local.read_spec; eauto. intro READ_SPEC. guardH READ_SPEC.
-      inv STEP. ss. subst.
-      econs; ss. econs; viewtac.
+      inv STEP. econs. econs; viewtac.
       i. rewrite fun_add_spec. condtac; viewtac.
       all: try by eapply read_wf; eauto.
     - (* write *)
@@ -330,6 +330,10 @@ Section ExecUnit.
       all: try by viewtac; ss; lia.
       + i. viewtac. rewrite fun_add_spec.
         condtac; viewtac; [ ss | rewrite COH ]; lia.
+      + i. viewtac; [ lia |].
+        rewrite Nat.le_le_succ_r. instantiate (1 := length mem1).
+        * lia.
+        * eapply read_wf; eauto.
     - (* dmb *)
       inv STEP. econs; ss. econs; viewtac.
   Qed.
