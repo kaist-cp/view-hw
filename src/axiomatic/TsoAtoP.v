@@ -335,6 +335,47 @@ Proof.
   unfold Memory.read. s. rewrite MSG. s. condtac; [|congr]. ss.
 Qed.
 
+Lemma label_update_mem_of_ex_msg
+      eid ex ob loc vold vnew
+      (OB: Permutation ob (Execution.eids ex))
+      (LABEL: Execution.label eid ex = Some (Label.update loc vold vnew)):
+  exists n,
+    <<VIEW: view_of_eid ex ob eid = Some (S n)>> /\
+    <<MSG: List.nth_error (mem_of_ex ex ob) n = Some (Msg.mk loc vnew (fst eid))>>.
+Proof.
+  generalize (Execution.eids_spec ex). i. des. rename NODUP into NODUP0.
+  specialize (LABEL0 eid). rewrite LABEL in LABEL0.
+  inv LABEL0. clear H0. exploit H; [congr|]. clear H. intro IN0.
+  symmetry in OB. exploit Permutation_in; eauto. intro IN.
+  exploit HahnList.Permutation_nodup; eauto. intro NODUP.
+  generalize (List_in_find_pos _ ob IN). i. des.
+  unfold view_of_eid. rewrite H.
+  exploit List_find_pos_inv; eauto. i. des.
+  destruct (equiv_dec a eid); [|done]. inversion e. subst.
+  esplits.
+  - unfold option_map. erewrite List_firstn_S; eauto.
+    rewrite mem_of_ex_app, List.app_length.
+    unfold mem_of_ex at 2. s. rewrite LABEL. s. rewrite Nat.add_1_r. ss.
+  - rewrite <- (List.firstn_skipn n ob) at 1.
+    rewrite mem_of_ex_app, List.nth_error_app2; [|lia].
+    erewrite Nat.sub_diag, List_skipn_cons; eauto. s.
+    unfold mem_of_ex. s. rewrite LABEL. ss.
+Qed.
+
+Lemma label_update_mem_of_ex
+      eid ex ob loc vold vnew
+      (OB: Permutation ob (Execution.eids ex))
+      (LABEL: Execution.label eid ex = Some (Label.update loc vold vnew)):
+  exists n,
+    <<VIEW: view_of_eid ex ob eid = Some (S n)>> /\
+    <<READ: Memory.read loc (S n) (mem_of_ex ex ob) = Some vnew>> /\
+    <<MSG: Memory.get_msg (S n) (mem_of_ex ex ob) = Some (Msg.mk loc vnew (fst eid))>>.
+Proof.
+  exploit label_update_mem_of_ex_msg; eauto. i. des.
+  esplits; eauto.
+  unfold Memory.read. s. rewrite MSG. s. condtac; [|congr]. ss.
+Qed.
+
 (* CHECK: union update case *)
 Lemma in_mem_of_ex
       ex ob view msg
