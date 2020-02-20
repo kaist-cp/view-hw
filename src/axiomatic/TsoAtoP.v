@@ -269,14 +269,62 @@ Inductive sim_local (tid:Id.t) (ex:Execution.t) (ob: list eidT) (alocal:ALocal.t
 }.
 Hint Constructors sim_local.
 
-(* TODO: sim_state AExecUnit.state Type 정리 *)
-(* Inductive sim_eu (tid:Id.t) (ex:Execution.t) (ob: list eidT) (aeu:AExecUnit.t) (eu:ExecUnit.t): Prop := *)
-(* | sim_eu_intro *)
-(*     (STATE: sim_state tid ex ob aeu.(AExecUnit.state) eu.(ExecUnit.state)) *)
-(*     (LOCAL: sim_local tid ex ob aeu.(AExecUnit.local) eu.(ExecUnit.local)) *)
-(*     (MEM: eu.(ExecUnit.mem) = mem_of_ex ex ob) *)
-(* . *)
-(* Hint Constructors sim_eu. *)
+Inductive sim_eu (tid:Id.t) (ex:Execution.t) (ob: list eidT) (aeu:AExecUnit.t) (eu:ExecUnit.t): Prop :=
+| sim_eu_intro
+    (STATE: sim_state tid ex ob aeu.(AExecUnit.state) eu.(ExecUnit.state))
+    (LOCAL: sim_local tid ex ob aeu.(AExecUnit.local) eu.(ExecUnit.local))
+    (MEM: eu.(ExecUnit.mem) = mem_of_ex ex ob)
+.
+Hint Constructors sim_eu.
+
+(* sim_machine_eu -> exists aeu, (1) aeu ~ (tpool's st+lc) /\ aeu -*-> [EX's aeu] *)
+(* `-*->`: rtc AExecUnit.step *)
+Definition sim_machine_eu (tid:Id.t) (exec:Execution.t) (ob: list eidT) (aeu:AExecUnit.t) (st: State.t (A:=unit)) (lc: Local.t): Prop :=
+  exists aeu1,
+    sim_state tid exec ob aeu1.(AExecUnit.state) st /\
+    sim_local tid exec ob aeu1.(AExecUnit.local) lc /\
+    rtc AExecUnit.step aeu1 aeu.
+
+Definition prefix_of {A} : relation (list A) := fun l1 l2 => exists k, l2 = l1 ++ k.
+
+(* `p`: program *)
+(* NOTE: `ob`, `n` -> `ob`? *)
+Inductive sim_machine (p:program) (exec:Execution.t) (ob: list eidT) (n:nat) (mach: Machine.t): Prop :=
+| sim_machine_intro
+    (EX: Valid.ex p exec)
+    (LINEARIZED: linearized (Execution.po ∪ exec.(Execution.rf)) ob)
+    (MEM: prefix_of (List.firstn n (mem_of_ex exec ob)) (mach.(Machine.mem)))
+    (TPOOL: IdMap.Forall2
+              (fun tid aeu tpool =>
+                 sim_machine_eu tid exec ob aeu (fst tpool) (snd tpool))
+              EX.(Valid.aeus) mach.(Machine.tpool))
+.
+
+Lemma sim_machine_init
+      p exec ob
+      (EX: Valid.ex p exec)
+      (LINEARIZED: linearized (Execution.po ∪ exec.(Execution.rf)) ob):
+  sim_machine p exec ob 0 (Machine.init p).
+Proof.
+  econs; eauto.
+  { econs; ss. }
+  instantiate (1 := EX).
+  admit.
+Qed.
+
+Lemma sim_machine_step
+      p exec ob n mach
+      (EX: Valid.ex p exec)
+      (REL: sim_machine p exec ob n mach)
+      (N: n < length ob):
+  exists mach',
+    <<STEP: Machine.step ExecUnit.step mach mach'>> /\
+    <<SIM: sim_machine p exec ob (S n) mach'>>.
+Proof.
+  admit.
+Qed.
+
+(* TODO: sim_machine_term: if n = length ob, ... *)
 
 Lemma label_read_mem_of_ex
       eid ex ob loc val
