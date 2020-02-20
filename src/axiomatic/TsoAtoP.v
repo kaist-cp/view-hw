@@ -237,49 +237,12 @@ Inductive sim_val (tid:Id.t) (ex:Execution.t) (ob: list eidT) (avala:ValA.t (A:=
 .
 Hint Constructors sim_val.
 
-Inductive sim_rmap (tid:Id.t) (ex:Execution.t) (ob: list eidT) (armap:RMap.t (A:=nat -> Prop)) (rmap:RMap.t (A:=View.t (A:=unit))): Prop :=
-| sim_rmap_intro
-    (RMAP: IdMap.Forall2 (fun reg => sim_val tid ex ob) armap rmap)
-.
-Hint Constructors sim_rmap.
-
-Inductive sim_state (tid:Id.t) (ex:Execution.t) (ob: list eidT) (astate:State.t (A:=nat -> Prop)) (state:State.t (A:=View.t (A:=unit))): Prop :=
+Inductive sim_state (tid:Id.t) (ex:Execution.t) (ob: list eidT) (astate:State.t (A:=unit)) (state:State.t (A:=unit)): Prop :=
 | sim_state_intro
     (STMTS: astate.(State.stmts) = state.(State.stmts))
-    (RMAP: sim_rmap tid ex ob astate.(State.rmap) state.(State.rmap))
+    (RMAP: astate.(State.rmap) = state.(State.rmap))
 .
 Hint Constructors sim_state.
-
-Lemma sim_rmap_add
-      tid ex ob armap rmap reg avala vala
-      (SIM: sim_rmap tid ex ob armap rmap)
-      (VAL: sim_val tid ex ob avala vala):
-  sim_rmap tid ex ob (RMap.add reg avala armap) (RMap.add reg vala rmap).
-Proof.
-  econs. ii. unfold RMap.add. rewrite ? IdMap.add_spec.
-  inv SIM. condtac; eauto.
-Qed.
-
-Lemma sim_rmap_expr
-      tid ex ob armap rmap e
-      (SIM: sim_rmap tid ex ob armap rmap):
-  sim_val tid ex ob (sem_expr armap e) (sem_expr rmap e).
-Proof.
-  inv SIM. induction e; s.
-  - (* const *)
-    econs; ss. econs 1; ss.
-  - (* reg *)
-    specialize (RMAP reg). unfold RMap.find. inv RMAP; ss.
-    econs; ss. econs 1; ss.
-  - (* op1 *)
-    inv IHe. econs; ss. congr.
-  - (* op2 *)
-    inv IHe1. inv IHe2. econs; ss.
-    + congr.
-    + apply sim_view_join; eapply sim_view_le; eauto.
-      * s. i. des. subst. esplits; eauto. left. ss.
-      * s. i. des. subst. esplits; eauto. right. ss.
-Qed.
 
 Inductive sim_local (tid:Id.t) (ex:Execution.t) (ob: list eidT) (alocal:ALocal.t) (local:Local.t): Prop := mk_sim_local {
   COH: forall loc,
@@ -402,13 +365,9 @@ Lemma sim_eu_step
       (WF: ExecUnit.wf tid eu1)
       (STEP: AExecUnit.step aeu1 aeu2)
       (LABEL: forall n label (LABEL: List.nth_error aeu2.(AExecUnit.local).(ALocal.labels) n = Some label),
-          Execution.label (tid, n) ex = Some label)
-      (ADDR: tid_lift tid aeu2.(AExecUnit.local).(ALocal.addr) ⊆ ex.(Execution.addr))
-      (DATA: tid_lift tid aeu2.(AExecUnit.local).(ALocal.data) ⊆ ex.(Execution.data))
-      (CTRL: tid_lift tid aeu2.(AExecUnit.local).(ALocal.ctrl) ⊆ ex.(Execution.ctrl0))
-      (RMW: tid_lift tid aeu2.(AExecUnit.local).(ALocal.rmw) ⊆ ex.(Execution.rmw)):
+          Execution.label (tid, n) ex = Some label):
   exists eu2,
-    <<STEP: ExecUnit.state_step tid eu1 eu2>> /\
+    <<STEP: ExecUnit.step tid eu1 eu2>> /\
     <<SIM: sim_eu tid ex ob aeu2 eu2>>.
 Proof.
   destruct eu1 as [[stmts1 rmap1] local1].
