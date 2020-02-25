@@ -279,37 +279,57 @@ Hint Constructors sim_eu.
 
 (* sim_machine_eu -> exists aeu, (1) aeu ~ (tpool's st+lc) /\ aeu -*-> [EX's aeu] *)
 (* `-*->`: rtc AExecUnit.step *)
-Definition sim_machine_eu (tid:Id.t) (exec:Execution.t) (ob: list eidT) (aeu:AExecUnit.t) (st: State.t (A:=unit)) (lc: Local.t): Prop :=
+Definition sim_machine_eu (tid:Id.t) (exec:Execution.t) (ob: list eidT) (aeu:AExecUnit.t) (tpool: (State.t (A:=unit) * Local.t)) (* (st: State.t (A:=unit)) (lc: Local.t) *): Prop :=
   exists aeu1,
-    sim_state tid exec ob aeu1.(AExecUnit.state) st /\
-    sim_local tid exec ob aeu1.(AExecUnit.local) lc /\
-    rtc AExecUnit.step aeu1 aeu.
-
-Definition prefix_of {A} : relation (list A) := fun l1 l2 => exists k, l2 = l1 ++ k.
+    <<ST: sim_state tid exec ob aeu1.(AExecUnit.state) (fst tpool)>> /\
+    <<LC: sim_local tid exec ob aeu1.(AExecUnit.local) (snd tpool)>> /\
+    <<STEPS: rtc AExecUnit.step aeu1 aeu>>.
 
 (* `p`: program *)
 (* NOTE: `ob`, `n` -> `ob`? *)
 Inductive sim_machine (p:program) (exec:Execution.t) (ob: list eidT) (n:nat) (mach: Machine.t): Prop :=
 | sim_machine_intro
     (EX: Valid.ex p exec)
+    (EIDS: Permutation ob (Execution.eids exec))
     (LINEARIZED: linearized (Execution.po ∪ exec.(Execution.rf)) ob)
-    (MEM: prefix_of (List.firstn n (mem_of_ex exec ob)) (mach.(Machine.mem)))
+    (MEM: mem_of_ex exec (List.firstn n ob) = mach.(Machine.mem))
     (TPOOL: IdMap.Forall2
               (fun tid aeu tpool =>
-                 sim_machine_eu tid exec ob aeu (fst tpool) (snd tpool))
+                 sim_machine_eu tid exec ob aeu tpool)
               EX.(Valid.aeus) mach.(Machine.tpool))
 .
 
 Lemma sim_machine_init
-      p exec ob
+      p exec ob n mach
       (EX: Valid.ex p exec)
-      (LINEARIZED: linearized (Execution.po ∪ exec.(Execution.rf)) ob):
+      (EIDS: Permutation ob (Execution.eids exec))
+      (LINEARIZED: linearized (Execution.po ∪ exec.(Execution.rf)) ob)
+      (MEM: mem_of_ex exec (List.firstn n ob) = mach.(Machine.mem))
+      (TPOOL: IdMap.Forall2
+                (fun tid aeu tpool =>
+                   sim_machine_eu tid exec ob aeu tpool)
+                EX.(Valid.aeus) mach.(Machine.tpool)):
   sim_machine p exec ob 0 (Machine.init p).
 Proof.
-  econs; eauto.
-  { econs; ss. }
-  instantiate (1 := EX).
-  admit.
+  econs; eauto. instantiate (1 := EX).
+  assert (INVALID: forall tid
+                     (FIND1: IdMap.find tid p = None)
+                     (FIND2: IdMap.find tid mach.(Machine.tpool) = None),
+             IdMap.find tid EX.(Valid.aeus) = None).
+  { i. generalize (EX.(Valid.AEUS) tid). rewrite FIND1. intro X. inv X. ss. }
+  assert (INVALID2: forall tid
+                     (FIND1: IdMap.find tid p = None)
+                     (FIND2: IdMap.find tid EX.(Valid.aeus) = None),
+             IdMap.find tid mach.(Machine.tpool) = None).
+  { i. admit. }
+  (* setoid_rewrite IdMap.elemcents_spec in INVALID at 1. *)
+  ii. ss. rewrite IdMap.map_spec.
+  unfold option_map.
+  destruct (IdMap.find id p) as [] eqn:E; destruct (IdMap.find id (Machine.tpool mach)) as [] eqn:E2.
+  - admit.
+  - admit.
+  - rewrite INVALID; eauto. admit.
+  - rewrite INVALID; eauto.
 Qed.
 
 Lemma sim_machine_step
