@@ -279,7 +279,7 @@ Hint Constructors sim_eu.
 
 (* sim_machine_eu -> exists aeu, (1) aeu ~ (tpool's st+lc) /\ aeu -*-> [EX's aeu] *)
 (* `-*->`: rtc AExecUnit.step *)
-Definition sim_machine_eu (tid:Id.t) (exec:Execution.t) (ob: list eidT) (aeu:AExecUnit.t) (tpool: (State.t (A:=unit) * Local.t)) (* (st: State.t (A:=unit)) (lc: Local.t) *): Prop :=
+Definition sim_machine_eu (tid:Id.t) (exec:Execution.t) (ob: list eidT) (aeu:AExecUnit.t) (tpool: (State.t (A:=unit) * Local.t)) : Prop :=
   exists aeu1,
     <<ST: sim_state tid exec ob aeu1.(AExecUnit.state) (fst tpool)>> /\
     <<LC: sim_local tid exec ob aeu1.(AExecUnit.local) (snd tpool)>> /\
@@ -300,36 +300,34 @@ Inductive sim_machine (p:program) (exec:Execution.t) (ob: list eidT) (n:nat) (ma
 .
 
 Lemma sim_machine_init
-      p exec ob n mach
+      p exec ob
       (EX: Valid.ex p exec)
       (EIDS: Permutation ob (Execution.eids exec))
-      (LINEARIZED: linearized (Execution.po ∪ exec.(Execution.rf)) ob)
-      (MEM: mem_of_ex exec (List.firstn n ob) = mach.(Machine.mem))
-      (TPOOL: IdMap.Forall2
-                (fun tid aeu tpool =>
-                   sim_machine_eu tid exec ob aeu tpool)
-                EX.(Valid.aeus) mach.(Machine.tpool)):
+      (LINEARIZED: linearized (Execution.po ∪ exec.(Execution.rf)) ob):
   sim_machine p exec ob 0 (Machine.init p).
 Proof.
   econs; eauto. instantiate (1 := EX).
+  assert (IN: forall tid stmts
+                (FIND1: IdMap.find tid p = Some stmts),
+             IdMap.find tid EX.(Valid.aeus)
+             = Some (AExecUnit.mk (State.init stmts) ALocal.init)).
+  (* Is this right? *)
+  { i. exploit EX.(Valid.AEUS). instantiate (1 := tid).
+    i. inv x0; rewrite FIND1 in H0; inv H0.
+    admit. }
   assert (INVALID: forall tid
-                     (FIND1: IdMap.find tid p = None)
-                     (FIND2: IdMap.find tid mach.(Machine.tpool) = None),
+                     (FIND1: IdMap.find tid p = None),
              IdMap.find tid EX.(Valid.aeus) = None).
-  { i. generalize (EX.(Valid.AEUS) tid). rewrite FIND1. intro X. inv X. ss. }
-  assert (INVALID2: forall tid
-                     (FIND1: IdMap.find tid p = None)
-                     (FIND2: IdMap.find tid EX.(Valid.aeus) = None),
-             IdMap.find tid mach.(Machine.tpool) = None).
-  { i. admit. }
-  (* setoid_rewrite IdMap.elemcents_spec in INVALID at 1. *)
+  { i. exploit EX.(Valid.AEUS). instantiate (1 := tid).
+    i. inv x0; rewrite FIND1 in H0; inv H0. refl. }
   ii. ss. rewrite IdMap.map_spec.
-  unfold option_map.
-  destruct (IdMap.find id p) as [] eqn:E; destruct (IdMap.find id (Machine.tpool mach)) as [] eqn:E2.
-  - admit.
-  - admit.
-  - rewrite INVALID; eauto. admit.
-  - rewrite INVALID; eauto.
+  destruct (IdMap.find id p) as [] eqn:Ep; ss; cycle 1.
+  { apply INVALID in Ep. rewrite Ep. ss. }
+  destruct (IdMap.find id (Valid.aeus EX)) as [] eqn:Ea; cycle 1.
+  { apply IN in Ep. rewrite Ea in Ep. inv Ep. }
+  apply IN in Ep. rewrite Ea in Ep. rewrite Ep.
+  econs. econs. instantiate (1 := (AExecUnit.mk (State.init l) ALocal.init)).
+  esplits; eauto. econs; eauto.
 Qed.
 
 Lemma sim_machine_step
