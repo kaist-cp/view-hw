@@ -277,6 +277,76 @@ Inductive sim_eu (tid:Id.t) (ex:Execution.t) (ob: list eidT) (aeu:AExecUnit.t) (
 .
 Hint Constructors sim_eu.
 
+(* sim_machine_eu -> exists aeu, (1) aeu ~ (tpool's st+lc) /\ aeu -*-> [EX's aeu] *)
+(* `-*->`: rtc AExecUnit.step *)
+Definition sim_machine_eu (tid:Id.t) (exec:Execution.t) (ob: list eidT) (aeu:AExecUnit.t) (tpool: (State.t (A:=unit) * Local.t)) : Prop :=
+  exists aeu1,
+    <<ST: sim_state tid exec ob aeu1.(AExecUnit.state) (fst tpool)>> /\
+    <<LC: sim_local tid exec ob aeu1.(AExecUnit.local) (snd tpool)>> /\
+    <<STEPS: rtc AExecUnit.step aeu1 aeu>>.
+
+(* `p`: program *)
+(* NOTE: `ob`, `n` -> `ob`? *)
+Inductive sim_machine (p:program) (exec:Execution.t) (ob: list eidT) (n:nat) (mach: Machine.t): Prop :=
+| sim_machine_intro
+    (EX: Valid.ex p exec)
+    (EIDS: Permutation ob (Execution.eids exec))
+    (LINEARIZED: linearized (Execution.po ∪ exec.(Execution.rf)) ob)
+    (MEM: mem_of_ex exec (List.firstn n ob) = mach.(Machine.mem))
+    (TPOOL: IdMap.Forall2
+              (fun tid aeu tpool =>
+                 sim_machine_eu tid exec ob aeu tpool)
+              EX.(Valid.aeus) mach.(Machine.tpool))
+.
+
+Lemma sim_machine_init
+      p exec ob
+      (EX: Valid.ex p exec)
+      (EIDS: Permutation ob (Execution.eids exec))
+      (LINEARIZED: linearized (Execution.po ∪ exec.(Execution.rf)) ob):
+  sim_machine p exec ob 0 (Machine.init p).
+Proof.
+  econs; eauto. instantiate (1 := EX).
+  assert (IN: forall tid stmts
+                (FIND1: IdMap.find tid p = Some stmts),
+             exists aeu,
+               IdMap.find tid EX.(Valid.aeus) = Some aeu /\
+               rtc AExecUnit.step
+                   (AExecUnit.mk (State.init stmts) ALocal.init)
+                   aeu).
+  { i. exploit EX.(Valid.AEUS). instantiate (1 := tid).
+    i. inv x0; rewrite FIND1 in H0; inv H0. eexists b; ss. }
+  assert (INVALID: forall tid
+                     (FIND1: IdMap.find tid p = None),
+             IdMap.find tid EX.(Valid.aeus) = None).
+  { i. exploit EX.(Valid.AEUS). instantiate (1 := tid).
+    i. inv x0; rewrite FIND1 in H0; inv H0. refl. }
+  ii. ss. rewrite IdMap.map_spec.
+  destruct (IdMap.find id p) as [] eqn:Ep; ss; cycle 1.
+  { apply INVALID in Ep. rewrite Ep. ss. }
+  apply IN in Ep. des.
+  destruct (IdMap.find id (Valid.aeus EX)) as [] eqn:Ea; inv Ep.
+  econs. econs. instantiate (1 := (AExecUnit.mk (State.init l) ALocal.init)).
+  esplits.
+  - econs; ss.
+  - econs; eauto.
+  - eauto.
+Qed.
+
+Lemma sim_machine_step
+      p exec ob n mach
+      (EX: Valid.ex p exec)
+      (REL: sim_machine p exec ob n mach)
+      (N: n < length ob):
+  exists mach',
+    <<STEP: Machine.step ExecUnit.step mach mach'>> /\
+    <<SIM: sim_machine p exec ob (S n) mach'>>.
+Proof.
+  admit.
+Qed.
+
+(* TODO: sim_machine_term: if n = length ob, ... *)
+
 Lemma label_read_mem_of_ex
       eid ex ob loc val
       (OB: Permutation ob (Execution.eids ex))
