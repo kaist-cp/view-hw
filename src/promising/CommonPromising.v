@@ -199,7 +199,7 @@ Module Memory.
   Proof.
     destruct ts3; ss.
     destruct (le_lt_dec (S ts3) ts2); ss.
-    exfalso. eapply LATEST; eauto. 
+    exfalso. eapply LATEST; eauto.
   Qed.
 
   Lemma ge_latest loc ts1 ts2 mem
@@ -507,3 +507,145 @@ Section View.
   Qed.
 End View.
 End View.
+
+Module Promises.
+  Definition t := Id.t -> bool.
+
+  Definition id_of_time (ts:Time.t): option positive :=
+    option_map Pos.of_succ_nat (Time.pred_opt ts).
+
+  Lemma id_of_time_inj ts ts'
+        (EQ: id_of_time ts = id_of_time ts'):
+    ts = ts'.
+  Proof.
+    revert EQ. unfold id_of_time, Time.pred_opt.
+    destruct ts, ts'; ss. i. inv EQ.
+    f_equal. apply SuccNat2Pos.inj. ss.
+  Qed.
+
+  Lemma id_of_time_le ts ts' p p'
+        (P: id_of_time ts = Some p)
+        (P': id_of_time ts' = Some p')
+        (LE: (p <= p')%positive):
+    ts <= ts'.
+  Proof.
+    revert P P' LE. unfold id_of_time, Time.pred_opt.
+    destruct ts, ts'; ss. i. inv P. inv P'. lia.
+  Qed.
+
+  Lemma id_of_time_lt ts ts' p p'
+        (P: id_of_time ts = Some p)
+        (P': id_of_time ts' = Some p')
+        (LE: (p < p')%positive):
+    ts < ts'.
+  Proof.
+    revert P P' LE. unfold id_of_time, Time.pred_opt.
+    destruct ts, ts'; ss. i. inv P. inv P'. lia.
+  Qed.
+
+  Definition lookup (ts:Time.t) (promises:t): bool :=
+    match id_of_time ts with
+    | None => false
+    | Some ts => promises ts
+    end.
+
+  Definition set (ts:Time.t) (promises:t): t :=
+    match id_of_time ts with
+    | None => promises
+    | Some ts => fun_add ts true promises
+    end.
+
+  Lemma set_o ts' ts promises:
+    lookup ts' (set ts promises) =
+    if ts' == ts
+    then ts' <> 0
+    else lookup ts' promises.
+  Proof.
+    unfold lookup, set.
+    destruct (id_of_time ts') eqn:X', (id_of_time ts) eqn:X, (equiv_dec ts' ts); ss;
+      destruct ts, ts'; ss;
+      try rewrite fun_add_spec in *.
+    - inv e. rewrite X in X'. inv X'. condtac; ss. congr.
+    - condtac; ss. inversion e. subst.
+      rewrite <- X' in X. apply id_of_time_inj in X. inv X. intuition.
+  Qed.
+
+  Definition unset (ts:Time.t) (promises:t): t :=
+    match id_of_time ts with
+    | None => promises
+    | Some ts => fun_add ts false promises
+    end.
+
+  Lemma unset_o ts' ts promises:
+    lookup ts' (unset ts promises) =
+    if ts' == ts
+    then false
+    else lookup ts' promises.
+  Proof.
+    unfold lookup, unset.
+    destruct (id_of_time ts') eqn:X', (id_of_time ts) eqn:X, (equiv_dec ts' ts); ss;
+      destruct ts, ts'; ss;
+      try rewrite fun_add_spec in *.
+    - inv e. rewrite X in X'. inv X'. condtac; intuition.
+    - condtac; ss. inversion e. subst.
+      rewrite <- X' in X. apply id_of_time_inj in X. inv X. intuition.
+  Qed.
+
+  Definition clear_below (ts:Time.t) (promises:t): t :=
+    match id_of_time ts with
+    | None => promises
+    | Some ts => fun i =>
+                  if Pos.leb i ts
+                  then false
+                  else promises i
+    end.
+
+  Lemma clear_below_o ts' ts promises:
+    lookup ts' (clear_below ts promises) = lookup ts' promises && Time.ltb ts ts'.
+  Proof.
+    unfold lookup, clear_below.
+    destruct (id_of_time ts') eqn:X', (id_of_time ts) eqn:X; destruct ts, ts'; ss.
+    - destruct (Pos.leb_spec0 p p0); ss.
+      + exploit id_of_time_le; try exact l; eauto.
+        destruct (promises p), (S ts <? S ts') eqn:CMP; ss.
+        apply Time.ltb_lt in CMP. lia.
+      + assert ((p0 < p)%positive) by lia.
+        exploit id_of_time_lt; try exact H; eauto.
+        destruct (promises p), (S ts <? S ts') eqn:CMP; ss.
+        apply Time.ltb_ge in CMP. lia.
+    - destruct (promises p); ss.
+  Qed.
+
+  Lemma set_unset a b promises
+        (DIFF: a <> b):
+    set a (unset b promises) = unset b (set a promises).
+  Proof.
+    funext. i. unfold set, unset.
+    destruct a, b; ss.
+    rewrite ? fun_add_spec. repeat condtac; ss.
+    inversion e. inversion e0. subst.
+    apply SuccNat2Pos.inj in H0. congr.
+  Qed.
+
+  Lemma lookup_bot view:
+    lookup view bot = false.
+  Proof.
+    unfold lookup. destruct (id_of_time view); ss.
+  Qed.
+
+  Lemma ext p1 p2
+        (EQ: forall i, lookup i p1 = lookup i p2):
+    p1 = p2.
+  Proof.
+    funext. i. specialize (EQ (Pos.to_nat x)).
+    unfold lookup, id_of_time in *.
+    destruct (Id.eq_dec 1 x).
+    { subst. ss. }
+    exploit (Pos2Nat.inj_pred x); [lia|].
+    destruct (Pos.to_nat x) eqn:NAT; ss.
+    - destruct x; ss. destruct x; ss.
+    - i. subst. rewrite Pos2SuccNat.id_succ in *.
+      generalize (Pos.succ_pred_or x). i. des; [congr|].
+      rewrite H in *. ss.
+  Qed.
+End Promises.
