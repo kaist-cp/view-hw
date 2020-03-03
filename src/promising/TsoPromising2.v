@@ -107,6 +107,30 @@ Section Local.
   .
   Hint Constructors fulfill.
 
+  Inductive rmw (vloc vold vnew:ValA.t (A:=View.t (A:=A))) (ts:Time.t) (tid:Id.t) (view_pre:View.t (A:=A)) (lc1:t) (mem1:Memory.t) (lc2:t): Prop :=
+  | rmw_intro
+      loc old new old_ts
+      view_old
+      (LOC: loc = vloc.(ValA.val))
+      (LATEST: Memory.latest loc old_ts ts mem1)
+      (OLD_MSG: Memory.read loc old_ts mem1 = Some old)
+      (OLD: vold.(ValA.val) = old)
+      (VIEW_OLD: view_old = View.mk old_ts bot)
+      (NEW: new = vnew.(ValA.val))
+      (WRITABLE: writable vloc vnew tid lc1 mem1 ts view_pre)
+      (MSG: Memory.get_msg ts mem1 = Some (Msg.mk loc new tid))
+      (PROMISE: Promises.lookup ts lc1.(promises))
+      (LC: lc2 =
+            mk
+              (fun_add loc (View.mk ts bot) lc1.(coh))
+              (join lc1.(vrn) (View.mk ts bot))
+              (join lc1.(vwn) (View.mk ts bot))
+              (join lc1.(vro) view_old)
+              (join lc1.(vwo) (View.mk ts bot))
+              (Promises.unset ts lc1.(promises)))
+  .
+  Hint Constructors rmw.
+
   Inductive write_failure (res: ValA.t (A:=View.t (A:=A))) (lc1:t) (lc2:t): Prop :=
   | write_failure_intro
       (RES: res = ValA.mk _ 1 bot)
@@ -150,6 +174,10 @@ Section Local.
       ex ord vloc vval res
       (EVENT: event = Event.write ex ord vloc vval res)
       (STEP: write_failure res lc1 lc2)
+  | step_rmw
+      ordr ordw vloc vold vnew ts view_pre
+      (EVENT: event = Event.rmw ordr ordw vloc vold vnew)
+      (STEP: rmw vloc vold vnew ts tid view_pre lc1 mem lc2)
   | step_dmb
       rr rw wr ww
       (EVENT: event = Event.barrier (Barrier.dmb rr rw wr ww))
@@ -300,6 +328,17 @@ Section Local.
     inv LC. econs; ss; try refl; try apply join_l.
   Qed.
 
+  Lemma rmw_incr
+        vloc vold vnew ts tid view_pre lc1 mem lc2
+        (LC: rmw vloc vold vnew ts tid view_pre lc1 mem lc2):
+    le lc1 lc2.
+  Proof.
+    inv LC. econs; ss; try refl; try apply join_l.
+    i. rewrite fun_add_spec. condtac; try refl.
+    clear X. inv e. s.
+    inv WRITABLE. unfold Order.le. clear -COH. lia.
+  Qed.
+
   Lemma dmb_incr
         rr rw wr ww lc1 lc2
         (LC: dmb rr rw wr ww lc1 lc2):
@@ -317,6 +356,7 @@ Section Local.
     - eapply read_incr. eauto.
     - eapply fulfill_incr. eauto.
     - eapply write_failure_incr. eauto.
+    - eapply rmw_incr. eauto.
     - eapply dmb_incr. eauto.
   Qed.
 End Local.
@@ -438,13 +478,6 @@ Section ExecUnit.
     destruct eu1 as [state1 local1 mem1].
     destruct eu2 as [state2 local2 mem2].
     inv WF. inv STEP. ss. subst.
-
-    (* assert (FWDVIEW: forall loc ts ord,
-               Memory.latest loc ts (View.ts (Local.coh local1 loc)) mem1 ->
-               ts <= length mem1 ->
-               View.ts (FwdItem.read_view (Local.fwdbank local1 loc) ts ord) <= length mem1).
-    { i. rewrite Local.fwd_read_view_le; eauto. } *)
-
     generalize LOCAL. intro WF_LOCAL1.
     inv STATE0; inv LOCAL0; inv EVENT; inv LOCAL; ss.
     - econs; ss.
@@ -452,10 +485,6 @@ Section ExecUnit.
     - inv RES. inv VIEW. inv VLOC. inv VIEW.
       exploit Local.read_spec; eauto. intro READ_SPEC. guardH READ_SPEC.
       inv STEP. ss. subst.
-
-      (* exploit FWDVIEW; eauto.
-      { eapply read_wf. eauto. } *)
-
       i. econs; ss.
       + apply rmap_add_wf; viewtac.
         rewrite TS. viewtac.
@@ -469,7 +498,7 @@ Section ExecUnit.
       inv STEP. inv WRITABLE. econs; ss.
       + apply rmap_add_wf; viewtac.
         rewrite TS. viewtac.
-      + econs; viewtac; rewrite <- ? TS0, <- ? TS1; eauto using get_msg_wf, expr_wf.
+      + econs; viewtac; rewrite <- ? TS0, <- ? TS1.
         * i. rewrite fun_add_spec. condtac; viewtac.
         * i. revert IN. rewrite Promises.unset_o. condtac; ss. eauto.
         * i. rewrite Promises.unset_o. rewrite fun_add_spec in TS2. condtac.
@@ -481,6 +510,18 @@ Section ExecUnit.
           }
     - inv STEP. econs; ss. apply rmap_add_wf; viewtac.
       inv RES. inv VIEW. rewrite TS. s. apply bot_spec.
+    - inv STEP. inv WRITABLE. econs; ss.
+      econs; viewtac; rewrite <- ? TS0, <- ? TS1.
+      + i. rewrite fun_add_spec. condtac; viewtac.
+      + eapply read_wf; eauto.
+      + i. revert IN. rewrite Promises.unset_o. condtac; ss. eauto.
+      + i. rewrite Promises.unset_o. rewrite fun_add_spec in TS. condtac.
+        { inversion e. subst. rewrite MSG in MSG0. destruct msg. inv MSG0. ss.
+        revert TS. condtac; ss; intuition.
+        }
+        { eapply PROMISES0; eauto. revert TS. condtac; ss. i.
+        inversion e. rewrite H2. rewrite COH0. ss.
+        }
     - inv STEP. econs; ss. econs; viewtac.
   Qed.
 
