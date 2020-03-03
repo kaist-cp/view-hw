@@ -114,7 +114,7 @@ Section Local.
             mk
               (fun_add loc (View.mk ts bot) lc1.(coh))
               lc1.(vrn)
-              lc1.(vwn)
+              (join lc1.(vwn) (View.mk ts bot))
               lc1.(vro)
               (join lc1.(vwo) (View.mk ts bot))
               (Promises.unset ts lc1.(promises)))
