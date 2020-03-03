@@ -74,11 +74,9 @@ Section Local.
 
   Inductive read (vloc res:ValA.t (A:=View.t (A:=A))) (ts:Time.t) (lc1:t) (mem1: Memory.t) (lc2:t): Prop :=
   | read_intro
-      loc val view
+      loc val
       view_pre view_msg view_post
       (LOC: loc = vloc.(ValA.val))
-      (VIEW: view = vloc.(ValA.annot))
-      (VIEW_PRE: view_pre = joins [view; lc1.(vrn)])
       (VIEW_PRE: view_pre = lc1.(vrn))
       (COH: Memory.latest loc ts (lc1.(coh) loc).(View.ts) mem1)
       (LATEST: Memory.latest loc ts view_pre.(View.ts) mem1)
@@ -93,7 +91,7 @@ Section Local.
               (join lc1.(vwn) view_post)
               (join lc1.(vro) view_post)
               lc1.(vwo)
-              (join lc1.(vcap) view)
+              lc1.(vcap)
               lc1.(vrel)
               lc1.(promises))
   .
@@ -102,14 +100,9 @@ Section Local.
   Inductive writable (vloc vval:ValA.t (A:=View.t (A:=A))) (tid:Id.t) (lc1:t) (mem1: Memory.t) (ts:Time.t) (view_pre:View.t (A:=A)): Prop :=
   | writable_intro
       loc val
-      view_loc view_val
       (LOC: loc = vloc.(ValA.val))
-      (VIEW_LOC: view_loc = vloc.(ValA.annot))
       (VAL: val = vval.(ValA.val))
-      (VIEW_VAL: view_val = vval.(ValA.annot))
-      (VIEW_PRE: view_pre = joins [
-                                view_loc; view_val; lc1.(vcap); lc1.(vwn)
-                             ])
+      (VIEW_PRE: view_pre = joins [lc1.(vcap); lc1.(vwn)])
       (COH: lt (lc1.(coh) loc).(View.ts) ts)
       (EXT: lt view_pre.(View.ts) ts)
   .
@@ -118,15 +111,12 @@ Section Local.
   Inductive fulfill (vloc vval res:ValA.t (A:=View.t (A:=A))) (ts:Time.t) (tid:Id.t) (view_pre:View.t (A:=A)) (lc1:t) (mem1: Memory.t) (lc2:t): Prop :=
   | fulfill_intro
       loc val
-      view_loc view_val
       (LOC: loc = vloc.(ValA.val))
-      (VIEW_LOC: view_loc = vloc.(ValA.annot))
       (VAL: val = vval.(ValA.val))
-      (VIEW_VAL: view_val = vval.(ValA.annot))
       (WRITABLE: writable vloc vval tid lc1 mem1 ts view_pre)
       (MSG: Memory.get_msg ts mem1 = Some (Msg.mk loc val tid))
       (PROMISE: Promises.lookup ts lc1.(promises))
-      (RES: res = ValA.mk _ 0 (View.mk ts view_pre.(View.annot)))
+      (RES: res = ValA.mk _ 0 bot)
       (LC2: lc2 =
             mk
               (fun_add loc (View.mk ts bot) lc1.(coh))
@@ -134,15 +124,14 @@ Section Local.
               lc1.(vwn)
               lc1.(vro)
               (join lc1.(vwo) (View.mk ts bot))
-              (join lc1.(vcap) view_loc)
+              lc1.(vcap)
               (join lc1.(vrel) (View.mk ts bot))
               (Promises.unset ts lc1.(promises)))
   .
   Hint Constructors fulfill.
 
-  Inductive write_failure (ex:bool) (res: ValA.t (A:=View.t (A:=A))) (lc1:t) (lc2:t): Prop :=
+  Inductive write_failure (res: ValA.t (A:=View.t (A:=A))) (lc1:t) (lc2:t): Prop :=
   | write_failure_intro
-      (EX: ex)
       (RES: res = ValA.mk _ 1 bot)
       (LC2: lc2 =
             mk
@@ -204,7 +193,7 @@ Section Local.
   | step_write_failure
       ex ord vloc vval res
       (EVENT: event = Event.write ex ord vloc vval res)
-      (STEP: write_failure ex res lc1 lc2)
+      (STEP: write_failure res lc1 lc2)
   (* | step_isb
       (EVENT: event = Event.barrier Barrier.isb)
       (STEP: isb lc1 lc2) *)
