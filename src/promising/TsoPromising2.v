@@ -32,16 +32,14 @@ Section Local.
     vwo: View.t (A:=A);
     vcap: View.t (A:=A);
     vrel: View.t (A:=A);
-    fwdbank: Loc.t -> (FwdItem.t (A:=A));
-    exbank: option (Exbank.t (A:=A));
     promises: Promises.t;
   }.
   Hint Constructors t.
 
-  Definition init: t := mk bot bot bot bot bot bot bot (fun _ => FwdItem.init) None bot.
+  Definition init: t := mk bot bot bot bot bot bot bot bot.
 
   Definition init_with_promises (promises: Promises.t): Local.t :=
-    mk bot bot bot bot bot bot bot (fun _ => FwdItem.init) None promises.
+    mk bot bot bot bot bot bot bot promises.
 
   Inductive promise (loc:Loc.t) (val:Val.t) (ts:Time.t) (tid:Id.t) (lc1:t) (mem1:Memory.t) (lc2:t) (mem2:Memory.t): Prop :=
   | promise_intro
@@ -54,8 +52,6 @@ Section Local.
               lc1.(vwo)
               lc1.(vcap)
               lc1.(vrel)
-              lc1.(fwdbank)
-              lc1.(exbank)
               (Promises.set ts lc1.(promises)))
       (MEM2: Memory.append (Msg.mk loc val tid) mem1 = (ts, mem2))
   .
@@ -72,41 +68,38 @@ Section Local.
               lc1.(vwo)
               (join lc1.(vcap) ctrl)
               lc1.(vrel)
-              lc1.(fwdbank)
-              lc1.(exbank)
               lc1.(promises))
   .
   Hint Constructors control.
 
-  Inductive read (ex:bool) (ord:OrdR.t) (vloc res:ValA.t (A:=View.t (A:=A))) (ts:Time.t) (lc1:t) (mem1: Memory.t) (lc2:t): Prop :=
+  Inductive read (vloc res:ValA.t (A:=View.t (A:=A))) (ts:Time.t) (lc1:t) (mem1: Memory.t) (lc2:t): Prop :=
   | read_intro
       loc val view
       view_pre view_msg view_post
       (LOC: loc = vloc.(ValA.val))
       (VIEW: view = vloc.(ValA.annot))
-      (VIEW_PRE: view_pre = joins [view; lc1.(vrn); (ifc (OrdR.ge ord OrdR.acquire) lc1.(vrel))])
+      (VIEW_PRE: view_pre = joins [view; lc1.(vrn)])
+      (VIEW_PRE: view_pre = lc1.(vrn))
       (COH: Memory.latest loc ts (lc1.(coh) loc).(View.ts) mem1)
       (LATEST: Memory.latest loc ts view_pre.(View.ts) mem1)
       (MSG: Memory.read loc ts mem1 = Some val)
-      (VIEW_MSG: view_msg = FwdItem.read_view (lc1.(fwdbank) loc) ts ord)
+      (VIEW_MSG: view_msg = View.mk ts bot)
       (VIEW_POST: view_post = join view_pre view_msg)
-      (RES: res = ValA.mk _ val view_post)
+      (RES: res = ValA.mk _ val bot)
       (LC2: lc2 =
             mk
               (fun_add loc (join (lc1.(coh) loc) view_post) lc1.(coh))
-              (join lc1.(vrn) (ifc (OrdR.ge ord OrdR.acquire_pc) view_post))
-              (join lc1.(vwn) (ifc (OrdR.ge ord OrdR.acquire_pc) view_post))
+              (join lc1.(vrn) view_post)
+              (join lc1.(vwn) view_post)
               (join lc1.(vro) view_post)
               lc1.(vwo)
               (join lc1.(vcap) view)
               lc1.(vrel)
-              lc1.(fwdbank)
-              (if ex then Some (Exbank.mk loc ts view_post) else lc1.(exbank))
               lc1.(promises))
   .
   Hint Constructors read.
 
-  Inductive writable (ex:bool) (ord:OrdW.t) (vloc vval:ValA.t (A:=View.t (A:=A))) (tid:Id.t) (lc1:t) (mem1: Memory.t) (ts:Time.t) (view_pre:View.t (A:=A)): Prop :=
+  Inductive writable (vloc vval:ValA.t (A:=View.t (A:=A))) (tid:Id.t) (lc1:t) (mem1: Memory.t) (ts:Time.t) (view_pre:View.t (A:=A)): Prop :=
   | writable_intro
       loc val
       view_loc view_val
@@ -115,24 +108,14 @@ Section Local.
       (VAL: val = vval.(ValA.val))
       (VIEW_VAL: view_val = vval.(ValA.annot))
       (VIEW_PRE: view_pre = joins [
-                                view_loc; view_val; lc1.(vcap); lc1.(vwn);
-                                ifc (OrdW.ge ord OrdW.release_pc) lc1.(vro);
-                                ifc (OrdW.ge ord OrdW.release_pc) lc1.(vwo);
-                                ifc (ex && (arch == riscv))
-                                    (match lc1.(exbank) with
-                                     | Some exbank => exbank.(Exbank.view)
-                                     | None => bot
-                                     end)
+                                view_loc; view_val; lc1.(vcap); lc1.(vwn)
                              ])
       (COH: lt (lc1.(coh) loc).(View.ts) ts)
       (EXT: lt view_pre.(View.ts) ts)
-      (EX: ex -> exists eb,
-           <<TSX: lc1.(exbank) = Some eb>> /\
-           <<EX: eb.(Exbank.loc) = loc -> Memory.exclusive tid loc eb.(Exbank.ts) ts mem1>>)
   .
   Hint Constructors writable.
 
-  Inductive fulfill (ex:bool) (ord:OrdW.t) (vloc vval res:ValA.t (A:=View.t (A:=A))) (ts:Time.t) (tid:Id.t) (view_pre:View.t (A:=A)) (lc1:t) (mem1: Memory.t) (lc2:t): Prop :=
+  Inductive fulfill (vloc vval res:ValA.t (A:=View.t (A:=A))) (ts:Time.t) (tid:Id.t) (view_pre:View.t (A:=A)) (lc1:t) (mem1: Memory.t) (lc2:t): Prop :=
   | fulfill_intro
       loc val
       view_loc view_val
@@ -140,10 +123,10 @@ Section Local.
       (VIEW_LOC: view_loc = vloc.(ValA.annot))
       (VAL: val = vval.(ValA.val))
       (VIEW_VAL: view_val = vval.(ValA.annot))
-      (WRITABLE: writable ex ord vloc vval tid lc1 mem1 ts view_pre)
+      (WRITABLE: writable vloc vval tid lc1 mem1 ts view_pre)
       (MSG: Memory.get_msg ts mem1 = Some (Msg.mk loc val tid))
       (PROMISE: Promises.lookup ts lc1.(promises))
-      (RES: res = ValA.mk _ 0 (View.mk (ifc (ex && (arch == riscv)) ts) view_pre.(View.annot)))
+      (RES: res = ValA.mk _ 0 (View.mk ts view_pre.(View.annot)))
       (LC2: lc2 =
             mk
               (fun_add loc (View.mk ts bot) lc1.(coh))
@@ -152,9 +135,7 @@ Section Local.
               lc1.(vro)
               (join lc1.(vwo) (View.mk ts bot))
               (join lc1.(vcap) view_loc)
-              (join lc1.(vrel) (View.mk (ifc (OrdW.ge ord OrdW.release) ts) bot))
-              (fun_add loc (FwdItem.mk ts (join view_loc view_val) ex) lc1.(fwdbank))
-              (if ex then None else lc1.(exbank))
+              (join lc1.(vrel) (View.mk ts bot))
               (Promises.unset ts lc1.(promises)))
   .
   Hint Constructors fulfill.
@@ -172,13 +153,11 @@ Section Local.
               lc1.(vwo)
               lc1.(vcap)
               lc1.(vrel)
-              lc1.(fwdbank)
-              None
               lc1.(promises))
   .
   Hint Constructors write_failure.
 
-  Inductive isb (lc1 lc2:t): Prop :=
+  (* Inductive isb (lc1 lc2:t): Prop :=
   | isb_intro
       (LC2: lc2 =
             mk
@@ -193,7 +172,7 @@ Section Local.
               lc1.(exbank)
               lc1.(promises))
   .
-  Hint Constructors isb.
+  Hint Constructors isb. *)
 
   Inductive dmb (rr rw wr ww:bool) (lc1 lc2:t): Prop :=
   | dmb_intro
@@ -206,8 +185,6 @@ Section Local.
               lc1.(vwo)
               lc1.(vcap)
               lc1.(vrel)
-              lc1.(fwdbank)
-              lc1.(exbank)
               lc1.(promises))
   .
   Hint Constructors dmb.
@@ -219,18 +196,18 @@ Section Local.
   | step_read
       ex ord vloc res ts
       (EVENT: event = Event.read ex false ord vloc res)
-      (STEP: read ex ord vloc res ts lc1 mem lc2)
+      (STEP: read vloc res ts lc1 mem lc2)
   | step_fulfill
       ex ord vloc vval res ts view_pre
       (EVENT: event = Event.write ex ord vloc vval res)
-      (STEP: fulfill ex ord vloc vval res ts tid view_pre lc1 mem lc2)
+      (STEP: fulfill vloc vval res ts tid view_pre lc1 mem lc2)
   | step_write_failure
       ex ord vloc vval res
       (EVENT: event = Event.write ex ord vloc vval res)
       (STEP: write_failure ex res lc1 lc2)
-  | step_isb
+  (* | step_isb
       (EVENT: event = Event.barrier Barrier.isb)
-      (STEP: isb lc1 lc2)
+      (STEP: isb lc1 lc2) *)
   | step_dmb
       rr rw wr ww
       (EVENT: event = Event.barrier (Barrier.dmb rr rw wr ww))
@@ -242,20 +219,6 @@ Section Local.
   .
   Hint Constructors step.
 
-  Inductive wf_fwdbank (loc:Loc.t) (mem:Memory.t) (coh: Time.t) (fwd:FwdItem.t (A:=A)): Prop :=
-  | wf_fwdbank_intro
-      (TS: fwd.(FwdItem.ts) <= Memory.latest_ts loc coh mem)
-      (VIEW: fwd.(FwdItem.view).(View.ts) <= fwd.(FwdItem.ts))
-      (VAL: exists val, Memory.read loc fwd.(FwdItem.ts) mem = Some val)
-  .
-
-  Inductive wf_exbank (mem:Memory.t) (coh: Time.t) (eb:Exbank.t (A:=A)): Prop :=
-  | wf_exbank_intro
-      (TS: eb.(Exbank.ts) <= Memory.latest_ts eb.(Exbank.loc) coh mem)
-      (VIEW: eb.(Exbank.view).(View.ts) <= coh)
-      (VAL: exists val, Memory.read eb.(Exbank.loc) eb.(Exbank.ts) mem = Some val)
-  .
-
   Inductive wf (tid:Id.t) (mem:Memory.t) (lc:t): Prop :=
   | wf_intro
       (COH: forall loc, (lc.(coh) loc).(View.ts) <= List.length mem)
@@ -265,8 +228,6 @@ Section Local.
       (VWO: lc.(vwo).(View.ts) <= List.length mem)
       (VCAP: lc.(vcap).(View.ts) <= List.length mem)
       (VREL: lc.(vrel).(View.ts) <= List.length mem)
-      (FWDBANK: forall loc, wf_fwdbank loc mem (lc.(coh) loc).(View.ts) (lc.(fwdbank) loc))
-      (EXBANK: forall eb, lc.(exbank) = Some eb -> wf_exbank mem (lc.(coh) eb.(Exbank.loc)).(View.ts) eb)
       (PROMISES: forall ts (IN: Promises.lookup ts lc.(promises)), ts <= List.length mem)
       (PROMISES: forall ts msg
                    (MSG: Memory.get_msg ts mem = Some msg)
