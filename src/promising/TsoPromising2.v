@@ -30,15 +30,14 @@ Section Local.
     vwn: View.t (A:=A);
     vro: View.t (A:=A);
     vwo: View.t (A:=A);
-    vrel: View.t (A:=A);
     promises: Promises.t;
   }.
   Hint Constructors t.
 
-  Definition init: t := mk bot bot bot bot bot bot bot.
+  Definition init: t := mk bot bot bot bot bot bot.
 
   Definition init_with_promises (promises: Promises.t): Local.t :=
-    mk bot bot bot bot bot bot promises.
+    mk bot bot bot bot bot promises.
 
   Inductive promise (loc:Loc.t) (val:Val.t) (ts:Time.t) (tid:Id.t) (lc1:t) (mem1:Memory.t) (lc2:t) (mem2:Memory.t): Prop :=
   | promise_intro
@@ -49,7 +48,6 @@ Section Local.
               lc1.(vwn)
               lc1.(vro)
               lc1.(vwo)
-              lc1.(vrel)
               (Promises.set ts lc1.(promises)))
       (MEM2: Memory.append (Msg.mk loc val tid) mem1 = (ts, mem2))
   .
@@ -88,7 +86,6 @@ Section Local.
               (join lc1.(vwn) view_post)
               (join lc1.(vro) view_post)
               lc1.(vwo)
-              lc1.(vrel)
               lc1.(promises))
   .
   Hint Constructors read.
@@ -120,7 +117,6 @@ Section Local.
               lc1.(vwn)
               lc1.(vro)
               (join lc1.(vwo) (View.mk ts bot))
-              (join lc1.(vrel) (View.mk ts bot))
               (Promises.unset ts lc1.(promises)))
   .
   Hint Constructors fulfill.
@@ -135,7 +131,6 @@ Section Local.
               lc1.(vwn)
               lc1.(vro)
               lc1.(vwo)
-              lc1.(vrel)
               lc1.(promises))
   .
   Hint Constructors write_failure.
@@ -166,7 +161,6 @@ Section Local.
               (joins [lc1.(vwn); ifc rw lc1.(vro); ifc ww lc1.(vwo)])
               lc1.(vro)
               lc1.(vwo)
-              lc1.(vrel)
               lc1.(promises))
   .
   Hint Constructors dmb.
@@ -208,7 +202,6 @@ Section Local.
       (VWN: lc.(vwn).(View.ts) <= List.length mem)
       (VRO: lc.(vro).(View.ts) <= List.length mem)
       (VWO: lc.(vwo).(View.ts) <= List.length mem)
-      (VREL: lc.(vrel).(View.ts) <= List.length mem)
       (PROMISES: forall ts (IN: Promises.lookup ts lc.(promises)), ts <= List.length mem)
       (PROMISES: forall ts msg
                    (MSG: Memory.get_msg ts mem = Some msg)
