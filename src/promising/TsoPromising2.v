@@ -30,16 +30,15 @@ Section Local.
     vwn: View.t (A:=A);
     vro: View.t (A:=A);
     vwo: View.t (A:=A);
-    vcap: View.t (A:=A);
     vrel: View.t (A:=A);
     promises: Promises.t;
   }.
   Hint Constructors t.
 
-  Definition init: t := mk bot bot bot bot bot bot bot bot.
+  Definition init: t := mk bot bot bot bot bot bot bot.
 
   Definition init_with_promises (promises: Promises.t): Local.t :=
-    mk bot bot bot bot bot bot bot promises.
+    mk bot bot bot bot bot bot promises.
 
   Inductive promise (loc:Loc.t) (val:Val.t) (ts:Time.t) (tid:Id.t) (lc1:t) (mem1:Memory.t) (lc2:t) (mem2:Memory.t): Prop :=
   | promise_intro
@@ -50,14 +49,13 @@ Section Local.
               lc1.(vwn)
               lc1.(vro)
               lc1.(vwo)
-              lc1.(vcap)
               lc1.(vrel)
               (Promises.set ts lc1.(promises)))
       (MEM2: Memory.append (Msg.mk loc val tid) mem1 = (ts, mem2))
   .
   Hint Constructors promise.
 
-  Inductive control (ctrl:View.t) (lc1 lc2:t): Prop :=
+  (* Inductive control (ctrl:View.t) (lc1 lc2:t): Prop :=
   | control_intro
       (LC2: lc2 =
             mk
@@ -66,11 +64,10 @@ Section Local.
               lc1.(vwn)
               lc1.(vro)
               lc1.(vwo)
-              (join lc1.(vcap) ctrl)
               lc1.(vrel)
               lc1.(promises))
   .
-  Hint Constructors control.
+  Hint Constructors control. *)
 
   Inductive read (vloc res:ValA.t (A:=View.t (A:=A))) (ts:Time.t) (lc1:t) (mem1: Memory.t) (lc2:t): Prop :=
   | read_intro
@@ -91,7 +88,6 @@ Section Local.
               (join lc1.(vwn) view_post)
               (join lc1.(vro) view_post)
               lc1.(vwo)
-              lc1.(vcap)
               lc1.(vrel)
               lc1.(promises))
   .
@@ -102,7 +98,7 @@ Section Local.
       loc val
       (LOC: loc = vloc.(ValA.val))
       (VAL: val = vval.(ValA.val))
-      (VIEW_PRE: view_pre = joins [lc1.(vcap); lc1.(vwn)])
+      (VIEW_PRE: view_pre = lc1.(vwn))
       (COH: lt (lc1.(coh) loc).(View.ts) ts)
       (EXT: lt view_pre.(View.ts) ts)
   .
@@ -124,7 +120,6 @@ Section Local.
               lc1.(vwn)
               lc1.(vro)
               (join lc1.(vwo) (View.mk ts bot))
-              lc1.(vcap)
               (join lc1.(vrel) (View.mk ts bot))
               (Promises.unset ts lc1.(promises)))
   .
@@ -140,7 +135,6 @@ Section Local.
               lc1.(vwn)
               lc1.(vro)
               lc1.(vwo)
-              lc1.(vcap)
               lc1.(vrel)
               lc1.(promises))
   .
@@ -172,7 +166,6 @@ Section Local.
               (joins [lc1.(vwn); ifc rw lc1.(vro); ifc ww lc1.(vwo)])
               lc1.(vro)
               lc1.(vwo)
-              lc1.(vcap)
               lc1.(vrel)
               lc1.(promises))
   .
@@ -201,10 +194,10 @@ Section Local.
       rr rw wr ww
       (EVENT: event = Event.barrier (Barrier.dmb rr rw wr ww))
       (STEP: dmb rr rw wr ww lc1 lc2)
-  | step_control
+  (* | step_control
       ctrl
       (EVENT: event = Event.control ctrl)
-      (LC: control ctrl lc1 lc2)
+      (LC: control ctrl lc1 lc2) *)
   .
   Hint Constructors step.
 
@@ -215,7 +208,6 @@ Section Local.
       (VWN: lc.(vwn).(View.ts) <= List.length mem)
       (VRO: lc.(vro).(View.ts) <= List.length mem)
       (VWO: lc.(vwo).(View.ts) <= List.length mem)
-      (VCAP: lc.(vcap).(View.ts) <= List.length mem)
       (VREL: lc.(vrel).(View.ts) <= List.length mem)
       (PROMISES: forall ts (IN: Promises.lookup ts lc.(promises)), ts <= List.length mem)
       (PROMISES: forall ts msg
