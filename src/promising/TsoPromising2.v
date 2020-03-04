@@ -22,14 +22,12 @@ Set Implicit Arguments.
 
 Module Local.
 Section Local.
-  Context `{A: Type, _: orderC A eq}.
-
   Inductive t := mk {
-    coh: Loc.t -> View.t (A:=A);
-    vrn: View.t (A:=A);
-    vwn: View.t (A:=A);
-    vro: View.t (A:=A);
-    vwo: View.t (A:=A);
+    coh: Loc.t -> View.t (A:=unit);
+    vrn: View.t (A:=unit);
+    vwn: View.t (A:=unit);
+    vro: View.t (A:=unit);
+    vwo: View.t (A:=unit);
     promises: Promises.t;
   }.
   Hint Constructors t.
@@ -53,7 +51,7 @@ Section Local.
   .
   Hint Constructors promise.
 
-  Inductive read (vloc res:ValA.t (A:=View.t (A:=A))) (ts:Time.t) (lc1:t) (mem1: Memory.t) (lc2:t): Prop :=
+  Inductive read (vloc res:ValA.t (A:=unit)) (ts:Time.t) (lc1:t) (mem1: Memory.t) (lc2:t): Prop :=
   | read_intro
       loc val
       view_pre view_msg view_post
@@ -76,7 +74,7 @@ Section Local.
   .
   Hint Constructors read.
 
-  Inductive writable (vloc vval:ValA.t (A:=View.t (A:=A))) (tid:Id.t) (lc1:t) (mem1: Memory.t) (ts:Time.t) (view_pre:View.t (A:=A)): Prop :=
+  Inductive writable (vloc vval:ValA.t (A:=unit)) (tid:Id.t) (lc1:t) (mem1: Memory.t) (ts:Time.t) (view_pre:View.t (A:=unit)): Prop :=
   | writable_intro
       loc val
       (LOC: loc = vloc.(ValA.val))
@@ -87,7 +85,7 @@ Section Local.
   .
   Hint Constructors writable.
 
-  Inductive fulfill (vloc vval res:ValA.t (A:=View.t (A:=A))) (ts:Time.t) (tid:Id.t) (view_pre:View.t (A:=A)) (lc1:t) (mem1: Memory.t) (lc2:t): Prop :=
+  Inductive fulfill (vloc vval res:ValA.t (A:=unit)) (ts:Time.t) (tid:Id.t) (view_pre:View.t (A:=unit)) (lc1:t) (mem1: Memory.t) (lc2:t): Prop :=
   | fulfill_intro
       loc val
       (LOC: loc = vloc.(ValA.val))
@@ -107,7 +105,7 @@ Section Local.
   .
   Hint Constructors fulfill.
 
-  Inductive rmw (vloc vold vnew:ValA.t (A:=View.t (A:=A))) (ts:Time.t) (tid:Id.t) (view_pre:View.t (A:=A)) (lc1:t) (mem1:Memory.t) (lc2:t): Prop :=
+  Inductive rmw (vloc vold vnew:ValA.t (A:=unit)) (ts:Time.t) (tid:Id.t) (view_pre:View.t (A:=unit)) (lc1:t) (mem1:Memory.t) (lc2:t): Prop :=
   | rmw_intro
       loc old new old_ts
       view_old
@@ -131,7 +129,7 @@ Section Local.
   .
   Hint Constructors rmw.
 
-  Inductive write_failure (res: ValA.t (A:=View.t (A:=A))) (lc1:t) (lc2:t): Prop :=
+  Inductive write_failure (res: ValA.t (A:=unit)) (lc1:t) (lc2:t): Prop :=
   | write_failure_intro
       (RES: res = ValA.mk _ 1 bot)
       (LC2: lc2 =
@@ -158,7 +156,7 @@ Section Local.
   .
   Hint Constructors dmb.
 
-  Inductive step (event:Event.t (A:=View.t (A:=A))) (tid:Id.t) (mem:Memory.t) (lc1 lc2:t): Prop :=
+  Inductive step (event:Event.t (A:=unit)) (tid:Id.t) (mem:Memory.t) (lc1 lc2:t): Prop :=
   | step_internal
       (EVENT: event = Event.internal)
       (LC: lc2 = lc1)
@@ -207,29 +205,6 @@ Section Local.
     - destruct ts; ss.
     - destruct ts; ss. destruct ts; ss.
   Qed.
-
-  (* Lemma fwd_view_le
-        tid mem lc loc ts ord
-        (WF: wf tid mem lc)
-        (COH: Memory.latest loc ts (lc.(coh) loc).(View.ts) mem):
-    (lc.(fwdbank) loc).(FwdItem.view).(View.ts) <=
-    (FwdItem.read_view (lc.(fwdbank) loc) ts ord).(View.ts).
-  Proof.
-    unfold FwdItem.read_view. condtac; ss.
-    inv WF. exploit FWDBANK. intro Y. inv Y.
-    rewrite VIEW, TS. apply Memory.latest_latest_ts. ss.
-  Qed.
-
-  Lemma fwd_read_view_le
-        tid mem lc loc ts ord
-        (WF: wf tid mem lc)
-        (COH: Memory.latest loc ts (lc.(coh) loc).(View.ts) mem):
-    (FwdItem.read_view (lc.(fwdbank) loc) ts ord).(View.ts) <= ts.
-  Proof.
-    inv WF. destruct (FWDBANK loc). des.
-    unfold FwdItem.read_view. condtac; ss.
-    destruct (equiv_dec (FwdItem.ts (fwdbank lc loc)) ts); ss. inv e. ss.
-  Qed. *)
 
   Lemma read_spec
         tid mem vloc res ts lc1 lc2
@@ -288,7 +263,7 @@ Section Local.
 
   Global Program Instance le_partial_order: PreOrder le.
   Next Obligation. econs; refl. Qed.
-  Next Obligation. ii. inv H1. inv H2. econs; etrans; eauto. Qed.
+  Next Obligation. ii. inv H. inv H0. econs; etrans; eauto. Qed.
 
   Lemma promise_incr
         loc val ts tid lc1 mem1 lc2 mem2
@@ -380,16 +355,14 @@ Ltac viewtac :=
 
 Module ExecUnit.
 Section ExecUnit.
-  Context `{A: Type, _: orderC A eq}.
-
   Inductive t := mk {
-    state: State.t (A:=View.t (A:=A));
-    local: Local.t (A:=A);
+    state: State.t (A:=unit);
+    local: Local.t;
     mem: Memory.t;
   }.
   Hint Constructors t.
 
-  Inductive state_step0 (tid:Id.t) (e1 e2:Event.t (A:=View.t (A:=A))) (eu1 eu2:t): Prop :=
+  Inductive state_step0 (tid:Id.t) (e1 e2:Event.t (A:=unit)) (eu1 eu2:t): Prop :=
   | state_step0_intro
       (STATE: State.step e1 eu1.(state) eu2.(state))
       (LOCAL: Local.step e2 tid eu1.(mem) eu1.(local) eu2.(local))
@@ -418,36 +391,11 @@ Section ExecUnit.
   .
   Hint Constructors step.
 
-  Inductive rmap_wf (mem:Memory.t) (rmap:RMap.t (A:=View.t (A:=A))): Prop :=
-  | rmap_wf_intro
-      (RMAP: forall r, (RMap.find r rmap).(ValA.annot).(View.ts) <= List.length mem)
-  .
-  Hint Constructors rmap_wf.
-
   Inductive wf (tid:Id.t) (eu:t): Prop :=
   | wf_intro
-      (STATE: rmap_wf eu.(mem) eu.(state).(State.rmap))
       (LOCAL: Local.wf tid eu.(mem) eu.(local))
   .
   Hint Constructors wf.
-
-  Lemma rmap_add_wf
-        mem rmap loc (val:ValA.t (A:=View.t (A:=A)))
-        (WF: rmap_wf mem rmap)
-        (VAL: val.(ValA.annot).(View.ts) <= List.length mem):
-    rmap_wf mem (RMap.add loc val rmap).
-  Proof.
-    inv WF. econs. i. unfold RMap.find, RMap.add. rewrite IdMap.add_spec.
-    condtac; viewtac.
-  Qed.
-
-  Lemma expr_wf
-        mem rmap e
-        (RMAP: rmap_wf mem rmap):
-    (sem_expr rmap e).(ValA.annot).(View.ts) <= List.length mem.
-  Proof.
-    induction e; viewtac. apply RMAP.
-  Qed.
 
   Lemma read_wf
         ts loc val mem
@@ -469,9 +417,8 @@ Section ExecUnit.
     eapply List.nth_error_Some. congr.
   Qed.
 
-  Lemma state_step0_wf tid e1 e2 eu1 eu2
-        (STEP: state_step0 tid e1 e2 eu1 eu2)
-        (EVENT: eqts_event e1 e2)
+  Lemma state_step0_wf tid e eu1 eu2
+        (STEP: state_step0 tid e e eu1 eu2)
         (WF: wf tid eu1):
     wf tid eu2.
   Proof.
@@ -479,37 +426,28 @@ Section ExecUnit.
     destruct eu2 as [state2 local2 mem2].
     inv WF. inv STEP. ss. subst.
     generalize LOCAL. intro WF_LOCAL1.
-    inv STATE0; inv LOCAL0; inv EVENT; inv LOCAL; ss.
-    - econs; ss.
-      eauto using rmap_add_wf, expr_wf.
-    - inv RES. inv VIEW. inv VLOC. inv VIEW.
-      exploit Local.read_spec; eauto. intro READ_SPEC. guardH READ_SPEC.
+    inversion STATE; inv LOCAL0; inv EVENT; inv LOCAL; ss.
+    - exploit Local.read_spec; eauto. intro READ_SPEC. guardH READ_SPEC.
       inv STEP. ss. subst.
       i. econs; ss.
-      + apply rmap_add_wf; viewtac.
-        rewrite TS. viewtac.
-      + econs; viewtac; eauto using expr_wf.
+      + econs; viewtac.
         all: try by eapply read_wf; eauto.
         * i. viewtac. rewrite fun_add_spec.
           condtac; viewtac. eapply read_wf; eauto.
         * i. eapply PROMISES0; eauto. eapply Time.le_lt_trans; [|by eauto].
-          rewrite fun_add_spec. condtac; ss. inversion e. rewrite H2. apply join_l.
-    - inv RES. inv VIEW. inv VVAL. inv VIEW. inv VLOC. inv VIEW.
-      inv STEP. inv WRITABLE. econs; ss.
-      + apply rmap_add_wf; viewtac.
-        rewrite TS. viewtac.
-      + econs; viewtac; rewrite <- ? TS0, <- ? TS1.
-        * i. rewrite fun_add_spec. condtac; viewtac.
-        * i. revert IN. rewrite Promises.unset_o. condtac; ss. eauto.
-        * i. rewrite Promises.unset_o. rewrite fun_add_spec in TS2. condtac.
-          { inversion e. subst. rewrite MSG in MSG0. destruct msg. inv MSG0. ss.
-            revert TS2. condtac; ss; intuition.
-          }
-          { eapply PROMISES0; eauto. revert TS2. condtac; ss. i.
-            inversion e. rewrite H2. rewrite COH0. ss.
-          }
-    - inv STEP. econs; ss. apply rmap_add_wf; viewtac.
-      inv RES. inv VIEW. rewrite TS. s. apply bot_spec.
+          rewrite fun_add_spec. condtac; ss. inversion e. rewrite H0. apply join_l.
+    - inv STEP. inv WRITABLE. econs; ss.
+      econs; viewtac; rewrite <- ? TS0, <- ? TS1.
+      + i. rewrite fun_add_spec. condtac; viewtac.
+      + i. revert IN. rewrite Promises.unset_o. condtac; ss. eauto.
+      + i. rewrite Promises.unset_o. rewrite fun_add_spec in TS. condtac.
+        { inversion e. subst. rewrite MSG in MSG0. destruct msg. inv MSG0. ss.
+          revert TS. condtac; ss; intuition.
+        }
+        { eapply PROMISES0; eauto. revert TS. condtac; ss. i.
+          inversion e. rewrite H0. rewrite COH0. ss.
+        }
+    - inv STEP. econs; ss.
     - inv STEP. inv WRITABLE. econs; ss.
       econs; viewtac; rewrite <- ? TS0, <- ? TS1.
       + i. rewrite fun_add_spec. condtac; viewtac.
@@ -520,7 +458,7 @@ Section ExecUnit.
         revert TS. condtac; ss; intuition.
         }
         { eapply PROMISES0; eauto. revert TS. condtac; ss. i.
-        inversion e. rewrite H2. rewrite COH0. ss.
+        inversion e. rewrite H0. rewrite COH0. ss.
         }
     - inv STEP. econs; ss. econs; viewtac.
   Qed.
@@ -530,23 +468,7 @@ Section ExecUnit.
         (WF: wf tid eu1):
     wf tid eu2.
   Proof.
-    inv STEP. eapply state_step0_wf; eauto. refl.
-  Qed.
-
-  Lemma rmap_append_wf
-        mem msg rmap
-        (WF: rmap_wf mem rmap):
-    rmap_wf (mem ++ [msg]) rmap.
-  Proof.
-    inv WF. econs. i. rewrite RMAP. rewrite List.app_length. lia.
-  Qed.
-
-  Lemma rmap_interference_wf
-        mem rmap mem_interference
-        (WF: rmap_wf mem rmap):
-    rmap_wf (mem ++ mem_interference) rmap.
-  Proof.
-    inv WF. econs. i. rewrite RMAP, app_length. lia.
+    inv STEP. eapply state_step0_wf; eauto.
   Qed.
 
   Lemma promise_step_wf tid eu1 eu2
@@ -558,17 +480,16 @@ Section ExecUnit.
     destruct eu2 as [state2 local2 mem2].
     inv WF. inv STEP. ss. subst.
     inv LOCAL. inv LOCAL0. inv MEM2. econs; ss.
-    - apply rmap_append_wf. ss.
-    - econs; eauto.
-      all: try rewrite List.app_length; s; try lia.
-      + i. rewrite COH. lia.
-      + i. revert IN. rewrite Promises.set_o. condtac.
-        * inversion e. i. inv IN. lia.
-        * i. exploit PROMISES; eauto. lia.
-      + i. rewrite Promises.set_o. apply Memory.get_msg_snoc_inv in MSG. des.
-        * destruct ts; ss. condtac; ss.
-          eapply PROMISES0; eauto.
-        * subst. condtac; ss. congr.
+    econs; eauto.
+    all: try rewrite List.app_length; s; try lia.
+    - i. rewrite COH. lia.
+    - i. revert IN. rewrite Promises.set_o. condtac.
+      + inversion e. i. inv IN. lia.
+      + i. exploit PROMISES; eauto. lia.
+    - i. rewrite Promises.set_o. apply Memory.get_msg_snoc_inv in MSG. des.
+      + destruct ts; ss. condtac; ss.
+        eapply PROMISES0; eauto.
+      + subst. condtac; ss. congr.
   Qed.
 
   Lemma step_wf tid eu1 eu2
@@ -595,7 +516,7 @@ Section ExecUnit.
     - rewrite app_nil_r. ss.
   Qed.
   Next Obligation.
-    ii. inv H1. inv H2. econs; etrans; eauto.
+    ii. inv H. inv H0. econs; etrans; eauto.
     rewrite MEM, app_assoc. eauto.
   Qed.
 
@@ -630,7 +551,7 @@ End ExecUnit.
 
 Module Machine.
   Inductive t := mk {
-    tpool: IdMap.t (State.t (A:=View.t (A:=unit)) * Local.t (A:=unit));
+    tpool: IdMap.t (State.t (A:=unit) * Local.t);
     mem: Memory.t;
   }.
   Hint Constructors t.
@@ -666,7 +587,7 @@ Module Machine.
     econs. i. eapply TERMINAL. eauto.
   Qed.
 
-  Inductive step (eustep: forall (tid:Id.t) (eu1 eu2:ExecUnit.t (A:=unit)), Prop) (m1 m2:t): Prop :=
+  Inductive step (eustep: forall (tid:Id.t) (eu1 eu2:ExecUnit.t), Prop) (m1 m2:t): Prop :=
   | step_intro
       tid st1 lc1 st2 lc2
       (FIND: IdMap.find tid m1.(tpool) = Some (st1, lc1))
@@ -713,9 +634,7 @@ Module Machine.
   Proof.
     econs. i. ss.
     rewrite IdMap.map_spec in FIND. destruct (IdMap.find tid p); inv FIND.
-    econs; ss.
-    - econs. i. unfold RMap.find, RMap.init. rewrite IdMap.gempty. ss.
-    - apply Local.init_wf.
+    econs; ss. apply Local.init_wf.
   Qed.
 
   Lemma init_no_promise p:
@@ -756,14 +675,13 @@ Module Machine.
       + econs; eauto.
       + refl.
     - i. exploit WF0; eauto. i. inv x. ss. econs; ss.
-      + apply ExecUnit.rmap_append_wf. ss.
-      + inv LOCAL. econs; eauto.
-        all: try rewrite List.app_length; s; try lia.
-        * i. rewrite COH. lia.
-        * i. exploit PROMISES; eauto. lia.
-        * i. apply Memory.get_msg_snoc_inv in MSG. des.
-          { eapply PROMISES0; eauto. }
-          { subst. ss. congr. }
+      inv LOCAL. econs; eauto.
+      all: try rewrite List.app_length; s; try lia.
+      + i. rewrite COH. lia.
+      + i. exploit PROMISES; eauto. lia.
+      + i. apply Memory.get_msg_snoc_inv in MSG. des.
+        { eapply PROMISES0; eauto. }
+        { subst. ss. congr. }
   Qed.
 
   Lemma rtc_step_promise_step_wf
