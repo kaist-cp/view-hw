@@ -20,6 +20,26 @@ Require Import PromisingArch.promising.CommonPromising.
 Set Implicit Arguments.
 
 
+Module FwdItem.
+Section FwdItem.
+  Context `{A: Type, _: orderC A eq}.
+
+  Inductive t := mk {
+    ts: Time.t;
+    view: View.t (A:=A);
+    ex: bool;
+  }.
+  Hint Constructors t.
+
+  Definition init: t := mk bot bot false.
+
+  Definition read_view (fwd:t) (tsx:Time.t) (ord:OrdR.t): View.t (A:=A) :=
+    if andb (fwd.(ts) == tsx) (negb (andb fwd.(ex) (orb (arch == riscv) (OrdR.ge ord OrdR.acquire_pc))))
+    then fwd.(view)
+    else View.mk tsx bot.
+End FwdItem.
+End FwdItem.
+
 Module Exbank.
 Section Exbank.
   Context `{A: Type, _: orderC A eq}.
@@ -32,6 +52,88 @@ Section Exbank.
   Hint Constructors t.
 End Exbank.
 End Exbank.
+
+Section Eqts.
+  Context `{A: Type, B: Type, _: orderC A eq, _: orderC B eq}.
+
+  Inductive eqts_view (v1: View.t (A:=A)) (v2: View.t (A:=B)): Prop :=
+  | eqts_view_intro
+      (TS: v1.(View.ts) = v2.(View.ts))
+  .
+  Hint Constructors eqts_view.
+
+  Inductive eqts_fwd (fwd1:FwdItem.t (A:=A)) (fwd2:FwdItem.t (A:=B)): Prop :=
+  | eqts_fwd_intro
+      (TS: fwd1.(FwdItem.ts) = fwd2.(FwdItem.ts))
+      (VIEW: eqts_view fwd1.(FwdItem.view) fwd2.(FwdItem.view))
+      (EX: fwd1.(FwdItem.ex) = fwd2.(FwdItem.ex))
+  .
+  Hint Constructors eqts_fwd.
+
+  Inductive eqts_val (v1:ValA.t (A:=View.t (A:=A))) (v2:ValA.t (A:=View.t (A:=B))): Prop :=
+  | eqts_val_intro
+      (VAL: v1.(ValA.val) = v2.(ValA.val))
+      (VIEW: eqts_view v1.(ValA.annot) v2.(ValA.annot))
+  .
+  Hint Constructors eqts_val.
+
+  Inductive eqts_event: forall (e1:Event.t (A:=View.t (A:=A))) (e2:Event.t (A:=View.t (A:=B))), Prop :=
+  | eqts_event_internal:
+      eqts_event Event.internal Event.internal
+  | eqts_event_read
+      ex rmw_fail ord vloc1 vloc2 res1 res2
+      (VLOC: eqts_val vloc1 vloc2)
+      (RES: eqts_val res1 res2):
+      eqts_event (Event.read ex rmw_fail ord vloc1 res1) (Event.read ex rmw_fail ord vloc2 res2)
+  | eqts_event_write
+      ex ord vloc1 vloc2 vval1 vval2 res1 res2
+      (VLOC: eqts_val vloc1 vloc2)
+      (VVAL: eqts_val vval1 vval2)
+      (RES: eqts_val res1 res2):
+      eqts_event (Event.write ex ord vloc1 vval1 res1) (Event.write ex ord vloc2 vval2 res2)
+  | eqts_event_rmw
+      ordr ordw vloc1 vloc2 old1 old2 new1 new2:
+      eqts_event (Event.rmw ordr ordw vloc1 old1 new1) (Event.rmw ordr ordw vloc2 old2 new2)
+  | eqts_event_barrier
+      b:
+      eqts_event (Event.barrier b) (Event.barrier b)
+  | eqts_event_control
+      ctrl1 ctrl2
+      (CTRL: eqts_view ctrl1 ctrl2):
+      eqts_event (Event.control ctrl1) (Event.control ctrl2)
+  .
+  Hint Constructors eqts_event.
+End Eqts.
+
+Section EqtsEquiv.
+  Context `{A: Type, _: orderC A eq}.
+
+  Global Program Instance eqts_view_equiv: Equivalence (@eqts_view A A).
+  Next Obligation. econs. ss. Qed.
+  Next Obligation. econs. inv H1. ss. Qed.
+  Next Obligation. econs. inv H1. inv H2. etrans; eauto. Qed.
+
+  Global Program Instance eqts_fwd_equiv: Equivalence (@eqts_fwd A A).
+  Next Obligation. econs; ss. Qed.
+  Next Obligation. ii. destruct x, y. inv H1. ss. subst. econs; ss. symmetry. ss. Qed.
+  Next Obligation. ii. destruct x, y, z. inv H1. inv H2. ss. subst. econs; ss. etrans; eauto. Qed.
+
+  Global Program Instance eqts_val_equiv: Equivalence eqts_val.
+  Next Obligation. econs; ss. Qed.
+  Next Obligation. ii. destruct x, y. inv H1. ss. subst. econs; ss. symmetry. ss. Qed.
+  Next Obligation. ii. destruct x, y, z. inv H1. inv H2. ss. subst. econs; ss. etrans; eauto. Qed.
+
+  Global Program Instance eqts_event_equiv: Equivalence eqts_event.
+  Next Obligation. ii. destruct x; econs; ss. Qed.
+  Next Obligation.
+    ii. inv H1; econs; ss.
+    all: symmetry; ss.
+  Qed.
+  Next Obligation.
+    ii. inv H1; inv H2; econs; ss.
+    all: etrans; eauto.
+  Qed.
+End EqtsEquiv.
 
 Module Local.
 Section Local.
