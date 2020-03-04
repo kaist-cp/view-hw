@@ -16,7 +16,7 @@ Require Import PromisingArch.lib.HahnRelationsMore.
 Require Import PromisingArch.lib.Order.
 Require Import PromisingArch.lib.Time.
 Require Import PromisingArch.lib.Lang.
-Require Import PromisingArch.promising.Promising.
+Require Import PromisingArch.promising.TsoPromising2.
 Require Import PromisingArch.promising.CommonPromising.
 Require Import PromisingArch.promising.StateExecFacts.
 Require Import PromisingArch.axiomatic.TsoAxiomatic.
@@ -77,7 +77,7 @@ Inductive sim_state_weak (state:State.t (A:=View.t (A:=unit))) (astate:State.t (
 .
 Hint Constructors sim_state_weak.
 
-Inductive sim_local_weak (local: Local.t (A:=unit)) (alocal: ALocal.t): Prop :=
+Inductive sim_local_weak (local: Local.t) (alocal: ALocal.t): Prop :=
 | sim_local_weak_none
 | sim_local_weak_some
 .
@@ -87,32 +87,6 @@ Lemma sim_state_weak_init stmts:
   sim_state_weak (State.init stmts) (State.init stmts).
 Proof.
   econs; ss. econs. ii. unfold RMap.init. rewrite ? IdMap.gempty. econs.
-Qed.
-
-Lemma sim_rmap_weak_add
-      rmap armap reg vala avala
-      (SIM: sim_rmap_weak rmap armap)
-      (VAL: sim_val_weak vala avala):
-  sim_rmap_weak (RMap.add reg vala rmap) (RMap.add reg avala armap).
-Proof.
-  econs. ii. unfold RMap.add. rewrite ? IdMap.add_spec.
-  inv SIM. condtac; eauto.
-Qed.
-
-Lemma sim_rmap_weak_expr
-      rmap armap e
-      (SIM: sim_rmap_weak rmap armap):
-  sim_val_weak (sem_expr rmap e) (sem_expr armap e).
-Proof.
-  inv SIM. induction e; s.
-  - (* const *)
-    econs; ss.
-  - (* reg *)
-    specialize (RMAP reg). unfold RMap.find. inv RMAP; ss.
-  - (* op1 *)
-    inv IHe. econs; ss. congr.
-  - (* op2 *)
-    inv IHe1. inv IHe2. econs; ss; try congr.
 Qed.
 
 Inductive sim_event: forall (e1: Event.t (A:=View.t (A:=unit))) (e2: Event.t (A:=nat -> Prop)), Prop :=
