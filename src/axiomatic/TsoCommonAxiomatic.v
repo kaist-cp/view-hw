@@ -58,19 +58,19 @@ Proof.
   - inv H. econs; eauto. econs; eauto. econs; eauto. econs; eauto.
 Qed.
 
-Inductive sim_val_weak (vala:ValA.t (A:=View.t (A:=unit))) (avala:ValA.t (A:=nat -> Prop)): Prop :=
+Inductive sim_val_weak (vala:ValA.t (A:=unit)) (avala:ValA.t (A:=unit)): Prop :=
 | sim_val_weak_intro
     (VAL: vala.(ValA.val) = avala.(ValA.val))
 .
 Hint Constructors sim_val_weak.
 
-Inductive sim_rmap_weak (rmap:RMap.t (A:=View.t (A:=unit))) (armap:RMap.t (A:=nat -> Prop)): Prop :=
+Inductive sim_rmap_weak (rmap:RMap.t (A:=unit)) (armap:RMap.t (A:=unit)): Prop :=
 | sim_rmap_weak_intro
     (RMAP: IdMap.Forall2 (fun reg => sim_val_weak) rmap armap)
 .
 Hint Constructors sim_rmap_weak.
 
-Inductive sim_state_weak (state:State.t (A:=View.t (A:=unit))) (astate:State.t (A:=nat -> Prop)): Prop :=
+Inductive sim_state_weak (state:State.t (A:=unit)) (astate:State.t (A:=unit)): Prop :=
 | sim_state_weak_intro
     (STMTS: state.(State.stmts) = astate.(State.stmts))
     (RMAP: sim_rmap_weak state.(State.rmap) astate.(State.rmap))
@@ -89,7 +89,7 @@ Proof.
   econs; ss. econs. ii. unfold RMap.init. rewrite ? IdMap.gempty. econs.
 Qed.
 
-Inductive sim_event: forall (e1: Event.t (A:=View.t (A:=unit))) (e2: Event.t (A:=nat -> Prop)), Prop :=
+Inductive sim_event: forall (e1: Event.t (A:=unit)) (e2: Event.t (A:=unit)), Prop :=
 | sim_event_internal:
     sim_event Event.internal Event.internal
 | sim_event_read
@@ -113,9 +113,6 @@ Inductive sim_event: forall (e1: Event.t (A:=View.t (A:=unit))) (e2: Event.t (A:
     b1 b2
     (BARRIER: b1 = b2):
     sim_event (Event.barrier b1) (Event.barrier b2)
-| sim_event_control
-    ctrl1 ctrl2:
-    sim_event (Event.control ctrl1) (Event.control ctrl2)
 .
 Hint Constructors sim_event.
 
