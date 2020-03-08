@@ -1099,10 +1099,15 @@ Proof.
     exploit Permutation_in; eauto. intro X.
     generalize (Execution.eids_spec ex). i. des.
     apply LABEL in X. destruct (Execution.label a ex) eqn:Y; ss.
-    destruct t; ss. inv MSG0. s. unfold Execution.label in Y.
-    rewrite EX.(Valid.LABELS), IdMap.map_spec in Y.
-    destruct (IdMap.find (fst a) (Valid.PRE EX).(Valid.aeus)) eqn:Z; ss.
-    generalize (EX.(Valid.AEUS) (fst a)). intro W. inv W; ss. congr.
+    destruct t; ss.
+    - inv MSG0. s. unfold Execution.label in Y.
+      rewrite EX.(Valid.LABELS), IdMap.map_spec in Y.
+      destruct (IdMap.find (fst a) (Valid.PRE EX).(Valid.aeus)) eqn:Z; ss.
+      generalize (EX.(Valid.AEUS) (fst a)). intro W. inv W; ss. congr.
+    - inv MSG0. s. unfold Execution.label in Y.
+      rewrite EX.(Valid.LABELS), IdMap.map_spec in Y.
+      destruct (IdMap.find (fst a) (Valid.PRE EX).(Valid.aeus)) eqn:Z; ss.
+      generalize (EX.(Valid.AEUS) (fst a)). intro W. inv W; ss. congr.
   }
   unfold IdMap.Equal, Machine.init_with_promises. s. i. des. subst.
   setoid_rewrite IdMap.mapi_spec in TPOOL.
@@ -1171,7 +1176,7 @@ Proof.
   { destruct (equiv_dec tid tid); [|congr]. ss. }
   intro FIND.
   cut (exists st2 lc2 aeu,
-          <<STEP: rtc (ExecUnit.state_step (A:=unit) tid)
+          <<STEP: rtc (ExecUnit.state_step tid)
                       (ExecUnit.mk
                          (State.init stmts)
                          (Local.init_with_promises (Machine.promises_from_mem tid (Machine.mem m)))
@@ -1223,40 +1228,42 @@ Proof.
                         (Local.init_with_promises (Machine.promises_from_mem tid (mem_of_ex ex ob)))
                         (mem_of_ex ex ob)).
     econs; ss.
-    - econs; ss. econs. ii. rewrite ? IdMap.gempty. ss.
-    - econs; eauto; ss.
-      + right. splits; ss. ii. inv H. inv REL1. inv H. inv H1. ss. lia.
-      + econs; i.
-        { destruct view; ss. apply Machine.promises_from_mem_spec in H. des.
-          exploit in_mem_of_ex; swap 1 2; eauto.
-          { eapply Permutation_NoDup; [by symmetry; eauto|].
-            eapply Execution.eids_spec; eauto.
-          }
-          s. i. des. esplits; cycle 1; eauto. lia.
-        }
-        { des. inv WRITE. destruct l; ss. exploit label_write_mem_of_ex; eauto. i. des.
-          rewrite VIEW in VIEW0. inv VIEW0.
-          unfold Memory.get_msg in MSG. ss. apply Machine.promises_from_mem_spec. eauto.
-        }
+    econs; eauto; ss.
+    econs; i.
+    { destruct view; ss. apply Machine.promises_from_mem_spec in H. des.
+      exploit in_mem_of_ex; swap 1 2; eauto.
+      { eapply Permutation_NoDup; [by symmetry; eauto|].
+      eapply Execution.eids_spec; eauto.
+      }
+      s. i. des.
+      - esplits; cycle 1; eauto with tso. lia.
+      - esplits; cycle 1; eauto with tso. lia.
+    }
+    { des. inv WRITE.
+      destruct l; ss; [ exploit label_write_mem_of_ex | exploit label_update_mem_of_ex ]; eauto.
+      - i. des.
+        rewrite VIEW in VIEW0. inv VIEW0.
+        unfold Memory.get_msg in MSG. ss. apply Machine.promises_from_mem_spec. eauto.
+      - i. des.
+        rewrite VIEW in VIEW0. inv VIEW0.
+        unfold Memory.get_msg in MSG. ss. apply Machine.promises_from_mem_spec. eauto.
+    }
   }
   { clear. econs; ss.
-    - econs. i. unfold RMap.find, RMap.init.
-      rewrite IdMap.gempty. ss. apply bot_spec.
-    - econs; ss; i; try by apply bot_spec.
-      + econs; esplits; ss.
-      + destruct ts; ss.
-        rewrite Machine.promises_from_mem_spec in IN. des.
-        apply lt_le_S. rewrite <- List.nth_error_Some. ii. congr.
-      + destruct ts; ss.
-        unfold Memory.get_msg in MSG. ss. destruct msg. ss. subst.
-        apply Machine.promises_from_mem_lookup in MSG. auto. }
+    econs; ss; i; try by apply bot_spec.
+    - destruct ts; ss.
+      rewrite Machine.promises_from_mem_spec in IN. des.
+      apply lt_le_S. rewrite <- List.nth_error_Some. ii. congr.
+    - destruct ts; ss.
+      unfold Memory.get_msg in MSG. ss. destruct msg. ss. subst.
+      apply Machine.promises_from_mem_lookup in MSG. auto. }
   { apply AExecUnit.wf_init. }
   i. des. destruct eu2 as [state2 local2 mem2]. inv SIM. ss. subst.
   esplits; eauto.
   - intro X. exploit X; eauto. i. inv STATE. congr.
   - inv STATE. econs; ss.
-    inv RMAP. econs. ii. specialize (RMAP0 id). inv RMAP0; ss. econs.
-    inv REL1. econs. ss.
+    inv RMAP. econs. ii.
+    destruct (IdMap.find id (State.rmap (AExecUnit.state aeu))); [econs|]; ss.
   - apply Promises.ext. i. rewrite Promises.lookup_bot.
     destruct (Promises.lookup i (Local.promises local2)) eqn:L; ss; cycle 1.
     apply LOCAL.(PROMISES) in L. des.
