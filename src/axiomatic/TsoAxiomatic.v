@@ -163,6 +163,12 @@ Module Label.
     s. destruct (equiv_dec loc loc); ss. exfalso. apply c. ss.
   Qed.
 
+  Lemma update_is_writing loc vold vnew:
+    is_writing loc (update loc vold vnew).
+  Proof.
+    s. destruct (equiv_dec loc loc); ss. exfalso. apply c. ss.
+  Qed.
+
   Lemma writing_exists_val
         loc l
         (WRING: is_writing loc l):
@@ -211,6 +217,7 @@ Module Label.
   Hint Resolve
        reading_is_read reading_is_accessing read_is_reading reading_exists_val reading_val_is_reading
        writing_is_write writing_is_accessing write_is_writing writing_exists_val writing_val_is_writing
+       update_is_writing
        accessing_is_access read_is_accessing write_is_accessing update_is_accessing
     : tso.
 End Label.
