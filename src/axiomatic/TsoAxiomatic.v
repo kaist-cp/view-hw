@@ -250,12 +250,12 @@ Module ALocal.
       (ALOCAL: alocal2 =
                mk
                  (alocal1.(labels) ++ [Label.update vloc.(ValA.val) voldv.(ValA.val) vnewv.(ValA.val)]))
-  | step_barrier
-      b
-      (EVENT: event = Event.barrier b)
+  | step_dmb
+      rr rw wr ww
+      (EVENT: event = Event.barrier (Barrier.dmb rr rw wr ww))
       (ALOCAL: alocal2 =
                mk
-                 (alocal1.(labels) ++ [Label.barrier b]))
+                 (alocal1.(labels) ++ [Label.barrier (Barrier.dmb rr rw wr ww)]))
   .
   Hint Constructors step : tso.
 
