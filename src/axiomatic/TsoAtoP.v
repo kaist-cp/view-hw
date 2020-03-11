@@ -358,20 +358,6 @@ Proof.
     unfold mem_of_ex. s. rewrite LABEL. ss.
 Qed.
 
-Lemma label_write_mem_of_ex
-      eid ex ob loc val
-      (OB: Permutation ob (Execution.eids ex))
-      (LABEL: Execution.label eid ex = Some (Label.write loc val)):
-  exists n,
-    <<VIEW: view_of_eid ex ob eid = Some (S n)>> /\
-    <<READ: Memory.read loc (S n) (mem_of_ex ex ob) = Some val>> /\
-    <<MSG: Memory.get_msg (S n) (mem_of_ex ex ob) = Some (Msg.mk loc val (fst eid))>>.
-Proof.
-  exploit label_write_mem_of_ex_msg; eauto. i. des.
-  esplits; eauto.
-  unfold Memory.read. s. rewrite MSG. s. condtac; [|congr]. ss.
-Qed.
-
 Lemma label_update_mem_of_ex_msg
       eid ex ob loc vold vnew
       (OB: Permutation ob (Execution.eids ex))
@@ -399,18 +385,23 @@ Proof.
     unfold mem_of_ex. s. rewrite LABEL. ss.
 Qed.
 
-Lemma label_update_mem_of_ex
-      eid ex ob loc vold vnew
+Lemma label_write_update_mem_of_ex
+      eid ex ob loc val vold
       (OB: Permutation ob (Execution.eids ex))
-      (LABEL: Execution.label eid ex = Some (Label.update loc vold vnew)):
+      (LABEL: Execution.label eid ex = Some (Label.write loc val) \/
+              Execution.label eid ex = Some (Label.update loc vold val)):
   exists n,
     <<VIEW: view_of_eid ex ob eid = Some (S n)>> /\
-    <<READ: Memory.read loc (S n) (mem_of_ex ex ob) = Some vnew>> /\
-    <<MSG: Memory.get_msg (S n) (mem_of_ex ex ob) = Some (Msg.mk loc vnew (fst eid))>>.
+    <<READ: Memory.read loc (S n) (mem_of_ex ex ob) = Some val>> /\
+    <<MSG: Memory.get_msg (S n) (mem_of_ex ex ob) = Some (Msg.mk loc val (fst eid))>>.
 Proof.
-  exploit label_update_mem_of_ex_msg; eauto. i. des.
-  esplits; eauto.
-  unfold Memory.read. s. rewrite MSG. s. condtac; [|congr]. ss.
+  inv LABEL.
+  - exploit label_write_mem_of_ex_msg; eauto. i. des.
+    esplits; eauto.
+    unfold Memory.read. s. rewrite MSG. s. condtac; [|congr]. ss.
+  - exploit label_update_mem_of_ex_msg; eauto. i. des.
+    esplits; eauto.
+    unfold Memory.read. s. rewrite MSG. s. condtac; [|congr]. ss.
 Qed.
 
 Lemma in_mem_of_ex
@@ -516,22 +507,13 @@ Proof.
     { exploit EX.(Valid.RF1).
       instantiate (1 := (tid, length (ALocal.labels alocal1))).
       instantiate (1 := res0). instantiate (1 := (ValA.val (sem_expr rmap1 eloc))).
-      { admit. }
+      { econs; eauto with tso. unfold Label.is_reading_val.
+        destruct (equiv_dec (ValA.val (sem_expr rmap1 eloc)) (ValA.val (sem_expr rmap1 eloc))); ss.
+        destruct (equiv_dec res0 res0); ss. destruct c. ss.
+      }
       i. des.
       { (* read from uninit *)
         subst. exists 0.
-        (* assert (FWD: Local.fwdbank local1 (ValA.val (sem_expr armap1 eloc)) = FwdItem.init).
-        { generalize (SIM_LOCAL.(FWDBANK) (ValA.val (sem_expr armap1 eloc))).
-          destruct (Local.fwdbank local1 (ValA.val (sem_expr armap1 eloc))) eqn:FWD; eauto.
-          i. des. inv WRITE. inv WRITE0. apply Label.is_writing_inv in LABEL0. des. subst.
-          exfalso. eapply EX.(Valid.INTERNAL). econs 2; econs.
-          - left. left. left. econs; eauto. econs; eauto.
-            econs; eauto using Label.read_is_accessing, Label.write_is_accessing.
-          - left. left. right. right. econs.
-            + econs; eauto. econs; eauto using Label.read_is_accessing, Label.write_is_accessing.
-            + econs; eauto. econs; eauto.
-          - ss.
-        } *)
         splits; ss.
         { lia. }
       }
@@ -612,11 +594,11 @@ Proof.
     assert (READ_STEP: exists res1 local2, Local.read (sem_expr rmap1 eloc) res1 n local1 (mem_of_ex ex ob) local2).
     { esplits. econs; eauto.
       - (* internal *)
-        generalize (SIM_LOCAL.(COH) (ValA.val (sem_expr armap1 eloc))). intro X. inv X.
+        generalize (SIM_LOCAL.(COH) (ValA.val (sem_expr rmap1 eloc))). intro X. inv X.
         { eapply Memory.latest_mon1. eapply Memory.latest_ts_latest; eauto. apply bot_spec. }
         eapply Memory.latest_mon1. eapply Memory.latest_ts_latest; eauto.
-        rewrite VIEW1. inv EID. inv REL. inv H. inv H0.
-        inv H2. apply Label.is_writing_inv in LABEL0. des. subst.
+        rewrite VIEW0. inv EID. inv REL. inv H. inv H0.
+        inv H2.
         inv H1. des. inv H.
         { exploit Valid.coherence_wr; try exact H0; eauto.
           all: try by econs; eauto; eauto using Label.write_is_writing, Label.read_is_reading.
@@ -632,8 +614,8 @@ Proof.
           exploit MSG; [lia|]. i. des.
           exploit EX.(Valid.RF_WF); [exact RF|exact RF0|]. i. subst.
           inv CO.
-          - rewrite VIEW_OF_EID in VIEW2. inv VIEW2. refl.
-          - eapply view_of_eid_ob; eauto. left. left. left. right. eauto.
+          - rewrite VIEW_OF_EID in VIEW1. inv VIEW1. refl.
+          - eapply view_of_eid_ob; eauto. left. left. right. eauto.
         }
         { inv H1.
           exploit EX.(Valid.RF2); eauto. i. des.
@@ -670,12 +652,19 @@ Proof.
             - econs; eauto. apply Label.write_is_writing.
           }
           inv SIM_EXT1.
-          { rewrite VIEW2 in TS2. inv TS2. }
-          unfold ALocal.next_eid in VIEW_OF_EID. rewrite VIEW_OF_EID in VIEW0. inv VIEW0.
-          unfold le in VIEW2. lia.
+          { rewrite VIEW1 in TS2. inv TS2. }
+          unfold ALocal.next_eid in VIEW_OF_EID. rewrite VIEW_OF_EID in VIEW. inv VIEW.
+          unfold le in VIEW1. lia.
         }
         exploit MSG; [lia|]. i. des.
-        exploit EX.(Valid.RF1); eauto. i. des.
+        exploit EX.(Valid.RF1).
+        instantiate (1 := (tid, length (ALocal.labels alocal1))).
+        instantiate (1 := res0). instantiate (1 := ValA.val (sem_expr rmap1 eloc)).
+        { econs; eauto with tso. unfold Label.is_reading_val.
+          destruct (equiv_dec (ValA.val (sem_expr rmap1 eloc)) (ValA.val (sem_expr rmap1 eloc))); ss.
+          destruct (equiv_dec res0 res0); ss. destruct c. ss.
+        }
+        i. des.
         { contradict NORF. econs. eauto. }
         exploit EX.(Valid.RF_WF); [exact RF|exact RF0|]. i. subst.
         exploit EX.(Valid.CO1).
@@ -822,7 +811,7 @@ Proof.
     exploit LABEL.
     { rewrite List.nth_error_app2; [|refl]. rewrite Nat.sub_diag. ss. }
     intro LABEL_LEN.
-    exploit label_write_mem_of_ex; eauto. i. des.
+    exploit label_write_update_mem_of_ex; eauto. i. des.
     exploit sim_rmap_expr. instantiate (1 := rmap1). instantiate (1 := rmap1).
     instantiate (1 := ob). instantiate (1 := ex). instantiate (1 := tid).
     { econs. unfold IdMap.Forall2. i.
@@ -1204,7 +1193,7 @@ Proof.
       - esplits; cycle 1; eauto with tso. lia.
     }
     { des. inv WRITE.
-      destruct l; ss; [ exploit label_write_mem_of_ex | exploit label_update_mem_of_ex ]; eauto.
+      destruct l; ss; exploit label_write_update_mem_of_ex; eauto.
       - i. des.
         rewrite VIEW in VIEW0. inv VIEW0.
         unfold Memory.get_msg in MSG. ss. apply Machine.promises_from_mem_spec. eauto.
