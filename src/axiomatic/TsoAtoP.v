@@ -358,6 +358,20 @@ Proof.
     unfold mem_of_ex. s. rewrite LABEL. ss.
 Qed.
 
+Lemma label_write_mem_of_ex
+      eid ex ob loc val
+      (OB: Permutation ob (Execution.eids ex))
+      (LABEL: Execution.label eid ex = Some (Label.write loc val)):
+  exists n,
+    <<VIEW: view_of_eid ex ob eid = Some (S n)>> /\
+    <<READ: Memory.read loc (S n) (mem_of_ex ex ob) = Some val>> /\
+    <<MSG: Memory.get_msg (S n) (mem_of_ex ex ob) = Some (Msg.mk loc val (fst eid))>>.
+Proof.
+  inv LABEL. exploit label_write_mem_of_ex_msg; eauto. i. des.
+  esplits; eauto.
+  unfold Memory.read. s. rewrite MSG. s. condtac; [|congr]. ss.
+Qed.
+
 Lemma label_update_mem_of_ex_msg
       eid ex ob loc vold vnew
       (OB: Permutation ob (Execution.eids ex))
@@ -385,23 +399,18 @@ Proof.
     unfold mem_of_ex. s. rewrite LABEL. ss.
 Qed.
 
-Lemma label_write_update_mem_of_ex
-      eid ex ob loc val vold
+Lemma label_update_mem_of_ex
+      eid ex ob loc vold vnew
       (OB: Permutation ob (Execution.eids ex))
-      (LABEL: Execution.label eid ex = Some (Label.write loc val) \/
-              Execution.label eid ex = Some (Label.update loc vold val)):
+      (LABEL: Execution.label eid ex = Some (Label.update loc vold vnew)):
   exists n,
     <<VIEW: view_of_eid ex ob eid = Some (S n)>> /\
-    <<READ: Memory.read loc (S n) (mem_of_ex ex ob) = Some val>> /\
-    <<MSG: Memory.get_msg (S n) (mem_of_ex ex ob) = Some (Msg.mk loc val (fst eid))>>.
+    <<READ: Memory.read loc (S n) (mem_of_ex ex ob) = Some vnew>> /\
+    <<MSG: Memory.get_msg (S n) (mem_of_ex ex ob) = Some (Msg.mk loc vnew (fst eid))>>.
 Proof.
-  inv LABEL.
-  - exploit label_write_mem_of_ex_msg; eauto. i. des.
-    esplits; eauto.
-    unfold Memory.read. s. rewrite MSG. s. condtac; [|congr]. ss.
-  - exploit label_update_mem_of_ex_msg; eauto. i. des.
-    esplits; eauto.
-    unfold Memory.read. s. rewrite MSG. s. condtac; [|congr]. ss.
+  inv LABEL. exploit label_update_mem_of_ex_msg; eauto. i. des.
+  esplits; eauto.
+  unfold Memory.read. s. rewrite MSG. s. condtac; [|congr]. ss.
 Qed.
 
 Lemma in_mem_of_ex
@@ -513,16 +522,15 @@ Proof.
         subst. exists 0.
         splits; ss. lia.
       }
-      admit.
-      (* exploit label_write_update_mem_of_ex; eauto.
-      { inv LABEL0. destruct l; ss; destruct (equiv_dec loc (ValA.val (sem_expr rmap1 eloc))); ss; inv e.
-        - left. destruct (equiv_dec val res0); ss. inv e. eauto.
-        - right. destruct (equiv_dec vnew res0); ss. inv e. rewrite EID.
-          (* TODO: why not vold? *)
-          admit.
-      }
-      i. des.
-      esplits; eauto. i. inv H. *)
+      inv LABEL0. destruct l; ss; destruct (equiv_dec loc (ValA.val (sem_expr rmap1 eloc))); ss; inv e.
+      - exploit label_write_mem_of_ex; eauto.
+        destruct (equiv_dec val res0); ss. inv e.
+        i. des.
+        esplits; eauto. i. inv H.
+      - exploit label_update_mem_of_ex; eauto.
+        destruct (equiv_dec vnew res0); ss. inv e.
+        i. des.
+        esplits; eauto. i. inv H.
     }
     des.
 
@@ -841,7 +849,7 @@ Proof.
     exploit LABEL.
     { rewrite List.nth_error_app2; [|refl]. rewrite Nat.sub_diag. ss. }
     intro LABEL_LEN.
-    exploit label_write_update_mem_of_ex; eauto. i. des.
+    exploit label_write_mem_of_ex; eauto. i. des.
     exploit sim_rmap_expr. instantiate (1 := rmap1). instantiate (1 := rmap1).
     instantiate (1 := ob). instantiate (1 := ex). instantiate (1 := tid).
     { econs. unfold IdMap.Forall2. i.
@@ -1026,8 +1034,6 @@ Proof.
     + econs. econs; ss; econs; ss.
     + econs; ss.
       inv SIM_LOCAL; econs; eauto.
-
-  Grab Existential Variables. { admit. }
 Qed.
 
 Lemma sim_eu_rtc_step
@@ -1225,7 +1231,7 @@ Proof.
       - esplits; cycle 1; eauto with tso. lia.
     }
     { des. inv WRITE.
-      destruct l; ss; exploit label_write_update_mem_of_ex; eauto.
+      destruct l; ss; [ exploit label_write_mem_of_ex | exploit label_update_mem_of_ex ]; eauto.
       - i. des.
         rewrite VIEW in VIEW0. inv VIEW0.
         unfold Memory.get_msg in MSG. ss. apply Machine.promises_from_mem_spec. eauto.
@@ -1256,5 +1262,4 @@ Proof.
     inv WRITE. unfold Execution.label in EID. ss.
     rewrite EX.(Valid.LABELS), IdMap.map_spec, <- AEU in EID. ss.
     apply List.nth_error_None in N. congr.
-    Grab Existential Variables. { admit. }
 Qed.
