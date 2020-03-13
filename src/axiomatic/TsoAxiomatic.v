@@ -122,6 +122,13 @@ Module Label.
     s. destruct (equiv_dec loc loc); ss. exfalso. apply c. ss.
   Qed.
 
+  Lemma read_is_reading_val loc val:
+    is_reading_val loc val (read loc val).
+  Proof.
+    s. destruct (equiv_dec loc loc); destruct (equiv_dec val val); ss; exfalso.
+    all: apply c; ss.
+  Qed.
+
   Lemma reading_exists_val
         loc l
         (RDING: is_reading loc l):
@@ -221,7 +228,7 @@ Module Label.
   Qed.
 
   Hint Resolve
-       reading_is_read reading_is_accessing read_is_reading reading_exists_val reading_val_is_reading
+       reading_is_read reading_is_accessing read_is_reading read_is_reading_val reading_exists_val reading_val_is_reading
        writing_is_write writing_is_accessing write_is_writing writing_exists_val writing_val_is_writing
        update_is_reading update_is_writing
        accessing_is_access read_is_accessing write_is_accessing update_is_accessing
