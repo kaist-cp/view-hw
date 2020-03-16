@@ -705,7 +705,11 @@ Proof.
           assert (JOIN_SN:join (View.ts (Local.vrn local1)) (S n) = View.ts (Local.vrn local1)).
           { destruct (View.ts (Local.vrn local1)).
             - lia.
-            - admit. (* TODO: TS1, TS2를 이용 *)
+            - assert (S n < S t).
+              { unfold lt. unfold lt in TS1.
+                etrans; eauto.
+              }
+              unfold join. unfold Time.join. lia.
           }
           inv SIM_EXT1; rewrite JOIN_SN in VIEW2.
           { rewrite VIEW2 in TS2. inv TS2. }
@@ -746,7 +750,11 @@ Proof.
           assert (JOIN_SN:join (View.ts (Local.vrn local1)) (S n) = View.ts (Local.vrn local1)).
           { destruct (View.ts (Local.vrn local1)).
             - lia.
-            - admit. (* TODO: TS1, TS2를 이용 *)
+            - assert (S n < S t).
+              { unfold lt. unfold lt in TS1.
+                etrans; eauto.
+              }
+              unfold join. unfold Time.join. lia.
           }
           inv SIM_EXT1; rewrite JOIN_SN in VIEW2.
           { rewrite VIEW2 in TS2. inv TS2. }
