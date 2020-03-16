@@ -316,9 +316,9 @@ Inductive sim_eu (tid:Id.t) (ex:Execution.t) (ob: list eidT) (aeu:AExecUnit.t) (
 Hint Constructors sim_eu.
 
 Lemma label_read_mem_of_ex
-      eid ex ob loc val
+      eid ex ob l
       (OB: Permutation ob (Execution.eids ex))
-      (LABEL: Execution.label eid ex = Some (Label.read loc val)):
+      (LABEL: Execution.label eid ex = Some l):
   exists view,
     <<VIEW: view_of_eid ex ob eid = Some view>>.
 Proof.
@@ -331,6 +331,7 @@ Proof.
   unfold view_of_eid. rewrite H. s. eauto.
 Qed.
 
+(* TODO: Lable.write -> writing_val *)
 Lemma label_write_mem_of_ex_msg
       eid ex ob loc val
       (OB: Permutation ob (Execution.eids ex))
@@ -358,6 +359,7 @@ Proof.
     unfold mem_of_ex. s. rewrite LABEL. ss.
 Qed.
 
+(* TODO: Lable.write -> writing_val *)
 Lemma label_write_mem_of_ex
       eid ex ob loc val
       (OB: Permutation ob (Execution.eids ex))
@@ -372,6 +374,7 @@ Proof.
   unfold Memory.read. s. rewrite MSG. s. condtac; [|congr]. ss.
 Qed.
 
+(* TODO: REMOVE *)
 Lemma label_update_mem_of_ex_msg
       eid ex ob loc vold vnew
       (OB: Permutation ob (Execution.eids ex))
@@ -399,6 +402,7 @@ Proof.
     unfold mem_of_ex. s. rewrite LABEL. ss.
 Qed.
 
+(* TODO: REMOVE *)
 Lemma label_update_mem_of_ex
       eid ex ob loc vold vnew
       (OB: Permutation ob (Execution.eids ex))
