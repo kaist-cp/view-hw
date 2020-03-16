@@ -494,11 +494,6 @@ Proof.
                         <<MSG: Memory.get_msg n (mem_of_ex ex ob) = Some (Msg.mk (ValA.val (sem_expr rmap1 eloc)) res0 (fst eid2))>>>> /\
                <<UNINIT: n = 0 ->
                       <<RF: ~ codom_rel ex.(Execution.rf) (tid, length (ALocal.labels alocal1))>>>>).
-                       (* /\ *)
-                      (* <<FWD: Local.fwdbank local1 (ValA.val (sem_expr armap1 eloc)) = FwdItem.init>>>> /\ *)
-               (* <<SIM_FWD: sim_view ex ob
-                                   (eq (tid, ALocal.next_eid alocal1))
-                                   (FwdItem.read_view (Local.fwdbank local1 (ValA.val (sem_expr armap1 eloc))) n ord).(View.ts)>>). *)
     { exploit EX.(Valid.RF1).
       instantiate (1 := (tid, length (ALocal.labels alocal1))).
       instantiate (1 := res0). instantiate (1 := (ValA.val (sem_expr rmap1 eloc))).
@@ -527,8 +522,18 @@ Proof.
       destruct n; unfold le.
       { lia. }
       exploit MSG; [lia|]. i. des.
-      admit.
-      (* eid2[S n] --rf--> (t, len)[view] 이므로 S n = view *)
+      destruct eid2. ss. destruct (t == tid).
+      { inv e. subst.
+        exploit Valid.rfi_is_po; eauto with tso. i.
+        inv x0. ss.
+        (* TODO: rfi is ob, so... *)
+        admit.
+      }
+      { exploit view_of_eid_ob; cycle 3.
+        { instantiate (1 := view). eauto. }
+        all: try eauto.
+        left. left. left. left. econs; eauto. econs; eauto.
+      }
     }
 
     assert (READ_STEP: exists res1 local2, Local.read (sem_expr rmap1 eloc) res1 n local1 (mem_of_ex ex ob) local2).
@@ -1003,8 +1008,18 @@ Proof.
       destruct old_ts; unfold le.
       { lia. }
       exploit MSG0; [lia|]. i. des.
-      admit.
-      (* eid2[S old_ts] --rf--> (t, len)[S n] 이므로 S old_ts = S n *)
+      destruct eid2. ss. destruct (t == tid).
+      { inv e. subst.
+        exploit Valid.rfi_is_po; eauto with tso. i.
+        inv x0. ss.
+        (* TODO: rfi is ob, so... *)
+        admit.
+      }
+      { exploit view_of_eid_ob; cycle 3.
+        { instantiate (1 := (S n)). eauto. }
+        all: try eauto.
+        left. left. left. left. econs; eauto. econs; eauto.
+      }
     }
 
     eexists (ExecUnit.mk _ _ _). esplits.
