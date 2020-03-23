@@ -1025,7 +1025,7 @@ Proof.
     eexists (ExecUnit.mk _ _ _). esplits.
     + econs. econs; ss.
       { econs; ss. instantiate (1 := vnewv). instantiate (1 := voldv). ss. }
-      econs 5; ss.
+      econs 4; ss.
       econs; try refl.
       all: cycle 3.
       { eauto. }
@@ -1272,7 +1272,7 @@ Proof.
     esplits.
     { econs. econs; ss.
       - econs; ss.
-      - econs 6; ss.
+      - econs 5; ss.
     }
     econs; ss.
     econs; ss.

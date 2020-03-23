@@ -129,20 +129,6 @@ Section Local.
   .
   Hint Constructors rmw.
 
-  Inductive write_failure (res: ValA.t (A:=unit)) (lc1:t) (lc2:t): Prop :=
-  | write_failure_intro
-      (RES: res = ValA.mk _ 1 bot)
-      (LC2: lc2 =
-            mk
-              lc1.(coh)
-              lc1.(vrn)
-              lc1.(vwn)
-              lc1.(vro)
-              lc1.(vwo)
-              lc1.(promises))
-  .
-  Hint Constructors write_failure.
-
   Inductive dmb (rr rw wr ww:bool) (lc1 lc2:t): Prop :=
   | dmb_intro
       (LC2: lc2 =
@@ -168,10 +154,6 @@ Section Local.
       vloc vval res ts view_pre
       (EVENT: event = Event.write false OrdW.pln vloc vval res)
       (STEP: fulfill vloc vval res ts tid view_pre lc1 mem lc2)
-  | step_write_failure
-      ex ord vloc vval res
-      (EVENT: event = Event.write ex ord vloc vval res)
-      (STEP: write_failure res lc1 lc2)
   | step_rmw
       vloc vold vnew ts view_pre
       (EVENT: event = Event.rmw OrdR.pln OrdW.pln vloc vold vnew)
@@ -295,14 +277,6 @@ Section Local.
     inv WRITABLE. unfold Order.le. clear -COH. lia.
   Qed.
 
-  Lemma write_failure_incr
-        res lc1 lc2
-        (LC: write_failure res lc1 lc2):
-    le lc1 lc2.
-  Proof.
-    inv LC. econs; ss; try refl; try apply join_l.
-  Qed.
-
   Lemma rmw_incr
         vloc vold vnew ts tid view_pre lc1 mem lc2
         (LC: rmw vloc vold vnew ts tid view_pre lc1 mem lc2):
@@ -330,7 +304,6 @@ Section Local.
     inv LC; try refl.
     - eapply read_incr. eauto.
     - eapply fulfill_incr. eauto.
-    - eapply write_failure_incr. eauto.
     - eapply rmw_incr. eauto.
     - eapply dmb_incr. eauto.
   Qed.
@@ -447,7 +420,6 @@ Section ExecUnit.
         { eapply PROMISES0; eauto. revert TS. condtac; ss. i.
           inversion e. rewrite H0. rewrite COH0. ss.
         }
-    - inv STEP. econs; ss.
     - inv STEP. inv WRITABLE. econs; ss.
       econs; viewtac; rewrite <- ? TS0, <- ? TS1.
       + i. rewrite fun_add_spec. condtac; viewtac.

@@ -79,8 +79,7 @@ Proof.
           - f_equal. apply Promises.set_unset.
             ii. subst. lia.
         }
-        { econs 4; eauto. inv STEP. econs; eauto. }
-        { econs 5; eauto. instantiate (1 := view_pre). instantiate (1 := ts).
+        { econs 4; eauto. instantiate (1 := view_pre). instantiate (1 := ts).
           inv STEP.
           exploit ExecUnit.read_wf; try exact OLD_MSG. i.
           inv WRITABLE. ss.
@@ -97,7 +96,7 @@ Proof.
           - f_equal. apply Promises.set_unset.
             ii. subst. lia.
         }
-        { econs 6; eauto. inv STEP. econs; eauto. }
+        { econs 5; eauto. inv STEP. econs; eauto. }
       * rewrite ? IdMap.add_add. eauto.
   - (* diff thread *)
     inv STEP. inv STEP1. inv STEP0. inv LOCAL0. inv MEM2. ss. subst.
@@ -128,8 +127,7 @@ Proof.
           - econs; ss.
           - apply Memory.get_msg_mon. ss.
         }
-        { econs 4; eauto. }
-        { econs 5; eauto. inv STEP. inv WRITABLE. econs; eauto.
+        { econs 4; eauto. inv STEP. inv WRITABLE. econs; eauto.
           - ii. eapply LATEST; eauto.
             destruct (lt_dec ts0 (length mem1)).
             { rewrite nth_error_app1 in MSG0; ss. }
@@ -141,7 +139,7 @@ Proof.
           - econs; ss.
           - apply Memory.get_msg_mon. ss.
         }
-        { econs 6; eauto. }
+        { econs 5; eauto. }
       * apply IdMap.add_add_diff. ss.
 Qed.
 
