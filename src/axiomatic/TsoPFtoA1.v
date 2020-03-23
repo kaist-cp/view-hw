@@ -270,8 +270,8 @@ Proof.
     eexists (IdMap.mapi (fun _ _ => [fun _ => None]) p).
     eexists (IdMap.mapi (fun _ _ => [bot]) p).
     eexists (IdMap.mapi (fun _ _ => [bot]) p).
-    eexists (Execution.mk (IdMap.mapi (fun _ _ => _) p) bot bot bot bot bot bot).
-    eexists (@Valid.mk_pre_ex _ _ (IdMap.mapi (fun tid stmts => AExecUnit.mk (State.init stmts) ALocal.init) p)  _ _ _ _ _ _).
+    eexists (Execution.mk (IdMap.mapi (fun _ _ => _) p) bot bot).
+    eexists (@Valid.mk_pre_ex _ _ (IdMap.mapi (fun tid stmts => AExecUnit.mk (State.init stmts) ALocal.init) p)  _ _).
     hexploit Machine.rtc_promise_step_spec; eauto. s. intro X.
     s. splits; cycle 1.
     - i. specialize (X tid). rewrite ? IdMap.map_spec, ? IdMap.mapi_spec in *.
@@ -293,11 +293,6 @@ Proof.
     rewrite IdMap.mapi_spec, STMT in *. inv FIND0.
     apply sim_state_weak_init.
   }
-  { inv REL6; eauto. s.
-    unfold Machine.init_with_promises in FIND0. ss.
-    rewrite IdMap.mapi_spec, STMT in *. inv FIND0.
-    auto.
-  }
   { instantiate (1 := ExecUnit.mk _ _ _). econs; ss; eauto. }
   i. des.
 
@@ -307,8 +302,8 @@ Proof.
   eexists (IdMap.add tid _ rs).
   eexists (IdMap.add tid _ covs).
   eexists (IdMap.add tid _ vexts).
-  eexists (Execution.mk _ _ _ _ _ _ _).
-  eexists (@Valid.mk_pre_ex _ _ (IdMap.add tid _ PRE.(Valid.aeus))  _ _ _ _ _ _).
+  eexists (Execution.mk _ _ _).
+  eexists (@Valid.mk_pre_ex _ _ (IdMap.add tid _ PRE.(Valid.aeus)) _ _).
   s. splits; cycle 1.
   - i. rewrite ? IdMap.add_spec. condtac; eauto.
   - ii. rewrite ? IdMap.add_spec. condtac; eauto.
@@ -319,23 +314,7 @@ all: ss.
 1: { ii. generalize (PRE.(Valid.AEUS) id). intro X.
      rewrite IdMap.add_spec. condtac; ss. inversion e0. subst. clear e0 X0.
      generalize (ATR tid). rewrite <- H. intro Y. inv Y. des. inv REL.
-     rewrite <- H6 in X. inv X. econs. etrans; eauto.
-}
-3: { funext. i. funext. i. propext. econs; ss. i. inv H.
-     rewrite IdMap.map_spec, IdMap.mapi_spec in RELS. destruct (IdMap.find tid p); ss.
-     inv RELS. inv REL. ss.
-}
-3: { funext. i. funext. i. propext. econs; ss. i. inv H.
-     rewrite IdMap.map_spec, IdMap.mapi_spec in RELS. destruct (IdMap.find tid p); ss.
-     inv RELS. inv REL. ss.
-}
-3: { funext. i. funext. i. propext. econs; ss. i. inv H.
-     rewrite IdMap.map_spec, IdMap.mapi_spec in RELS. destruct (IdMap.find tid p); ss.
-     inv RELS. inv REL. ss.
-}
-3: { funext. i. funext. i. propext. econs; ss. i. inv H.
-     rewrite IdMap.map_spec, IdMap.mapi_spec in RELS. destruct (IdMap.find tid p); ss.
-     inv RELS. inv REL. ss.
+     rewrite <- H6 in X. inv X. econs. etrans; eauto with tso.
 }
 4: { ii. rewrite IdMap.mapi_spec. destruct (IdMap.find id p); ss. econs. refl. }
 3: { unfold IdMap.map. rewrite IdMap.mapi_mapi. f_equal. }
