@@ -89,6 +89,32 @@ Proof.
   econs; ss. econs. ii. unfold RMap.init. rewrite ? IdMap.gempty. econs.
 Qed.
 
+Lemma sim_rmap_weak_add
+      rmap armap reg vala avala
+      (SIM: sim_rmap_weak rmap armap)
+      (VAL: sim_val_weak vala avala):
+  sim_rmap_weak (RMap.add reg vala rmap) (RMap.add reg avala armap).
+Proof.
+  econs. ii. unfold RMap.add. rewrite ? IdMap.add_spec.
+  inv SIM. condtac; eauto.
+Qed.
+
+Lemma sim_rmap_weak_expr
+      rmap armap e
+      (SIM: sim_rmap_weak rmap armap):
+  sim_val_weak (sem_expr rmap e) (sem_expr armap e).
+Proof.
+  inv SIM. induction e; s.
+  - (* const *)
+    econs; ss.
+  - (* reg *)
+    specialize (RMAP reg). unfold RMap.find. inv RMAP; ss.
+  - (* op1 *)
+    inv IHe. econs; ss. congr.
+  - (* op2 *)
+    inv IHe1. inv IHe2. econs; ss; try congr.
+Qed.
+
 Inductive sim_event: forall (e1: Event.t (A:=unit)) (e2: Event.t (A:=unit)), Prop :=
 | sim_event_internal:
     sim_event Event.internal Event.internal
