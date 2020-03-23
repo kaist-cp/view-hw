@@ -16,17 +16,17 @@ Require Import PromisingArch.lib.HahnRelationsMore.
 Require Import PromisingArch.lib.Order.
 Require Import PromisingArch.lib.Time.
 Require Import PromisingArch.lib.Lang.
-Require Import PromisingArch.promising.Promising.
+Require Import PromisingArch.promising.TsoPromising2.
 Require Import PromisingArch.promising.CommonPromising.
-Require Import PromisingArch.promising.StateExecFacts.
-Require Import PromisingArch.axiomatic.Axiomatic.
-Require Import PromisingArch.axiomatic.CommonAxiomatic.
+Require Import PromisingArch.promising.TsoStateExecFacts.
+Require Import PromisingArch.axiomatic.TsoAxiomatic.
+Require Import PromisingArch.axiomatic.TsoCommonAxiomatic.
 
 Set Implicit Arguments.
 
 
 Inductive sim_trace (p: program) (mem: Memory.t) (tid: Id.t):
-  forall (tr: list (ExecUnit.t (A:=unit))) (atr: list AExecUnit.t)
+  forall (tr: list (ExecUnit.t)) (atr: list AExecUnit.t)
      (wl: list (nat -> option (Loc.t * Time.t))) (rl: list (nat -> option (Loc.t * Time.t)))
      (cov: list (nat -> Time.t)) (vext: list (nat -> Time.t)), Prop :=
 | sim_trace_init
@@ -79,7 +79,7 @@ Inductive sim_trace (p: program) (mem: Memory.t) (tid: Id.t):
     (VEXT: vext2 = match e with
                    | Event.read _ _ _ _ res =>
                      (fun eid => if Nat.eqb eid (ALocal.next_eid aeu1.(AExecUnit.local))
-                                then res.(ValA.annot).(View.ts)
+                                then bot (* CHECK *)
                                 else vext1 eid)
                    | Event.write _ _ vloc _ (ValA.mk _ 0 _) =>
                      (fun eid => if Nat.eqb eid (ALocal.next_eid aeu1.(AExecUnit.local))
@@ -93,7 +93,7 @@ Inductive sim_trace (p: program) (mem: Memory.t) (tid: Id.t):
 
 Definition sim_traces
            (p: program) (mem: Memory.t)
-           (trs: IdMap.t (list (ExecUnit.t (A:=unit))))
+           (trs: IdMap.t (list (ExecUnit.t)))
            (atrs: IdMap.t (list AExecUnit.t))
            (ws: IdMap.t (list (nat -> option (Loc.t * Time.t))))
            (rs: IdMap.t (list (nat -> option (Loc.t * Time.t))))
@@ -179,7 +179,7 @@ Ltac simplify :=
          end).
 
 Lemma promising_pf_sim_step
-      tid e (eu1 eu2:ExecUnit.t (A:=unit)) aeu1
+      tid e (eu1 eu2:ExecUnit.t) aeu1
       (STATE1: sim_state_weak eu1.(ExecUnit.state) aeu1.(AExecUnit.state))
       (LOCAL1: sim_local_weak eu1.(ExecUnit.local) aeu1.(AExecUnit.local))
       (STEP: ExecUnit.state_step0 tid e e eu1 eu2):
@@ -199,87 +199,43 @@ Proof.
     + econs; ss.
     + ss.
     + ss.
-    + inv LOCAL1; [econs 1|econs 2]; eauto.
   - eexists _, (AExecUnit.mk (State.mk _ _) _). splits; ss.
     + econs 2. ss.
     + econs; ss.
     + econs; ss.
     + econs; ss. eauto using sim_rmap_weak_add, sim_rmap_weak_expr.
-    + inv LOCAL1; [econs 1|econs 2]; eauto.
-  - inv STEP. ss.
+  - inv STEP.
     eexists _, (AExecUnit.mk (State.mk _ _) _). splits; ss.
     + econs 3; ss.
     + econs 2; ss.
     + econs; ss. eauto using sim_rmap_weak_add, sim_rmap_weak_expr.
     + econs; ss. eauto using sim_rmap_weak_add, sim_rmap_weak_expr.
-    + destruct ex0.
-      * econs 2; ss.
-        rewrite List.nth_error_app2, minus_diag; ss.
-        specialize (@sim_rmap_weak_expr rmap armap1 eloc RMAP). i.
-        inv H. rewrite VAL. refl.
-      * inv LOCAL1; [econs 1|econs 2]; eauto; ss.
-        rewrite List.nth_error_app1; eauto.
-        eapply List.nth_error_Some. ii. congr.
-  - inv STEP. ss.
+  - inv STEP.
     eexists _, (AExecUnit.mk (State.mk _ _) _). splits; ss.
     + econs 4; ss.
-    + econs 3; ss. inv WRITABLE. i. specialize (EX H). des.
-      inv LOCAL1; try congr.
-      rewrite TSX in LOCAL_EX. inv LOCAL_EX.
-      esplits; eauto. rewrite LABEL_EX; eauto.
+    + econs 3; ss.
     + econs; ss.
       * eauto using sim_rmap_weak_add, sim_rmap_weak_expr.
       * eauto using sim_rmap_weak_add, sim_rmap_weak_expr.
     + econs; ss. eauto using sim_rmap_weak_add, sim_rmap_weak_expr.
-    + destruct ex0; eauto.
-      inv LOCAL1; [econs 1|econs 2]; ss.
-      { eauto. }
-      { eauto. }
-      rewrite List.nth_error_app1; eauto.
-      eapply List.nth_error_Some. ii. congr.
-  - inv STEP. destruct ex0; ss.
+  - inv STEP.
     eexists _, (AExecUnit.mk (State.mk _ _) _). splits; ss.
-    + econs 4; ss.
+    + econs 5; ss. admit. (* sem_rmw armap *)
     + econs 4; ss.
     + econs; ss.
-      * eauto using sim_rmap_weak_add, sim_rmap_weak_expr.
-      * eauto using sim_rmap_weak_add, sim_rmap_weak_expr.
-    + econs; ss. eauto using sim_rmap_weak_add, sim_rmap_weak_expr.
-    + eauto.
+      eauto using sim_rmap_weak_add, sim_rmap_weak_expr.
+    + econs; ss.
   - inv STEP.
     eexists _, (AExecUnit.mk (State.mk _ _) _). splits; ss.
     + econs 7; ss.
     + econs 5; ss.
     + econs; ss.
     + econs; ss.
-    + inv LOCAL1; [econs 1|econs 2]; eauto; ss.
-      rewrite List.nth_error_app1; eauto.
-      eapply List.nth_error_Some. ii. congr.
-  - inv STEP.
-    eexists _, (AExecUnit.mk (State.mk _ _) _). splits; ss.
-    + econs 7; ss.
-    + econs 5; ss.
-    + econs; ss.
-    + econs; ss.
-    + inv LOCAL1; [econs 1|econs 2]; eauto; ss.
-      rewrite List.nth_error_app1; eauto.
-      eapply List.nth_error_Some. ii. congr.
-  - inv LC.
-    eexists _, (AExecUnit.mk (State.mk _ _) _). splits; ss.
-    + econs 8; ss.
-    + econs 6; ss.
-    + econs; ss.
-      exploit sim_rmap_weak_expr; eauto. intro X. inv X.
-      inv VAL. rewrite <- H0. ss.
-    + inv LOCAL1; [econs 1|econs 2]; eauto; ss.
-      rewrite List.nth_error_app1; eauto.
-      eapply List.nth_error_Some. ii. congr.
   - eexists _, (AExecUnit.mk (State.mk _ _) _). splits; ss.
     + econs 9. ss.
     + econs; ss.
     + ss.
     + ss.
-    + inv LOCAL1; [econs 1|econs 2]; eauto.
 Qed.
 
 Lemma promising_pf_sim_traces
