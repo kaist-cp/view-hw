@@ -135,6 +135,15 @@ Inductive sim_event: forall (e1: Event.t (A:=unit)) (e2: Event.t (A:=unit)), Pro
     (VVAL: sim_val_weak vval1 vval2)
     (RES: sim_val_weak res1 res2):
     sim_event (Event.write ex1 ord1 vloc1 vval1 res1) (Event.write ex2 ord2 vloc2 vval2 res2)
+| sim_event_rmw
+    ex1 ord1 vloc1 old1 new1
+    ex2 ord2 vloc2 old2 new2
+    (EX: ex1 = ex2)
+    (ORD: ord1 = ord2)
+    (VLOC: sim_val_weak vloc1 vloc2)
+    (OLD: sim_val_weak old1 old2)
+    (NEW: sim_val_weak new1 new2):
+    sim_event (Event.rmw ex1 ord1 vloc1 old1 new1) (Event.rmw ex2 ord2 vloc2 old2 new2)
 | sim_event_barrier
     b1 b2
     (BARRIER: b1 = b2):
