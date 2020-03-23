@@ -260,22 +260,6 @@ Proof.
   inv SIM. condtac; eauto.
 Qed.
 
-Lemma sim_rmap_expr
-      tid ex ob armap rmap e
-      (SIM: sim_rmap tid ex ob armap rmap):
-  sim_val tid ex ob (sem_expr armap e) (sem_expr rmap e).
-Proof.
-  inv SIM. induction e; s.
-  - (* const *)
-    econs; ss.
-  - (* reg *)
-    specialize (RMAP reg). unfold RMap.find. inv RMAP; ss.
-  - (* op1 *)
-    inv IHe. econs; ss. congr.
-  - (* op2 *)
-    inv IHe1. inv IHe2. econs; ss. congr.
-Qed.
-
 Inductive sim_local (tid:Id.t) (ex:Execution.t) (ob: list eidT) (alocal:ALocal.t) (local:Local.t): Prop := mk_sim_local {
   COH: forall loc,
         sim_view
@@ -773,13 +757,7 @@ Proof.
       { econs; ss. }
       econs 2; eauto.
     + generalize READ_STEP. intro X. inv X.
-      exploit sim_rmap_expr. instantiate (1 := rmap1). instantiate (1 := rmap1).
-      instantiate (1 := ob). instantiate (1 := ex). instantiate (1 := tid).
-      { econs. unfold IdMap.Forall2. i.
-        destruct (IdMap.find id rmap1); eauto.
-      }
-      intro Y. inv Y.
-      instantiate (1 := eloc) in VAL. rewrite READ in MSG0. inv MSG0.
+      rewrite READ in MSG0. inv MSG0.
       econs; ss. econs; ss.
       * (* sim_local coh *)
         i. rewrite List.app_length, Nat.add_1_r.
