@@ -161,20 +161,20 @@ Section Local.
       (EVENT: event = Event.internal)
       (LC: lc2 = lc1)
   | step_read
-      ex ord vloc res ts
-      (EVENT: event = Event.read ex false ord vloc res)
+      vloc res ts
+      (EVENT: event = Event.read false false OrdR.pln vloc res)
       (STEP: read vloc res ts lc1 mem lc2)
   | step_fulfill
-      ex ord vloc vval res ts view_pre
-      (EVENT: event = Event.write ex ord vloc vval res)
+      vloc vval res ts view_pre
+      (EVENT: event = Event.write false OrdW.pln vloc vval res)
       (STEP: fulfill vloc vval res ts tid view_pre lc1 mem lc2)
   | step_write_failure
       ex ord vloc vval res
       (EVENT: event = Event.write ex ord vloc vval res)
       (STEP: write_failure res lc1 lc2)
   | step_rmw
-      ordr ordw vloc vold vnew ts view_pre
-      (EVENT: event = Event.rmw ordr ordw vloc vold vnew)
+      vloc vold vnew ts view_pre
+      (EVENT: event = Event.rmw OrdR.pln OrdW.pln vloc vold vnew)
       (STEP: rmw vloc vold vnew ts tid view_pre lc1 mem lc2)
   | step_dmb
       rr rw wr ww

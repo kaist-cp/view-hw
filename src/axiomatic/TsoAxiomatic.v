@@ -259,14 +259,14 @@ Module ALocal.
                mk
                  (alocal1.(labels) ++ [Label.read vloc.(ValA.val) res]))
   | step_write
-      ord vloc vval
-      (EVENT: event = Event.write false ord vloc vval (ValA.mk _ 0 tt))
+      vloc vval
+      (EVENT: event = Event.write false OrdW.pln vloc vval (ValA.mk _ 0 tt))
       (ALOCAL: alocal2 =
                mk
                  (alocal1.(labels) ++ [Label.write vloc.(ValA.val) vval.(ValA.val)]))
   | step_update
-      ordr ordw vloc voldv vnewv
-      (EVENT: event = Event.rmw ordr ordw vloc voldv vnewv)
+      vloc voldv vnewv
+      (EVENT: event = Event.rmw OrdR.pln OrdW.pln vloc voldv vnewv)
       (ALOCAL: alocal2 =
                mk
                  (alocal1.(labels) ++ [Label.update vloc.(ValA.val) voldv.(ValA.val) vnewv.(ValA.val)]))
