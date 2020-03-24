@@ -170,16 +170,11 @@ Module Label.
     s. destruct (equiv_dec loc loc); ss. exfalso. apply c. ss.
   Qed.
 
-  Lemma update_is_reading loc vold vnew:
-    is_reading loc (update loc vold vnew).
+  Lemma write_is_writing_val loc val:
+    is_writing_val loc val (write loc val).
   Proof.
-    s. destruct (equiv_dec loc loc); ss. exfalso. apply c. ss.
-  Qed.
-
-  Lemma update_is_writing loc vold vnew:
-    is_writing loc (update loc vold vnew).
-  Proof.
-    s. destruct (equiv_dec loc loc); ss. exfalso. apply c. ss.
+    s. destruct (equiv_dec loc loc); destruct (equiv_dec val val); ss; exfalso.
+    all: apply c; ss.
   Qed.
 
   Lemma writing_exists_val
@@ -199,6 +194,18 @@ Module Label.
     is_writing loc l.
   Proof.
     destruct l; ss; destruct (equiv_dec loc0 loc); ss.
+  Qed.
+
+  Lemma update_is_reading loc vold vnew:
+    is_reading loc (update loc vold vnew).
+  Proof.
+    s. destruct (equiv_dec loc loc); ss. exfalso. apply c. ss.
+  Qed.
+
+  Lemma update_is_writing loc vold vnew:
+    is_writing loc (update loc vold vnew).
+  Proof.
+    s. destruct (equiv_dec loc loc); ss. exfalso. apply c. ss.
   Qed.
 
   Lemma accessing_is_access
@@ -229,7 +236,7 @@ Module Label.
 
   Hint Resolve
        reading_is_read reading_is_accessing read_is_reading read_is_reading_val reading_exists_val reading_val_is_reading
-       writing_is_write writing_is_accessing write_is_writing writing_exists_val writing_val_is_writing
+       writing_is_write writing_is_accessing write_is_writing write_is_writing_val writing_exists_val writing_val_is_writing
        update_is_reading update_is_writing
        accessing_is_access read_is_accessing write_is_accessing update_is_accessing
     : tso.
