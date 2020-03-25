@@ -110,7 +110,7 @@ Section Local.
       loc old new old_ts
       view_old
       (LOC: loc = vloc.(ValA.val))
-      (LATEST: Memory.latest loc old_ts ts mem1)
+      (LATEST: Memory.latest loc old_ts (pred ts) mem1)
       (OLD_MSG: Memory.read loc old_ts mem1 = Some old)
       (OLD: vold.(ValA.val) = old)
       (VIEW_OLD: view_old = View.mk old_ts bot)

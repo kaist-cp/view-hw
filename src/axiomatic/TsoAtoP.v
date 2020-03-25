@@ -1033,7 +1033,7 @@ Proof.
               + econs; eauto with tso.
           }
           inv SIM_EXT1.
-          { rewrite VIEW0 in TS2. inv TS2. }
+          { inv VIEW0. }
           unfold ALocal.next_eid in VIEW_OF_EID. rewrite VIEW_OF_EID in VIEW. inv VIEW.
           unfold le in VIEW0. lia.
         }
@@ -1070,7 +1070,7 @@ Proof.
             - econs; eauto with tso.
           }
           inv SIM_EXT1.
-          { rewrite VIEW2 in TS2. inv TS2. }
+          { inv VIEW2. }
           unfold ALocal.next_eid in VIEW_OF_EID. rewrite VIEW_OF_EID in VIEW. inv VIEW.
           unfold le in VIEW2. lia.
         }
@@ -1106,7 +1106,7 @@ Proof.
             - econs; eauto with tso.
           }
           inv SIM_EXT1.
-          { rewrite VIEW2 in TS2. inv TS2. }
+          { inv VIEW2. }
           unfold ALocal.next_eid in VIEW_OF_EID. rewrite VIEW_OF_EID in VIEW. inv VIEW.
           unfold le in VIEW2. lia.
         }

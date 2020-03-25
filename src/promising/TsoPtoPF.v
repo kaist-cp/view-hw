@@ -87,7 +87,7 @@ Proof.
           econs; eauto; ss. instantiate (1 := old_ts).
           - ii. eapply LATEST; eauto.
             rewrite nth_error_app1 in MSG0; ss.
-            eapply lt_le_trans; eauto.
+            eapply lt_le_trans; eauto. lia.
           - apply Memory.read_mon. ss.
           - econs; eauto.
           - rewrite <- MSG. unfold Memory.get_msg. destruct ts; ss.
@@ -134,7 +134,9 @@ Proof.
             contradict n.
             eapply Time.lt_le_trans; [apply TS2|].
             inv WF. exploit WF0; try exact FIND; eauto. i. inv x. inv LOCAL. ss.
-            viewtac.
+            etrans. instantiate (1 := ts).
+            + lia.
+            + viewtac.
           - apply Memory.read_mon. ss.
           - econs; ss.
           - apply Memory.get_msg_mon. ss.
