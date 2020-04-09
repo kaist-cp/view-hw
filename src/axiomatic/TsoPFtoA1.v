@@ -622,7 +622,7 @@ Proof.
           rewrite MSG. ss. des_ifs.
     - i. unfold ALocal.next_eid in *. des_ifs.
       + apply Nat.eqb_eq in Heq. subst. rewrite fun_add_spec. des_ifs; [|congr]. inv e.
-        destruct ts; ss. esplits; eauto with tso.
+        destruct ts; ss. esplits; eauto using Label.write_is_writing_val.
         * unfold Memory.get_msg in MSG. ss. rewrite MSG. des_ifs.
           unfold Time.lt, Time.bot. lia.
         * unfold Memory.get_msg in MSG. ss. rewrite MSG. des_ifs.
