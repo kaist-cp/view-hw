@@ -1005,11 +1005,16 @@ Proof.
       { econs; ss. instantiate (1 := vnewv). instantiate (1 := voldv). ss. }
       econs 4; ss.
       econs; try refl.
-      all: cycle 3.
+      all: cycle 4.
       { eauto. }
       { rewrite SIM_LOCAL.(PROMISES). esplits; eauto with tso. }
+      { instantiate (1 := old_ts).
+        admit.
+        (* Need a lemma
+        "update vold to vnew ->
+         uninit vold \/ write vold label \/ update vold label" *)
+      }
       { (* latest old_ts *)
-        instantiate (1 := old_ts).
         ii.
         exploit in_mem_of_ex; swap 1 2; eauto.
         { eapply Permutation_NoDup; [by symmetry; eauto|].
