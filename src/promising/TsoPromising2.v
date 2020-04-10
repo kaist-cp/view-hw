@@ -111,7 +111,7 @@ Section Local.
       view_old
       (LOC: loc = vloc.(ValA.val))
       (OLD_RANGE: old_ts < ts)
-      (LATEST: Memory.latest loc old_ts (pred ts) mem1)
+      (EX: Memory.exclusive tid loc old_ts ts mem1)
       (OLD_MSG: Memory.read loc old_ts mem1 = Some old)
       (OLD: vold.(ValA.val) = old)
       (VIEW_OLD: view_old = View.mk old_ts bot)
@@ -208,7 +208,7 @@ Section Local.
         apply Memory.ge_latest. etrans; eauto.
   Qed.
 
-  Lemma update_spec
+  (* Lemma update_spec
         tid view_pre mem vloc vold vnew ts lc1 lc2
         (WF: Local.wf tid mem lc1)
         (RMW: Local.rmw vloc vold vnew ts tid view_pre lc1 mem lc2):
@@ -233,7 +233,7 @@ Section Local.
       eapply le_antisym; ss.
       + eapply Memory.latest_ts_read_le; eauto. lia.
       + eapply Memory.latest_latest_ts. ss.
-  Qed.
+  Qed. *)
 
   Lemma interference_wf
         tid (lc:t) mem mem_interference

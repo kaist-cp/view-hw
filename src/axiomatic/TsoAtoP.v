@@ -1028,12 +1028,12 @@ Proof.
           { des.
             - eapply view_of_eid_ob_write; eauto.
               + left. left. left. right. right. econs.
-                * econs; eauto. econs; eauto with tso.
+                * econs; eauto. econs; eauto with tso. rewrite H. eauto with tso.
                 * econs; eauto with tso. econs; eauto with tso.
               + econs; eauto with tso.
             - eapply view_of_eid_ob_write; eauto.
               + left. left. left. right. right. econs.
-                * econs; eauto. econs; eauto with tso.
+                * econs; eauto. econs; eauto with tso. rewrite H. eauto with tso.
                 * econs; eauto with tso. econs; eauto with tso.
               + econs; eauto with tso.
           }
