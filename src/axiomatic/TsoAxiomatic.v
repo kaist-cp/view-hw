@@ -241,11 +241,22 @@ Module Label.
     s. destruct (equiv_dec loc loc); ss. exfalso. apply c. ss.
   Qed.
 
+  Lemma writing_same_loc loc1 loc2 l
+    (W1: is_writing loc1 l)
+    (W2: is_writing loc2 l):
+    loc1 = loc2.
+  Proof.
+    destruct l; ss.
+    - destruct (equiv_dec loc loc1); ss. inv e. destruct (equiv_dec loc1 loc2); ss.
+    - destruct (equiv_dec loc loc1); ss. inv e. destruct (equiv_dec loc1 loc2); ss.
+  Qed.
+
   Hint Resolve
        reading_is_read reading_is_accessing read_is_reading read_is_reading_val reading_exists_val reading_val_is_reading
        writing_is_write writing_is_accessing write_is_writing write_is_writing_val writing_exists_val writing_val_is_writing
        update_is_reading update_is_writing update_is_writing_val
        accessing_is_access read_is_accessing write_is_accessing update_is_accessing
+       writing_same_loc
     : tso.
 End Label.
 
