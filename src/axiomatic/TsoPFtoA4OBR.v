@@ -17,13 +17,13 @@ Require Import PromisingArch.lib.HahnRelationsMore.
 Require Import PromisingArch.lib.Order.
 Require Import PromisingArch.lib.Time.
 Require Import PromisingArch.lib.Lang.
-Require Import PromisingArch.promising.Promising.
-Require Import PromisingArch.promising.StateExecFacts.
-Require Import PromisingArch.axiomatic.Axiomatic.
-Require Import PromisingArch.axiomatic.CommonAxiomatic.
-Require Import PromisingArch.axiomatic.PFtoA1.
-Require Import PromisingArch.axiomatic.PFtoA2.
-Require Import PromisingArch.axiomatic.PFtoA3.
+Require Import PromisingArch.promising.TsoPromising2.
+Require Import PromisingArch.promising.TsoStateExecFacts.
+Require Import PromisingArch.axiomatic.TsoAxiomatic.
+Require Import PromisingArch.axiomatic.TsoCommonAxiomatic.
+Require Import PromisingArch.axiomatic.TsoPFtoA1.
+Require Import PromisingArch.axiomatic.TsoPFtoA2.
+Require Import PromisingArch.axiomatic.TsoPFtoA3.
 
 Set Implicit Arguments.
 
@@ -36,7 +36,7 @@ Lemma sim_traces_sim_th'_ob_read
       (PRE: Valid.pre_ex p ex)
       (CO: ex.(Execution.co) = co_gen ws)
       (RF: ex.(Execution.rf) = rf_gen ws rs)
-      (INTERNAL: acyclic (Execution.internal ex))
+      (* (INTERNAL: acyclic (Execution.internal ex)) *)
       (CO1: Valid.co1 ex)
       (CO2: Valid.co2 ex)
       (RF1: Valid.rf1 ex)
@@ -81,7 +81,7 @@ Proof.
   ii.
   destruct (le_lt_dec (length (ALocal.labels (AExecUnit.local aeu1))) eid2); cycle 1.
   { eapply L; eauto. }
-  inv EID2. destruct l0; ss.
+  inv EID2.
   destruct eu1 as [st1 lc1 mem1].
   destruct eu2 as [st2 lc2 mem2].
   destruct aeu1 as [ast1 alc1].
@@ -92,239 +92,174 @@ Proof.
   all: assert (EID2: eid2 = length (ALocal.labels alc1)) by (clear - LABEL l; lia); subst.
   all: exploit LABELS; eauto; ss.
   all: try by clear; rewrite List.app_length; s; lia.
+  all: destruct l0; ss.
   all: intro NTH; apply nth_error_snoc_inv_last in NTH; inv NTH.
-  rewrite EU, AEU, WL, RL, COV, VEXT in SIMTR.
-  exploit sim_trace_sim_th; try exact SIMTR; eauto. intro L'.
-  exploit L'.(RPROP1); ss.
-  { apply nth_error_last. apply Nat.eqb_eq. ss. }
-  unfold ALocal.next_eid in *. condtac; cycle 1.
-  { apply Nat.eqb_neq in X. congr. }
-  i. des. inv x0.
-  exploit L'.(RPROP2); eauto.
-  { rewrite X. eauto. }
-  s. rewrite X. i. des.
-  apply nth_error_snoc_inv_last in x3. inv x3.
-  clear x4 H3 tid'0 x2 x0.
-  rewrite EX2.(XVEXT); s; cycle 1.
-  { rewrite List.app_length. s. clear. lia. }
-  rewrite X.
-  inv STEP0. ss. subst. inv LOCAL0; inv EVENT.
-  exploit sim_trace_sim_th; try exact TRACE; eauto. intro SIM_TH.
-  destruct SIM_TH.(EU_WF).
-  specialize (Local.read_spec LOCAL0 STEP0). intro READ_SPEC. guardH READ_SPEC.
-  clear STATE2 LOCAL0. inv STEP0. ss.
-  exploit EX2.(LABELS); eauto; ss.
-  { rewrite List.app_length. s. clear. lia. }
-  i.
-  move AOB at bottom. unfold ob' in AOB. des_union.
-  - (* rfe *)
-    assert (v_gen vexts eid1 = ts).
-    { inv H. destruct eid1 as [tid1 eid1]. inv H2. ss.
-      generalize H1. intro Y. rewrite RF in Y. inv Y. ss.
-      erewrite EX2.(XR) in R; eauto; cycle 1.
-      { s. rewrite List.app_length. s. clear. lia. }
-      destruct (length (ALocal.labels alc1) =? length (ALocal.labels alc1)); ss.
-      move READ_SPEC at bottom. rewrite fun_add_spec in *.
-      destruct (equiv_dec (ValA.val vloc) (ValA.val vloc)); cycle 1.
-      { exfalso. apply c. ss. }
-      generalize SIM_TH.(MEM). s. i. subst.
-      unguardH READ_SPEC. des. rewrite <- COH0 in R. inv R.
-      generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
-      exploit sim_trace_last; try exact REL0. i. des. simplify.
-      exploit sim_trace_sim_th; try exact REL0; eauto. intro L1.
-      exploit L1.(WPROP3); eauto. i. des.
-      unfold v_gen. ss. rewrite <- H7. auto.
+  { (* read *)
+    rewrite EU, AEU, WL, RL, COV, VEXT in SIMTR.
+    exploit sim_trace_sim_th; try exact SIMTR; eauto. intro L'.
+    exploit L'.(RPROP1); ss.
+    { split.
+      - apply nth_error_last. apply Nat.eqb_eq. ss.
+      - eauto with tso.
     }
-    subst.
-    rewrite <- join_r. unfold FwdItem.read_view. condtac; ss.
-    destruct (equiv_dec (FwdItem.ts (Local.fwdbank lc1 (ValA.val vloc))) (v_gen vexts eid1)); ss. inv e.
-    generalize (L.(LC).(FWDBANK) (ValA.val vloc)). s. i. des.
-    + rewrite <- TS in H2.
-      destruct eid as [tid2 eid2], eid1 as [tid1 eid1].
-      assert (tid1 = tid2).
-      { inv H. exploit RF2; eauto. i. des.
-        unfold Execution.label in WRITE0. ss.
-        rewrite PRE.(Valid.LABELS) in WRITE0.
-        rewrite IdMap.map_spec in WRITE0.
-        destruct (IdMap.find tid1 (Valid.aeus PRE)) eqn:FIND1; ss.
-        generalize (ATR tid1). intro ATR1. inv ATR1; try congr. des. simplify.
+    unfold ALocal.next_eid in *. condtac; cycle 1.
+    { apply Nat.eqb_neq in X. congr. }
+    i. des. inv x0.
+    exploit L'.(RPROP2); eauto.
+    { rewrite X. eauto. }
+    s. rewrite X. i. des.
+    apply nth_error_snoc_inv_last in x3. inv x3. inv x4.
+    destruct (equiv_dec (ValA.val (sem_expr rmap eloc)) (ValA.val vloc1)); ss. clear e.
+    destruct (equiv_dec val val0); ss. inv e.
+    clear x5 H1 tid'0 x2 x0.
+    rewrite EX2.(XVEXT); s; cycle 1.
+    { rewrite List.app_length. s. clear. lia. }
+    rewrite X.
+    inv STEP0. ss. subst. inv LOCAL0; inv EVENT.
+    exploit sim_trace_sim_th; try exact TRACE; eauto. intro SIM_TH.
+    destruct SIM_TH.(EU_WF).
+    specialize (Local.read_spec LOCAL0 STEP0). intro READ_SPEC. guardH READ_SPEC.
+    clear LOCAL0. inv STEP0. ss.
+    exploit EX2.(LABELS); eauto; ss.
+    { rewrite List.app_length. s. clear. lia. }
+    i.
+    move AOB at bottom. unfold ob' in AOB. des_union.
+    - (* rfe *)
+      rename H1 into H.
+      assert (v_gen vexts eid1 = ts).
+      { inv H. destruct eid1 as [tid1 eid1]. inv H2. ss.
+        generalize H1. intro Y. rewrite RF in Y. inv Y. ss.
+        erewrite EX2.(XR) in R; eauto; cycle 1.
+        { s. rewrite List.app_length. s. clear. lia. }
+        destruct (length (ALocal.labels alc1) =? length (ALocal.labels alc1)); ss.
+        move READ_SPEC at bottom. rewrite fun_add_spec in *.
+        destruct (equiv_dec (ValA.val vloc) (ValA.val vloc)); cycle 1.
+        { exfalso. apply c. ss. }
+        generalize SIM_TH.(MEM). s. i. subst.
+        unguardH READ_SPEC. des. rewrite <- COH0 in R. inv R.
         generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
         exploit sim_trace_last; try exact REL0. i. des. simplify.
         exploit sim_trace_sim_th; try exact REL0; eauto. intro L1.
-        inv WRITE. inv WRITE1. destruct l0; ss.
-        unfold Execution.label in EID0. ss.
-        rewrite PRE.(Valid.LABELS) in EID0.
-        rewrite IdMap.map_spec in EID0.
-        destruct (IdMap.find tid2 (Valid.aeus PRE)) eqn:FIND2; ss.
-        generalize (ATR tid2). intro ATR2. inv ATR2; try congr. des. simplify.
-        generalize (SIM tid2). intro SIM2. inv SIM2; simplify.
-        exploit sim_trace_last; try exact REL1. i. des. simplify.
-        exploit sim_trace_sim_th; try exact REL1; eauto. intro L2.
-        move H2 at bottom.
-        unfold v_gen in H2. ss.
-        rewrite <- H10, <- H16 in H2.
-        exploit L1.(WPROP2); eauto. i. des.
-        exploit L2.(WPROP2); eauto. i. des.
         exploit L1.(WPROP3); eauto. i. des.
-        exploit L2.(WPROP3); eauto. i. des.
-        rewrite x8, x14 in H2. inv H2.
-        rewrite H in x17. rewrite x11 in x17. inv x17. ss. }
+        unfold v_gen. ss. rewrite <- H7. auto.
+      }
       subst.
-      inv WRITE. inv PO. ss. subst. inv H. inv H3. ss.
-    + rewrite H1. refl.
-  - (* dob *)
-    unfold Execution.dob in H. rewrite ? seq_assoc in *. des_union.
-    + inv H1. des. inv H1; cycle 1.
-      { generalize L.(LC).(FWDBANK). intro SIM_FWD. ss.
-        specialize (SIM_FWD (sem_expr rmap eloc).(ValA.val)). des; cycle 1.
-        - destruct x. inv H2. exploit RF2; eauto. i. des.
-          exfalso. apply (SIM_FWD0 (t, n0)).
-          econs; try refl. econs. split.
-          + rewrite READ in EID. inv EID. econs; eauto.
-            econs; eauto. ss. unfold equiv_dec.
-            unfold Z_eqdec. unfold proj_sumbool. des_ifs.
-          + eapply Valid.rfi_is_po; eauto. econs; eauto.
-        - inv WRITE.
-          assert (x = eid).
-          { inv H2. destruct x. inv H3. ss. subst.
-            destruct eid. generalize PO. intro Y. inv Y. ss. subst.
-            generalize (Nat.lt_trichotomy n0 n1). i. des.
-            - exfalso. eapply INTERNAL. econs 2.
-              + econs 1. left. left. left. econs; eauto.
-                inv WRITE0. destruct l0; ss.
-                destruct (equiv_dec loc (ValA.val (sem_expr rmap eloc))) eqn:Heq; ss.
-                rewrite -> e in *. econs; eauto.
-                econs; unfold Label.is_accessing; eauto.
-                * instantiate (1 := ValA.val (sem_expr rmap eloc)).
-                  destruct (equiv_dec (ValA.val (sem_expr rmap eloc)) (ValA.val (sem_expr rmap eloc))) eqn:Heq1; ss.
-                * destruct (equiv_dec (ValA.val (sem_expr rmap eloc)) (ValA.val (sem_expr rmap eloc))) eqn:Heq1; ss.
-              + econs 1. left. left. right. econs. econs. split.
-                * apply H1.
-                * eapply Valid.po_loc_write_is_co; eauto.
-                  exploit RF2; eauto. i. des.
-                  rewrite EID in READ. inv READ. econs; eauto. ss.
-                  destruct (equiv_dec (ValA.val (sem_expr rmap eloc)) (ValA.val (sem_expr rmap eloc))); ss.
-                  exfalso. apply c. ss.
-            - subst. ss.
-            - exploit (NWRITE (tid, n0)); eauto.
-              { eapply Valid.rfi_is_po; eauto. econs; eauto. }
-              i. exploit RF2; eauto. i. des.
-              rewrite EID in READ. inv READ. exfalso.
-              inv x2. apply LABEL1. unfold Execution.label in WRITE, EID0. ss.
-              rewrite WRITE in EID0. inv EID0. ss.
-              destruct (equiv_dec (ValA.val (sem_expr rmap eloc)) (ValA.val (sem_expr rmap eloc))); ss.
-              exfalso. apply c. ss. }
-          subst. rewrite <- join_r. exploit VIEW; eauto. i.
-          rewrite x. rewrite H0 in *. eapply Local.fwd_view_le; eauto.
-          apply SIM_TH.(EU_WF).
-      }
-      inv H; cycle 1.
-      { exploit Valid.data_label; eauto. i. des. inv EID2. destruct l0; ss. congr. }
-      inv EID. rewrite <- join_l, <- join_l.
-      destruct eid1 as [tid1 eid1]. exploit Valid.addr_is_po; eauto. intro Y. inv Y. ss. subst.
-      exploit EX2.(ADDR); eauto; ss.
-      { rewrite List.app_length. s. clear. lia. }
-      intro Y. inv Y.
-      { exploit sim_trace_sim_th; try exact TRACE; eauto. intro M.
-        destruct M.(AEU_WF). ss. exploit ADDR_LIMIT; eauto. clear. lia.
-      }
-      inv H.
-      move STATE0 at bottom. inv STATE0.
-      inv STATE1. ss. inv STMTS. destruct L.(ST). ss.
-      exploit sim_rmap_expr; eauto. instantiate (1 := eloc). i.
-      inv x2. specialize (VIEW (tid, eid1)). ss.
-      exploit VIEW; ss.
-    + inv H1. des. inv H1.
-      { inv H2. inv H3. destruct l0; ss. congr. }
-      inv H2. des. inv H2.
-      rewrite L.(LC).(VRN); ss.
-      * rewrite <- join_l, <- join_r, <- join_l. ss.
-      * econs; eauto. unfold sim_local_vrn. left. right.
-        rewrite ? seq_assoc in H1. econs; eauto.
-  - (* aob *)
-    unfold Execution.aob in H1. rewrite ? seq_assoc in *.
-    inv H1. des. inv H.  des. inv H2. inv H1. guardH H2.
-    assert (v_gen vexts x2 = ts).
-    { inv H3. destruct x2 as [tid1 eid1]. inv H1. ss.
-      generalize H. intro Y. rewrite RF in Y. inv Y. ss.
-      erewrite EX2.(XR) in R; eauto; cycle 1.
-      { s. rewrite List.app_length. s. clear. lia. }
-      destruct (length (ALocal.labels alc1) =? length (ALocal.labels alc1)); ss.
-      move READ_SPEC at bottom. rewrite fun_add_spec in *.
-      destruct (equiv_dec (ValA.val vloc) (ValA.val vloc)); cycle 1.
-      { exfalso. apply c. ss. }
-      generalize SIM_TH.(MEM). s. i. subst.
-      unguardH READ_SPEC. des. rewrite <- COH0 in R. inv R.
-      generalize (SIM tid). intro SIM1. inv SIM1; simplify.
-      exploit sim_trace_last; try exact REL0. i. des. simplify.
-      exploit sim_trace_sim_th; try exact REL0; eauto. intro L1.
-      exploit L1.(WPROP3); eauto. i. des.
-      unfold v_gen. ss. rewrite FIND_VEXTL. auto. }
-    subst.
-    rewrite <- join_r. unfold FwdItem.read_view. condtac; ss.
-    destruct (equiv_dec (FwdItem.ts (Local.fwdbank lc1 (ValA.val vloc))) (v_gen vexts x2)); ss. inv e.
-    generalize (L.(LC).(FWDBANK) (ValA.val vloc)). s. i. des.
-    + apply Bool.negb_true_iff, Bool.andb_false_iff in X0. des.
-      * assert (eid = x2).
-        { inv WRITE. inv H3. destruct x2. inv H5. ss. subst.
-          destruct eid. generalize PO. intro Y. inv Y. ss. subst.
-          generalize (Nat.lt_trichotomy n0 n1). i. des.
-          - exfalso. eapply INTERNAL. econs 2.
-            + econs 1. left. left. left. econs; eauto.
-              inv WRITE0. destruct l0; ss.
-              destruct (equiv_dec loc (ValA.val vloc)) eqn:Heq; ss.
-              rewrite -> e in *. econs; eauto.
-              econs; unfold Label.is_accessing; eauto.
-              * instantiate (1 := ValA.val vloc).
-                destruct (equiv_dec (ValA.val vloc) (ValA.val vloc)) eqn:Heq1; ss.
-              * rewrite <- H0.
-                destruct (equiv_dec (ValA.val vloc) (ValA.val vloc)) eqn:Heq1; ss.
-            + econs 1. left. left. right. econs. econs. split.
-              * apply H.
-              * eapply Valid.po_loc_write_is_co; eauto.
-                exploit RF2; eauto. i. des.
-                rewrite EID in READ. inv READ. econs; eauto. ss.
-                rewrite <- H0.
-                destruct (equiv_dec (ValA.val vloc) (ValA.val vloc)); ss.
-                exfalso. apply c. ss.
-          - subst. ss.
-          - exploit (NWRITE (tid, n0)); eauto.
-            { eapply Valid.rfi_is_po; eauto. econs; eauto. }
-            i. exploit RF2; eauto. i. des.
-            rewrite EID in READ. inv READ. exfalso.
-            inv x2. apply LABEL1. unfold Execution.label in WRITE, EID0. ss.
-            rewrite WRITE in EID0. inv EID0. ss. rewrite <- H0.
-            destruct (equiv_dec (ValA.val vloc) (ValA.val vloc)); ss.
-            exfalso. apply c. ss. }
-        subst. exploit EX0; eauto. congr.
-      * unguardH H2. des.
-        { destruct (equiv_dec arch riscv); ss. }
-        { inv H2. destruct l0; ss. rewrite EID in EID0. inv EID0.
-          rewrite LABEL1 in X0. rewrite Bool.orb_comm in X0. ss.
+      admit.
+
+      (* inv H. inv H2. ss.
+      rewrite <- join_r. unfold FwdItem.read_view. condtac; ss.
+      destruct (equiv_dec (FwdItem.ts (Local.fwdbank lc1 (ValA.val vloc))) (v_gen vexts eid1)); ss. inv e.
+      generalize (L.(LC).(FWDBANK) (ValA.val vloc)). s. i. des.
+      + rewrite <- TS in H2.
+        destruct eid as [tid2 eid2], eid1 as [tid1 eid1].
+        assert (tid1 = tid2).
+        { inv H. exploit RF2; eauto. i. des.
+          unfold Execution.label in WRITE0. ss.
+          rewrite PRE.(Valid.LABELS) in WRITE0.
+          rewrite IdMap.map_spec in WRITE0.
+          destruct (IdMap.find tid1 (Valid.aeus PRE)) eqn:FIND1; ss.
+          generalize (ATR tid1). intro ATR1. inv ATR1; try congr. des. simplify.
+          generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
+          exploit sim_trace_last; try exact REL0. i. des. simplify.
+          exploit sim_trace_sim_th; try exact REL0; eauto. intro L1.
+          inv WRITE. inv WRITE1. destruct l0; ss.
+          unfold Execution.label in EID0. ss.
+          rewrite PRE.(Valid.LABELS) in EID0.
+          rewrite IdMap.map_spec in EID0.
+          destruct (IdMap.find tid2 (Valid.aeus PRE)) eqn:FIND2; ss.
+          generalize (ATR tid2). intro ATR2. inv ATR2; try congr. des. simplify.
+          generalize (SIM tid2). intro SIM2. inv SIM2; simplify.
+          exploit sim_trace_last; try exact REL1. i. des. simplify.
+          exploit sim_trace_sim_th; try exact REL1; eauto. intro L2.
+          move H2 at bottom.
+          unfold v_gen in H2. ss.
+          rewrite <- H10, <- H16 in H2.
+          exploit L1.(WPROP2); eauto. i. des.
+          exploit L2.(WPROP2); eauto. i. des.
+          exploit L1.(WPROP3); eauto. i. des.
+          exploit L2.(WPROP3); eauto. i. des.
+          rewrite x8, x14 in H2. inv H2.
+          rewrite H in x17. rewrite x11 in x17. inv x17. ss. }
+        subst.
+        inv WRITE. inv PO. ss. subst. inv H. inv H3. ss.
+      + rewrite H1. refl. *)
+    - (* dob *)
+      rename H1 into H.
+      unfold Execution.dob in H. rewrite ? seq_assoc in *. des_union.
+      + admit.
+
+        (* inv H1. des. inv H1; cycle 1.
+        { generalize L.(LC).(FWDBANK). intro SIM_FWD. ss.
+          specialize (SIM_FWD (sem_expr rmap eloc).(ValA.val)). des; cycle 1.
+          - destruct x. inv H2. exploit RF2; eauto. i. des.
+            exfalso. apply (SIM_FWD0 (t, n0)).
+            econs; try refl. econs. split.
+            + rewrite READ in EID. inv EID. econs; eauto.
+              econs; eauto. ss. unfold equiv_dec.
+              unfold Z_eqdec. unfold proj_sumbool. des_ifs.
+            + eapply Valid.rfi_is_po; eauto. econs; eauto.
+          - inv WRITE.
+            assert (x = eid).
+            { inv H2. destruct x. inv H3. ss. subst.
+              destruct eid. generalize PO. intro Y. inv Y. ss. subst.
+              generalize (Nat.lt_trichotomy n0 n1). i. des.
+              - exfalso. eapply INTERNAL. econs 2.
+                + econs 1. left. left. left. econs; eauto.
+                  inv WRITE0. destruct l0; ss.
+                  destruct (equiv_dec loc (ValA.val (sem_expr rmap eloc))) eqn:Heq; ss.
+                  rewrite -> e in *. econs; eauto.
+                  econs; unfold Label.is_accessing; eauto.
+                  * instantiate (1 := ValA.val (sem_expr rmap eloc)).
+                    destruct (equiv_dec (ValA.val (sem_expr rmap eloc)) (ValA.val (sem_expr rmap eloc))) eqn:Heq1; ss.
+                  * destruct (equiv_dec (ValA.val (sem_expr rmap eloc)) (ValA.val (sem_expr rmap eloc))) eqn:Heq1; ss.
+                + econs 1. left. left. right. econs. econs. split.
+                  * apply H1.
+                  * eapply Valid.po_loc_write_is_co; eauto.
+                    exploit RF2; eauto. i. des.
+                    rewrite EID in READ. inv READ. econs; eauto. ss.
+                    destruct (equiv_dec (ValA.val (sem_expr rmap eloc)) (ValA.val (sem_expr rmap eloc))); ss.
+                    exfalso. apply c. ss.
+              - subst. ss.
+              - exploit (NWRITE (tid, n0)); eauto.
+                { eapply Valid.rfi_is_po; eauto. econs; eauto. }
+                i. exploit RF2; eauto. i. des.
+                rewrite EID in READ. inv READ. exfalso.
+                inv x2. apply LABEL1. unfold Execution.label in WRITE, EID0. ss.
+                rewrite WRITE in EID0. inv EID0. ss.
+                destruct (equiv_dec (ValA.val (sem_expr rmap eloc)) (ValA.val (sem_expr rmap eloc))); ss.
+                exfalso. apply c. ss. }
+            subst. rewrite <- join_r. exploit VIEW; eauto. i.
+            rewrite x. rewrite H0 in *. eapply Local.fwd_view_le; eauto.
+            apply SIM_TH.(EU_WF).
         }
-    + rewrite H. refl.
-  - (* bob *)
-    unfold Execution.bob in H. rewrite ? seq_assoc in *. des_union.
-    + rewrite L.(LC).(VRN); ss.
-      * rewrite <- join_l, <- join_r, <- join_l. ss.
-      * econs; eauto. unfold sim_local_vrn. left. left. left.
-        rewrite ? seq_assoc. inv H1. des. inv H1. ss.
-    + inv H1. des. inv H1. inv H3. destruct l0; ss. congr.
-    + rewrite L.(LC).(VRN); ss.
-      * rewrite <- join_l, <- join_r, <- join_l. ss.
-      * econs; eauto. unfold sim_local_vrn. left. left. right.
+        inv H; cycle 1.
+        { exploit Valid.data_label; eauto. i. des. inv EID2. destruct l0; ss. congr. }
+        inv EID. rewrite <- join_l, <- join_l.
+        destruct eid1 as [tid1 eid1]. exploit Valid.addr_is_po; eauto. intro Y. inv Y. ss. subst.
+        exploit EX2.(ADDR); eauto; ss.
+        { rewrite List.app_length. s. clear. lia. }
+        intro Y. inv Y.
+        { exploit sim_trace_sim_th; try exact TRACE; eauto. intro M.
+          destruct M.(AEU_WF). ss. exploit ADDR_LIMIT; eauto. clear. lia.
+        }
+        inv H.
+        move STATE0 at bottom. inv STATE0.
+        inv STATE1. ss. inv STMTS. destruct L.(ST). ss.
+        exploit sim_rmap_expr; eauto. instantiate (1 := eloc). i.
+        inv x2. specialize (VIEW (tid, eid1)). ss.
+        exploit VIEW; ss. *)
+
+      + inv H1. des. inv H1.
+        inv H3. destruct l0; ss; congr.
+    - (* bob *)
+      unfold Execution.bob in H. rewrite ? seq_assoc in *. (* des_union. *)
+      rewrite L.(LC).(VRN); ss.
+      + admit.
+        (* rewrite <- join_l, <- join_r, <- join_l. ss. *)
+      + econs; eauto. unfold sim_local_vrn. right.
         rewrite ? seq_assoc. inv H. des. inv H2. ss.
-    + inv H1. des. inv H1. inv H3. destruct l0; ss. congr.
-    + inv H. des. inv H2. inv H3. destruct l0; ss. rewrite EID in EID0. inv EID0. rewrite LABEL1.
-      rewrite L.(LC).(VREL); ss.
-      * rewrite <- join_l, <- join_r, <- join_r, <- join_l. ss.
-      * econs; ss. unfold sim_local_vrel. ss.
-    + rewrite L.(LC).(VRN); ss.
-      * rewrite <- join_l, <- join_r, <- join_l. ss.
-      * econs; eauto. unfold sim_local_vrn. right.
-        rewrite ? seq_assoc. ss.
-    + inv H. des. inv H2. inv H3. destruct l0; ss. congr.
-    + destruct (equiv_dec arch riscv); ss. exploit Valid.rmw_spec; eauto. i. des.
-      exploit EX2.(LABELS_REV); eauto. i.
-      inv LABEL2. des. destruct l0; ss. rewrite x2 in EID0. inv EID0.
+  }
+  { (* update *)
+    admit.
+  }
 Qed.
