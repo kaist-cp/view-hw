@@ -17,20 +17,20 @@ Require Import PromisingArch.lib.HahnRelationsMore.
 Require Import PromisingArch.lib.Order.
 Require Import PromisingArch.lib.Time.
 Require Import PromisingArch.lib.Lang.
-Require Import PromisingArch.promising.Promising.
+Require Import PromisingArch.promising.TsoPromising2.
 Require Import PromisingArch.promising.CommonPromising.
-Require Import PromisingArch.promising.StateExecFacts.
-Require Import PromisingArch.promising.PtoPF.
-Require Import PromisingArch.axiomatic.Axiomatic.
-Require Import PromisingArch.axiomatic.CommonAxiomatic.
-Require Import PromisingArch.axiomatic.PFtoA1.
-Require Import PromisingArch.axiomatic.PFtoA2.
-Require Import PromisingArch.axiomatic.PFtoA3.
-Require Import PromisingArch.axiomatic.PFtoA4OBW.
-Require Import PromisingArch.axiomatic.PFtoA4OBR.
-Require Import PromisingArch.axiomatic.PFtoA4FR.
-Require Import PromisingArch.axiomatic.PFtoA4Atomic.
-Require Import PromisingArch.axiomatic.PFtoA4SL.
+Require Import PromisingArch.promising.TsoStateExecFacts.
+Require Import PromisingArch.promising.TsoPtoPF.
+Require Import PromisingArch.axiomatic.TsoAxiomatic.
+Require Import PromisingArch.axiomatic.TsoCommonAxiomatic.
+Require Import PromisingArch.axiomatic.TsoPFtoA1.
+Require Import PromisingArch.axiomatic.TsoPFtoA2.
+Require Import PromisingArch.axiomatic.TsoPFtoA3.
+Require Import PromisingArch.axiomatic.TsoPFtoA4OBW.
+Require Import PromisingArch.axiomatic.TsoPFtoA4OBR.
+Require Import PromisingArch.axiomatic.TsoPFtoA4FR.
+(* Require Import PromisingArch.axiomatic.PFtoA4Atomic. *)
+Require Import PromisingArch.axiomatic.TsoPFtoA4SL.
 
 Set Implicit Arguments.
 
@@ -43,7 +43,7 @@ Lemma sim_traces_sim_th'_step
       (PRE: Valid.pre_ex p ex)
       (CO: ex.(Execution.co) = co_gen ws)
       (RF: ex.(Execution.rf) = rf_gen ws rs)
-      (INTERNAL: acyclic (Execution.internal ex))
+      (* (INTERNAL: acyclic (Execution.internal ex)) *)
       (CO1: Valid.co1 ex)
       (CO2: Valid.co2 ex)
       (RF1: Valid.rf1 ex)
@@ -78,7 +78,7 @@ Proof.
   - eapply sim_traces_sim_th'_ob_write; eauto.
   - eapply sim_traces_sim_th'_ob_read; eauto.
   - eapply sim_traces_sim_th'_fr; eauto.
-  - eapply sim_traces_sim_th'_atomic; eauto.
+  (* - eapply sim_traces_sim_th'_atomic; eauto. *)
 Qed.
 
 Lemma sim_traces_sim_th'
@@ -89,7 +89,7 @@ Lemma sim_traces_sim_th'
       (PRE: Valid.pre_ex p ex)
       (CO: ex.(Execution.co) = co_gen ws)
       (RF: ex.(Execution.rf) = rf_gen ws rs)
-      (INTERNAL: acyclic (Execution.internal ex))
+      (* (INTERNAL: acyclic (Execution.internal ex)) *)
       (CO1: Valid.co1 ex)
       (CO2: Valid.co2 ex)
       (RF1: Valid.rf1 ex)
@@ -157,21 +157,13 @@ Proof.
     - econs; ss.
       + ii. inv EID. inv REL. inv H1. inv H7. des. inv H7. ss. lia.
       + ii. inv EID. inv REL. des_union.
+        * inv H1. des. inv H1. des. ss. lia.
         * inv H1. des. inv H1. des. inv H1. des. inv H1. ss. lia.
-        * inv H1. des. inv H1. des. inv H1. des. inv H1. ss. lia.
-        * inv H6. des. inv H6. des. inv H6. ss. lia.
-        * inv H1. des. inv H1. ss. lia.
       + ii. inv EID. inv REL. des_union.
-        * inv H6. des. inv H6. des. inv H6. des. inv H6. ss. lia.
-        * inv H6. des. inv H6. des. inv H6. des. inv H6. ss. lia.
-        * inv H1. des. inv H1. ss. lia.
-      + ii. inv EID. inv REL. inv H1. inv H7. ss. lia.
-      + ii. inv EID. inv REL. inv H1. inv H7. ss. lia.
-      + ii. inv EID. inv REL.
         * inv H1. des. inv H1. ss. lia.
         * inv H1. des. inv H1. ss. lia.
       + ii. inv EID. inv REL. inv H1. inv H7. ss. lia.
-      + right. esplits; eauto. ii. inv H1. inv REL. inv H1. inv H7. ss. lia.
+      + ii. inv EID. inv REL. inv H1. inv H7. ss. lia.
       + i. destruct view; ss. exploit Machine.promises_from_mem_inv; eauto. i. des.
         hexploit sim_traces_ex; try exact SIM.
         all: try rewrite lastn_all; ss.
@@ -186,10 +178,10 @@ Proof.
         inv STEP.  inv NOPROMISE. erewrite PROMISES; eauto. i. des.
         { inv x1. }
         exploit L.(WPROP2); eauto. i. des.
-        exploit L.(WPROP3); eauto. i. des. subst. rewrite x2 in x4. inv x4.
+        exploit L.(WPROP3); eauto. i. des. subst. rewrite x2 in x5. inv x5.
         exploit EX.(LABELS_REV); eauto. i.
         esplits; cycle 1.
-        * econs; eauto.
+        * econs; eauto with tso.
         * rewrite EX.(XVEXT); ss.
           { etrans; eauto. }
           { apply List.nth_error_Some. congr. }
@@ -197,15 +189,15 @@ Proof.
     - ii. ss. lia.
     - ii. ss. lia.
     - ii. ss. lia.
-    - ii. ss. lia.
+    (* - ii. ss. lia. *)
   }
   i. simplify.
   exploit sim_trace_length; eauto. intro LEN. guardH LEN.
   exploit lastn_S1; try exact EU; [unguardH LEN; des; lia|].
-  exploit lastn_S1; try exact AEU; [unguardH LEN; des; lia|i]. 
-  exploit lastn_S1; try exact WL; [unguardH LEN; des; lia|i]. 
+  exploit lastn_S1; try exact AEU; [unguardH LEN; des; lia|i].
+  exploit lastn_S1; try exact WL; [unguardH LEN; des; lia|i].
   exploit lastn_S1; try exact RL; [unguardH LEN; des; lia|i].
-  exploit lastn_S1; try exact COV; [unguardH LEN; des; lia|i]. 
+  exploit lastn_S1; try exact COV; [unguardH LEN; des; lia|i].
   exploit lastn_S1; try exact VEXT; [unguardH LEN; des; lia|i].
   subst. exploit sim_trace_lastn; eauto. instantiate (1 := n). i.
   exploit sim_trace_last; eauto. i. des.
@@ -228,7 +220,7 @@ Lemma sim_traces_vext_valid
       (PRE: Valid.pre_ex p ex)
       (CO: ex.(Execution.co) = co_gen ws)
       (RF: ex.(Execution.rf) = rf_gen ws rs)
-      (INTERNAL: acyclic (Execution.internal ex))
+      (* (INTERNAL: acyclic (Execution.internal ex)) *)
       (CO1: Valid.co1 ex)
       (CO2: Valid.co2 ex)
       (RF1: Valid.rf1 ex)
@@ -253,30 +245,20 @@ Lemma sim_traces_vext_valid
     forall eid1 eid2
       (OB: ob' ex eid1 eid2)
       (EID2: ex.(Execution.label_is) Label.is_read eid2),
-      Time.le ((v_gen vexts) eid1) ((v_gen vexts) eid2)>> /\
+      Time.le ((v_gen vexts) eid1) ((v_gen vexts) eid2)>>.
+      (* /\
   <<ATOMIC:
     forall eid1 eid2 eid
       (ATOMIC: ex.(Execution.rmw) eid1 eid2)
       (FRE: Execution.fre ex eid1 eid)
       (COE: Execution.coe ex eid eid2),
-      False>>.
+      False>>. *)
 Proof.
   splits; i.
   - destruct eid1 as [tid1 eid1].
     destruct eid2 as [tid2 eid2].
     inversion FR.
-    + inv H. des. exploit RF2; eauto. i. des.
-      revert READ. unfold Execution.label. s. rewrite PRE.(Valid.LABELS), IdMap.map_spec.
-      generalize (ATR tid1). generalize (SIM tid1). intros X Y; inv X; inv Y; simplify; ss.
-      i. des. subst.
-      exploit sim_trace_last; eauto. i. des. simplify.
-      exploit sim_trace_length; eauto. s. i. des.
-      hexploit sim_traces_sim_th'; eauto.
-      { s. instantiate (1 := length tr'). lia. }
-      all: try rewrite lastn_all; s; eauto; try lia.
-      intro TH'. eapply TH'.(PFtoA3.FR); eauto.
-      apply List.nth_error_Some. congr.
-    + inv H. inv H1. inv H. inv H1. destruct l; ss.
+    + inv H. des. exploit RF2; eauto. i. des. inv READ.
       revert EID. unfold Execution.label. s. rewrite PRE.(Valid.LABELS), IdMap.map_spec.
       generalize (ATR tid1). generalize (SIM tid1). intros X Y; inv X; inv Y; simplify; ss.
       i. des. subst.
@@ -285,11 +267,22 @@ Proof.
       hexploit sim_traces_sim_th'; eauto.
       { s. instantiate (1 := length tr'). lia. }
       all: try rewrite lastn_all; s; eauto; try lia.
-      intro TH'. eapply TH'.(PFtoA3.FR); eauto.
+      intro TH'. eapply TH'.(TsoPFtoA3.FR); eauto.
+      apply List.nth_error_Some. congr.
+    + inv H. inv H1. inv H. inv H1.
+      revert EID. unfold Execution.label. s. rewrite PRE.(Valid.LABELS), IdMap.map_spec.
+      generalize (ATR tid1). generalize (SIM tid1). intros X Y; inv X; inv Y; simplify; ss.
+      i. des. subst.
+      exploit sim_trace_last; eauto. i. des. simplify.
+      exploit sim_trace_length; eauto. s. i. des.
+      hexploit sim_traces_sim_th'; eauto.
+      { s. instantiate (1 := length tr'). lia. }
+      all: try rewrite lastn_all; s; eauto; try lia.
+      intro TH'. eapply TH'.(TsoPFtoA3.FR); eauto.
       apply List.nth_error_Some. congr.
   - destruct eid1 as [tid1 eid1].
     destruct eid2 as [tid2 eid2].
-    inversion EID2. destruct l; ss.
+    inversion EID2.
     revert EID. unfold Execution.label. s. rewrite PRE.(Valid.LABELS), IdMap.map_spec.
     generalize (ATR tid2). generalize (SIM tid2). intros X Y; inv X; inv Y; simplify; ss.
     i. des. subst.
@@ -298,11 +291,11 @@ Proof.
     hexploit sim_traces_sim_th'; eauto.
     { s. instantiate (1 := length tr'). lia. }
     all: try rewrite lastn_all; s; eauto; try lia.
-    intro TH'. eapply TH'.(PFtoA3.OBW); eauto.
+    intro TH'. eapply TH'.(TsoPFtoA3.OBW); eauto.
     apply List.nth_error_Some. congr.
   - destruct eid1 as [tid1 eid1].
     destruct eid2 as [tid2 eid2].
-    inversion EID2. destruct l; ss.
+    inversion EID2.
     revert EID. unfold Execution.label. s. rewrite PRE.(Valid.LABELS), IdMap.map_spec.
     generalize (ATR tid2). generalize (SIM tid2). intros X Y; inv X; inv Y; simplify; ss.
     i. des. subst.
@@ -311,21 +304,7 @@ Proof.
     hexploit sim_traces_sim_th'; eauto.
     { s. instantiate (1 := length tr'). lia. }
     all: try rewrite lastn_all; s; eauto; try lia.
-    intro TH'. eapply TH'.(PFtoA3.OBR); eauto.
-    apply List.nth_error_Some. congr.
-  - destruct eid1 as [tid1 eid1].
-    destruct eid2 as [tid2 eid2].
-    exploit Valid.rmw_spec; eauto. i. des.
-    inversion LABEL2. des. destruct l; ss.
-    revert EID. unfold Execution.label. s. rewrite PRE.(Valid.LABELS), IdMap.map_spec.
-    generalize (ATR tid2). generalize (SIM tid2). intros X Y; inv X; inv Y; simplify; ss.
-    i. des. subst.
-    exploit sim_trace_last; eauto. i. des. simplify.
-    exploit sim_trace_length; eauto. s. i. des.
-    hexploit sim_traces_sim_th'; eauto.
-    { s. instantiate (1 := length tr'). lia. }
-    all: try rewrite lastn_all; s; eauto; try lia.
-    intro TH'. eapply TH'.(PFtoA3.ATOMIC); eauto.
+    intro TH'. eapply TH'.(TsoPFtoA3.OBR); eauto.
     apply List.nth_error_Some. congr.
 Qed.
 
@@ -359,19 +338,29 @@ Proof.
   inv EID2. destruct l; ss.
   - right. des_union.
     + exploit sim_traces_cov_po_loc; eauto. i. des.
-      exploit PO_LOC_READ; eauto.
+      exploit PO_LOC_READ; eauto with tso.
     + exploit sim_traces_cov_fr; eauto. i.
-      split; eauto using Nat.lt_le_incl.
+      split; eauto using Nat.lt_le_incl with tso.
     + exploit sim_traces_cov_co; eauto. i.
-      split; eauto using Nat.lt_le_incl.
+      split; eauto using Nat.lt_le_incl with tso.
     + exploit sim_traces_cov_rf; eauto. i.
-      split; eauto. rewrite x0. auto.
+      split; eauto with tso. rewrite x0. auto.
   - left. des_union.
     + exploit sim_traces_cov_po_loc; eauto. i. des.
-      exploit PO_LOC_WRITE; eauto.
-    + exploit sim_traces_cov_fr; eauto.
-    + exploit sim_traces_cov_co; eauto.
-    + exploit RF2; eauto. i. des. congr.
+      exploit PO_LOC_WRITE; eauto with tso.
+    + exploit sim_traces_cov_fr; eauto with tso.
+    + exploit sim_traces_cov_co; eauto with tso.
+    + exploit RF2; eauto. i. des.
+      inv READ. inv WRITE. destruct l; ss; congr.
+  - right. des_union.
+    + exploit sim_traces_cov_po_loc; eauto. i. des.
+      exploit PO_LOC_READ; eauto with tso.
+    + exploit sim_traces_cov_fr; eauto. i.
+      split; eauto using Nat.lt_le_incl with tso.
+    + exploit sim_traces_cov_co; eauto. i.
+      split; eauto using Nat.lt_le_incl with tso.
+    + exploit sim_traces_cov_rf; eauto. i.
+      split; eauto with tso. rewrite x0. auto.
 Qed.
 
 Lemma sim_traces_valid_external_atomic
@@ -382,7 +371,7 @@ Lemma sim_traces_valid_external_atomic
       (PRE: Valid.pre_ex p ex)
       (CO: ex.(Execution.co) = co_gen ws)
       (RF: ex.(Execution.rf) = rf_gen ws rs)
-      (INTERNAL: acyclic (Execution.internal ex))
+      (* (INTERNAL: acyclic (Execution.internal ex)) *)
       (CO1: Valid.co1 ex)
       (CO2: Valid.co2 ex)
       (RF1: Valid.rf1 ex)
@@ -400,24 +389,31 @@ Lemma sim_traces_valid_external_atomic
       (LABEL1: Execution.label_is ex Label.is_access eid1)
       (LABEL2: Execution.label_is ex Label.is_access eid2),
       (Time.lt ((v_gen vexts) eid1) ((v_gen vexts) eid2) /\ ex.(Execution.label_is) Label.is_write eid2) \/
-      (Time.le ((v_gen vexts) eid1) ((v_gen vexts) eid2) /\ ex.(Execution.label_is) Label.is_read eid2)>> /\
-  <<ATOMIC: le (ex.(Execution.rmw) ∩ ((Execution.fre ex) ⨾ (Execution.coe ex))) bot>>.
+      (Time.le ((v_gen vexts) eid1) ((v_gen vexts) eid2) /\ ex.(Execution.label_is) Label.is_read eid2)>>.
+      (* /\
+  <<ATOMIC: le (ex.(Execution.rmw) ∩ ((Execution.fre ex) ⨾ (Execution.coe ex))) bot>>. *)
 Proof.
   generalize STEP. intro X. inv X. splits.
   - exploit sim_traces_vext_valid; eauto. i. des.
     inv LABEL2. destruct l; ss.
     + right. rewrite ob_ob' in OB. des_union.
       * exploit FR; eauto. i.
-        split; eauto using Nat.lt_le_incl.
+        split; eauto using Nat.lt_le_incl with tso.
       * exploit sim_traces_vext_co; eauto. i.
-        split; eauto using Nat.lt_le_incl.
-      * exploit OB_READ; eauto.
+        split; eauto using Nat.lt_le_incl with tso.
+      * exploit OB_READ; eauto with tso.
     + left. rewrite ob_ob' in OB. des_union.
-      * exploit FR; eauto.
-      * exploit sim_traces_vext_co; eauto.
-      * exploit OB_WRITE; eauto.
-  - exploit sim_traces_vext_valid; eauto. i. des.
-    ii. inv H. inv H1. des. exfalso. eauto.
+      * exploit FR; eauto with tso.
+      * exploit sim_traces_vext_co; eauto with tso.
+      * exploit OB_WRITE; eauto with tso.
+    + right. rewrite ob_ob' in OB. des_union.
+      * exploit FR; eauto. i.
+        split; eauto using Nat.lt_le_incl with tso.
+      * exploit sim_traces_vext_co; eauto. i.
+        split; eauto using Nat.lt_le_incl with tso.
+      * exploit OB_READ; eauto with tso.
+  (* - exploit sim_traces_vext_valid; eauto. i. des.
+    ii. inv H. inv H1. des. exfalso. eauto. *)
 Qed.
 
 Lemma internal_acyclic
@@ -436,7 +432,8 @@ Proof.
   ii. exploit INTERNAL; eauto. i. des.
   - inv x0; lia.
   - inv x1. lia.
-  - inv x1. inv x2. rewrite EID in EID0. inv EID0. destruct l0; ss; congr.
+  - inv x1. inv x2. rewrite EID in EID0. inv EID0. destruct l0; ss.
+    admit.
 Qed.
 
 Lemma promising_pf_valid
@@ -448,7 +445,7 @@ Lemma promising_pf_valid
     <<RF1: Valid.rf1 ex>> /\
     <<RF2: Valid.rf2 ex>> /\
     <<RF_WF: Valid.rf_wf ex>> /\
-    <<INTERNAL:
+    (* <<INTERNAL:
       forall eid1 eid2
         (INTERNAL: (Execution.internal ex)⁺ eid1 eid2),
         Time.lt (cov eid1) (cov eid2) \/
@@ -458,7 +455,7 @@ Lemma promising_pf_valid
          ex.(Execution.label_is) Label.is_read eid2) \/
         (Time.le (cov eid1) (cov eid2) /\
          ex.(Execution.label_is) Label.is_write eid1 /\
-         ex.(Execution.label_is) Label.is_read eid2)>> /\
+         ex.(Execution.label_is) Label.is_read eid2)>> /\ *)
     <<EXTERNAL:
       forall eid1 eid2
         (OB: (Execution.ob ex ∩ (ex.(Execution.label_is_rel) Label.is_access))⁺ eid1 eid2),
@@ -470,20 +467,16 @@ Lemma promising_pf_valid
         (Time.le (vext eid1) (vext eid2) /\
          ex.(Execution.label_is) Label.is_write eid1 /\
          ex.(Execution.label_is) Label.is_read eid2)>> /\
-    <<ATOMIC: le (ex.(Execution.rmw) ∩ ((Execution.fre ex) ⨾ (Execution.coe ex))) bot>> /\
+    (* <<ATOMIC: le (ex.(Execution.rmw) ∩ ((Execution.fre ex) ⨾ (Execution.coe ex))) bot>> /\ *)
     <<STATE: IdMap.Forall2
                (fun tid sl aeu => sim_state_weak (fst sl) aeu.(AExecUnit.state))
                m.(Machine.tpool) PRE.(Valid.aeus)>>.
 Proof.
   exploit promising_pf_sim_traces; eauto. i. des.
   destruct PRE, ex. ss.
-  remember (Execution.mk labels addr data ctrl0 rmw (co_gen ws) (rf_gen ws rs)) as ex'.
+  remember (Execution.mk labels (co_gen ws) (rf_gen ws rs)) as ex'.
   replace labels with ex'.(Execution.labels) in LABELS; [|subst; ss].
-  replace addr with ex'.(Execution.addr) in ADDR; [|subst; ss].
-  replace data with ex'.(Execution.data) in DATA; [|subst; ss].
-  replace ctrl0 with ex'.(Execution.ctrl0) in CTRL; [|subst; ss].
-  replace rmw with ex'.(Execution.rmw) in RMW; [|subst; ss].
-  remember (@Valid.mk_pre_ex p ex' aeus AEUS LABELS ADDR DATA CTRL RMW) as PRE'.
+  remember (@Valid.mk_pre_ex p ex' aeus AEUS LABELS) as PRE'.
   replace aeus with PRE'.(Valid.aeus) in ATR; [|subst; ss].
   exists ex'. exists PRE'. exists (v_gen covs). exists (v_gen vexts).
   generalize STEP. intro X. inversion X.
@@ -494,7 +487,11 @@ Proof.
   generalize (sim_traces_rf_wf SIM). intro RF_WF.
   replace (co_gen ws) with (ex'.(Execution.co)) in CO1, CO2;[|subst; ss].
   replace (rf_gen ws rs) with (ex'.(Execution.rf)) in RF1, RF2, RF_WF; [|subst; ss].
-  hexploit sim_traces_valid_internal; eauto; try by (subst; ss). intro INTERNAL.
+
+  (* hexploit sim_traces_valid_internal; eauto; try by (subst; ss).
+  { admit. }
+  { admit. }
+  intro INTERNAL.
   assert (INTERNAL': forall eid1 eid2 (INTERNAL: (Execution.internal ex')⁺ eid1 eid2),
              Time.lt (v_gen covs eid1) (v_gen covs eid2) \/
              (Time.le (v_gen covs eid1) (v_gen covs eid2) /\
@@ -506,7 +503,9 @@ Proof.
               ex'.(Execution.label_is) Label.is_read eid2)).
   { i. induction INTERNAL0.
     + exploit INTERNAL; eauto. i. des; eauto.
-      { exploit Valid.internal_rw; eauto. i. des.
+      { exploit Valid.internal_rw; eauto.
+        { admit. }
+        i. des.
         inversion EID1. inversion EID2.
         destruct l0; ss.
         - destruct l; ss.
@@ -529,12 +528,21 @@ Proof.
       * inversion IHINTERNAL0_5. inversion IHINTERNAL0_0.
         rewrite EID in EID0. inversion EID0. rewrite H0 in *.
         destruct l0; ss; congr. }
-  generalize (internal_acyclic _ INTERNAL'). intro ACYCLIC.
-  exploit sim_traces_valid_external_atomic; eauto; try by (subst; ss). i. des.
+  generalize (internal_acyclic _ INTERNAL'). intro ACYCLIC. *)
+
+  hexploit sim_traces_valid_external_atomic; eauto; try by (subst; ss).
+  { admit. }
+  { admit. }
+
+  intro EXTERNAL. des.
   esplits; eauto.
-  - clear INTERNAL'. i. induction OB.
+  { admit. }
+  { admit. }
+  - (* clear INTERNAL'. *)
+    i. induction OB.
     + inversion H. inversion H1.
-      exploit EXTERNAL; eauto. i. des; eauto.
+      exploit EXTERNAL; eauto. i. des; eauto with tso.
+      { destruct l2; eauto with tso. }
       { destruct l1.
         - exploit Valid.ob_read_read_po; eauto. i.
           right. left. splits; eauto.
