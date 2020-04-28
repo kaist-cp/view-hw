@@ -34,6 +34,7 @@ Definition ob' (ex: Execution.t): relation eidT :=
 Ltac des_union :=
   repeat
     (try match goal with
+         | [H: Execution.internal _ _ _ |- _] => inv H
          | [H: Execution.cowr _ _ _ |- _] => inv H
          | [H: Execution.corw _ _ _ |- _] => inv H
          | [H: Execution.ob _ _ _ |- _] => inv H

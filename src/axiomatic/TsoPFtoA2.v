@@ -455,7 +455,7 @@ Proof.
     }
 Qed.
 
-(* Lemma sim_traces_cov_po_loc
+Lemma sim_traces_cov_po_loc
       p mem trs atrs ws rs covs vexts
       ex
       (SIM: sim_traces p mem trs atrs ws rs covs vexts)
@@ -485,7 +485,7 @@ Proof.
   - inv H1. unfold Execution.label in *. ss.
     rewrite PRE.(Valid.LABELS), IdMap.map_spec, <- H in *. inv EID.
     rewrite EID2 in H2. inv H2. eauto.
-Qed. *)
+Qed.
 
 Lemma sim_traces_vext_co
       p mem trs atrs ws rs covs vexts
