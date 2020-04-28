@@ -649,12 +649,15 @@ Module Execution.
   .
   Hint Constructors e : tso.
 
+  Definition po_loc (ex:t): relation eidT := po ∩ ex.(label_rel) label_loc.
   Definition fr (ex:t): relation eidT :=
     (ex.(rf)⁻¹ ⨾ ex.(co)) ∪
     ((ex.(label_rel) label_loc) ∩
      ((ex.(label_is) Label.is_read) \₁ codom_rel ex.(rf)) × (ex.(label_is) Label.is_write)).
 
   Definition rfe (ex:t): relation eidT := ex.(rf) ∩ e.
+
+  Definition internal (ex:t): relation eidT := (po_loc ex) ∪ (fr ex) ∪ ex.(co) ∪ ex.(rf).
 
   Definition cowr (ex:t): relation eidT := po ⨾ (fr ex).
   Definition corw (ex:t): relation eidT := po^? ⨾ ex.(rf).
@@ -675,6 +678,7 @@ Module Execution.
      ⦗ex.(label_is) (Label.is_barrier_c Barrier.is_dmb_wr)⦘ ⨾
      po ⨾
      ⦗ex.(label_is) Label.is_read⦘.
+    (* TODO: only read, not update *)
 
   Definition ob (ex:t): relation eidT :=
     (obs ex) ∪ (dob ex) ∪ (bob ex).
@@ -1003,6 +1007,7 @@ Module Valid.
   Ltac obtac :=
     repeat
       (try match goal with
+           | [H: Execution.internal _ _ _ |- _] => inv H
            | [H: Execution.ob _ _ _ |- _] => inv H
            | [H: Execution.obs _ _ _ |- _] => inv H
            | [H: Execution.dob _ _ _ |- _] => inv H
@@ -1122,6 +1127,150 @@ Module Valid.
         exploit barrier_ob_po; eauto with tso. i. inv x2. lia.
       + exfalso. eapply ob_label; eauto.
   Qed.
+
+  Lemma acyclic_internal
+        p exec
+        (EX: ex p exec):
+    acyclic (Execution.internal exec).
+  Proof.
+    admit.
+
+
+    (* ii. apply t_step_rt in H. des.
+    induction H0.
+
+    obtac.
+    - induction H0.
+
+    + inv H0. inv H1. inv H. inv H0. lia.
+      + inv H1. exploit EX.(COWR); ss. instantiate (1 := x).
+        econs. esplits; eauto.
+        left. econs; eauto.
+      + inv H1. exploit EX.(COWR); ss. instantiate (1 := x).
+        econs. esplits; eauto.
+        right. econs; eauto with tso. econs; eauto with tso.
+      + inv H1. exploit EX.(CO2); eauto. i. des.
+        exploit EX.(EXTERNAL); ss. instantiate (1 := x).
+        inv LABEL. inv LABEL0.
+        apply t_step_rt. esplits.
+        * left. right. right. econs. econs; econs; eauto with tso.
+          split; eauto. econs; eauto with tso.
+        * econs. left. left. right. ss.
+      + inv H0. exploit EX.(COWR); ss. instantiate (1 := z).
+        econs. esplits; eauto.
+        left. econs; eauto.
+      + exploit EX.(EXTERNAL); ss. instantiate (1 := x).
+        apply t_step_rt. esplits.
+        * left. left. left. right. econs. econs; econs; eauto with tso.
+        * econs. left. left. left. right. left. econs; econs; eauto with tso.
+      + exploit EX.(EXTERNAL); ss. instantiate (1 := x).
+        apply t_step_rt. esplits.
+        * left. left. left. right. econs. econs; econs; eauto with tso.
+        * econs. left. left. left. right. right. econs; econs; eauto with tso.
+      + exploit EX.(EXTERNAL); ss. instantiate (1 := x).
+        apply t_step_rt. esplits.
+        * left. left. left. right. econs. econs; econs; eauto with tso.
+        * econs. left. left. right. ss.
+      + inv H0. exploit EX.(COWR); ss. instantiate (1 := z).
+        econs. esplits; eauto.
+        right. econs; eauto with tso. econs; eauto with tso.
+      +
+    - (* refl *)
+      obtac.
+      { inv H0. inv H. lia. }
+      all: exploit EX.(EXTERNAL); ss; instantiate (1 := x).
+      + left. left. left. left. right. left. econs; eauto.
+      + left. left. left. left. right. right. econs; eauto with tso. econs; eauto with tso.
+      + left. left. left. right. ss.
+      + exploit rfi_is_po; eauto.
+        { econs. ss. }
+        i. inv x1. lia.
+    -
+    destruct x as [tid1 iid1].
+    destruct y as [tid2 iid2]. *)
+  Qed.
+
+  Lemma internal_rw
+        p ex
+        eid1 eid2
+        (PRE: pre_ex p ex)
+        (CO2: co2 ex)
+        (RF2: rf2 ex)
+        (INTERNAL: Execution.internal ex eid1 eid2):
+    <<EID1: ex.(Execution.label_is) Label.is_access eid1>> /\
+    <<EID2: ex.(Execution.label_is) Label.is_access eid2>>.
+  Proof.
+    unfold Execution.internal in *. obtac.
+    - inv H. inv H1. inv LABEL. splits.
+      + destruct l1; ss; econs; eauto.
+      + destruct l2; ss; econs; eauto.
+    - exploit CO2; eauto. i. des.
+      exploit RF2; eauto. i. des.
+      inv READ. inv LABEL0. destruct l; destruct l0; ss.
+      all: splits; econs; eauto.
+    - splits.
+      + destruct l1; ss; econs; eauto.
+      + destruct l2; ss; econs; eauto.
+    - exploit CO2; eauto. i. des.
+      inv LABEL. inv LABEL0. destruct l; destruct l0; ss.
+      all: splits; econs; eauto.
+    - exploit RF2; eauto. i. des.
+      inv READ. inv WRITE. destruct l; destruct l0; ss.
+      all: splits; econs; eauto.
+  Qed.
+
+  (* TODO: it's impossible, maybe need pure_read? *)
+  (* Lemma internal_read_read_po
+        p ex
+        eid1 eid2
+        (PRE: pre_ex p ex)
+        (CO2: co2 ex)
+        (RF2: rf2 ex)
+        (INTERNAL: Execution.internal ex eid1 eid2)
+        (EID1: ex.(Execution.label_is) Label.is_read eid1)
+        (EID2: ex.(Execution.label_is) Label.is_read eid2):
+    Execution.po eid1 eid2.
+  Proof.
+    obtac.
+    - inv H. ss.
+    - exploit RF2; eauto. i. des.
+      exploit CO2; eauto. i. des.
+
+    - rewrite EID in EID0. inv EID0. destruct l0; ss.
+    - exploit CO2; eauto. i. des.
+      inv LABEL2. destruct l; ss.
+      + rewrite EID in EID1. inv EID1. ss.
+      + (* update 때문에 coe가 발생. coe는 po가 아님 *)
+    - exploit RF2; eauto. i. des.
+      destruct l0; ss. congr.
+  Qed. *)
+
+  (* TODO: it's impossible, maybe need pure_read? *)
+  (* Lemma ob_read_read_po
+        p ex
+        eid1 eid2
+        (PRE: pre_ex p ex)
+        (CO1: co1 ex)
+        (CO2: co2 ex)
+        (RF1: rf1 ex)
+        (RF2: rf2 ex)
+        (RF_WF: rf_wf ex)
+        (* (INTERNAL: acyclic (Execution.internal ex)) *)
+        (OB: Execution.ob ex eid1 eid2)
+        (EID1: ex.(Execution.label_is) Label.is_read eid1)
+        (EID2: ex.(Execution.label_is) Label.is_read eid2):
+    Execution.po eid1 eid2.
+  Proof.
+    inv EID1. inv EID2. destruct l; ss. destruct l0; ss.
+    all: obtac; try congr.
+    all: try by etrans; eauto.
+    - exploit RF2; eauto. i. des. inv WRITE. rewrite EID in EID1. destruct l; ss.
+    - exploit CO2; eauto. i. des. inv LABEL2. rewrite EID1 in EID0. destruct l; ss.
+    - inv H. rewrite EID0 in EID1. inv EID1. inv LABEL1.
+    - exploit CO2; eauto. i. des. inv LABEL2. rewrite EID1 in EID0. destruct l; ss.
+    -
+    - revert H0. unfold ifc. condtac; ss. eapply rmw_spec. eauto.
+  Qed. *)
 End Valid.
 
 Coercion Valid.PRE: Valid.ex >-> Valid.pre_ex.
