@@ -130,6 +130,29 @@ Section Local.
   .
   Hint Constructors rmw.
 
+  Inductive rmw_failure (vloc vold res:ValA.t (A:=unit)) (old_ts:Time.t) (lc1:t) (mem1:Memory.t) (lc2:t): Prop :=
+  | rmw_failure_intro
+      loc old
+      view_pre view_old view_post
+      (LOC: loc = vloc.(ValA.val))
+      (VIEW_PRE: view_pre = (join lc1.(vrn) lc1.(vwo)))
+      (LATEST: Memory.latest loc old_ts view_pre.(View.ts) mem1)
+      (OLD_MSG: Memory.read loc old_ts mem1 = Some old)
+      (OLD: vold.(ValA.val) <> old)
+      (VIEW_OLD: view_old = View.mk old_ts bot)
+      (VIEW_POST: view_post = join view_pre view_old)
+      (RES: res = ValA.mk _ old bot)
+      (LC: lc2 =
+            mk
+              (fun_add loc (join (lc1.(coh) loc) view_old) lc1.(coh))
+              (join lc1.(vrn) view_post)
+              (join lc1.(vwn) view_post)
+              (join lc1.(vro) view_old)
+              lc1.(vwo)
+              lc1.(promises))
+  .
+  Hint Constructors rmw_failure.
+
   Inductive dmb (rr rw wr ww:bool) (lc1 lc2:t): Prop :=
   | dmb_intro
       (LC2: lc2 =
@@ -159,6 +182,10 @@ Section Local.
       vloc vold vnew ts view_pre
       (EVENT: event = Event.rmw OrdR.pln OrdW.pln vloc vold vnew)
       (STEP: rmw vloc vold vnew ts tid view_pre lc1 mem lc2)
+  | step_rmw_failure
+      vloc vold old_ts res
+      (EVENT: event = Event.read false true OrdR.pln vloc res)
+      (STEP: rmw_failure vloc vold res old_ts lc1 mem lc2)
   | step_dmb
       rr rw wr ww
       (EVENT: event = Event.barrier (Barrier.dmb rr rw wr ww))
@@ -316,6 +343,16 @@ Section Local.
     inv WRITABLE. unfold Order.le. clear -COH. lia.
   Qed.
 
+  Lemma rmw_failure_incr
+        vloc vold res ts lc1 mem1 lc2
+        (LC: rmw_failure vloc vold res ts lc1 mem1 lc2):
+    le lc1 lc2.
+  Proof.
+    inv LC. econs; ss; try refl; try apply join_l.
+    i. rewrite fun_add_spec. condtac; try refl.
+    clear X. inv e. s. apply join_l.
+  Qed.
+
   Lemma dmb_incr
         rr rw wr ww lc1 lc2
         (LC: dmb rr rw wr ww lc1 lc2):
@@ -333,6 +370,7 @@ Section Local.
     - eapply read_incr. eauto.
     - eapply fulfill_incr. eauto.
     - eapply rmw_incr. eauto.
+    - eapply rmw_failure_incr. eauto.
     - eapply dmb_incr. eauto.
   Qed.
 End Local.
@@ -460,6 +498,11 @@ Section ExecUnit.
         { eapply PROMISES0; eauto. revert TS. condtac; ss. i.
         inversion e. rewrite H0. rewrite COH0. ss.
         }
+    - inv STEP. econs. ss. econs; viewtac; try by eapply read_wf; eauto.
+      + i. rewrite fun_add_spec. condtac; viewtac.
+        eapply read_wf; eauto.
+      + i. eapply PROMISES0; eauto. eapply Time.le_lt_trans; [|by eauto].
+        rewrite fun_add_spec. condtac; ss. inversion e. rewrite H0. apply join_l.
     - inv STEP. econs; ss. econs; viewtac.
   Qed.
 
