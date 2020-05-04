@@ -278,8 +278,8 @@ Module ALocal.
                mk
                  alocal1.(labels))
   | step_read
-      vloc res
-      (EVENT: event = Event.read false false OrdR.pln vloc (ValA.mk _ res tt))
+      rmw_fail vloc res
+      (EVENT: event = Event.read false rmw_fail OrdR.pln vloc (ValA.mk _ res tt))
       (ALOCAL: alocal2 =
                mk
                  (alocal1.(labels) ++ [Label.read vloc.(ValA.val) res]))
@@ -422,27 +422,19 @@ Module AExecUnit.
       + destruct local1. refl.
     - splits.
       + inv WF. econs; ss.
-        all: try rewrite List.app_length; s.
-        all: unfold ALocal.next_eid in *.
-      + econs; ss.
-        * esplits; eauto.
+      + econs; ss. eauto.
     - splits.
       + inv WF. econs; ss.
-        all: try rewrite List.app_length; s.
-        all: unfold ALocal.next_eid in *.
-      + econs; ss.
-        * esplits; eauto.
+      + econs; ss. eauto.
     - splits.
       + inv WF. econs; ss.
-        all: try rewrite List.app_length; s.
-        all: unfold ALocal.next_eid in *.
-      + econs; ss.
-        * esplits; eauto.
+      + econs; ss. eauto.
     - splits.
       + inv WF. econs; ss.
-        all: try rewrite List.app_length; s.
-        all: unfold ALocal.next_eid in *.
-      + econs; ss. eexists; eauto.
+      + econs; ss. eauto.
+    - splits.
+      + inv WF. econs; ss.
+      + econs; ss. eauto.
     - splits.
       + inv WF. econs; ss.
       + destruct local1. refl.
