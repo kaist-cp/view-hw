@@ -96,12 +96,16 @@ Proof.
           - f_equal. apply Promises.set_unset.
             ii. subst. lia.
         }
-        { econs 5; eauto. instantiate (1 := old_ts). instantiate (1 := vold).
-          inv STEP. exploit ExecUnit.read_wf; try exact OLD_MSG. i.
+        { econs 5; eauto. instantiate (1 := old_ts). instantiate (1 := vold). inv STEP. ss.
+          exploit ExecUnit.read_wf; try exact OLD_MSG. i.
           econs; eauto; ss.
+          - ii. eapply COH; eauto.
+            rewrite nth_error_app1 in MSG; ss.
+            eapply lt_le_trans; eauto.
+            inv WF. exploit WF0; eauto. i. inv x. ss. inv LOCAL. ss.
           - ii. eapply LATEST; eauto.
             rewrite nth_error_app1 in MSG; ss.
-            eapply lt_le_trans. eauto.
+            eapply lt_le_trans; eauto.
             inv WF. exploit WF0; eauto. i. inv x. ss. inv LOCAL.
             repeat apply join_spec; viewtac.
           - apply Memory.read_mon. ss.
@@ -153,14 +157,19 @@ Proof.
           - apply Memory.get_msg_mon. ss.
         }
         { econs 5; eauto. instantiate (1 := old_ts). instantiate (1 := vold).
-          inv STEP. exploit ExecUnit.read_wf; try exact OLD_MSG. i.
-          econs; eauto; ss.
+          inv STEP. econs; eauto.
+          - ii. eapply COH; eauto.
+            destruct (lt_dec ts (length mem1)).
+            { rewrite nth_error_app1 in MSG; ss. }
+            contradict n.
+            eapply lt_le_trans; [apply TS2|].
+            inv WF. exploit WF0; try exact FIND; eauto. i. inv x. inv LOCAL. ss.
           - ii. eapply LATEST; eauto.
             destruct (lt_dec ts (length mem1)).
             { rewrite nth_error_app1 in MSG; ss. }
             contradict n.
             eapply Time.lt_le_trans; [apply TS2|].
-            inv WF. exploit WF0; try exact FIND; eauto. i. inv x. inv LOCAL. viewtac.
+            inv WF. exploit WF0; try exact FIND; eauto. i. inv x. inv LOCAL. ss.
           - apply Memory.read_mon. ss.
         }
         { econs 6; eauto. }

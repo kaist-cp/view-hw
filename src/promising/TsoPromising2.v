@@ -135,7 +135,8 @@ Section Local.
       loc old
       view_pre view_old view_post
       (LOC: loc = vloc.(ValA.val))
-      (VIEW_PRE: view_pre = (join lc1.(vrn) lc1.(vwo)))
+      (VIEW_PRE: view_pre = lc1.(vrn))
+      (COH: Memory.latest loc old_ts (lc1.(coh) loc).(View.ts) mem1)
       (LATEST: Memory.latest loc old_ts view_pre.(View.ts) mem1)
       (OLD_MSG: Memory.read loc old_ts mem1 = Some old)
       (OLD: vold.(ValA.val) <> old)
@@ -144,10 +145,10 @@ Section Local.
       (RES: res = ValA.mk _ old bot)
       (LC: lc2 =
             mk
-              (fun_add loc (join (lc1.(coh) loc) view_old) lc1.(coh))
+              (fun_add loc (join (lc1.(coh) loc) view_post) lc1.(coh))
               (join lc1.(vrn) view_post)
               (join lc1.(vwn) view_post)
-              (join lc1.(vro) view_old)
+              (join lc1.(vro) view_post)
               lc1.(vwo)
               lc1.(promises))
   .
