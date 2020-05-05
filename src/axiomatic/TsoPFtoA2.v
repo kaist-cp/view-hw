@@ -254,9 +254,9 @@ Proof.
   exploit sim_trace_last; try exact REL6; eauto. i. des. simplify.
   exploit sim_trace_sim_th; try exact REL6; eauto. intro TH2.
   exploit TH1.(WPROP3); eauto. i. des.
-  exploit TH2.(RPROP2); eauto. i. des. unguardH x11. des; subst; ss.
-  { rewrite x11 in *. unfold Time.lt in x0. lia. }
-  rewrite x11 in x6. inv x6.
+  exploit TH2.(RPROP2); eauto. i. des. unguardH x10. des; subst; ss.
+  { rewrite x10 in *. unfold Time.lt in x0. lia. }
+  rewrite x10 in x6. inv x6.
   generalize (ATR tid1). intro ATR1. inv ATR1; try congr.
   generalize (ATR tid2). intro ATR2. inv ATR2; try congr.
   des. simplify. destruct PRE, ex. ss.
@@ -634,12 +634,26 @@ Proof.
   - eapply LABELS_REV0; eauto. apply nth_error_app_mon. ss.
 
   (* update *)
+  - rewrite XCOV0; eauto; tac; try lia.
+    inv NEW. destruct new1. ss. subst.
+    condtac; ss. apply Nat.eqb_eq in X. lia.
   - rewrite XVEXT0; eauto; tac; try lia.
-  - admit.
-    (* erewrite XW0; eauto; tac; try lia.
-    inv RES. destruct res1. ss. subst. ss. *)
-  - admit.
-    (* rewrite XVEXT0; eauto; tac; try lia. *)
+    inv NEW. destruct new1. ss. subst.
+    condtac; ss. apply Nat.eqb_eq in X. lia.
+  - erewrite XW0; eauto; tac; try lia.
+    inv NEW. destruct new1. ss. subst.
+    condtac; ss. apply Nat.eqb_eq in X. lia.
+  - erewrite XR0; eauto; tac; try lia.
+  - eapply LABELS_REV0; eauto. apply nth_error_app_mon. ss.
+
+  (* rmw fail -> read *)
+  - rewrite XCOV0; eauto; tac; try lia.
+    condtac; ss. apply Nat.eqb_eq in X. lia.
+  - rewrite XVEXT0; eauto; tac; try lia.
+    condtac; ss. apply Nat.eqb_eq in X. lia.
+  - erewrite XR0; eauto; tac; try lia.
+    condtac; ss. apply Nat.eqb_eq in X. lia.
+  - eapply LABELS_REV0; eauto. apply nth_error_app_mon. ss.
 
   (* barrier *)
   - rewrite XVEXT0; eauto; tac; try lia.

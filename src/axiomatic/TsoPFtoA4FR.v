@@ -138,10 +138,7 @@ Proof.
     exploit sim_trace_sim_th; try exact SIMTR; eauto. intro L2.
     exploit sim_trace_sim_th; try exact TRACE; eauto. intro L1.
     exploit L2.(RPROP1); ss.
-    { split.
-      - apply nth_error_last. apply Nat.eqb_eq. ss.
-      - eauto with tso.
-    }
+    { apply nth_error_last. apply Nat.eqb_eq. ss. }
     unfold ALocal.next_eid in *. condtac; cycle 1.
     { apply Nat.eqb_neq in X. congr. }
     i. des. inv x0. rewrite EX2.(XVEXT) in *; s; cycle 1.
@@ -172,7 +169,9 @@ Proof.
     rewrite EX2'.(XCOV) in *; eauto; cycle 1.
     { apply List.nth_error_Some. congr. }
     rewrite x6 in *. rewrite x3 in x10. inv x10.
-    eapply Memory.latest_lt; eauto. ii. contradict TS2. lia.
+    (* rewrite H2 in x8. inv x8. *)
+    eapply Memory.latest_lt; try exact x0; eauto.
+    ii. inv STEP0. eauto.
   }
   { (* read -> update *)
     rewrite EU, AEU, WL, RL, COV, VEXT in SIMTR.
