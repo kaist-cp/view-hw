@@ -222,7 +222,8 @@ Section Local.
         (WF: Local.wf tid mem lc1)
         (READ: Local.read vloc res ts lc1 mem lc2):
     <<LATEST: Memory.latest vloc.(ValA.val) ts lc2.(Local.vrn).(View.ts) mem>> /\
-    <<COH: ts = Memory.latest_ts vloc.(ValA.val) (lc2.(Local.coh) vloc.(ValA.val)).(View.ts) mem>>.
+    <<COH: ts = Memory.latest_ts vloc.(ValA.val) (lc2.(Local.coh) vloc.(ValA.val)).(View.ts) mem>> /\
+    <<COH2: Memory.latest vloc.(ValA.val) ts (lc2.(Local.coh) vloc.(ValA.val)).(View.ts) mem>>.
   Proof.
     inv READ. ss. rewrite fun_add_spec. condtac; [|congr]. splits.
     - apply Memory.latest_join; auto. apply Memory.latest_join; auto.
@@ -234,6 +235,8 @@ Section Local.
         apply Memory.latest_join; ss.
         apply Memory.latest_join; ss.
         apply Memory.ge_latest. etrans; eauto.
+    - apply Memory.latest_join; auto. apply Memory.latest_join; auto.
+      apply Memory.ge_latest. ss.
   Qed.
 
   Lemma rmw_failure_spec
@@ -241,7 +244,8 @@ Section Local.
         (WF: Local.wf tid mem lc1)
         (READ: Local.rmw_failure vloc vold res old_ts lc1 mem lc2):
     <<LATEST: Memory.latest vloc.(ValA.val) old_ts lc2.(Local.vrn).(View.ts) mem>> /\
-    <<COH: old_ts = Memory.latest_ts vloc.(ValA.val) (lc2.(Local.coh) vloc.(ValA.val)).(View.ts) mem>>.
+    <<COH: old_ts = Memory.latest_ts vloc.(ValA.val) (lc2.(Local.coh) vloc.(ValA.val)).(View.ts) mem>> /\
+    <<COH2: Memory.latest vloc.(ValA.val) old_ts (lc2.(Local.coh) vloc.(ValA.val)).(View.ts) mem>>.
   Proof.
     inv READ. ss. rewrite fun_add_spec. condtac; [|congr]. splits.
     - apply Memory.latest_join; auto. apply Memory.latest_join; auto.
@@ -253,6 +257,8 @@ Section Local.
         apply Memory.latest_join; ss.
         apply Memory.latest_join; ss.
         apply Memory.ge_latest. etrans; eauto.
+    - apply Memory.latest_join; auto. apply Memory.latest_join; auto.
+      apply Memory.ge_latest. ss.
   Qed.
 
   (* Lemma update_spec
