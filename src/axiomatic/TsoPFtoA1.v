@@ -64,12 +64,14 @@ Inductive sim_trace (p: program) (mem: Memory.t) (tid: Id.t):
                                          (eu2.(ExecUnit.local).(Local.coh) vloc.(ValA.val)).(View.ts)
                                          mem)
                             else r1 eid)
+               (* TODO: infer rmw read timestamp *)
                (* | Event.rmw _ _ vloc _ _ =>
                  (fun eid => if Nat.eqb eid (ALocal.next_eid aeu1.(AExecUnit.local))
                             then Some (vloc.(ValA.val),
-                                       Memory.latest_ts
+                                       Memory.exclusive_ts
+                                         tid
                                          vloc.(ValA.val)
-                                         (pred (eu2.(ExecUnit.local).(Local.coh) vloc.(ValA.val)).(View.ts))
+                                         (pred ((eu2.(ExecUnit.local).(Local.coh) vloc.(ValA.val)).(View.ts)))
                                          mem)
                             else r1 eid) *)
                | _ => r1
@@ -390,7 +392,6 @@ Inductive sim_th
       List.nth_error aeu.(AExecUnit.local).(ALocal.labels) eid = Some (Label.read loc val) /\
       __guard__ ((ts = Time.bot /\ val = Val.default) \/
                  Memory.get_msg ts mem = Some (Msg.mk loc val tid'));
-  (* TODO: maybe add UPROP when read? *)
   COVPROP:
     forall eid (COV: cov eid > 0),
       AExecUnit.label_is aeu.(AExecUnit.local).(ALocal.labels) Label.is_access eid;
