@@ -89,7 +89,10 @@ Inductive sim_trace (p: program) (mem: Memory.t) (tid: Id.t):
                  | _ => cov1
                  end)
     (VEXT: vext2 = match e with
-                   | Event.read _ _ _ vloc _
+                   | Event.read _ _ _ vloc _ =>
+                     (fun eid => if Nat.eqb eid (ALocal.next_eid aeu1.(AExecUnit.local))
+                                then (eu2.(ExecUnit.local).(Local.vrn).(View.ts))
+                                else vext1 eid)
                    | Event.write _ _ vloc _ (ValA.mk _ 0 _)
                    | Event.rmw _ _ vloc _ _ =>
                      (fun eid => if Nat.eqb eid (ALocal.next_eid aeu1.(AExecUnit.local))
