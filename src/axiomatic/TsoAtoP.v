@@ -1225,7 +1225,7 @@ Proof.
         rewrite sim_local_vro_step. rewrite inverse_step.
         rewrite ? inverse_union. apply sim_view_join; eauto.
         { eapply sim_view_le; [|exact SIM_LOCAL.(VRO)]. eauto. }
-        eapply sim_view_le; [|exact SIM_EXT2].
+        eapply sim_view_le; [|exact SIM_EXT1].
         i. subst. right. econs; eauto. econs; eauto with tso.
       * rewrite List.app_length, Nat.add_1_r.
         rewrite sim_local_vwo_step. rewrite inverse_step.

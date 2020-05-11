@@ -108,13 +108,11 @@ Section Local.
   Inductive rmw (vloc vold vnew:ValA.t (A:=unit)) (ts:Time.t) (tid:Id.t) (view_pre:View.t (A:=unit)) (lc1:t) (mem1:Memory.t) (lc2:t): Prop :=
   | rmw_intro
       loc old new old_ts
-      view_old
       (LOC: loc = vloc.(ValA.val))
       (OLD_RANGE: old_ts < ts)
       (EX: Memory.exclusive tid loc old_ts ts mem1)
       (OLD_MSG: Memory.read loc old_ts mem1 = Some old)
       (OLD: vold.(ValA.val) = old)
-      (VIEW_OLD: view_old = View.mk old_ts bot)
       (NEW: new = vnew.(ValA.val))
       (WRITABLE: writable vloc vnew tid lc1 mem1 ts view_pre)
       (MSG: Memory.get_msg ts mem1 = Some (Msg.mk loc new tid))
@@ -124,7 +122,7 @@ Section Local.
               (fun_add loc (View.mk ts bot) lc1.(coh))
               (join lc1.(vrn) (View.mk ts bot))
               (join lc1.(vwn) (View.mk ts bot))
-              (join lc1.(vro) view_old)
+              (join lc1.(vro) (View.mk ts bot)) (* vro is about what point this thread had seen while taking read step, not just msg view itself*)
               (join lc1.(vwo) (View.mk ts bot))
               (Promises.unset ts lc1.(promises)))
   .
@@ -514,7 +512,6 @@ Section ExecUnit.
     - inv STEP. inv WRITABLE. econs; ss.
       econs; viewtac; rewrite <- ? TS0, <- ? TS1.
       + i. rewrite fun_add_spec. condtac; viewtac.
-      + eapply read_wf; eauto.
       + i. revert IN. rewrite Promises.unset_o. condtac; ss. eauto.
       + i. rewrite Promises.unset_o. rewrite fun_add_spec in TS. condtac.
         { inversion e. subst. rewrite MSG in MSG0. destruct msg. inv MSG0. ss.
