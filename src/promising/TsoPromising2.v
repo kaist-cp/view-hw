@@ -139,7 +139,6 @@ Section Local.
       (COH: Memory.latest loc old_ts (lc1.(coh) loc).(View.ts) mem1)
       (LATEST: Memory.latest loc old_ts view_pre.(View.ts) mem1)
       (OLD_MSG: Memory.read loc old_ts mem1 = Some old)
-      (OLD: vold.(ValA.val) <> old)
       (VIEW_OLD: view_old = View.mk old_ts bot)
       (VIEW_POST: view_post = join view_pre view_old)
       (RES: res = ValA.mk _ old bot)

@@ -1319,7 +1319,7 @@ Proof.
 
     inversion RMW. ss.
 
-    assert (RMW_FAIL_STEP: exists local2, Local.rmw_failure (sem_expr rmap1 eloc) vold vres n local1 (mem_of_ex ex ob) local2).
+    assert (RMW_FAIL_STEP: exists vold local2, Local.rmw_failure (sem_expr rmap1 eloc) vold vres n local1 (mem_of_ex ex ob) local2).
     { esplits. econs; eauto.
       - (* internal *)
         generalize (SIM_LOCAL.(COH) (ValA.val (sem_expr rmap1 eloc))). intro X. inv X.
@@ -1684,6 +1684,9 @@ Proof.
     + econs. econs; ss; econs; ss.
     + econs; ss.
       inv SIM_LOCAL; econs; eauto.
+
+  Grab Existential Variables.
+  eauto. (* vold when rmw_failure*)
 Qed.
 
 Lemma sim_eu_rtc_step

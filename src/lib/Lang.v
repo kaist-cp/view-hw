@@ -235,9 +235,7 @@ Section SEM.
 
   Inductive sem_rmw_fail (rmap:RMap.t (A:=A)): forall (rmw:rmwT) (vres:ValA.t), Prop :=
   | sem_rmw_fail_cas
-      eold enew vold vres
-      (OLD: vold = sem_expr rmap eold)
-      (NEQ: vold.(ValA.val) <> vres.(ValA.val)):
+      eold enew vres:
       sem_rmw_fail rmap (rmw_cas eold enew) vres
   .
 End SEM.
