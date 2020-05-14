@@ -367,6 +367,13 @@ Inductive sim_th
     exists ts,
       w eid = Some (loc, ts) /\
       Memory.get_msg ts mem = Some (Msg.mk loc val tid);
+  WPROP2':
+    forall eid loc l
+      (GET: List.nth_error aeu.(AExecUnit.local).(ALocal.labels) eid = Some l /\
+            Label.is_writing loc l),
+    exists ts val,
+      w eid = Some (loc, ts) /\
+      Memory.get_msg ts mem = Some (Msg.mk loc val tid);
   WPROP3:
     forall eid loc ts (GET: w eid = Some (loc, ts)),
       Time.lt Time.bot ts /\
@@ -466,6 +473,8 @@ Proof.
       destruct eid; ss.
     - rewrite IdMap.mapi_spec, STMT in FIND. inv FIND. s. i. des.
       destruct eid; ss.
+    - rewrite IdMap.mapi_spec, STMT in FIND. inv FIND. s. i. des.
+      destruct eid; ss.
     - unfold Time.bot. i. lia.
     - unfold Time.bot. i. lia.
     - i. destruct iid1; ss.
@@ -517,6 +526,8 @@ Proof.
       - i. exploit IH.(WPROP1); eauto. s. i. des; [left|right]; esplits; eauto.
         eapply nth_error_app_mon. eauto.
       - i. exploit IH.(WPROP2); eauto. des.
+        apply nth_error_snoc_inv in GET. des; eauto. split; ss. destruct l; ss.
+      - i. exploit IH.(WPROP2'); eauto. des.
         apply nth_error_snoc_inv in GET. des; eauto. split; ss. destruct l; ss.
       - i. exploit IH.(WPROP3); eauto. s. i. des. des_ifs.
         { exfalso. apply Nat.eqb_eq in Heq. subst.
@@ -616,6 +627,8 @@ Proof.
       - i. exploit IH.(WPROP1); eauto. s. i. des; [left|right]; esplits; eauto.
         eapply nth_error_app_mon. eauto.
       - i. exploit IH.(WPROP2); eauto. des.
+        apply nth_error_snoc_inv in GET. des; eauto. split; ss. destruct l; ss.
+      - i. exploit IH.(WPROP2'); eauto. des.
         apply nth_error_snoc_inv in GET. des; eauto. split; ss. destruct l; ss.
       - i. exploit IH.(WPROP3); eauto. s. i. des. des_ifs.
         { exfalso. apply Nat.eqb_eq in Heq. subst.
@@ -736,6 +749,21 @@ Proof.
         * inv VLOC. rewrite VAL0. eauto.
         * rewrite fun_add_spec in *. des_ifs; [|congr]. ss.
           inv VLOC. inv VVAL. rewrite <- VAL0, <- VAL1.
+          specialize (Memory.latest_ts_spec (ValA.val vloc0) ts mem). i. des.
+          destruct ts; ss. unfold Memory.get_msg in MSG. ss.
+          rewrite MSG. ss. des_ifs.
+    - i. des. unfold ALocal.next_eid in *. apply nth_error_snoc_inv in GET. des.
+      + des_ifs.
+        { apply Nat.eqb_eq in Heq. subst. lia. }
+        eapply IH.(WPROP2'); eauto.
+      + des_ifs; cycle 1.
+        { apply Nat.eqb_neq in Heq. lia. }
+        inv GET0. destruct (equiv_dec (ValA.val vloc) loc); ss. inv e.
+        esplits; eauto.
+        * inv VLOC. rewrite VAL0. eauto.
+        * rewrite fun_add_spec in *. des_ifs; [|congr]. ss.
+          inv VLOC. inv VVAL. rewrite <- VAL0.
+          instantiate (1 := ValA.val vval0).
           specialize (Memory.latest_ts_spec (ValA.val vloc0) ts mem). i. des.
           destruct ts; ss. unfold Memory.get_msg in MSG. ss.
           rewrite MSG. ss. des_ifs.
@@ -867,6 +895,21 @@ Proof.
           specialize (Memory.latest_ts_spec (ValA.val vloc0) ts mem). i. des.
           destruct ts; ss. unfold Memory.get_msg in MSG. ss.
           rewrite MSG. ss. des_ifs.
+    - i. des. unfold ALocal.next_eid in *. apply nth_error_snoc_inv in GET. des.
+      + des_ifs.
+        { apply Nat.eqb_eq in Heq. subst. lia. }
+        eapply IH.(WPROP2'); eauto.
+      + des_ifs; cycle 1.
+        { apply Nat.eqb_neq in Heq. lia. }
+        inv GET0. destruct (equiv_dec (ValA.val vloc) loc); ss. inv e.
+        esplits; eauto.
+        * inv VLOC. rewrite VAL. eauto.
+        * rewrite fun_add_spec in *. des_ifs; [|congr]. ss.
+          inv VLOC. inv NEW. rewrite <- VAL.
+          instantiate (1 := ValA.val vnew).
+          specialize (Memory.latest_ts_spec (ValA.val vloc0) ts mem). i. des.
+          destruct ts; ss. unfold Memory.get_msg in MSG. ss.
+          rewrite MSG. ss. des_ifs.
     - i. unfold ALocal.next_eid in *. des_ifs.
       + apply Nat.eqb_eq in Heq. subst. rewrite fun_add_spec. des_ifs; [|congr]. inv e.
         destruct ts; ss. esplits; eauto using Label.update_is_writing_val.
@@ -967,6 +1010,8 @@ Proof.
     - i. exploit IH.(WPROP1); eauto. s. i. des; [left|right]; esplits; eauto.
       eapply nth_error_app_mon. eauto.
     - i. des. exploit IH.(WPROP2); eauto.
+      apply nth_error_snoc_inv in GET. des; eauto. destruct l; ss.
+    - i. des. exploit IH.(WPROP2'); eauto.
       apply nth_error_snoc_inv in GET. des; eauto. destruct l; ss.
     - i. exploit IH.(WPROP3); eauto. s. i. des. esplits; eauto.
       eapply nth_error_app_mon. eauto.

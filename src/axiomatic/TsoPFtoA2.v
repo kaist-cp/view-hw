@@ -63,21 +63,16 @@ Lemma sim_traces_co1
               (fun tid atr aeu => exists l, atr = aeu :: l)
               atrs PRE.(Valid.aeus)):
   forall eid1 eid2,
-    (exists loc
-        val1
-        val2,
-        <<LABEL: ex.(Execution.label_is) (Label.is_writing_val loc val1) eid1>> /\
-        <<LABEL: ex.(Execution.label_is) (Label.is_writing_val loc val2) eid2>>) ->
+    (exists loc,
+        <<LABEL: ex.(Execution.label_is) (Label.is_writing loc) eid1>> /\
+        <<LABEL: ex.(Execution.label_is) (Label.is_writing loc) eid2>>) ->
     (eid1 = eid2 \/ (co_gen ws) eid1 eid2 \/ (co_gen ws) eid2 eid1).
 Proof.
-  i. des. destruct PRE, ex. unfold Execution.label in *. ss.
+  i. des. destruct PRE, ex.
   destruct eid1 as [tid1 eid1], eid2 as [tid2 eid2]. ss.
   inversion LABEL. inversion LABEL0.
-  destruct (IdMap.find tid1 labels) eqn:FIND1, (IdMap.find tid2 labels) eqn:FIND2; cycle 1.
-  (* TODO: writing_val로 바꾸면서 달라짐. 둘다 some 아니면 모순임 *)
-  { admit. }
-  { admit. }
-  { admit. }
+  unfold Execution.label in *. ss.
+  destruct (IdMap.find tid1 labels) eqn:FIND1, (IdMap.find tid2 labels) eqn:FIND2; ss.
   subst. rewrite IdMap.map_spec in *.
   generalize (ATR tid1). intro ATR1.
   generalize (ATR tid2). intro ATR2.
@@ -92,14 +87,8 @@ Proof.
   exploit sim_trace_last; try exact REL0; eauto. i. des. simplify.
   exploit sim_trace_sim_th; try exact REL6; eauto. intro TH1.
   exploit sim_trace_sim_th; try exact REL0; eauto. intro TH2.
-  inversion LABEL. exploit TH1.(WPROP2). esplits; try exact LABEL1; eauto.
-  (* TODO: writing_val로 바꾸면서 달라짐 *)
-  { instantiate (1 := eid1). admit. }
-  intro W1. des.
-  inv LABEL0. exploit TH2.(WPROP2). esplits; try exact LABEL2; eauto.
-  (* TODO: writing_val로 바꾸면서 달라짐 *)
-  { instantiate (1 := eid2). admit. }
-  intro W2. des.
+  exploit TH1.(WPROP2'). esplits; try exact LABEL1; eauto with tso. intro W1. des.
+  exploit TH2.(WPROP2'). esplits; try exact LABEL2; eauto with tso. intro W2. des.
   destruct (Id.eq_dec tid1 tid2); subst; simplify.
   - specialize (Nat.lt_trichotomy ts ts0). i. des; subst.
     + right. left. econs; eauto.
@@ -120,32 +109,31 @@ Lemma sim_traces_co2
               atrs PRE.(Valid.aeus)):
   forall eid1 eid2,
     (co_gen ws) eid1 eid2 ->
-    exists loc
-      val1
-      val2,
-      <<LABEL: ex.(Execution.label_is) (Label.is_writing_val loc val1) eid1>> /\
-      <<LABEL: ex.(Execution.label_is) (Label.is_writing_val loc val2) eid2>>.
+    exists loc,
+      <<LABEL: ex.(Execution.label_is) (Label.is_writing loc) eid1>> /\
+      <<LABEL: ex.(Execution.label_is) (Label.is_writing loc) eid2>>.
 Proof.
-  i. destruct PRE, ex. unfold Execution.label in *. ss.
+  i. destruct PRE, ex.
   destruct eid1 as [tid1 eid1], eid2 as [tid2 eid2]. inv H. ss.
   generalize (SIM tid1). intro SIM1. inv SIM1; try congr.
   generalize (SIM tid2). intro SIM2. inv SIM2; try congr.
   generalize (ATR tid1). intro ATR1. inv ATR1; try congr.
   generalize (ATR tid2). intro ATR2. inv ATR2; try congr.
   des. simplify.
-  repeat rewrite IdMap.map_spec.
-  (* TODO: reading_val로 바꾸면서 달라짐 *)
-  admit.
 
-
-  (* rewrite <- H13. rewrite <- H15. ss.
-  exploit sim_trace_last; try exact REL6; eauto. i. des. simplify.
+  exploit sim_trace_last. try exact REL6; eauto. i. des. simplify.
   exploit sim_trace_last; try exact REL0; eauto. i. des. simplify.
   exploit sim_trace_sim_th; try exact REL6; eauto. intro TH1.
   exploit sim_trace_sim_th; try exact REL0; eauto. intro TH2.
   exploit TH1.(WPROP3); eauto. i. des.
   exploit TH2.(WPROP3); eauto. i. des.
-  esplits; eauto. *)
+  esplits.
+  - econs; cycle 1. instantiate (1 := l). eauto with tso.
+    unfold Execution.label. ss. repeat rewrite IdMap.map_spec.
+    rewrite <- H13. ss.
+  - econs; cycle 1. instantiate (1 := l0). eauto with tso.
+    unfold Execution.label. ss. repeat rewrite IdMap.map_spec.
+    rewrite <- H15. ss.
 Qed.
 
 Lemma sim_traces_rf1_aux
