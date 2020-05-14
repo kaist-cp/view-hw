@@ -99,7 +99,7 @@ Proof.
     rewrite EU, AEU, WL, RL, COV, VEXT in SIMTR.
     exploit sim_trace_sim_th; try exact SIMTR; eauto. intro L'.
     exploit L'.(RPROP1); ss.
-    { apply nth_error_last. apply Nat.eqb_eq. ss. }
+    { split; eauto with tso. apply nth_error_last. apply Nat.eqb_eq. ss. }
     unfold ALocal.next_eid in *. condtac; cycle 1.
     { apply Nat.eqb_neq in X. congr. }
     i. des. inv x0.
@@ -212,7 +212,7 @@ Proof.
     rewrite EU, AEU, WL, RL, COV, VEXT in SIMTR.
     exploit sim_trace_sim_th; try exact SIMTR; eauto. intro L'.
     exploit L'.(RPROP1); ss.
-    { apply nth_error_last. apply Nat.eqb_eq. ss. }
+    { split; eauto with tso. apply nth_error_last. apply Nat.eqb_eq. ss. }
     unfold ALocal.next_eid in *. condtac; cycle 1.
     { apply Nat.eqb_neq in X. congr. }
     i. des. inv x0.

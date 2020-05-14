@@ -138,7 +138,7 @@ Proof.
     exploit sim_trace_sim_th; try exact SIMTR; eauto. intro L2.
     exploit sim_trace_sim_th; try exact TRACE; eauto. intro L1.
     exploit L2.(RPROP1); ss.
-    { apply nth_error_last. apply Nat.eqb_eq. ss. }
+    { split; eauto with tso. apply nth_error_last. apply Nat.eqb_eq. ss. }
     unfold ALocal.next_eid in *. condtac; cycle 1.
     { apply Nat.eqb_neq in X. congr. }
     i. des. inv x0. rewrite EX2.(XVEXT) in *; s; cycle 1.
@@ -177,7 +177,7 @@ Proof.
     exploit sim_trace_sim_th; try exact SIMTR; eauto. intro L2.
     exploit sim_trace_sim_th; try exact TRACE; eauto. intro L1.
     exploit L2.(RPROP1); ss.
-    { apply nth_error_last. apply Nat.eqb_eq. ss. }
+    { split; eauto with tso. apply nth_error_last. apply Nat.eqb_eq. ss. }
     unfold ALocal.next_eid in *. condtac; cycle 1.
     { apply Nat.eqb_neq in X. congr. }
     i. des. inv x0. rewrite EX2.(XVEXT) in *; s; cycle 1.
@@ -222,7 +222,7 @@ Proof.
     exploit sim_trace_sim_th; try exact SIMTR; eauto. intro L2.
     exploit sim_trace_sim_th; try exact TRACE; eauto. intro L1.
     exploit L2.(RPROP1); ss.
-    { apply nth_error_last. apply Nat.eqb_eq. ss. }
+    { split; eauto with tso. apply nth_error_last. apply Nat.eqb_eq. ss. }
     unfold ALocal.next_eid in *. condtac; cycle 1.
     { apply Nat.eqb_neq in X. congr. }
     i. des. inv x0. rewrite EX2.(XVEXT) in *; s; cycle 1.
@@ -261,7 +261,7 @@ Proof.
     exploit sim_trace_sim_th; try exact SIMTR; eauto. intro L2.
     exploit sim_trace_sim_th; try exact TRACE; eauto. intro L1.
     exploit L2.(RPROP1); ss.
-    { apply nth_error_last. apply Nat.eqb_eq. ss. }
+    { split; eauto with tso. apply nth_error_last. apply Nat.eqb_eq. ss. }
     unfold ALocal.next_eid in *. condtac; cycle 1.
     { apply Nat.eqb_neq in X. congr. }
     i. des. inv x0. rewrite EX2.(XVEXT) in *; s; cycle 1.

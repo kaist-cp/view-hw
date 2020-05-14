@@ -363,6 +363,63 @@ Proof.
       split; eauto with tso. rewrite x0. auto.
 Qed.
 
+Lemma sim_traces_valid_cowr
+      p trs atrs ws rs covs vexts
+      m ex
+      (STEP: Machine.pf_exec p m)
+      (SIM: sim_traces p m.(Machine.mem) trs atrs ws rs covs vexts)
+      (PRE: Valid.pre_ex p ex)
+      (CO: ex.(Execution.co) = co_gen ws)
+      (RF: ex.(Execution.rf) = rf_gen ws rs)
+      (CO1: Valid.co1 ex)
+      (CO2: Valid.co2 ex)
+      (RF1: Valid.rf1 ex)
+      (RF2: Valid.rf2 ex)
+      (RF_WF: Valid.rf_wf ex)
+      (TR: IdMap.Forall2
+             (fun _ tr sl => exists l, tr = (ExecUnit.mk (fst sl) (snd sl) m.(Machine.mem)) :: l)
+             trs m.(Machine.tpool))
+      (ATR: IdMap.Forall2
+              (fun _ atr aeu => exists l, atr = aeu :: l)
+              atrs (Valid.aeus PRE)):
+  <<INTERNAL:
+    forall eid1 eid2
+      (COWR: Execution.cowr ex eid1 eid2),
+      (Time.lt ((v_gen covs) eid1) ((v_gen covs) eid2) /\ ex.(Execution.label_is) Label.is_write eid2) \/
+      (Time.le ((v_gen covs) eid1) ((v_gen covs) eid2) /\ ex.(Execution.label_is) Label.is_read eid2)>>.
+Proof.
+  admit.
+
+  (* generalize STEP. intro X. inv X.
+  ii. exploit Valid.internal_rw; eauto. i. des.
+  inv EID2. destruct l; ss.
+  - right. des_union.
+    + exploit sim_traces_cov_po_loc; eauto. i. des.
+      exploit PO_LOC_READ; eauto with tso.
+    + exploit sim_traces_cov_fr; eauto. i.
+      split; eauto using Nat.lt_le_incl with tso.
+    + exploit sim_traces_cov_co; eauto. i.
+      split; eauto using Nat.lt_le_incl with tso.
+    + exploit sim_traces_cov_rf; eauto. i.
+      split; eauto with tso. rewrite x0. auto.
+  - left. des_union.
+    + exploit sim_traces_cov_po_loc; eauto. i. des.
+      exploit PO_LOC_WRITE; eauto with tso.
+    + exploit sim_traces_cov_fr; eauto with tso.
+    + exploit sim_traces_cov_co; eauto with tso.
+    + exploit RF2; eauto. i. des.
+      inv READ. inv WRITE. destruct l; ss; congr.
+  - right. des_union.
+    + exploit sim_traces_cov_po_loc; eauto. i. des.
+      exploit PO_LOC_READ; eauto with tso.
+    + exploit sim_traces_cov_fr; eauto. i.
+      split; eauto using Nat.lt_le_incl with tso.
+    + exploit sim_traces_cov_co; eauto. i.
+      split; eauto using Nat.lt_le_incl with tso.
+    + exploit sim_traces_cov_rf; eauto. i.
+      split; eauto with tso. rewrite x0. auto. *)
+Qed.
+
 Lemma sim_traces_valid_external_atomic
       p trs atrs ws rs covs vexts
       m ex
@@ -433,6 +490,28 @@ Proof.
   - inv x0; lia.
   - inv x1. lia.
   - inv x1. inv x2. rewrite EID in EID0. inv EID0. destruct l0; ss.
+
+    admit.
+    (* update가 자기 자신 것을 읽고 있음 *)
+Qed.
+
+Lemma cowr_irrefl
+      ex cov
+      (COWR: forall eid1 eid2 (COWR: Execution.cowr ex eid1 eid2),
+          Time.lt (cov eid1) (cov eid2) \/
+          (Time.le (cov eid1) (cov eid2) /\
+           Execution.po eid1 eid2 /\
+           ex.(Execution.label_is) Label.is_read eid1 /\
+           ex.(Execution.label_is) Label.is_read eid2) \/
+          (Time.le (cov eid1) (cov eid2) /\
+           ex.(Execution.label_is) Label.is_write eid1 /\
+           ex.(Execution.label_is) Label.is_read eid2)):
+  irreflexive (Execution.cowr ex).
+Proof.
+  ii. exploit COWR; eauto. i. des.
+  - inv x0; lia.
+  - inv x1. lia.
+  - inv x1. inv x2. rewrite EID in EID0. inv EID0. destruct l0; ss.
     admit.
 Qed.
 
@@ -445,9 +524,9 @@ Lemma promising_pf_valid
     <<RF1: Valid.rf1 ex>> /\
     <<RF2: Valid.rf2 ex>> /\
     <<RF_WF: Valid.rf_wf ex>> /\
-    (* <<INTERNAL:
+    <<COWR:
       forall eid1 eid2
-        (INTERNAL: (Execution.internal ex)⁺ eid1 eid2),
+        (COWR: (Execution.cowr ex) eid1 eid2),
         Time.lt (cov eid1) (cov eid2) \/
         (Time.le (cov eid1) (cov eid2) /\
          Execution.po eid1 eid2 /\
@@ -455,7 +534,7 @@ Lemma promising_pf_valid
          ex.(Execution.label_is) Label.is_read eid2) \/
         (Time.le (cov eid1) (cov eid2) /\
          ex.(Execution.label_is) Label.is_write eid1 /\
-         ex.(Execution.label_is) Label.is_read eid2)>> /\ *)
+         ex.(Execution.label_is) Label.is_read eid2)>> /\
     <<EXTERNAL:
       forall eid1 eid2
         (OB: (Execution.ob ex ∩ (ex.(Execution.label_is_rel) Label.is_access))⁺ eid1 eid2),
@@ -488,11 +567,10 @@ Proof.
   replace (co_gen ws) with (ex'.(Execution.co)) in CO1, CO2;[|subst; ss].
   replace (rf_gen ws rs) with (ex'.(Execution.rf)) in RF1, RF2, RF_WF; [|subst; ss].
 
-  (* hexploit sim_traces_valid_internal; eauto; try by (subst; ss).
-  { admit. }
-  { admit. }
-  intro INTERNAL.
-  assert (INTERNAL': forall eid1 eid2 (INTERNAL: (Execution.internal ex')⁺ eid1 eid2),
+  hexploit sim_traces_valid_cowr; eauto; try by (subst; ss).
+  intro CORW.
+
+  (* assert (INTERNAL': forall eid1 eid2 (INTERNAL: (Execution.internal ex')⁺ eid1 eid2),
              Time.lt (v_gen covs eid1) (v_gen covs eid2) \/
              (Time.le (v_gen covs eid1) (v_gen covs eid2) /\
               Execution.po eid1 eid2 /\
@@ -527,29 +605,27 @@ Proof.
         destruct l0; ss; congr.
       * inversion IHINTERNAL0_5. inversion IHINTERNAL0_0.
         rewrite EID in EID0. inversion EID0. rewrite H0 in *.
-        destruct l0; ss; congr. }
-  generalize (internal_acyclic _ INTERNAL'). intro ACYCLIC. *)
+        destruct l0; ss; congr. } *)
+
+  (* generalize (internal_acyclic _ INTERNAL'). intro ACYCLIC. *)
 
   hexploit sim_traces_valid_external_atomic; eauto; try by (subst; ss).
-  { admit. }
-  { admit. }
 
   intro EXTERNAL. des.
   esplits; eauto.
-  { admit. }
-  { admit. }
-  - (* clear INTERNAL'. *)
+  all: admit.
+
+
+  (* - clear INTERNAL'.
     i. induction OB.
     + inversion H. inversion H1.
-      exploit EXTERNAL; eauto. i. des; eauto with tso.
-      { destruct l2; eauto with tso. }
-      { destruct l1.
-        - exploit Valid.ob_read_read_po; eauto. i.
-          right. left. splits; eauto.
-        - right. right. splits; eauto.
-        - inv LABEL1.
-        - inv LABEL1.
-      }
+      exploit EXTERNAL; eauto with tso. i. des; eauto.
+      destruct l1; ss.
+      * admit.
+        (* exploit Valid.ob_read_read_po; eauto. i.
+        right. left. splits; eauto. *)
+      * right. right. splits; eauto with tso.
+      * admit.
     + des.
       * left. etrans; eauto.
       * left. eapply le_lt_trans; eauto.
@@ -559,9 +635,11 @@ Proof.
       * right. right. splits; try etrans; eauto.
       * left. eapply lt_le_trans; eauto.
       * inversion IHOB6. inversion IHOB0. rewrite EID in EID0.
-        inversion EID0. rewrite H0 in *. ss. destruct l0; ss; congr.
+        inversion EID0. rewrite H0 in *. ss. destruct l0; ss; try congr.
+        admit.
       * inversion IHOB5. inversion IHOB0. rewrite EID in EID0.
-        inversion EID0. rewrite H0 in *. ss. destruct l0; ss; congr.
+        inversion EID0. rewrite H0 in *. ss. destruct l0; ss; try congr.
+        admit.
   - clear - SIM TR ATR.
     ii. generalize (SIM id). i. inv H; ss.
     + generalize (TR id). i. inv H; try congr.
@@ -574,6 +652,7 @@ Proof.
         rewrite IdMap.mapi_spec in *. rewrite STMT in FIND. ss.
         symmetry in FIND. inv FIND. rewrite H0.
         apply sim_state_weak_init. }
+  - admit. *)
 Qed.
 
 Theorem promising_pf_to_axiomatic
@@ -586,7 +665,7 @@ Theorem promising_pf_to_axiomatic
                m.(Machine.tpool) EX.(Valid.aeus)>>.
 Proof.
   exploit promising_pf_valid; eauto. i. des.
-  exists ex. eexists (Valid.mk_ex PRE CO1 CO2 RF1 RF2 RF_WF _ _ ATOMIC).
+  exists ex. eexists (Valid.mk_ex PRE CO1 CO2 RF1 RF2 RF_WF _ _ _).
   s. esplits; eauto.
   ii. inv H. specialize (STATE tid). inv STATE; try congr.
   rewrite FIND in H. inv H. destruct a. destruct aeu. ss.
@@ -598,11 +677,20 @@ Grab Existential Variables.
   exploit EXTERNAL; eauto. i. des.
   - inv x; lia.
   - inv x0. lia.
-  - inv x0. inv x1. rewrite EID in EID0. inv EID0. destruct l0; ss; congr.
+  - inv x0. inv x1. rewrite EID in EID0. inv EID0. destruct l0; ss; try congr.
+
+    admit.
 }
-{ (* internal *)
-  clear - INTERNAL.
-  eapply internal_acyclic. auto.
+{ (* corw *)
+  ii.
+  admit.
+  (* clear - CORW.
+  eapply corw_irrefl. auto. *)
+}
+{ (* cowr *)
+  admit.
+  (* clear - COWR.
+  eapply cowr_irrefl. auto. *)
 }
 Qed.
 
