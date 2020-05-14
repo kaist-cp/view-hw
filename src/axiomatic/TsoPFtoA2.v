@@ -157,22 +157,19 @@ Lemma sim_traces_rf1_aux
         <<RF: (rf_gen ws rs) eid2 eid1>>).
 Proof.
   i. destruct eid1 as [tid1 eid1].
-  destruct PRE, ex. unfold Execution.label in *. ss.
-  rewrite LABELS in *.
-  (* TODO: reading_val로 바꾸면서 달라짐 *)
-  admit.
-
-  (* rewrite IdMap.map_spec in *.
+  destruct PRE, ex.
+  inversion LABEL. inversion LABEL0.
+  unfold Execution.label in *. ss. rewrite LABELS in *.
+  rewrite IdMap.map_spec in *.
   destruct (IdMap.find tid1 aeus) eqn:FIND1; ss.
   generalize (ATR tid1). intro ATR1. inv ATR1; try congr.
   generalize (SIM tid1). intro SIM1. inv SIM1; try congr.
   des. simplify.
   exploit sim_trace_last; eauto. i. des. simplify.
   exploit sim_trace_sim_th; eauto. intro TH.
-  (* exploit r_property; eauto. i. des. simplify. *)
   exploit TH.(RPROP1); eauto with tso. i. des. unguardH x1. des.
   - left. esplits; subst; eauto.
-    ii. inv H. inv H1.
+    ii. inv H. inv H2.
     destruct x as [tid2 eid2]. ss. simplify.
     rewrite R in x0. inv x0.
     generalize (SIM tid2). intro SIM1. inv SIM1; try congr.
@@ -193,8 +190,9 @@ Proof.
       rewrite Promises.lookup_bot in x3. ss.
     + generalize (ATR tid'). intro ATR2. inv ATR2; try congr.
       des. simplify. eexists (tid', eid). esplits; ss.
-      * rewrite IdMap.map_spec. rewrite <- H8. ss. eauto.
-      * econs; eauto. *)
+      * econs; eauto. unfold Execution.label in *. ss.
+        rewrite IdMap.map_spec. rewrite <- H9. ss.
+      * econs; eauto.
 Qed.
 
 Lemma sim_traces_rf1
@@ -249,11 +247,11 @@ Proof.
   generalize (ATR tid2). intro ATR2. inv ATR2; try congr.
   des. simplify. destruct PRE, ex. ss.
   rewrite LABELS.
-  (* TODO: reading_val로 바꾸면서 달라짐 *)
-  admit.
-
-  (* repeat rewrite IdMap.map_spec.
-  rewrite <- H8. rewrite <- H13. ss. esplits; eauto. *)
+  esplits; cycle 1.
+  - econs; eauto. unfold Execution.label in *. ss.
+    repeat rewrite IdMap.map_spec.
+    rewrite <- H13. ss.
+  - admit. (* RPROP2: read vs update *)
 Qed.
 
 Lemma sim_traces_rf_wf
@@ -632,6 +630,7 @@ Proof.
     inv NEW. destruct new1. ss. subst.
     condtac; ss. apply Nat.eqb_eq in X. lia.
   - erewrite XR0; eauto; tac; try lia.
+    condtac; ss. apply Nat.eqb_eq in X. lia.
   - eapply LABELS_REV0; eauto. apply nth_error_app_mon. ss.
 
   (* rmw fail -> read *)
