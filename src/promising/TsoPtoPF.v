@@ -87,7 +87,7 @@ Proof.
           econs; try exact OLD_RANGE; ss.
           - ii. eapply EX; eauto.
             rewrite nth_error_app1 in MSG0; ss.
-            eapply lt_le_trans; eauto.
+            eapply lt_le_trans; eauto. lia.
           - apply Memory.read_mon. ss.
           - econs; eauto.
           - rewrite <- MSG. unfold Memory.get_msg. destruct ts; ss.
