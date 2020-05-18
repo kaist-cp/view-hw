@@ -25,15 +25,14 @@ Section FwdItem.
 
   Inductive t := mk {
     ts: Time.t;
-    view: View.t (A:=A);
   }.
   Hint Constructors t.
 
-  Definition init: t := mk bot bot.
+  Definition init: t := mk bot.
 
-  Definition read_view (fwd:t) (tsx:Time.t): View.t (A:=A) :=
+  Definition read_view (fwd:t) (tsx:Time.t): View.t (A:=unit) :=
     if fwd.(ts) == tsx
-    then fwd.(view)
+    then View.mk bot bot
     else View.mk tsx bot.
 End FwdItem.
 End FwdItem.
@@ -46,7 +45,7 @@ Section Local.
     vwn: View.t (A:=unit);
     vro: View.t (A:=unit);
     vwo: View.t (A:=unit);
-    fwdbank: Loc.t -> (FwdItem.t (A:=unit));
+    fwdbank: Loc.t -> (FwdItem.t);
     promises: Promises.t;
   }.
   Hint Constructors t.
@@ -122,7 +121,7 @@ Section Local.
               (join lc1.(vwn) (View.mk ts bot))
               lc1.(vro)
               (join lc1.(vwo) (View.mk ts bot))
-              (fun_add loc (FwdItem.mk ts bot) lc1.(fwdbank))
+              (fun_add loc (FwdItem.mk ts) lc1.(fwdbank))
               (Promises.unset ts lc1.(promises)))
   .
   Hint Constructors fulfill.
@@ -146,7 +145,7 @@ Section Local.
               (join lc1.(vwn) (View.mk ts bot))
               (join lc1.(vro) (View.mk ts bot)) (* vro is about what point this thread had seen while taking read step, not just msg view itself*)
               (join lc1.(vwo) (View.mk ts bot))
-              (fun_add loc (FwdItem.mk ts bot) lc1.(fwdbank))
+              (fun_add loc (FwdItem.mk ts) lc1.(fwdbank))
               (Promises.unset ts lc1.(promises)))
   .
   Hint Constructors rmw.
@@ -216,10 +215,9 @@ Section Local.
   .
   Hint Constructors step.
 
-  Inductive wf_fwdbank (loc:Loc.t) (mem:Memory.t) (coh: Time.t) (fwd:FwdItem.t (A:=unit)): Prop :=
+  Inductive wf_fwdbank (loc:Loc.t) (mem:Memory.t) (coh: Time.t) (fwd:FwdItem.t): Prop :=
   | wf_fwdbank_intro
       (TS: fwd.(FwdItem.ts) <= Memory.latest_ts loc coh mem)
-      (VIEW: fwd.(FwdItem.view).(View.ts) <= fwd.(FwdItem.ts))
       (VAL: exists val, Memory.read loc fwd.(FwdItem.ts) mem = Some val)
   .
 
@@ -248,18 +246,6 @@ Section Local.
     - destruct ts; ss. destruct ts; ss.
   Qed.
 
-  Lemma fwd_view_le
-        tid mem lc loc ts
-        (WF: wf tid mem lc)
-        (COH: Memory.latest loc ts (lc.(coh) loc).(View.ts) mem):
-    (lc.(fwdbank) loc).(FwdItem.view).(View.ts) <=
-    (FwdItem.read_view (lc.(fwdbank) loc) ts).(View.ts).
-  Proof.
-    unfold FwdItem.read_view. condtac; ss.
-    inv WF. exploit FWDBANK. intro Y. inv Y.
-    rewrite VIEW, TS. apply Memory.latest_latest_ts. ss.
-  Qed.
-
   Lemma fwd_read_view_le
         tid mem lc loc ts
         (WF: wf tid mem lc)
@@ -268,7 +254,7 @@ Section Local.
   Proof.
     inv WF. destruct (FWDBANK loc). des.
     unfold FwdItem.read_view. condtac; ss.
-    clear X. inv e. ss.
+    apply bot_spec.
   Qed.
 
   Lemma read_spec
