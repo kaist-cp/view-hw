@@ -326,3 +326,105 @@ Proof.
   refl.
 Qed.
 
+Inductive sim_local_fwd ex (loc:Loc.t) (eid1 eid2:eidT): Prop :=
+| sim_local_fwd_intro
+    (PO: Execution.po eid1 eid2)
+    (WRITE: ex.(Execution.label_is) (Label.is_writing loc) eid1)
+    (NWRITE: forall eid
+               (PO: Execution.po eid1 eid)
+               (PO: Execution.po eid eid2),
+        ex.(Execution.label_is) (fun l => ~ Label.is_writing loc l) eid)
+.
+
+Lemma sim_local_fwd_step ex loc:
+  sim_local_fwd ex loc =
+  (sim_local_fwd ex loc ⨾ ⦗ex.(Execution.label_is) (fun l => ~ (Label.is_writing loc l))⦘ ∪
+   ⦗ex.(Execution.label_is) (Label.is_writing loc)⦘) ⨾
+  Execution.po_adj.
+Proof.
+  funext. i. funext. i. propext. econs.
+  - i. inv H. rewrite Execution.po_po_adj in PO. inv PO. des.
+    inv H0. destruct x0, x1. ss. subst.
+    econs. splits; cycle 1.
+    { instantiate (1 := (_, _)). econs; ss. }
+    inv H.
+    + right. econs; ss.
+    + hexploit NWRITE; eauto with tso. i.
+      left. econs. splits; cycle 1.
+      { econs; eauto. }
+      econs; eauto. i. apply NWRITE; eauto. etrans; eauto with tso.
+  - i. inv H. des. inv H1. destruct x0, x1. ss. subst. inv H0.
+    + inv H. des. inv H1. inv H2. inv H0.
+      econs; eauto.
+      * etrans; eauto with tso.
+      * i. rewrite Execution.po_po_adj in PO1. inv PO1. des. inv H0. destruct x0. ss. inv N.
+        inv H; eauto with tso.
+    + inv H. inv H1. econs; eauto with tso.
+      i. inv PO. inv PO0. ss. subst. lia.
+Qed.
+
+Lemma sim_local_fwd_functional ex loc eid1 eid2 eid3
+      (EID1: sim_local_fwd ex loc eid1 eid3)
+      (EID2: sim_local_fwd ex loc eid2 eid3):
+  eid1 = eid2.
+Proof.
+  inv EID1. inv EID2.
+  destruct eid1, eid2, eid3. inv PO. inv PO0. ss. subst. f_equal.
+  destruct (Nat.compare_spec n n0); ss.
+  - exploit (NWRITE (t1, n0)); eauto with tso. i.
+    inv WRITE0. inv x0. rewrite EID in EID0. inv EID0. ss.
+  - exploit (NWRITE0 (t1, n)); eauto with tso. i.
+    inv WRITE. inv x0. rewrite EID in EID0. inv EID0. ss.
+Qed.
+
+Lemma rfi_sim_local_fwd
+      p ex (EX: Valid.ex p ex)
+      loc eid1 eid2
+      (EID1: ex.(Execution.label_is) (Label.is_writing loc) eid1)
+      (EID2: ex.(Execution.label_is) (Label.is_reading loc) eid2)
+      (RFI: Execution.rfi ex eid1 eid2):
+  sim_local_fwd ex loc eid1 eid2.
+Proof.
+  destruct eid1 as [tid1 n1].
+  destruct eid2 as [tid2 n2].
+  inv RFI. inv H0. ss. subst.
+  destruct (Nat.compare_spec n1 n2).
+  - subst. exfalso. eapply EX.(Valid.CORW).
+    econs. esplits; try exact H. eauto.
+  - econs; ss. i. destruct eid. inv PO. inv PO0. ss. subst.
+    inv EID1. inv EID2.
+    exploit Valid.po_label; eauto.
+    { instantiate (1 := (t, n)). econs; ss. }
+    i. des. econs; eauto. intro X.
+    exploit Valid.coherence_ww.
+    { eauto. }
+    { econs; try exact EID; eauto. }
+    { econs; try exact LABEL1; eauto. }
+    { econs; ss. }
+    i.
+    exploit Valid.coherence_wr; try exact H; eauto.
+    { econs; try exact LABEL1; eauto. }
+    { econs; try exact EID0; eauto. }
+    { econs; ss. }
+    i. des.
+    exploit EX.(Valid.RF_WF); [exact H|exact RF|]. i. subst.
+    inv CO.
+    + inv H1. lia.
+    + exfalso. eapply EX.(Valid.EXTERNAL). econs 2; econs; left; left; right; eauto.
+  - exfalso. eapply EX.(Valid.CORW). econs. esplits; [|exact H]. econs 2. ss.
+Qed.
+
+Definition sim_local_fwd_none ex loc :=
+  ⦗ex.(Execution.label_is) (Label.is_writing loc)⦘ ⨾ Execution.po.
+
+Lemma sim_local_fwd_none_step ex loc:
+  sim_local_fwd_none ex loc =
+  (sim_local_fwd_none ex loc ∪ ⦗ex.(Execution.label_is) (Label.is_writing loc)⦘) ⨾
+  Execution.po_adj.
+Proof.
+  unfold sim_local_fwd_none. rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
+  rewrite Execution.po_po_adj at 1.
+  rewrite (clos_refl_union Execution.po), union_seq, eq_seq.
+  rewrite ? (seq_union' (Execution.po ⨾ Execution.po_adj) Execution.po_adj), ? seq_assoc, ? union_assoc.
+  refl.
+Qed.

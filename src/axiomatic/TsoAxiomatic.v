@@ -647,6 +647,7 @@ Module Execution.
     ((ex.(label_rel) label_loc) ∩
      ((ex.(label_is) Label.is_read) \₁ codom_rel ex.(rf)) × (ex.(label_is) Label.is_write)).
 
+  Definition rfi (ex:t): relation eidT := ex.(rf) ∩ i.
   Definition rfe (ex:t): relation eidT := ex.(rf) ∩ e.
 
   Definition internal (ex:t): relation eidT := (po_loc ex) ∪ (fr ex) ∪ ex.(co) ∪ ex.(rf).
