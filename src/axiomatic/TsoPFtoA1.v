@@ -481,6 +481,7 @@ Proof.
     - rewrite IdMap.mapi_spec, STMT in FIND. inv FIND.
       econs; ss.
       econs; ss; i; try by apply bot_spec.
+      + econs; esplits; ss.
       + destruct ts; ss.
         rewrite Machine.promises_from_mem_spec in IN. des.
         apply lt_le_S. rewrite <- List.nth_error_Some. ii. congr.
