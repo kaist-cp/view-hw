@@ -319,7 +319,6 @@ Section Local.
         tid view_pre mem vloc vold vnew ts lc1 lc2
         (WF: Local.wf tid mem lc1)
         (RMW: Local.rmw vloc vold vnew ts tid view_pre lc1 mem lc2):
-    <<LATEST: Memory.latest vloc.(ValA.val) ts lc2.(Local.vrn).(View.ts) mem>> /\
     <<COH: ts = Memory.latest_ts vloc.(ValA.val) (lc2.(Local.coh) vloc.(ValA.val)).(View.ts) mem>> /\
     <<OLD_TS:
       exists old_ts,
@@ -328,9 +327,6 @@ Section Local.
     >>.
   Proof.
     inv RMW. ss. rewrite fun_add_spec. condtac; [|congr]. splits.
-    - assert (join (View.ts (vrn lc1)) ts = ts).
-      { admit. }
-      rewrite H. apply Memory.ge_latest. ss.
     - apply le_antisym; ss.
       + eapply Memory.latest_ts_read_le; eauto.
         eapply Memory.get_msg_read. eauto.
