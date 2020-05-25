@@ -86,6 +86,10 @@ Proof.
           inv WRITABLE. ss.
           exploit ExecUnit.get_msg_wf; try exact MSG. i.
           econs; try exact OLD_RANGE; ss.
+          - ii. eapply COH; eauto.
+            rewrite nth_error_app1 in MSG0; ss.
+            eapply lt_le_trans; eauto.
+            inv WF. exploit WF0; eauto. i. inv x. ss. inv LOCAL. ss.
           - ii. eapply EX; eauto.
             rewrite nth_error_app1 in MSG0; ss.
             eapply lt_le_trans; eauto.
@@ -144,6 +148,12 @@ Proof.
         }
         { econs 4; eauto. instantiate (1 := view_pre). instantiate (1 := ts).
           inv STEP. inv WRITABLE. econs; try exact OLD_RANGE; eauto.
+          - ii. eapply COH; eauto.
+            destruct (lt_dec ts0 (length mem1)).
+            { rewrite nth_error_app1 in MSG0; ss. }
+            contradict n.
+            eapply lt_le_trans; [apply TS2|].
+            inv WF. exploit WF0; try exact FIND; eauto. i. inv x. inv LOCAL. ss.
           - ii. eapply EX; eauto.
             destruct (lt_dec ts0 (length mem1)).
             { rewrite nth_error_app1 in MSG0; ss. }
