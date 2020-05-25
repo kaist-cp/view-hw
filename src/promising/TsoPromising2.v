@@ -130,7 +130,10 @@ Section Local.
   | rmw_intro
       loc old new old_ts
       (LOC: loc = vloc.(ValA.val))
-      (OLD_RANGE: old_ts < ts)
+      (* CHECK: vs. *)
+      (COH: Memory.latest loc old_ts (lc1.(coh) loc).(View.ts) mem1)
+      (* (COH: le (lc1.(coh) loc).(View.ts) old_ts) *)
+      (OLD_RANGE: lt old_ts ts)
       (EX: Memory.exclusive tid loc old_ts ts mem1)
       (OLD_MSG: Memory.read loc old_ts mem1 = Some old)
       (OLD: vold.(ValA.val) = old)
@@ -419,7 +422,7 @@ Section Local.
     inv LC. econs; ss; try refl; try apply join_l.
     i. rewrite fun_add_spec. condtac; try refl.
     clear X. inv e. s.
-    inv WRITABLE. unfold Order.le. clear -COH. lia.
+    inv WRITABLE. unfold Order.le. clear -COH0. lia.
   Qed.
 
   Lemma rmw_failure_incr
@@ -595,7 +598,7 @@ Section ExecUnit.
         revert TS. condtac; ss; intuition.
         }
         { eapply PROMISES0; eauto. revert TS. condtac; ss. i.
-        inversion e. rewrite H0. rewrite COH0. ss.
+        inversion e. rewrite H0. rewrite COH1. ss.
         }
     - inv STEP. econs. ss.
       exploit FWDVIEW; eauto.
