@@ -152,7 +152,7 @@ Proof.
     { inv STEP. ss. }
     rewrite EX2.(XCOV) in *; s; cycle 1.
     { rewrite List.app_length. s. clear. lia. }
-    rewrite X. i.
+    rewrite X. intro FR_COV. guardH FR_COV.
     exploit sim_trace_sim_th; try exact SIMTR2; eauto. intro L1'.
     exploit sim_trace_length; try exact SIMTR2; eauto. intro LEN. guardH LEN.
     symmetry in ATR2. hexploit sim_traces_ex; try exact ATR2; eauto.
@@ -169,8 +169,10 @@ Proof.
     { apply List.nth_error_Some. congr. }
     rewrite EX2'.(XCOV) in *; eauto; cycle 1.
     { apply List.nth_error_Some. congr. }
-    rewrite x6 in *. rewrite x3 in x10. inv x10.
-    eapply Memory.latest_lt; eauto.
+    rewrite x4 in *. rewrite x1 in x8. inv x8.
+    unguardH FR_COV. des.
+    - eapply Memory.latest_lt; eauto.
+    - admit.
   }
   { (* read -> update *)
     rewrite EU, AEU, WL, RL, COV, VEXT in SIMTR.
@@ -191,7 +193,7 @@ Proof.
     { inv STEP. ss. }
     rewrite EX2.(XCOV) in *; s; cycle 1.
     { rewrite List.app_length. s. clear. lia. }
-    rewrite X. i.
+    rewrite X. intro FR_COV. guardH FR_COV.
     exploit sim_trace_sim_th; try exact SIMTR2; eauto. intro L1'.
     exploit sim_trace_length; try exact SIMTR2; eauto. intro LEN. guardH LEN.
     symmetry in ATR2. hexploit sim_traces_ex; try exact ATR2; eauto.
@@ -208,14 +210,92 @@ Proof.
     { apply List.nth_error_Some. congr. }
     rewrite EX2'.(XCOV) in *; eauto; cycle 1.
     { apply List.nth_error_Some. congr. }
-    rewrite x6 in *. rewrite x3 in x10. inv x10.
-    eapply Memory.latest_lt; eauto.
+    rewrite x4 in *. rewrite x1 in x8. inv x8.
+    unguardH FR_COV. des; admit.
   }
   { (* update -> write *)
-    admit.
+    rewrite EU, AEU, WL, RL, COV, VEXT in SIMTR.
+    exploit sim_trace_sim_th; try exact SIMTR; eauto. intro L2.
+    exploit sim_trace_sim_th; try exact TRACE; eauto. intro L1.
+    exploit L2.(RPROP1); ss.
+    { split.
+      - instantiate (1 := (Label.update (ValA.val (sem_expr rmap eloc)) (ValA.val voldv) (ValA.val vnewv))).
+        apply nth_error_last. apply Nat.eqb_eq. ss.
+      - eauto with tso.
+    }
+    unfold ALocal.next_eid in *. condtac; cycle 1.
+    { apply Nat.eqb_neq in X. congr. }
+    i. des. inv x0. rewrite EX2.(XVEXT) in *; s; cycle 1.
+    { rewrite List.app_length. s. clear. lia. }
+    rewrite X.
+    inv STEP0. ss. subst. inv LOCAL0; inv EVENT.
+    generalize L1.(EU_WF). intro WF. inv WF. ss.
+    generalize (Local.rmw_spec LOCAL0 STEP0). i. des. subst.
+    exploit sim_traces_cov_fr; eauto.
+    { inv STEP. ss. }
+    rewrite EX2.(XCOV) in *; s; cycle 1.
+    { rewrite List.app_length. s. clear. lia. }
+    rewrite X. intro FR_COV. guardH FR_COV.
+    exploit sim_trace_sim_th; try exact SIMTR2; eauto. intro L1'.
+    exploit sim_trace_length; try exact SIMTR2; eauto. intro LEN. guardH LEN.
+    symmetry in ATR2. hexploit sim_traces_ex; try exact ATR2; eauto.
+    1: instantiate (3 := length atr'0).
+    all: try rewrite lastn_all; ss.
+    all: try by clear -LEN; unguardH LEN; des; lia.
+    intro EX2'.
+    revert EID0. unfold Execution.label. s. rewrite PRE.(Valid.LABELS), IdMap.map_spec.
+    generalize (ATR tid2). rewrite ATR2. intros Y Z; inv Y; ss.
+    rewrite <- H in Z. inv Z. des. simplify.
+    exploit L1'.(WPROP2); eauto with tso. i. des.
+    exploit L1'.(WPROP3); eauto. i. des. subst.
+    rewrite EX2'.(XVEXT) in *; eauto; cycle 1.
+    { apply List.nth_error_Some. congr. }
+    rewrite EX2'.(XCOV) in *; eauto; cycle 1.
+    { apply List.nth_error_Some. congr. }
+    rewrite x4 in *. rewrite x1 in x8. inv x8.
+    unguardH FR_COV. des; admit.
   }
   { (* update -> update *)
-    admit.
+    rewrite EU, AEU, WL, RL, COV, VEXT in SIMTR.
+    exploit sim_trace_sim_th; try exact SIMTR; eauto. intro L2.
+    exploit sim_trace_sim_th; try exact TRACE; eauto. intro L1.
+    exploit L2.(RPROP1); ss.
+    { split.
+      - instantiate (1 := (Label.update (ValA.val (sem_expr rmap eloc)) (ValA.val voldv) (ValA.val vnewv))).
+        apply nth_error_last. apply Nat.eqb_eq. ss.
+      - eauto with tso.
+    }
+    unfold ALocal.next_eid in *. condtac; cycle 1.
+    { apply Nat.eqb_neq in X. congr. }
+    i. des. inv x0. rewrite EX2.(XVEXT) in *; s; cycle 1.
+    { rewrite List.app_length. s. clear. lia. }
+    rewrite X.
+    inv STEP0. ss. subst. inv LOCAL0; inv EVENT.
+    generalize L1.(EU_WF). intro WF. inv WF. ss.
+    generalize (Local.rmw_spec LOCAL0 STEP0). i. des. subst.
+    exploit sim_traces_cov_fr; eauto.
+    { inv STEP. ss. }
+    rewrite EX2.(XCOV) in *; s; cycle 1.
+    { rewrite List.app_length. s. clear. lia. }
+    rewrite X. intro FR_COV. guardH FR_COV.
+    exploit sim_trace_sim_th; try exact SIMTR2; eauto. intro L1'.
+    exploit sim_trace_length; try exact SIMTR2; eauto. intro LEN. guardH LEN.
+    symmetry in ATR2. hexploit sim_traces_ex; try exact ATR2; eauto.
+    1: instantiate (3 := length atr'0).
+    all: try rewrite lastn_all; ss.
+    all: try by clear -LEN; unguardH LEN; des; lia.
+    intro EX2'.
+    revert EID0. unfold Execution.label. s. rewrite PRE.(Valid.LABELS), IdMap.map_spec.
+    generalize (ATR tid2). rewrite ATR2. intros Y Z; inv Y; ss.
+    rewrite <- H in Z. inv Z. des. simplify.
+    exploit L1'.(WPROP2); eauto with tso. i. des.
+    exploit L1'.(WPROP3); eauto. i. des. subst.
+    rewrite EX2'.(XVEXT) in *; eauto; cycle 1.
+    { apply List.nth_error_Some. congr. }
+    rewrite EX2'.(XCOV) in *; eauto; cycle 1.
+    { apply List.nth_error_Some. congr. }
+    rewrite x4 in *. rewrite x1 in x8. inv x8.
+    unguardH FR_COV. des; admit.
   }
   { (* read -> write *)
     rewrite EU, AEU, WL, RL, COV, VEXT in SIMTR.
@@ -236,7 +316,7 @@ Proof.
     { inv STEP. ss. }
     rewrite EX2.(XCOV) in *; s; cycle 1.
     { rewrite List.app_length. s. clear. lia. }
-    rewrite X. i.
+    rewrite X. intro FR_COV. guardH FR_COV.
     exploit sim_trace_sim_th; try exact SIMTR2; eauto. intro L1'.
     exploit sim_trace_length; try exact SIMTR2; eauto. intro LEN. guardH LEN.
     symmetry in ATR2. hexploit sim_traces_ex; try exact ATR2; eauto.
@@ -253,8 +333,8 @@ Proof.
     { apply List.nth_error_Some. congr. }
     rewrite EX2'.(XCOV) in *; eauto; cycle 1.
     { apply List.nth_error_Some. congr. }
-    rewrite x6 in *. rewrite x3 in x10. inv x10.
-    eapply Memory.latest_lt; eauto.
+    rewrite x4 in *. rewrite x1 in x8. inv x8.
+    unguardH FR_COV. des; admit.
   }
   { (* read -> update *)
     rewrite EU, AEU, WL, RL, COV, VEXT in SIMTR.
@@ -275,7 +355,7 @@ Proof.
     { inv STEP. ss. }
     rewrite EX2.(XCOV) in *; s; cycle 1.
     { rewrite List.app_length. s. clear. lia. }
-    rewrite X. i.
+    rewrite X. intro FR_COV. guardH FR_COV.
     exploit sim_trace_sim_th; try exact SIMTR2; eauto. intro L1'.
     exploit sim_trace_length; try exact SIMTR2; eauto. intro LEN. guardH LEN.
     symmetry in ATR2. hexploit sim_traces_ex; try exact ATR2; eauto.
@@ -292,7 +372,7 @@ Proof.
     { apply List.nth_error_Some. congr. }
     rewrite EX2'.(XCOV) in *; eauto; cycle 1.
     { apply List.nth_error_Some. congr. }
-    rewrite x6 in *. rewrite x3 in x10. inv x10.
-    eapply Memory.latest_lt; eauto.
+    rewrite x4 in *. rewrite x1 in x8. inv x8.
+    unguardH FR_COV. des; admit.
   }
 Qed.
