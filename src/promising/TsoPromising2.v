@@ -318,7 +318,7 @@ Section Local.
       apply Memory.ge_latest. eapply fwd_read_view_le; eauto.
   Qed.
 
-  (* Lemma update_spec
+  Lemma rmw_spec
         tid view_pre mem vloc vold vnew ts lc1 lc2
         (WF: Local.wf tid mem lc1)
         (RMW: Local.rmw vloc vold vnew ts tid view_pre lc1 mem lc2):
@@ -338,8 +338,17 @@ Section Local.
     - eexists old_ts. split; ss.
       eapply le_antisym; ss.
       + eapply Memory.latest_ts_read_le; eauto. lia.
-      + eapply Memory.latest_latest_ts. ss.
-  Qed. *)
+      + eapply Memory.latest_latest_ts. ii.
+        unfold Memory.exclusive in EX. unfold Memory.no_msgs in EX.
+        exploit EX; eauto.
+        { etrans; eauto. lia. }
+        esplits; eauto. destruct (Msg.tid msg == tid); ss. inv e0.
+        unfold Memory.latest in COH. unfold Memory.no_msgs in COH.
+        exploit COH; eauto.
+        destruct (lt_eq_lt_dec (S ts0) (View.ts (coh lc1 (ValA.val vloc)))). inv s; try lia.
+        (* easy?: my write X ts -> ts <= coh(X) *)
+        admit.
+  Qed.
 
   Lemma interference_wf
         tid (lc:t) mem mem_interference

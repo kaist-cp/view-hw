@@ -167,7 +167,7 @@ Proof.
   des. simplify.
   exploit sim_trace_last; eauto. i. des. simplify.
   exploit sim_trace_sim_th; eauto. intro TH.
-  exploit TH.(RPROP1); eauto with tso. i. des. unguardH x1. des.
+  exploit TH.(RPROP1); eauto with tso. i. des. unguardH READ_TS_SPEC. des.
   - left. esplits; subst; eauto.
     ii. inv H. inv H2.
     destruct x as [tid2 eid2]. ss. simplify.
@@ -186,8 +186,8 @@ Proof.
     exploit sim_trace_sim_th; try exact REL0; eauto. intro TH'.
     exploit TH'.(WPROP1); eauto. i. des; ss.
     + destruct b. ss. inv NOPROMISE.
-      exploit PROMISES; eauto. i. rewrite x in x3.
-      rewrite Promises.lookup_bot in x3. ss.
+      exploit PROMISES; eauto. i. rewrite x in x2.
+      rewrite Promises.lookup_bot in x2. ss.
     + generalize (ATR tid'). intro ATR2. inv ATR2; try congr.
       des. simplify. eexists (tid', eid). esplits; ss.
       * econs; eauto. unfold Execution.label in *. ss.
@@ -240,18 +240,33 @@ Proof.
   exploit sim_trace_last; try exact REL6; eauto. i. des. simplify.
   exploit sim_trace_sim_th; try exact REL6; eauto. intro TH2.
   exploit TH1.(WPROP3); eauto. i. des.
-  exploit TH2.(RPROP2); eauto. i. des. unguardH x10. des; subst; ss.
-  { rewrite x10 in *. unfold Time.lt in x0. lia. }
-  rewrite x10 in x6. inv x6.
-  generalize (ATR tid1). intro ATR1. inv ATR1; try congr.
-  generalize (ATR tid2). intro ATR2. inv ATR2; try congr.
-  des. simplify. destruct PRE, ex. ss.
-  rewrite LABELS.
-  esplits; cycle 1.
-  - econs; eauto. unfold Execution.label in *. ss.
-    repeat rewrite IdMap.map_spec.
-    rewrite <- H13. ss.
-  - admit. (* RPROP2: read vs update *)
+  exploit TH2.(RPROP2); eauto. i. des.
+  - unguardH READ_TS_SPEC. des; subst; ss.
+    { rewrite READ_TS_SPEC in *. unfold Time.lt in x0. lia. }
+    rewrite READ_TS_SPEC in x6. inv x6.
+    generalize (ATR tid1). intro ATR1. inv ATR1; try congr.
+    generalize (ATR tid2). intro ATR2. inv ATR2; try congr.
+    des. simplify. destruct PRE, ex. ss.
+    rewrite LABELS. esplits.
+    + econs; eauto. unfold Execution.label in *. ss.
+      repeat rewrite IdMap.map_spec.
+      rewrite <- H8. ss.
+    + econs; eauto. unfold Execution.label in *. ss.
+      repeat rewrite IdMap.map_spec.
+      rewrite <- H13. ss.
+  - unguardH READ_TS_SPEC. des; subst; ss.
+    { rewrite READ_TS_SPEC in *. unfold Time.lt in x0. lia. }
+    rewrite READ_TS_SPEC in x6. inv x6.
+    generalize (ATR tid1). intro ATR1. inv ATR1; try congr.
+    generalize (ATR tid2). intro ATR2. inv ATR2; try congr.
+    des. simplify. destruct PRE, ex. ss.
+    rewrite LABELS. esplits.
+    + econs; eauto. unfold Execution.label in *. ss.
+      repeat rewrite IdMap.map_spec.
+      rewrite <- H8. ss.
+    + econs; eauto. unfold Execution.label in *. ss.
+      repeat rewrite IdMap.map_spec.
+      rewrite <- H13. ss.
 Qed.
 
 Lemma sim_traces_rf_wf
@@ -310,10 +325,13 @@ Lemma sim_traces_cov_rf
   <<RF:
     forall eid1 eid2
       (RF: ex.(Execution.rf) eid1 eid2),
-      Time.eq ((v_gen covs) eid1) ((v_gen covs) eid2)>>.
+      Time.eq ((v_gen covs) eid1) ((v_gen covs) eid2) /\
+      ~ ex.(Execution.label_is) Label.is_write eid2 \/
+      Time.lt ((v_gen covs) eid1) ((v_gen covs) eid2) /\
+      ex.(Execution.label_is) Label.is_write eid2>>.
 Proof.
   ii. rewrite RF in *. inv RF0.
-  destruct eid1 as [tid1 eid1], eid2 as [tid2 eid2]. ss.
+  destruct eid1 as [tid1 iid1], eid2 as [tid2 iid2]. ss.
   generalize (SIM tid1). intro SIM1. inv SIM1; try congr.
   generalize (SIM tid2). intro SIM2. inv SIM2; try congr. simplify.
   exploit sim_trace_last; try exact REL6; eauto. i. des. simplify.
@@ -321,8 +339,11 @@ Proof.
   exploit sim_trace_last; try exact REL0; eauto. i. des. simplify.
   exploit sim_trace_sim_th; try exact REL0; eauto. intro TH2.
   exploit TH1.(WPROP3); eauto. i. des.
-  exploit TH2.(RPROP2); eauto. i. des.
-  unfold v_gen. ss. subst. rewrite <- H4, <- H10. ss.
+  exploit TH2.(RPROP2); eauto. i. des; [left | right].
+  + unfold v_gen. ss. subst. rewrite <- H4, <- H10. split; ss.
+    admit. (* easy: same iid2 not write *)
+  + unfold v_gen. ss. subst. rewrite <- H4, <- H10. split; ss.
+    admit. (* easy: same iid2 write *)
 Qed.
 
 Lemma sim_traces_cov_fr
