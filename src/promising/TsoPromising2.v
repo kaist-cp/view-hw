@@ -130,9 +130,7 @@ Section Local.
   | rmw_intro
       loc old new old_ts
       (LOC: loc = vloc.(ValA.val))
-      (* CHECK: vs. *)
       (COH: Memory.latest loc old_ts (lc1.(coh) loc).(View.ts) mem1)
-      (* (COH: le (lc1.(coh) loc).(View.ts) old_ts) *)
       (OLD_RANGE: lt old_ts ts)
       (EX: Memory.exclusive tid loc old_ts ts mem1)
       (OLD_MSG: Memory.read loc old_ts mem1 = Some old)
@@ -318,6 +316,28 @@ Section Local.
       apply Memory.ge_latest. eapply fwd_read_view_le; eauto.
   Qed.
 
+  Lemma rmw_latest_old
+        loc old_ts ts tid mem lc old
+        (COH: Memory.latest loc old_ts (View.ts (Local.coh lc loc)) mem)
+        (EX: Memory.exclusive tid loc old_ts ts mem)
+        (OLD_MSG: Memory.read loc old_ts mem = Some old)
+        (OLD_RANGE: lt old_ts ts):
+    <<LATEST_OLD: old_ts = Memory.latest_ts loc (pred ts) mem>>.
+  Proof.
+    eapply le_antisym; ss.
+    + eapply Memory.latest_ts_read_le; eauto. lia.
+    + eapply Memory.latest_latest_ts. ii.
+      unfold Memory.exclusive in EX. unfold Memory.no_msgs in EX.
+      exploit EX; eauto.
+      { etrans; eauto. lia. }
+      esplits; eauto. destruct (Msg.tid msg == tid); ss. inv e.
+      unfold Memory.latest in COH. unfold Memory.no_msgs in COH.
+      exploit COH; eauto.
+      destruct (lt_eq_lt_dec (S ts0) (View.ts (coh lc (Msg.loc msg)))). inv s; try lia.
+      (* maybe easy: my write X ts -> ts <= coh(X) *)
+      admit.
+  Qed.
+
   Lemma rmw_spec
         tid view_pre mem vloc vold vnew ts lc1 lc2
         (WF: Local.wf tid mem lc1)
@@ -336,18 +356,7 @@ Section Local.
       + apply Memory.latest_latest_ts.
         apply Memory.ge_latest. ss.
     - eexists old_ts. split; ss.
-      eapply le_antisym; ss.
-      + eapply Memory.latest_ts_read_le; eauto. lia.
-      + eapply Memory.latest_latest_ts. ii.
-        unfold Memory.exclusive in EX. unfold Memory.no_msgs in EX.
-        exploit EX; eauto.
-        { etrans; eauto. lia. }
-        esplits; eauto. destruct (Msg.tid msg == tid); ss. inv e0.
-        unfold Memory.latest in COH. unfold Memory.no_msgs in COH.
-        exploit COH; eauto.
-        destruct (lt_eq_lt_dec (S ts0) (View.ts (coh lc1 (ValA.val vloc)))). inv s; try lia.
-        (* easy?: my write X ts -> ts <= coh(X) *)
-        admit.
+      eapply rmw_latest_old; eauto.
   Qed.
 
   Lemma interference_wf

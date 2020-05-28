@@ -314,13 +314,12 @@ Proof.
           erewrite EX2.(XR) in R; eauto; cycle 1.
           { s. rewrite List.app_length. s. clear. lia. }
           destruct (length (ALocal.labels alc1) =? length (ALocal.labels alc1)); ss.
-          move RMW_SPEC at bottom. rewrite fun_add_spec in *.
+          rewrite fun_add_spec in *.
           destruct (equiv_dec (ValA.val vloc) (ValA.val vloc)); cycle 1.
           { exfalso. apply c. ss. }
-          generalize SIM_TH.(MEM). s. i. subst.
-          unguardH RMW_SPEC. des. ss.
-          assert (old_ts = old_ts0).
-          { admit. (* maybe easy?: same proof as rmw_spec *)}
+          generalize SIM_TH.(MEM). s. i. subst. ss.
+          assert (old_ts = Memory.latest_ts (ValA.val vloc) (Init.Nat.pred ts) (Machine.mem m)).
+          { eapply Local.rmw_latest_old; eauto. }
           subst. inv R.
           generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
           exploit sim_trace_last; try exact REL0. i. des. simplify.
