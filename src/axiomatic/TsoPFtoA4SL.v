@@ -623,7 +623,7 @@ Proof.
     exploit sim_trace_sim_th; try exact TRACE; eauto. intro SIM_TH.
     generalize STEP0. intro STEP0'. inv STEP0'.
     inv ASTATE_STEP; inv ALOCAL_STEP; ss; inv EVENT; ss. splits.
-    { econs; ss. inv RMAP. admit. (* apply sim_rmap_add; try apply L. econs; ss. *) }
+    { econs; ss. inv RMAP. apply L. }
     destruct L.(LC). ss. econs; ss.
     all: try rewrite List.app_length, Nat.add_1_r.
     + i. rewrite sim_local_coh_step. rewrite inverse_step.
@@ -669,8 +669,7 @@ Proof.
                 { exfalso. apply c. ss. }
                 i. unfold ALocal.next_eid in *.
                 rewrite R in x8. inv x8. rewrite e.
-                (* easy: (latest_ts to-1) <= (latest_ts to) *)
-                admit.
+                eapply Memory.latest_ts_mon. lia.
             - exploit EX2.(LABELS); eauto; ss.
               { rewrite List.app_length. s. lia. }
               rewrite List.nth_error_app2, Nat.sub_diag; ss.
@@ -706,8 +705,7 @@ Proof.
                 { exfalso. apply c. ss. }
                 i. unfold ALocal.next_eid in *.
                 rewrite R in x8. inv x8. rewrite e.
-                (* easy: (latest_ts to-1) <= (latest_ts to) *)
-                admit.
+                eapply Memory.latest_ts_mon. lia.
             - exploit EX2.(LABELS); eauto; ss.
               { rewrite List.app_length. s. lia. }
               rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x0.
@@ -888,10 +886,7 @@ Proof.
     guardH RMW_FAILURE_SPEC. clear LOCAL0 H.
     generalize STEP0. intro STEP0'. inv STEP0'.
     inv ASTATE_STEP; inv ALOCAL_STEP; ss; inv EVENT; ss. splits.
-    { econs; ss. admit.
-      (* apply sim_rmap_add; try apply L.
-      inv VAL. ss. *)
-    }
+    { econs; ss. inv RMAP. apply L. }
     destruct L.(LC). ss. econs; ss.
     all: try rewrite List.app_length, Nat.add_1_r.
     + i. rewrite sim_local_coh_step. rewrite inverse_step.
