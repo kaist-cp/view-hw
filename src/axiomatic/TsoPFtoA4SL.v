@@ -120,14 +120,7 @@ Proof.
             - (* rfe *)
               inv H. exploit RF2; eauto. i. des.
               destruct x as [tid1 eid1]. ss.
-              inv WRITE. inv READ. destruct l; destruct l0; ss.
-              all: destruct (equiv_dec loc1 loc0); ss; inv e0.
-              all: destruct (equiv_dec loc2 loc0); ss; inv e0.
-              1, 2, 3: destruct (equiv_dec val2 val1); ss; inv e0.
-              3, 4: destruct (equiv_dec vnew val1); ss; inv e0.
-              1: destruct (equiv_dec val3 val1); ss; inv e0.
-              2: destruct (equiv_dec vold val1); ss; inv e0.
-              4: destruct (equiv_dec vold0 val1); ss; inv e0.
+              inv WRITE. inv READ. destruct l; destruct l0; ss; eqvtac.
               all: clear LABEL LABEL0.
               all: rename EID0 into WRITE.
               + (* write -> read *)
@@ -223,14 +216,7 @@ Proof.
             - (* rfe *)
               inv H. exploit RF2; eauto. i. des.
               destruct x as [tid1 eid1]. ss.
-              inv WRITE. inv READ. destruct l; destruct l0; ss.
-              all: destruct (equiv_dec loc1 loc0); ss; inv e0.
-              all: destruct (equiv_dec loc2 loc0); ss; inv e0.
-              1, 2, 3: destruct (equiv_dec val1 val0); ss; inv e0.
-              3, 4: destruct (equiv_dec vnew0 val0); ss; inv e0.
-              1: destruct (equiv_dec val2 val0); ss; inv e0.
-              2: destruct (equiv_dec vold0 val0); ss; inv e0.
-              4: destruct (equiv_dec vold1 val0); ss; inv e0.
+              inv WRITE. inv READ. destruct l; destruct l0; ss; eqvtac.
               all: clear LABEL LABEL0.
               all: rename EID0 into WRITE.
               + (* write -> read *)
@@ -332,19 +318,14 @@ Proof.
           { rewrite List.app_length. s. lia. }
           rewrite List.nth_error_app2, Nat.sub_diag; ss.
         - inv H. exploit RF2; eauto. i. des.
-          inv WRITE. inv READ. destruct l; destruct l0; ss.
-          all: destruct (equiv_dec loc1 loc0); ss; inv e.
-          all: destruct (equiv_dec loc2 loc0); ss; inv e.
+          inv WRITE. inv READ. destruct l; destruct l0; ss; eqvtac.
           all: rename EID0 into WRITE.
           all: try rewrite EID in WRITE; inv WRITE.
-          all: destruct (equiv_dec val2 val1); ss; inv e.
-          + destruct (equiv_dec val3 val1); ss; inv e.
-            exploit EX2.(LABELS); eauto; ss.
+          + exploit EX2.(LABELS); eauto; ss.
             { rewrite List.app_length. s. lia. }
             rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x1.
             inv VLOC. congr.
-          + destruct (equiv_dec vold val1); ss; inv e.
-            exploit EX2.(LABELS); eauto; ss.
+          + exploit EX2.(LABELS); eauto; ss.
             { rewrite List.app_length. s. lia. }
             rewrite List.nth_error_app2, Nat.sub_diag; ss.
       }
@@ -354,19 +335,14 @@ Proof.
           { rewrite List.app_length. s. lia. }
           rewrite List.nth_error_app2, Nat.sub_diag; ss.
         - inv H. exploit RF2; eauto. i. des.
-          inv WRITE. inv READ. destruct l; destruct l0; ss.
-          all: destruct (equiv_dec loc1 loc0); ss; inv e.
-          all: destruct (equiv_dec loc2 loc0); ss; inv e.
+          inv WRITE. inv READ. destruct l; destruct l0; ss; eqvtac.
           all: rename EID0 into WRITE.
           all: try rewrite EID in WRITE; inv WRITE.
-          all: destruct (equiv_dec vnew0 val0); ss; inv e.
-          + destruct (equiv_dec val1 val0); ss; inv e.
-            exploit EX2.(LABELS); eauto; ss.
+          + exploit EX2.(LABELS); eauto; ss.
             { rewrite List.app_length. s. lia. }
             rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x1.
             inv VLOC. congr.
-          + destruct (equiv_dec vold1 val0); ss; inv e.
-            exploit EX2.(LABELS); eauto; ss.
+          + exploit EX2.(LABELS); eauto; ss.
             { rewrite List.app_length. s. lia. }
             rewrite List.nth_error_app2, Nat.sub_diag; ss.
       }
@@ -466,12 +442,9 @@ Proof.
           { (* write *)
             inv H0; cycle 1.
             - inv H. exploit RF2; eauto. i. des.
-              inv WRITE. inv READ. destruct l; destruct l0; ss.
-              all: destruct (equiv_dec loc1 loc0); ss; inv e0.
-              all: destruct (equiv_dec loc2 loc0); ss; inv e0.
+              inv WRITE. inv READ. destruct l; destruct l0; ss; eqvtac.
               all: rename EID0 into WRITE.
               all: try rewrite EID in WRITE; inv WRITE.
-              all: destruct (equiv_dec val1 val0); ss; inv e0.
               + exploit EX2.(LABELS); eauto; ss.
                 { rewrite List.app_length. s. lia. }
                 rewrite List.nth_error_app2, Nat.sub_diag; ss.
@@ -494,12 +467,9 @@ Proof.
           { (* update *)
             inv H0; cycle 1.
             - inv H. exploit RF2; eauto. i. des.
-              inv WRITE. inv READ. destruct l; destruct l0; ss.
-              all: destruct (equiv_dec loc1 loc0); ss; inv e0.
-              all: destruct (equiv_dec loc2 loc0); ss; inv e0.
+              inv WRITE. inv READ. destruct l; destruct l0; ss; eqvtac.
               all: rename EID0 into WRITE.
               all: try rewrite EID in WRITE; inv WRITE.
-              all: destruct (equiv_dec vnew0 val); ss; inv e0.
               + exploit EX2.(LABELS); eauto; ss.
                 { rewrite List.app_length. s. lia. }
                 rewrite List.nth_error_app2, Nat.sub_diag; ss.
@@ -521,12 +491,9 @@ Proof.
           rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x0.
           inv VLOC. congr.
         - inv H. exploit RF2; eauto. i. des.
-          inv WRITE. inv READ. destruct l; destruct l0; ss.
-          all: destruct (equiv_dec loc1 loc0); ss; inv e.
-          all: destruct (equiv_dec loc2 loc0); ss; inv e.
+          inv WRITE. inv READ. destruct l; destruct l0; ss; eqvtac.
           all: rename EID0 into WRITE.
           all: try rewrite EID in WRITE; inv WRITE.
-          all: destruct (equiv_dec val1 val0); ss; inv e.
           + exploit EX2.(LABELS); eauto; ss.
             { rewrite List.app_length. s. lia. }
             rewrite List.nth_error_app2, Nat.sub_diag; ss.
@@ -540,12 +507,9 @@ Proof.
           { rewrite List.app_length. s. lia. }
           rewrite List.nth_error_app2, Nat.sub_diag; ss.
         - inv H. exploit RF2; eauto. i. des.
-          inv WRITE. inv READ. destruct l; destruct l0; ss.
-          all: destruct (equiv_dec loc1 loc0); ss; inv e.
-          all: destruct (equiv_dec loc2 loc0); ss; inv e.
+          inv WRITE. inv READ. destruct l; destruct l0; ss; eqvtac.
           all: rename EID0 into WRITE.
           all: try rewrite EID in WRITE; inv WRITE.
-          all: destruct (equiv_dec vnew0 val); ss; inv e.
           + exploit EX2.(LABELS); eauto; ss.
             { rewrite List.app_length. s. lia. }
             rewrite List.nth_error_app2, Nat.sub_diag; ss.
@@ -670,36 +634,43 @@ Proof.
             generalize SIM_TH.(MEM). s. i. subst.
             rewrite e. eapply Memory.get_msg_read; eauto. }
           apply Nat.lt_le_incl.
-          eapply Nat.le_lt_trans; try eapply COH0. rewrite <- e.
-          etrans; try apply COH; eauto. apply Memory.latest_ts_spec.
+          eapply Nat.le_lt_trans; try eapply COH1. rewrite <- e.
+          etrans; try apply COH0; eauto. apply Memory.latest_ts_spec.
         - inv EID. inv REL. des. inv H. inv H2. destruct l; ss.
           all: inv LABEL; destruct (equiv_dec loc0 loc); ss; inv e0; clear H1.
           { (* write *)
             inv H0; cycle 1.
             - inv H. exploit RF2; eauto. i. des.
-              inv WRITE. inv READ. destruct l; destruct l0; ss.
-              all: destruct (equiv_dec loc1 loc0); ss; inv e0.
-              all: destruct (equiv_dec loc2 loc0); ss; inv e0.
+              inv WRITE. inv READ. destruct l; destruct l0; ss; eqvtac.
               all: rename EID0 into WRITE.
               all: try rewrite EID in WRITE; inv WRITE.
-              all: destruct (equiv_dec val1 val0); ss; inv e0.
               + exploit EX2.(LABELS); eauto; ss.
                 { rewrite List.app_length. s. lia. }
                 rewrite List.nth_error_app2, Nat.sub_diag; ss.
-              + exploit EX2.(LABELS); eauto; ss.
-                { rewrite List.app_length. s. lia. }
-                rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x1.
-                destruct (equiv_dec (ValA.val voldv) val0); ss. inv e0.
-                admit.
-                (* rewrite EX2.(XVEXT); cycle 1.
-                { ss. rewrite List.app_length. ss. clear. lia. }
+              + (* write -> update *)
+                rename EID into WRITE.
+                unfold Execution.label in WRITE. ss.
+                rewrite PRE.(Valid.LABELS) in WRITE.
+                rewrite IdMap.map_spec in WRITE.
+                destruct (IdMap.find (fst x) (Valid.aeus PRE)) eqn:FIND1; ss.
+                generalize (ATR (fst x)). intro ATR1. inv ATR1; try congr. des. simplify.
+                generalize (SIM (fst x)). intro SIM1. inv SIM1; simplify.
+                exploit sim_trace_last; try exact REL0. i. des. simplify.
+                exploit sim_trace_sim_th; try exact REL0; eauto. intro L1.
+                rewrite RF in H0. inv H0. ss. simplify.
+                exploit WPROP3; eauto. i. des. simplify.
+                unfold v_gen. ss. rewrite <- H8. rewrite x2.
+                exploit EX2.(XR); eauto.
+                { instantiate (1 := ALocal.next_eid alc1).
+                  ss. rewrite List.app_length. ss. unfold ALocal.next_eid. clear. lia. }
                 condtac; cycle 1.
-                { rewrite Nat.eqb_neq in X0. unfold ALocal.next_eid in X0. ss. }
+                { rewrite Nat.eqb_neq in X0. ss. }
                 rewrite fun_add_spec. condtac; cycle 1.
                 { exfalso. apply c. ss. }
-                s. eapply Memory.latest_ts_read_le; ss.
-                generalize SIM_TH.(MEM). s. i. rewrite H in MSG. rewrite e.
-                eapply Memory.get_msg_read; eauto. *)
+                i. unfold ALocal.next_eid in *.
+                rewrite R in x8. inv x8. rewrite e.
+                (* easy: (latest_ts to-1) <= (latest_ts to) *)
+                admit.
             - exploit EX2.(LABELS); eauto; ss.
               { rewrite List.app_length. s. lia. }
               rewrite List.nth_error_app2, Nat.sub_diag; ss.
@@ -707,27 +678,51 @@ Proof.
           { (* update *)
             inv H0; cycle 1.
             - inv H. exploit RF2; eauto. i. des.
-              inv WRITE. inv READ. destruct l; destruct l0; ss.
-              all: destruct (equiv_dec loc1 loc0); ss; inv e0.
-              all: destruct (equiv_dec loc2 loc0); ss; inv e0.
+              inv WRITE. inv READ. destruct l; destruct l0; ss; eqvtac.
               all: rename EID0 into WRITE.
               all: try rewrite EID in WRITE; inv WRITE.
-              all: destruct (equiv_dec vnew1 val); ss; inv e0.
               + exploit EX2.(LABELS); eauto; ss.
                 { rewrite List.app_length. s. lia. }
                 rewrite List.nth_error_app2, Nat.sub_diag; ss.
-              + exploit EX2.(LABELS); eauto; ss.
-                { rewrite List.app_length. s. lia. }
-                rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x1.
-                destruct (equiv_dec (ValA.val voldv) val); ss. inv e0.
+              + (* update -> update *)
+                rename EID into WRITE.
+                unfold Execution.label in WRITE. ss.
+                rewrite PRE.(Valid.LABELS) in WRITE.
+                rewrite IdMap.map_spec in WRITE.
+                destruct (IdMap.find (fst x) (Valid.aeus PRE)) eqn:FIND1; ss.
+                generalize (ATR (fst x)). intro ATR1. inv ATR1; try congr. des. simplify.
+                generalize (SIM (fst x)). intro SIM1. inv SIM1; simplify.
+                exploit sim_trace_last; try exact REL0. i. des. simplify.
+                exploit sim_trace_sim_th; try exact REL0; eauto. intro L1.
+                rewrite RF in H0. inv H0. ss. simplify.
+                exploit WPROP3; eauto. i. des. simplify.
+                unfold v_gen. ss. rewrite <- H8. rewrite x2.
+                exploit EX2.(XR); eauto.
+                { instantiate (1 := ALocal.next_eid alc1).
+                  ss. rewrite List.app_length. ss. unfold ALocal.next_eid. clear. lia. }
+                condtac; cycle 1.
+                { rewrite Nat.eqb_neq in X0. ss. }
+                rewrite fun_add_spec. condtac; cycle 1.
+                { exfalso. apply c. ss. }
+                i. unfold ALocal.next_eid in *.
+                rewrite R in x8. inv x8. rewrite e.
+                (* easy: (latest_ts to-1) <= (latest_ts to) *)
                 admit.
             - exploit EX2.(LABELS); eauto; ss.
               { rewrite List.app_length. s. lia. }
               rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x0.
-              admit.
+              rewrite EX2.(XVEXT); cycle 1.
+              { ss. rewrite List.app_length. ss. clear. lia. }
+              condtac; cycle 1.
+              { rewrite Nat.eqb_neq in X0. unfold ALocal.next_eid in X0. ss. }
+              rewrite fun_add_spec. condtac; cycle 1.
+              { exfalso. apply c. ss. }
+              s. eapply Memory.latest_ts_read_le; ss.
+              generalize SIM_TH.(MEM). s. i. rewrite H in MSG. rewrite e.
+              eapply Memory.get_msg_read; eauto.
           }
       }
-      ii. des; [apply COH|]; eauto.
+      ii. des; [apply COH0|]; eauto.
       inv EID. inv REL. inv H. inv H0. inv H2. destruct l; ss.
       all: inv LABEL; destruct (equiv_dec loc0 loc); ss; inv e; clear H0.
       { (* write *)
@@ -736,42 +731,34 @@ Proof.
           { rewrite List.app_length. s. lia. }
           rewrite List.nth_error_app2, Nat.sub_diag; ss.
         - inv H. exploit RF2; eauto. i. des.
-          inv WRITE. inv READ. destruct l; destruct l0; ss.
-          all: destruct (equiv_dec loc1 loc0); ss; inv e.
-          all: destruct (equiv_dec loc2 loc0); ss; inv e.
+          inv WRITE. inv READ. destruct l; destruct l0; ss; eqvtac.
           all: rename EID0 into WRITE.
           all: try rewrite EID in WRITE; inv WRITE.
-          all: destruct (equiv_dec val1 val0); ss; inv e.
           + exploit EX2.(LABELS); eauto; ss.
             { rewrite List.app_length. s. lia. }
             rewrite List.nth_error_app2, Nat.sub_diag; ss.
           + exploit EX2.(LABELS); eauto; ss.
             { rewrite List.app_length. s. lia. }
             rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x1.
-            destruct (equiv_dec (ValA.val voldv) val0); ss. inv e.
-            admit.
+            inv VLOC. congr.
       }
       { (* update *)
         inv H1.
         - exploit EX2.(LABELS); eauto; ss.
           { rewrite List.app_length. s. lia. }
           rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x0.
-            admit.
+          inv VLOC. congr.
         - inv H. exploit RF2; eauto. i. des.
-          inv WRITE. inv READ. destruct l; destruct l0; ss.
-          all: destruct (equiv_dec loc1 loc0); ss; inv e.
-          all: destruct (equiv_dec loc2 loc0); ss; inv e.
+          inv WRITE. inv READ. destruct l; destruct l0; ss; eqvtac.
           all: rename EID0 into WRITE.
           all: try rewrite EID in WRITE; inv WRITE.
-          all: destruct (equiv_dec vnew1 val); ss; inv e.
           + exploit EX2.(LABELS); eauto; ss.
             { rewrite List.app_length. s. lia. }
             rewrite List.nth_error_app2, Nat.sub_diag; ss.
           + exploit EX2.(LABELS); eauto; ss.
             { rewrite List.app_length. s. lia. }
             rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x1.
-            destruct (equiv_dec (ValA.val voldv) val); ss. inv e.
-            admit.
+            inv VLOC. congr.
       }
     + i. rewrite sim_local_vrn_step. rewrite inverse_step.
       rewrite ? inverse_union. ii. des.
@@ -828,7 +815,8 @@ Proof.
         rewrite EX2.(XVEXT); cycle 1.
         { ss. rewrite List.app_length. ss. unfold ALocal.next_eid. clear. lia. }
         destruct (length (ALocal.labels alc1) =? ALocal.next_eid alc1) eqn:Heq.
-        -- admit. (* post_view < vro *)
+        -- rewrite fun_add_spec. condtac; ss.
+           exfalso. apply c. ss.
         -- rewrite Nat.eqb_neq in Heq. ss.
     + i. rewrite sim_local_vwo_step. rewrite inverse_step.
       rewrite ? inverse_union. ii. des.
@@ -919,14 +907,7 @@ Proof.
             - (* rfe *)
               inv H. exploit RF2; eauto. i. des.
               destruct x as [tid1 eid1]. ss.
-              inv WRITE. inv READ. destruct l; destruct l0; ss.
-              all: destruct (equiv_dec loc1 loc0); ss; inv e0.
-              all: destruct (equiv_dec loc2 loc0); ss; inv e0.
-              1, 2, 3: destruct (equiv_dec val1 val0); ss; inv e0.
-              3, 4: destruct (equiv_dec vnew val0); ss; inv e0.
-              1: destruct (equiv_dec val2 val0); ss; inv e0.
-              2: destruct (equiv_dec vold0 val0); ss; inv e0.
-              4: destruct (equiv_dec vold1 val0); ss; inv e0.
+              inv WRITE. inv READ. destruct l; destruct l0; ss; eqvtac.
               all: clear LABEL LABEL0.
               all: rename EID0 into WRITE.
               + (* write -> read *)
@@ -1022,14 +1003,7 @@ Proof.
             - (* rfe *)
               inv H. exploit RF2; eauto. i. des.
               destruct x as [tid1 eid1]. ss.
-              inv WRITE. inv READ. destruct l; destruct l0; ss.
-              all: destruct (equiv_dec loc1 loc0); ss; inv e0.
-              all: destruct (equiv_dec loc2 loc0); ss; inv e0.
-              1, 2, 3: destruct (equiv_dec val0 val); ss; inv e0.
-              3, 4: destruct (equiv_dec vnew0 val); ss; inv e0.
-              1: destruct (equiv_dec val1 val); ss; inv e0.
-              2: destruct (equiv_dec vold1 val); ss; inv e0.
-              4: destruct (equiv_dec vold2 val); ss; inv e0.
+              inv WRITE. inv READ. destruct l; destruct l0; ss; eqvtac.
               all: clear LABEL LABEL0.
               all: rename EID0 into WRITE.
               + (* write -> read *)
@@ -1131,19 +1105,14 @@ Proof.
           { rewrite List.app_length. s. lia. }
           rewrite List.nth_error_app2, Nat.sub_diag; ss.
         - inv H. exploit RF2; eauto. i. des.
-          inv WRITE. inv READ. destruct l; destruct l0; ss.
-          all: destruct (equiv_dec loc1 loc0); ss; inv e.
-          all: destruct (equiv_dec loc2 loc0); ss; inv e.
+          inv WRITE. inv READ. destruct l; destruct l0; ss; eqvtac.
           all: rename EID0 into WRITE.
           all: try rewrite EID in WRITE; inv WRITE.
-          all: destruct (equiv_dec val1 val0); ss; inv e.
-          + destruct (equiv_dec val2 val0); ss; inv e.
-            exploit EX2.(LABELS); eauto; ss.
+          + exploit EX2.(LABELS); eauto; ss.
             { rewrite List.app_length. s. lia. }
             rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x1.
             inv VLOC. congr.
-          + destruct (equiv_dec vold0 val0); ss; inv e.
-            exploit EX2.(LABELS); eauto; ss.
+          + exploit EX2.(LABELS); eauto; ss.
             { rewrite List.app_length. s. lia. }
             rewrite List.nth_error_app2, Nat.sub_diag; ss.
       }
@@ -1153,19 +1122,14 @@ Proof.
           { rewrite List.app_length. s. lia. }
           rewrite List.nth_error_app2, Nat.sub_diag; ss.
         - inv H. exploit RF2; eauto. i. des.
-          inv WRITE. inv READ. destruct l; destruct l0; ss.
-          all: destruct (equiv_dec loc1 loc0); ss; inv e.
-          all: destruct (equiv_dec loc2 loc0); ss; inv e.
+          inv WRITE. inv READ. destruct l; destruct l0; ss; eqvtac.
           all: rename EID0 into WRITE.
           all: try rewrite EID in WRITE; inv WRITE.
-          all: destruct (equiv_dec vnew0 val); ss; inv e.
-          + destruct (equiv_dec val0 val); ss; inv e.
-            exploit EX2.(LABELS); eauto; ss.
+          + exploit EX2.(LABELS); eauto; ss.
             { rewrite List.app_length. s. lia. }
             rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x1.
             inv VLOC. congr.
-          + destruct (equiv_dec vold2 val); ss; inv e.
-            exploit EX2.(LABELS); eauto; ss.
+          + exploit EX2.(LABELS); eauto; ss.
             { rewrite List.app_length. s. lia. }
             rewrite List.nth_error_app2, Nat.sub_diag; ss.
       }
@@ -1262,12 +1226,9 @@ Proof.
           { rewrite List.app_length. s. lia. }
           rewrite List.nth_error_app2, Nat.sub_diag; ss.
         - inv H. exploit RF2; eauto. i. des.
-          inv WRITE. inv READ. destruct l; destruct l0; ss.
-          all: destruct (equiv_dec loc1 loc0); ss; inv e.
-          all: destruct (equiv_dec loc2 loc0); ss; inv e.
+          inv WRITE. inv READ. destruct l; destruct l0; ss; eqvtac.
           all: rename EID0 into WRITE.
           all: try rewrite EID in WRITE; inv WRITE.
-          all: destruct (equiv_dec val1 val0); ss; inv e.
           + exploit EX2.(LABELS); eauto; ss.
             { rewrite List.app_length. s. lia. }
             rewrite List.nth_error_app2, Nat.sub_diag; ss.
@@ -1281,12 +1242,9 @@ Proof.
           { rewrite List.app_length. s. lia. }
           rewrite List.nth_error_app2, Nat.sub_diag; ss.
         - inv H. exploit RF2; eauto. i. des.
-          inv WRITE. inv READ. destruct l; destruct l0; ss.
-          all: destruct (equiv_dec loc1 loc0); ss; inv e.
-          all: destruct (equiv_dec loc2 loc0); ss; inv e.
+          inv WRITE. inv READ. destruct l; destruct l0; ss; eqvtac.
           all: rename EID0 into WRITE.
           all: try rewrite EID in WRITE; inv WRITE.
-          all: destruct (equiv_dec vnew0 val); ss; inv e.
           + exploit EX2.(LABELS); eauto; ss.
             { rewrite List.app_length. s. lia. }
             rewrite List.nth_error_app2, Nat.sub_diag; ss.
