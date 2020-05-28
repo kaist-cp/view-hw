@@ -172,7 +172,9 @@ Proof.
     rewrite x4 in *. rewrite x1 in x8. inv x8.
     unguardH FR_COV. des.
     - eapply Memory.latest_lt; eauto.
-    - admit.
+    - rewrite <- FR_COV0 in *.
+      (* easy: read is not write *)
+      admit.
   }
   { (* read -> update *)
     rewrite EU, AEU, WL, RL, COV, VEXT in SIMTR.
@@ -211,7 +213,11 @@ Proof.
     rewrite EX2'.(XCOV) in *; eauto; cycle 1.
     { apply List.nth_error_Some. congr. }
     rewrite x4 in *. rewrite x1 in x8. inv x8.
-    unguardH FR_COV. des; admit.
+    unguardH FR_COV. des.
+    - eapply Memory.latest_lt; eauto.
+    - rewrite <- FR_COV0 in *.
+      (* easy: read is not update *)
+      admit.
   }
   { (* update -> write *)
     rewrite EU, AEU, WL, RL, COV, VEXT in SIMTR.
@@ -253,7 +259,15 @@ Proof.
     rewrite EX2'.(XCOV) in *; eauto; cycle 1.
     { apply List.nth_error_Some. congr. }
     rewrite x4 in *. rewrite x1 in x8. inv x8.
-    unguardH FR_COV. des; admit.
+    unguardH FR_COV. des.
+    - eapply Memory.latest_lt; try exact FR_COV; eauto. ss.
+      inv STEP0. rewrite LC. ii. ss. rewrite fun_add_spec in *. des_ifs; cycle 1.
+      { exfalso. apply c. ss. }
+      unfold View.ts in TS1, TS2. ss.
+      rewrite Memory.latest_ts_rec in TS1. lia.
+    - rewrite <- FR_COV0 in *.
+      (* easy: update is not write *)
+      admit.
   }
   { (* update -> update *)
     rewrite EU, AEU, WL, RL, COV, VEXT in SIMTR.
@@ -295,7 +309,15 @@ Proof.
     rewrite EX2'.(XCOV) in *; eauto; cycle 1.
     { apply List.nth_error_Some. congr. }
     rewrite x4 in *. rewrite x1 in x8. inv x8.
-    unguardH FR_COV. des; admit.
+    unguardH FR_COV. des.
+    - eapply Memory.latest_lt; try exact FR_COV; eauto. ss.
+      inv STEP0. rewrite LC. ii. ss. rewrite fun_add_spec in *. des_ifs; cycle 1.
+      { exfalso. apply c. ss. }
+      unfold View.ts in TS1, TS2. ss.
+      rewrite Memory.latest_ts_rec in TS1. lia.
+    - inv FR_COV0. inv STEP0.
+      (* maybe easy: can't take same step twice *)
+      admit.
   }
   { (* read -> write *)
     rewrite EU, AEU, WL, RL, COV, VEXT in SIMTR.
@@ -334,7 +356,11 @@ Proof.
     rewrite EX2'.(XCOV) in *; eauto; cycle 1.
     { apply List.nth_error_Some. congr. }
     rewrite x4 in *. rewrite x1 in x8. inv x8.
-    unguardH FR_COV. des; admit.
+    unguardH FR_COV. des.
+    - eapply Memory.latest_lt; eauto.
+    - rewrite <- FR_COV0 in *.
+      (* easy: read is not update *)
+      admit.
   }
   { (* read -> update *)
     rewrite EU, AEU, WL, RL, COV, VEXT in SIMTR.
@@ -373,6 +399,10 @@ Proof.
     rewrite EX2'.(XCOV) in *; eauto; cycle 1.
     { apply List.nth_error_Some. congr. }
     rewrite x4 in *. rewrite x1 in x8. inv x8.
-    unguardH FR_COV. des; admit.
+    unguardH FR_COV. des.
+    - eapply Memory.latest_lt; eauto.
+    - rewrite <- FR_COV0 in *.
+      (* easy: read is not update *)
+      admit.
   }
 Qed.

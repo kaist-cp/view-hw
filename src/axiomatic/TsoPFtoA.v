@@ -335,9 +335,7 @@ Lemma sim_traces_valid_rf_refl
              ex.(Execution.label_is) Label.is_write eid2>>.
 Proof.
   generalize STEP. intro X. inv X. ii.
-  exploit sim_traces_cov_rf; eauto. i. des.
-  (* hard: rf cov eq? 뜯어고쳐야 *)
-  admit.
+  exploit sim_traces_cov_rf; eauto.
 Qed.
 
 Lemma sim_traces_valid_porf
@@ -403,13 +401,21 @@ Proof.
   exploit sim_traces_cov_fr; eauto. i.
   assert (MID_ACCESS: Execution.label_is ex (fun label : Label.t => Label.is_access label) mid).
   { inv PO_LOC. inv H0. inv LABEL. destruct l2; eauto with tso. }
-  inv MID_ACCESS. destruct l; ss.
-  - exploit PO_LOC_READ; eauto with tso. i.
-    eapply le_lt_trans; eauto.
-  - exploit PO_LOC_WRITE; eauto with tso. i.
-    etrans; eauto.
-  - exploit PO_LOC_WRITE; eauto with tso. i.
-    etrans; eauto.
+  inv MID_ACCESS. des.
+  - destruct l; ss.
+    + exploit PO_LOC_READ.
+      { split; eauto with tso. ii. inv H. rewrite EID in EID0. destruct l; ss. }
+      i. eapply le_lt_trans; eauto.
+    + exploit PO_LOC_WRITE; eauto with tso. i.
+      etrans; eauto.
+    + exploit PO_LOC_WRITE; eauto with tso. i.
+      etrans; eauto.
+  - subst. inv FR.
+    + inv H. des.
+      exploit CO2; eauto. i. des.
+      exploit PO_LOC_WRITE; ss. inv LABEL1. eauto with tso.
+    + inv H. des. inv H1.
+      exploit PO_LOC_WRITE; ss.
 Qed.
 
 Lemma sim_traces_valid_external_atomic

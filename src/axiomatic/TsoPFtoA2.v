@@ -341,6 +341,7 @@ Proof.
   exploit TH1.(WPROP3); eauto. i. des.
   exploit TH2.(RPROP2); eauto. i. des; [left | right].
   + unfold v_gen. ss. subst. rewrite <- H4, <- H10. split; ss.
+    ii. inv H1.
     admit. (* easy: same iid2 not write *)
   + unfold v_gen. ss. subst. rewrite <- H4, <- H10. split; ss.
     admit. (* easy: same iid2 write *)
@@ -351,6 +352,7 @@ Lemma sim_traces_cov_fr
       ex m
       (STEP: Machine.pf_exec p m)
       (SIM: sim_traces p m.(Machine.mem) trs atrs ws rs covs vexts)
+      (* 어디선가 따로 증명, 아토미시티 *)
       (CO: ex.(Execution.co) = co_gen ws)
       (RF: ex.(Execution.rf) = rf_gen ws rs)
       (PRE: Valid.pre_ex p ex)
@@ -391,6 +393,11 @@ Proof.
       i. des.
       * right. rewrite x3 in *. split; ss.
       * (* hard: eid1가 update이기 때문에
+      x -rf-> eid1 lt
+      x -co-> eid2 lt
+      -------------
+      lt eid1 eid2
+      eid2 -co-> eid1
            x -co-> eid2 -co-> eid1 이면, x -rf-> eid1 일 수 없음 *)
         admit.
       * left. rewrite <- CO in x3. exploit sim_traces_cov_co; eauto. i. split; ss.
