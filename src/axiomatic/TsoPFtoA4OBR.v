@@ -105,9 +105,9 @@ Proof.
     i. des. inv x0.
     exploit L'.(RPROP2); eauto.
     { rewrite X. eauto. }
-    s. rewrite X. i. des.
-    apply nth_error_snoc_inv_last in x3. inv x3.
-    clear x4 H1 tid'0 x2 x0.
+    s. rewrite X. i. des; cycle 1.
+    { apply nth_error_snoc_inv_last in x2. inv x2. inv x4. }
+    apply nth_error_snoc_inv_last in x2. inv x2.
     rewrite EX2.(XVEXT); s; cycle 1.
     { rewrite List.app_length. s. clear. lia. }
     rewrite X.
@@ -172,8 +172,8 @@ Proof.
             exploit L2.(WPROP2'); eauto. i. des.
             exploit L1.(WPROP3); eauto. i. des.
             exploit L2.(WPROP3); eauto. i. des.
-            rewrite x8, x15 in H2. inv H2.
-            rewrite H in x19. rewrite x12 in x19. inv x19. ss. }
+            rewrite x11, x18 in H2. inv H2.
+            rewrite H in x22. rewrite x15 in x22. inv x22. ss. }
           subst.
           inv WRITE. inv PO. ss. subst. inv H. inv H3. ss.
         + rewrite H1. refl.
@@ -253,8 +253,8 @@ Proof.
             exploit L2.(WPROP2'); eauto. i. des.
             exploit L1.(WPROP3); eauto. i. des.
             exploit L2.(WPROP3); eauto. i. des.
-            rewrite x8, x15 in H2. inv H2.
-            rewrite H in x19. rewrite x12 in x19. inv x19. ss. }
+            rewrite x11, x18 in H2. inv H2.
+            rewrite H in x22. rewrite x15 in x22. inv x22. ss. }
           subst.
           inv WRITE. inv PO. ss. subst. inv H. inv H3. ss.
         + rewrite H1. refl.
@@ -276,7 +276,91 @@ Proof.
     }
   }
   { (* update *)
-    admit.
+    rewrite EU, AEU, WL, RL, COV, VEXT in SIMTR.
+    exploit sim_trace_sim_th; try exact SIMTR; eauto. intro L'.
+    exploit L'.(RPROP1); ss.
+    { split.
+      - apply nth_error_last. apply Nat.eqb_eq. ss.
+      - eauto with tso.
+    }
+    unfold ALocal.next_eid in *. condtac; cycle 1.
+    { apply Nat.eqb_neq in X. congr. }
+    i. des. inv x0.
+    exploit L'.(RPROP2); eauto.
+    { rewrite X. eauto. }
+    s. rewrite X. i. des.
+    { apply nth_error_snoc_inv_last in x2. inv x2.
+      exfalso. apply x4. eauto with tso.
+    }
+    apply nth_error_snoc_inv_last in x2. inv x2.
+    rewrite EX2.(XVEXT); s; cycle 1.
+    { rewrite List.app_length. s. clear. lia. }
+    rewrite X.
+    inv STEP0. ss. subst. inv LOCAL0; inv EVENT.
+    {
+      exploit sim_trace_sim_th; try exact TRACE; eauto. intro SIM_TH.
+      destruct SIM_TH.(EU_WF).
+      specialize (Local.rmw_spec LOCAL0 STEP0). intro RMW_SPEC. guardH RMW_SPEC.
+      clear LOCAL0. inv STEP0. ss.
+      exploit EX2.(LABELS); eauto; ss.
+      { rewrite List.app_length. s. clear. lia. }
+      i.
+      move AOB at bottom. unfold ob' in AOB. des_union.
+      - (* rfe *)
+        rename H1 into H.
+        assert (v_gen vexts eid1 = old_ts).
+        { inv H. destruct eid1 as [tid1 eid1]. inv H2. ss.
+          generalize H1. intro Y. rewrite RF in Y. inv Y. ss.
+          erewrite EX2.(XR) in R; eauto; cycle 1.
+          { s. rewrite List.app_length. s. clear. lia. }
+          destruct (length (ALocal.labels alc1) =? length (ALocal.labels alc1)); ss.
+          move RMW_SPEC at bottom. rewrite fun_add_spec in *.
+          destruct (equiv_dec (ValA.val vloc) (ValA.val vloc)); cycle 1.
+          { exfalso. apply c. ss. }
+          generalize SIM_TH.(MEM). s. i. subst.
+          unguardH RMW_SPEC. des. ss.
+          assert (old_ts = old_ts0).
+          { admit. (* maybe easy?: same proof as rmw_spec *)}
+          subst. inv R.
+          generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
+          exploit sim_trace_last; try exact REL0. i. des. simplify.
+          exploit sim_trace_sim_th; try exact REL0; eauto. intro L1.
+          exploit L1.(WPROP3); eauto. i. des.
+          unfold v_gen. ss. rewrite <- H7. auto.
+        }
+        subst.
+        rewrite fun_add_spec. condtac; ss; cycle 1.
+        { exfalso. apply c. ss. }
+        unfold Time.le. lia.
+      - (* dob *)
+        rename H1 into H.
+        unfold Execution.dob in H. rewrite ? seq_assoc in *. des_union.
+        + inv H1. des. inv H. des. inv H1.
+          rewrite L.(LC).(VWN); ss.
+          * rewrite fun_add_spec. condtac; ss; cycle 1.
+            { exfalso. apply c. ss. }
+            inv WRITABLE. unfold Time.le. lia.
+          * econs; eauto. unfold sim_local_vwn. left. econs; eauto.
+        + inv H1. des. inv H. des. inv H1.
+          rewrite L.(LC).(VWN); ss.
+          * rewrite fun_add_spec. condtac; ss; cycle 1.
+            { exfalso. apply c. ss. }
+            inv WRITABLE. unfold Time.le. lia.
+          * econs; eauto. unfold sim_local_vwn.
+            inv H2. inv H1. destruct l0; ss.
+            -- left. econs. split; eauto. econs; eauto with tso.
+            -- right. econs. split; eauto. econs; eauto with tso.
+            -- right. econs. split; eauto. econs; eauto with tso.
+      - (* bob *)
+        unfold Execution.bob in H. rewrite ? seq_assoc in *. des_union.
+        rewrite L.(LC).(VWN); ss.
+        * rewrite fun_add_spec. condtac; ss; cycle 1.
+            { exfalso. apply c. ss. }
+            inv WRITABLE. unfold Time.le. lia.
+          * econs; eauto. unfold sim_local_vwn.
+            inv H. inv H1. inv H. inv H1. inv H. des. inv H1. des. inv H2. inv H4.
+            right. econs. split; eauto. eapply Execution.po_chain. econs. split; eauto.
+    }
   }
   { (* rmw_failure *)
     rewrite EU, AEU, WL, RL, COV, VEXT in SIMTR.
@@ -288,9 +372,9 @@ Proof.
     i. des. inv x0.
     exploit L'.(RPROP2); eauto.
     { rewrite X. eauto. }
-    s. rewrite X. i. des.
-    apply nth_error_snoc_inv_last in x3. inv x3.
-    clear x4 H1 tid'0 x2 x0.
+    s. rewrite X. i. des; cycle 1.
+    { apply nth_error_snoc_inv_last in x2. inv x2. inv x4. }
+    apply nth_error_snoc_inv_last in x2. inv x2.
     rewrite EX2.(XVEXT); s; cycle 1.
     { rewrite List.app_length. s. clear. lia. }
     rewrite X.
@@ -355,8 +439,8 @@ Proof.
             exploit L2.(WPROP2'); eauto. i. des.
             exploit L1.(WPROP3); eauto. i. des.
             exploit L2.(WPROP3); eauto. i. des.
-            rewrite x8, x15 in H2. inv H2.
-            rewrite H in x19. rewrite x12 in x19. inv x19. ss. }
+            rewrite x11, x18 in H2. inv H2.
+            rewrite H in x22. rewrite x15 in x22. inv x22. ss. }
           subst.
           inv WRITE. inv PO. ss. subst. inv H. inv H3. ss.
         + rewrite H1. refl.
@@ -436,8 +520,8 @@ Proof.
             exploit L2.(WPROP2'); eauto. i. des.
             exploit L1.(WPROP3); eauto. i. des.
             exploit L2.(WPROP3); eauto. i. des.
-            rewrite x8, x15 in H2. inv H2.
-            rewrite H in x19. rewrite x12 in x19. inv x19. ss. }
+            rewrite x11, x18 in H2. inv H2.
+            rewrite H in x22. rewrite x15 in x22. inv x22. ss. }
           subst.
           inv WRITE. inv PO. ss. subst. inv H. inv H3. ss.
         + rewrite H1. refl.
