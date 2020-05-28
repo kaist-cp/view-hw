@@ -121,7 +121,7 @@ Proof.
     - (* rfe *)
       rename H1 into H.
       inv H. exploit RF2; eauto. i. des.
-      inv READ. inv WRITE. destruct l0; destruct l1; ss; congr.
+      inv READ. destruct l0; ss; try congr.
     - (* dob *)
       rename H1 into H.
       unfold Execution.dob in H. rewrite ? seq_assoc in *. des_union.
@@ -145,6 +145,62 @@ Proof.
       inv H. des. inv H3. inv H4. destruct l0; ss; congr.
   }
   { (* update *)
-    admit.
+    rewrite EU, AEU, WL, RL, COV, VEXT in SIMTR.
+    exploit sim_trace_sim_th; try exact SIMTR; eauto. intro L'.
+    (* inv RES. destruct res1. ss. subst. *)
+    exploit L'.(WPROP2); ss.
+    { split.
+      - apply nth_error_last. apply Nat.eqb_eq. ss.
+      - eauto with tso.
+    }
+    unfold ALocal.next_eid in *. condtac; cycle 1.
+    { apply Nat.eqb_neq in X. congr. }
+    i. des. inv x0.
+    exploit L'.(WPROP3); eauto.
+    { rewrite X. eauto. }
+    s. rewrite X. i. des.
+    apply nth_error_snoc_inv_last in x5. inv x5. inv x6.
+    destruct (equiv_dec (ValA.val (sem_expr rmap eloc)) (ValA.val vloc1)); ss. clear e.
+    destruct (equiv_dec (ValA.val vnewv) val); ss. inv e.
+    rewrite x1 in x7. inv x7. clear x3 x4 H1.
+    rewrite EX2.(XVEXT); s; cycle 1.
+    { rewrite List.app_length. s. clear. lia. }
+    rewrite X.
+    inv STEP0. ss. subst. inv LOCAL0; inv EVENT; inv STEP0; ss.
+    move OB at bottom. unfold ob' in OB. des_union.
+    - (* rfe *)
+      rename H1 into H.
+      inv H. exploit RF2; eauto. i. des.
+      inv READ. inv WRITE. destruct l0; destruct l1; ss; try congr.
+      + admit.
+      + admit.
+      (* maybe easy: rfe에서 앞선 write보다 커짐을 보여야 함  *)
+    - (* dob *)
+      rename H1 into H.
+      unfold Execution.dob in H. rewrite ? seq_assoc in *. des_union.
+      + inv H1. des.
+        inv H1. eapply Nat.le_lt_trans.
+        { apply L.(LC).(VWN); ss. econs; ss. left. ss. }
+        s. rewrite fun_add_spec. condtac; [|congr].
+        inv WRITABLE. ss.
+      + inv H1. des.
+        inv H1. eapply Nat.le_lt_trans.
+        { apply L.(LC).(VWN); ss. econs; ss. inv H. des. inv H1. inv H5.
+          destruct l0; ss.
+          - left. econs; ss. econs; eauto. econs; ss. econs; eauto.
+          - right. econs; ss. econs; eauto. econs; ss. econs; eauto.
+          - right. econs; ss. econs; eauto. econs; ss. econs; eauto.
+        }
+        s. rewrite fun_add_spec. condtac; [|congr].
+        inv WRITABLE. ss.
+    - (* bob *)
+      unfold Execution.bob in H. rewrite ? seq_assoc in *.
+      inv H. des. inv H1. des. inv H. des. inv H4. des.
+      inv H3. inv H5. inv H. eapply Nat.le_lt_trans.
+      { apply L.(LC).(VWN); ss. econs; ss. right. econs. split; ss.
+        eapply Execution.po_chain. econs. split; eauto.
+      }
+      s. rewrite fun_add_spec. condtac; [|congr].
+      inv WRITABLE. ss.
   }
 Qed.
