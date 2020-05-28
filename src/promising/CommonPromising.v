@@ -318,6 +318,16 @@ Module Memory.
     - eapply IHto; eauto. eapply latest_mon2; eauto.
   Qed.
 
+  Lemma latest_ts_rec
+        loc to mem:
+    latest_ts loc (latest_ts loc to mem) mem = latest_ts loc to mem.
+  Proof.
+    induction to; ss.
+    destruct (nth_error mem to) eqn:NTH; ss. destruct t0.
+    destruct (Loc.eq_dec loc0 loc); ss. rewrite NTH.
+    destruct (Loc.eq_dec loc0 loc); ss.
+  Qed.
+
   Lemma latest_ts_read_lt
         loc from to mem v val
         (LATEST: latest_ts loc to mem = from)
