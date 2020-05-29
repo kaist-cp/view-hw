@@ -64,7 +64,6 @@ Inductive sim_trace (p: program) (mem: Memory.t) (tid: Id.t):
                                          (eu2.(ExecUnit.local).(Local.coh) vloc.(ValA.val)).(View.ts)
                                          mem)
                             else r1 eid)
-               (* CHECK: infer rmw read timestamp *)
                | Event.rmw _ _ vloc _ _ =>
                  (fun eid => if Nat.eqb eid (ALocal.next_eid aeu1.(AExecUnit.local))
                             then Some (vloc.(ValA.val),
@@ -999,7 +998,7 @@ Proof.
         inv OLD. rewrite VAL in *.
         exploit Memory.read_get_msg; eauto. i.
         assert (TS_GT: lt (Memory.latest_ts (ValA.val (sem_expr rmap0 eloc0)) (Init.Nat.pred ts) mem) ts).
-        { destruct ts; ss. admit. (* easy: by definition of latest_ts *) }
+        { eapply le_lt_trans with (Init.Nat.pred ts); try lia. apply Memory.latest_ts_spec. }
         des; esplits.
         all: try by rewrite List.nth_error_app2, Nat.sub_diag; [|refl]; ss; eauto with tso.
         all: try by eauto with tso.

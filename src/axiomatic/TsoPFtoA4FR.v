@@ -172,9 +172,9 @@ Proof.
     rewrite x4 in *. rewrite x1 in x8. inv x8.
     unguardH FR_COV. des.
     - eapply Memory.latest_lt; eauto.
-    - rewrite <- FR_COV0 in *.
-      (* easy: read is not write *)
-      admit.
+    - inv FR_COV0.
+      move EID at bottom. unfold Execution.label in EID. ss. rewrite PRE.(Valid.LABELS), IdMap.map_spec in EID.
+      rewrite <- H in EID. ss. congr.
   }
   { (* read -> update *)
     rewrite EU, AEU, WL, RL, COV, VEXT in SIMTR.
@@ -215,9 +215,9 @@ Proof.
     rewrite x4 in *. rewrite x1 in x8. inv x8.
     unguardH FR_COV. des.
     - eapply Memory.latest_lt; eauto.
-    - rewrite <- FR_COV0 in *.
-      (* easy: read is not update *)
-      admit.
+    - inv FR_COV0.
+      move EID at bottom. unfold Execution.label in EID. ss. rewrite PRE.(Valid.LABELS), IdMap.map_spec in EID.
+      rewrite <- H in EID. ss. congr.
   }
   { (* update -> write *)
     rewrite EU, AEU, WL, RL, COV, VEXT in SIMTR.
@@ -265,9 +265,9 @@ Proof.
       { exfalso. apply c. ss. }
       unfold View.ts in TS1, TS2. ss.
       rewrite Memory.latest_ts_rec in TS1. lia.
-    - rewrite <- FR_COV0 in *.
-      (* easy: update is not write *)
-      admit.
+    - inv FR_COV0.
+      move EID at bottom. unfold Execution.label in EID. ss. rewrite PRE.(Valid.LABELS), IdMap.map_spec in EID.
+      rewrite <- H in EID. ss. congr.
   }
   { (* update -> update *)
     rewrite EU, AEU, WL, RL, COV, VEXT in SIMTR.
@@ -358,9 +358,9 @@ Proof.
     rewrite x4 in *. rewrite x1 in x8. inv x8.
     unguardH FR_COV. des.
     - eapply Memory.latest_lt; eauto.
-    - rewrite <- FR_COV0 in *.
-      (* easy: read is not update *)
-      admit.
+    - inv FR_COV0.
+      move EID at bottom. unfold Execution.label in EID. ss. rewrite PRE.(Valid.LABELS), IdMap.map_spec in EID.
+      rewrite <- H in EID. ss. congr.
   }
   { (* read -> update *)
     rewrite EU, AEU, WL, RL, COV, VEXT in SIMTR.
@@ -401,8 +401,8 @@ Proof.
     rewrite x4 in *. rewrite x1 in x8. inv x8.
     unguardH FR_COV. des.
     - eapply Memory.latest_lt; eauto.
-    - rewrite <- FR_COV0 in *.
-      (* easy: read is not update *)
-      admit.
+    - inv FR_COV0.
+      move EID at bottom. unfold Execution.label in EID. ss. rewrite PRE.(Valid.LABELS), IdMap.map_spec in EID.
+      rewrite <- H in EID. ss. congr.
   }
 Qed.

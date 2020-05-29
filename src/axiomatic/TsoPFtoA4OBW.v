@@ -109,9 +109,7 @@ Proof.
     exploit L'.(WPROP3); eauto.
     { rewrite X. eauto. }
     s. rewrite X. i. des.
-    apply nth_error_snoc_inv_last in x5. inv x5. inv x6.
-    destruct (equiv_dec (ValA.val (sem_expr rmap eloc)) (ValA.val vloc1)); ss. clear e.
-    destruct (equiv_dec (ValA.val (sem_expr rmap eval))); ss. inv e.
+    apply nth_error_snoc_inv_last in x5. inv x5. inv x6. eqvtac.
     rewrite x1 in x7. inv x7. clear x3 x4 H1.
     rewrite EX2.(XVEXT); s; cycle 1.
     { rewrite List.app_length. s. clear. lia. }
@@ -132,7 +130,7 @@ Proof.
         inv WRITABLE. ss.
       + inv H1. des.
         inv H1. eapply Nat.le_lt_trans.
-        { apply L.(LC).(VWN); ss. econs; ss. inv H. des. inv H1. inv H5.
+        { apply L.(LC).(VWN); ss. econs; ss. inv H. des. inv H1. inv H6.
           destruct l0; ss.
           - left. econs; ss. econs; eauto. econs; ss. econs; eauto.
           - right. econs; ss. econs; eauto. econs; ss. econs; eauto.
@@ -142,7 +140,7 @@ Proof.
         inv WRITABLE. ss.
     - (* bob *)
       unfold Execution.bob in H. rewrite ? seq_assoc in *.
-      inv H. des. inv H3. inv H4. destruct l0; ss; congr.
+      inv H. des. inv H4. inv H5. destruct l0; ss; congr.
   }
   { (* update *)
     rewrite EU, AEU, WL, RL, COV, VEXT in SIMTR.
@@ -159,9 +157,7 @@ Proof.
     exploit L'.(WPROP3); eauto.
     { rewrite X. eauto. }
     s. rewrite X. i. des.
-    apply nth_error_snoc_inv_last in x5. inv x5. inv x6.
-    destruct (equiv_dec (ValA.val (sem_expr rmap eloc)) (ValA.val vloc1)); ss. clear e.
-    destruct (equiv_dec (ValA.val vnewv) val); ss. inv e.
+    apply nth_error_snoc_inv_last in x5. inv x5. inv x6. eqvtac.
     rewrite x1 in x7. inv x7. clear x3 x4 H1.
     rewrite EX2.(XVEXT); s; cycle 1.
     { rewrite List.app_length. s. clear. lia. }
@@ -171,8 +167,10 @@ Proof.
     - (* rfe *)
       rename H1 into H.
       inv H. exploit RF2; eauto. i. des.
-      inv READ. inv WRITE. destruct l0; destruct l1; ss; try congr.
-      + admit.
+      inv READ. inv WRITE. destruct l0; destruct l1; ss; try congr; eqvtac.
+      + rewrite fun_add_spec. condtac; [|congr].
+        inv WRITABLE. ss.
+        admit.
       + admit.
       (* maybe easy: rfe에서 앞선 write보다 커짐을 보여야 함  *)
     - (* dob *)
@@ -185,7 +183,7 @@ Proof.
         inv WRITABLE. ss.
       + inv H1. des.
         inv H1. eapply Nat.le_lt_trans.
-        { apply L.(LC).(VWN); ss. econs; ss. inv H. des. inv H1. inv H5.
+        { apply L.(LC).(VWN); ss. econs; ss. inv H. des. inv H1. inv H6.
           destruct l0; ss.
           - left. econs; ss. econs; eauto. econs; ss. econs; eauto.
           - right. econs; ss. econs; eauto. econs; ss. econs; eauto.
@@ -195,8 +193,8 @@ Proof.
         inv WRITABLE. ss.
     - (* bob *)
       unfold Execution.bob in H. rewrite ? seq_assoc in *.
-      inv H. des. inv H1. des. inv H. des. inv H4. des.
-      inv H3. inv H5. inv H. eapply Nat.le_lt_trans.
+      inv H. des. inv H1. des. inv H. des. inv H5. des.
+      inv H. inv H6. inv H4. eapply Nat.le_lt_trans.
       { apply L.(LC).(VWN); ss. econs; ss. right. econs. split; ss.
         eapply Execution.po_chain. econs. split; eauto.
       }
