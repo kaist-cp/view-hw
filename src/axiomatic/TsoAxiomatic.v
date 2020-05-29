@@ -535,6 +535,14 @@ Module Execution.
   .
   Hint Constructors label_is : tso.
 
+  Inductive label_is_not (ex:t) (pred:Label.t -> Prop) (eid:eidT): Prop :=
+  | label_is_not_intro
+      l
+      (EID: label eid ex = Some l)
+      (LABEL: pred l -> False)
+  .
+  Hint Constructors label_is : tso.
+
   Inductive label_rel (ex:t) (rel:relation Label.t) (eid1 eid2:eidT): Prop :=
   | label_rel_intro
       l1 l2
@@ -1133,19 +1141,20 @@ Module Valid.
         (* (INTERNAL: acyclic (Execution.internal ex)) *)
         (OB: Execution.ob ex eid1 eid2)
         (EID1: ex.(Execution.label_is) Label.is_read eid1)
-        (EID1': ~ ex.(Execution.label_is) Label.is_write eid1)
+        (EID1': ex.(Execution.label_is_not) Label.is_write eid1)
         (EID2: ex.(Execution.label_is) Label.is_read eid2)
-        (EID2': ~ ex.(Execution.label_is) Label.is_write eid2):
+        (EID2': ex.(Execution.label_is_not) Label.is_write eid2):
     Execution.po eid1 eid2.
   Proof.
-    inv EID1. inv EID2. destruct l; ss. destruct l0; ss.
+    inv EID1. inv EID1'. rewrite EID in EID0. inv EID0.
+    inv EID2. inv EID2'. rewrite EID1 in EID0. inv EID0.
+    destruct l; ss. destruct l0; ss.
     all: obtac; try congr.
     all: try by etrans; eauto.
-    all: try by exfalso; apply EID1'; eauto with tso.
-    all: try by exfalso; apply EID2'; eauto with tso.
-    - exploit RF2; eauto. i. des. inv WRITE. rewrite EID in EID1. destruct l; ss.
-    - exploit CO2; eauto. i. des. inv LABEL2. rewrite EID1 in EID0. destruct l; ss.
-    - exploit CO2; eauto. i. des. inv LABEL2. rewrite EID1 in EID0. destruct l; ss.
+    - exploit RF2; eauto. i. des. inv WRITE. rewrite EID in EID0. destruct l; ss.
+    - exploit CO2; eauto. i. des. inv LABEL4. rewrite EID1 in EID0. destruct l; ss.
+    - rewrite EID1 in EID0. inv EID0. ss.
+    - exploit CO2; eauto. i. des. inv LABEL4. rewrite EID1 in EID0. destruct l; ss.
   Qed.
 End Valid.
 

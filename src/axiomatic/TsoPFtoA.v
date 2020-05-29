@@ -330,7 +330,7 @@ Lemma sim_traces_valid_rf_refl
   <<RF_REFL: forall eid1 eid2
              (RF: Execution.rf ex eid1 eid2),
              Time.eq ((v_gen covs) eid1) ((v_gen covs) eid2) /\
-             ~ ex.(Execution.label_is) Label.is_write eid2 \/
+             ex.(Execution.label_is_not) Label.is_write eid2 \/
              Time.lt ((v_gen covs) eid1) ((v_gen covs) eid2) /\
              ex.(Execution.label_is) Label.is_write eid2>>.
 Proof.
@@ -404,7 +404,7 @@ Proof.
   inv MID_ACCESS. des.
   - destruct l; ss.
     + exploit PO_LOC_READ.
-      { split; eauto with tso. ii. inv H. rewrite EID in EID0. destruct l; ss. }
+      { split; eauto with tso. econs; eauto with tso. }
       i. eapply le_lt_trans; eauto.
     + exploit PO_LOC_WRITE; eauto with tso. i.
       etrans; eauto.
@@ -445,7 +445,7 @@ Lemma sim_traces_valid_external_atomic
       (LABEL2: Execution.label_is ex Label.is_access eid2),
       (Time.lt ((v_gen vexts) eid1) ((v_gen vexts) eid2) /\ ex.(Execution.label_is) Label.is_write eid2) \/
       (Time.le ((v_gen vexts) eid1) ((v_gen vexts) eid2) /\ ex.(Execution.label_is) Label.is_read eid2
-        /\ ~ ex.(Execution.label_is) Label.is_write eid2)>>.
+        /\ ex.(Execution.label_is_not) Label.is_write eid2)>>.
       (* /\
   <<ATOMIC: le (ex.(Execution.rmw) ∩ ((Execution.fre ex) ⨾ (Execution.coe ex))) bot>>. *)
 Proof.
@@ -455,13 +455,13 @@ Proof.
   - right. rewrite ob_ob' in OB. des_union.
     + exploit FR; eauto. i.
       esplits; eauto using Nat.lt_le_incl with tso.
-      unfold not. i. inv H. destruct l; ss; try congr.
+      econs; eauto with tso.
     + exploit sim_traces_vext_co; eauto. i.
       esplits; eauto using Nat.lt_le_incl with tso.
-      unfold not. i. inv H. destruct l; ss; try congr.
+      econs; eauto with tso.
     + exploit OB_READ; eauto with tso. i.
       esplits; eauto using Nat.lt_le_incl with tso.
-      unfold not. i. inv H0. destruct l; ss; try congr.
+      econs; eauto with tso.
   - left. rewrite ob_ob' in OB. des_union.
     + exploit FR; eauto with tso.
     + exploit sim_traces_vext_co; eauto with tso.
@@ -481,7 +481,7 @@ Lemma corw_irrefl
           forall eid1 eid2
           (RF: Execution.rf ex eid1 eid2),
         Time.eq (cov eid1) (cov eid2) /\
-        ~ ex.(Execution.label_is) Label.is_write eid2 \/
+        ex.(Execution.label_is_not) Label.is_write eid2 \/
         Time.lt (cov eid1) (cov eid2) /\
         ex.(Execution.label_is) Label.is_write eid2)
       (PORF:
@@ -494,7 +494,7 @@ Proof.
   ii. inv H. des. inv H0.
   - exploit RF_REFL; eauto. i. des.
     + exploit RF2; eauto. i. des.
-      exfalso. apply x1. inv WRITE. eauto with tso.
+      inv x1. inv WRITE. rewrite EID in EID0. inv EID0. eauto with tso.
     + unfold Time.lt in *. lia.
   - exploit PORF; eauto.
     { instantiate (1 := x).
@@ -545,7 +545,7 @@ Lemma promising_pf_valid
     <<RF_REFL: forall eid1 eid2
                (RF: Execution.rf ex eid1 eid2),
                Time.eq (cov eid1) (cov eid2) /\
-               ~ ex.(Execution.label_is) Label.is_write eid2 \/
+               ex.(Execution.label_is_not) Label.is_write eid2 \/
                Time.lt (cov eid1) (cov eid2) /\
                ex.(Execution.label_is) Label.is_write eid2>> /\
     <<PORF: forall eid1 mid eid2
@@ -563,13 +563,13 @@ Lemma promising_pf_valid
         (Time.le (vext eid1) (vext eid2) /\
          Execution.po eid1 eid2 /\
          ex.(Execution.label_is) Label.is_read eid1 /\
-         ~ ex.(Execution.label_is) Label.is_write eid1 /\
+         ex.(Execution.label_is_not) Label.is_write eid1 /\
          ex.(Execution.label_is) Label.is_read eid2 /\
-         ~ ex.(Execution.label_is) Label.is_write eid2) \/
+         ex.(Execution.label_is_not) Label.is_write eid2) \/
         (Time.le (vext eid1) (vext eid2) /\
          ex.(Execution.label_is) Label.is_write eid1 /\
          ex.(Execution.label_is) Label.is_read eid2 /\
-         ~ ex.(Execution.label_is) Label.is_write eid2)>> /\
+         ex.(Execution.label_is_not) Label.is_write eid2)>> /\
     (* <<ATOMIC: le (ex.(Execution.rmw) ∩ ((Execution.fre ex) ⨾ (Execution.coe ex))) bot>> /\ *)
     <<STATE: IdMap.Forall2
                (fun tid sl aeu => sim_state_weak (fst sl) aeu.(AExecUnit.state))
@@ -605,10 +605,10 @@ Proof.
     + inversion H. inversion H1.
       exploit EXTERNAL; eauto with tso. i. des; eauto.
       destruct l1; ss.
-      * assert (NWRITE: ~ Execution.label_is ex' (fun label : Label.t => Label.is_write label) x).
-        { unfold not. i. inversion H2. rewrite EID1 in EID. destruct l; ss. }
-        exploit Valid.ob_read_read_po; eauto with tso. i.
-        right. left. splits; eauto with tso.
+      * exploit Valid.ob_read_read_po; eauto with tso.
+        { econs; eauto with tso. }
+        i.
+        right. left. splits; eauto with tso. econs; eauto with tso.
       * right. right. splits; eauto with tso.
       * right. right. splits; eauto with tso.
     + des.
@@ -619,10 +619,14 @@ Proof.
       * right. left. splits; try etrans; eauto.
       * right. right. splits; try etrans; eauto.
       * left. eapply lt_le_trans; eauto.
-      * inversion IHOB8. inversion IHOB0. rewrite EID in EID0.
-        inversion EID0. rewrite H0 in *. ss.
-      * inversion IHOB6. inversion IHOB0. rewrite EID in EID0.
-        inversion EID0. rewrite H0 in *. ss.
+      * inversion IHOB8. inversion IHOB0. inversion IHOB9.
+        rewrite EID in EID0. inversion EID0. rewrite H0 in *.
+        rewrite EID in EID1. inversion EID1. rewrite H1 in *.
+        ss.
+      * inversion IHOB6. inversion IHOB0. inversion IHOB7.
+        rewrite EID in EID0. inversion EID0. rewrite H0 in *.
+        rewrite EID in EID1. inversion EID1. rewrite H1 in *.
+        ss.
   - clear - SIM TR ATR.
     ii. generalize (SIM id). i. inv H; ss.
     + generalize (TR id). i. inv H; try congr.
@@ -659,7 +663,7 @@ Grab Existential Variables.
   exploit EXTERNAL; eauto. i. des.
   - inv x; lia.
   - inv x0. lia.
-  - congr.
+  - inv x0. inv x2. rewrite EID in EID0. inv EID0. congr.
 }
 { (* corw *)
   eapply corw_irrefl; eauto.
