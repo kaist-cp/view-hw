@@ -46,7 +46,7 @@ Ltac condtac :=
 Ltac eqvtac :=
   repeat (repeat
   (match goal with
-         | [H: context [@equiv_dec ?a ?b ?c ?d ?x ?y] |- _] => destruct (@equiv_dec a b c d x y) as [deq|]; ss; inv deq
+         | [H: context [@equiv_dec ?a ?b ?c ?d ?x ?y] |- _] => destruct (@equiv_dec a b c d x y) as [deq|]; ss; inv deq; clear H
          end; try subst)).
 
 Definition proj_sumbool (P Q: Prop) (a: {P} + {Q}) : bool :=
