@@ -497,22 +497,30 @@ Proof.
           exploit TH1.(WPROP2); eauto with tso. i. des.
           exploit TH1.(WPROP3); eauto with tso. i. des.
           generalize (SIM tid1). intro SIM1. inv SIM1; try congr. simplify.
-          unfold v_gen. ss. rewrite <- H11, <- H6.
           exploit sim_trace_last; try exact REL0; eauto. i. des. simplify.
           exploit sim_trace_sim_th; try exact REL0; eauto. intro TH2.
           exploit TH1.(WPROP3); eauto. i. des.
           exploit TH2.(RPROP2); eauto. i. des; [left |].
-          * rewrite x15. split; ss.
+          * unfold v_gen. ss. rewrite <- H11, <- H6.
+            rewrite x15. split; ss.
             destruct ((tid1, iid1) == (tid2, iid2)); ss. inv e.
-            move EID at bottom. unfold Execution.label in EID. ss.
+            move EID at bottom.
             exploit sim_trace_last; try exact REL6; eauto. i. des. simplify.
             congr.
           * move CO1 at bottom. unguardH CO1. des; [right | left |].
             -- inv CO1. rewrite <- H6 in H11. inv H11. split; ss.
-            --
+            -- rewrite <- CO in CO1. exploit sim_traces_cov_co; eauto. i. split; ss.
+               destruct ((tid1, iid1) == (tid2, iid2)); ss. inv e.
+               unfold Time.lt in x20. lia.
             -- admit.
         + (* update of writing *)
-          generalize PRE. intro PRE2. destruct PRE.
+          destruct PRE.
+          exploit sim_traces_co1; eauto.
+          { esplits.
+            - instantiate (1 := eid1). eauto with tso.
+            - eauto with tso.
+          }
+          intro CO1. guardH CO1.
           unfold Execution.label in *.
           rewrite LABELS in *. rewrite IdMap.map_spec in *.
           destruct eid1 as [tid1 iid1], eid2 as [tid2 iid2]. ss.
@@ -525,18 +533,23 @@ Proof.
           exploit TH1.(WPROP2); eauto with tso. i. des.
           exploit TH1.(WPROP3); eauto with tso. i. des.
           generalize (SIM tid1). intro SIM1. inv SIM1; try congr. simplify.
-          unfold v_gen. ss. rewrite <- H12, <- H7.
           exploit sim_trace_last; try exact REL0; eauto. i. des. simplify.
           exploit sim_trace_sim_th; try exact REL0; eauto. intro TH2.
           exploit TH1.(WPROP3); eauto. i. des.
           exploit TH2.(RPROP2); eauto. i. des; [left |].
-          * rewrite x15. split; ss.
+          * unfold v_gen. ss. rewrite <- H11, <- H6.
+            rewrite x15. split; ss.
             destruct ((tid1, iid1) == (tid2, iid2)); ss. inv e.
-            move EID at bottom. unfold Execution.label in EID. ss.
+            move EID at bottom.
             exploit sim_trace_last; try exact REL6; eauto. i. des. simplify.
-            rewrite EID in x17. inv x17. ss.
-          * (* normal: co1 *)
-            admit.
+            rewrite x17 in EID. inv EID.
+            exfalso. apply x19. eauto with tso.
+          * move CO1 at bottom. unguardH CO1. des; [right | left |].
+            -- inv CO1. rewrite <- H6 in H11. inv H11. split; ss.
+            -- rewrite <- CO in CO1. exploit sim_traces_cov_co; eauto. i. split; ss.
+               destruct ((tid1, iid1) == (tid2, iid2)); ss. inv e.
+               unfold Time.lt in x20. lia.
+            -- admit.
       - exfalso.
         rewrite RF in *. eapply H3. unfold codom_rel.
         eexists. eauto.
