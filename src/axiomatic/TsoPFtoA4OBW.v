@@ -130,7 +130,7 @@ Proof.
         inv WRITABLE. ss.
       + inv H1. des.
         inv H1. eapply Nat.le_lt_trans.
-        { apply L.(LC).(VWN); ss. econs; ss. inv H. des. inv H1. inv H6.
+        { apply L.(LC).(VWN); ss. econs; ss. inv H. des. inv H1. inv H5.
           destruct l0; ss.
           - left. econs; ss. econs; eauto. econs; ss. econs; eauto.
           - right. econs; ss. econs; eauto. econs; ss. econs; eauto.
@@ -140,7 +140,7 @@ Proof.
         inv WRITABLE. ss.
     - (* bob *)
       unfold Execution.bob in H. rewrite ? seq_assoc in *.
-      inv H. des. inv H4. inv H5. destruct l0; ss; congr.
+      inv H. des. inv H3. inv H4. destruct l0; ss; congr.
   }
   { (* update *)
     rewrite EU, AEU, WL, RL, COV, VEXT in SIMTR.
@@ -162,17 +162,36 @@ Proof.
     rewrite EX2.(XVEXT); s; cycle 1.
     { rewrite List.app_length. s. clear. lia. }
     rewrite X.
-    inv STEP0. ss. subst. inv LOCAL0; inv EVENT; inv STEP0; ss.
+    exploit sim_trace_sim_th; try exact TRACE; eauto. intro SIM_TH.
+    destruct SIM_TH.(EU_WF).
+    inv STEP0. inv LOCAL1; ss.
+    specialize (Local.rmw_spec LOCAL0 STEP0). intro RMW_SPEC. guardH RMW_SPEC.
+    inv EVENT; inv STEP0; ss.
     move OB at bottom. unfold ob' in OB. des_union.
     - (* rfe *)
       rename H1 into H.
-      inv H. exploit RF2; eauto. i. des.
-      inv READ. inv WRITE. destruct l0; destruct l1; ss; try congr; eqvtac.
-      + rewrite fun_add_spec. condtac; [|congr].
-        inv WRITABLE. ss.
-        admit.
-      + admit.
-      (* maybe easy: rfe에서 앞선 write보다 커짐을 보여야 함  *)
+      assert (v_gen vexts eid1 = old_ts).
+      { inv H. destruct eid1 as [tid1 eid1]. inv H2. ss.
+        generalize H1. intro Y. rewrite RF in Y. inv Y. ss.
+        erewrite EX2.(XR) in R; eauto; cycle 1.
+        { s. rewrite List.app_length. s. clear. lia. }
+        destruct (length (ALocal.labels alc1) =? length (ALocal.labels alc1)); ss.
+        rewrite fun_add_spec in *.
+        destruct (equiv_dec (ValA.val vloc) (ValA.val vloc)); cycle 1.
+        { exfalso. apply c. ss. }
+        generalize SIM_TH.(MEM). s. i. subst. ss.
+        assert (old_ts = Memory.latest_ts (ValA.val vloc) (Init.Nat.pred ts) (Machine.mem m)).
+        { eapply Local.rmw_latest_old; eauto. }
+        subst. inv R.
+        generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
+        exploit sim_trace_last; try exact REL0. i. des. simplify.
+        exploit sim_trace_sim_th; try exact REL0; eauto. intro L1.
+        exploit L1.(WPROP3); eauto. i. des.
+        unfold v_gen. ss. rewrite <- H9. auto.
+      }
+      subst.
+      rewrite fun_add_spec. condtac; ss.
+      exfalso. apply c. ss.
     - (* dob *)
       rename H1 into H.
       unfold Execution.dob in H. rewrite ? seq_assoc in *. des_union.
@@ -183,7 +202,7 @@ Proof.
         inv WRITABLE. ss.
       + inv H1. des.
         inv H1. eapply Nat.le_lt_trans.
-        { apply L.(LC).(VWN); ss. econs; ss. inv H. des. inv H1. inv H6.
+        { apply L.(LC).(VWN); ss. econs; ss. inv H. des. inv H1. inv H5.
           destruct l0; ss.
           - left. econs; ss. econs; eauto. econs; ss. econs; eauto.
           - right. econs; ss. econs; eauto. econs; ss. econs; eauto.
@@ -193,8 +212,8 @@ Proof.
         inv WRITABLE. ss.
     - (* bob *)
       unfold Execution.bob in H. rewrite ? seq_assoc in *.
-      inv H. des. inv H1. des. inv H. des. inv H5. des.
-      inv H. inv H6. inv H4. eapply Nat.le_lt_trans.
+      inv H. des. inv H1. des. inv H. des. inv H4. des.
+      inv H. inv H5. inv H3. eapply Nat.le_lt_trans.
       { apply L.(LC).(VWN); ss. econs; ss. right. econs. split; ss.
         eapply Execution.po_chain. econs. split; eauto.
       }
