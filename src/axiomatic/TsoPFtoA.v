@@ -232,9 +232,9 @@ Lemma sim_traces_vext_valid
       (ATR: IdMap.Forall2
               (fun _ atr aeu => exists l, atr = aeu :: l)
               atrs (Valid.aeus PRE)):
-  <<FR:
+  <<FRE:
     forall eid1 eid2
-      (FR: Execution.fr ex eid1 eid2),
+      (FRE: Execution.fre ex eid1 eid2),
       Time.lt ((v_gen vexts) eid1) ((v_gen vexts) eid2)>> /\
   <<OB_WRITE:
     forall eid1 eid2
@@ -257,8 +257,8 @@ Proof.
   splits; i.
   - destruct eid1 as [tid1 eid1].
     destruct eid2 as [tid2 eid2].
-    inversion FR.
-    + inv H. des. exploit RF2; eauto. i. des. inv READ.
+    inversion FRE. inversion H.
+    + inv H1. des. exploit RF2; eauto. i. des. inv READ.
       revert EID. unfold Execution.label. s. rewrite PRE.(Valid.LABELS), IdMap.map_spec.
       generalize (ATR tid1). generalize (SIM tid1). intros X Y; inv X; inv Y; simplify; ss.
       i. des. subst.
@@ -267,9 +267,9 @@ Proof.
       hexploit sim_traces_sim_th'; eauto.
       { s. instantiate (1 := length tr'). lia. }
       all: try rewrite lastn_all; s; eauto; try lia.
-      intro TH'. eapply TH'.(TsoPFtoA3.FR); eauto.
+      intro TH'. eapply TH'.(TsoPFtoA3.FRE); eauto.
       apply List.nth_error_Some. congr.
-    + inv H. inv H1. inv H. inv H1.
+    + inv H1. inv H3. inv H1. inv H3.
       revert EID. unfold Execution.label. s. rewrite PRE.(Valid.LABELS), IdMap.map_spec.
       generalize (ATR tid1). generalize (SIM tid1). intros X Y; inv X; inv Y; simplify; ss.
       i. des. subst.
@@ -278,7 +278,7 @@ Proof.
       hexploit sim_traces_sim_th'; eauto.
       { s. instantiate (1 := length tr'). lia. }
       all: try rewrite lastn_all; s; eauto; try lia.
-      intro TH'. eapply TH'.(TsoPFtoA3.FR); eauto.
+      intro TH'. eapply TH'.(TsoPFtoA3.FRE); eauto.
       apply List.nth_error_Some. congr.
   - destruct eid1 as [tid1 eid1].
     destruct eid2 as [tid2 eid2].
@@ -453,7 +453,7 @@ Proof.
   exploit sim_traces_vext_valid; eauto. i. des.
   inv LABEL2. destruct l; ss.
   - right. rewrite ob_ob' in OB. des_union.
-    + exploit FR; eauto. i.
+    + exploit FRE; eauto. i.
       esplits; eauto using Nat.lt_le_incl with tso.
       econs; eauto with tso.
     + exploit sim_traces_vext_co; eauto. i.
@@ -463,11 +463,11 @@ Proof.
       esplits; eauto using Nat.lt_le_incl with tso.
       econs; eauto with tso.
   - left. rewrite ob_ob' in OB. des_union.
-    + exploit FR; eauto with tso.
+    + exploit FRE; eauto with tso.
     + exploit sim_traces_vext_co; eauto with tso.
     + exploit OB_WRITE; eauto with tso.
   - left. rewrite ob_ob' in OB. des_union.
-    + exploit FR; eauto with tso.
+    + exploit FRE; eauto with tso.
     + exploit sim_traces_vext_co; eauto with tso.
     + exploit OB_WRITE; eauto with tso.
   (* - exploit sim_traces_vext_valid; eauto. i. des.

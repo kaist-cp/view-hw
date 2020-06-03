@@ -45,7 +45,7 @@ Ltac des_union :=
 Lemma ob_ob'
       ex eid1 eid2:
   Execution.ob ex eid1 eid2 <->
-  (Execution.fr ex ∪ ex.(Execution.co) ∪ ob' ex) eid1 eid2.
+  (Execution.fre ex ∪ ex.(Execution.co) ∪ ob' ex) eid1 eid2.
 Proof.
   split; i.
   - des_union.
@@ -196,12 +196,12 @@ Definition sim_ob_read
     (EID2: ex.(Execution.label_is) Label.is_read (tid, eid2)),
     Time.le (vext eid1) (vext (tid, eid2)).
 
-Definition sim_fr
+Definition sim_fre
            (tid:Id.t) (ex:Execution.t) (vext: eidT -> Time.t)
            (eu:ExecUnit.t) (aeu:AExecUnit.t): Prop :=
   forall eid1 eid2
     (LABEL: eid1 < List.length aeu.(AExecUnit.local).(ALocal.labels))
-    (FR: Execution.fr ex (tid, eid1) eid2),
+    (FR: Execution.fre ex (tid, eid1) eid2),
     Time.lt (vext (tid, eid1)) (vext eid2).
 
 (* Definition sim_atomic
@@ -221,7 +221,7 @@ Inductive sim_th'
   LC: sim_local tid mem ex vext eu.(ExecUnit.local) aeu.(AExecUnit.local);
   OBW: sim_ob_write tid ex vext eu aeu;
   OBR: sim_ob_read tid ex vext eu aeu;
-  FR: sim_fr tid ex vext eu aeu;
+  FRE: sim_fre tid ex vext eu aeu;
   (* ATOMIC: sim_atomic tid ex vext eu aeu; *)
 }.
 Hint Constructors sim_th'.

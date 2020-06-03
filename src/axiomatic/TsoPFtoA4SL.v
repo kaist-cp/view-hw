@@ -121,7 +121,6 @@ Proof.
               inv H. exploit RF2; eauto. i. des.
               destruct x as [tid1 eid1]. ss.
               inv WRITE. inv READ. destruct l; destruct l0; ss; eqvtac.
-              all: clear LABEL LABEL0.
               all: rename EID0 into WRITE.
               + (* write -> read *)
                 unfold Execution.label in WRITE. ss.
@@ -217,7 +216,6 @@ Proof.
               inv H. exploit RF2; eauto. i. des.
               destruct x as [tid1 eid1]. ss.
               inv WRITE. inv READ. destruct l; destruct l0; ss; eqvtac.
-              all: clear LABEL LABEL0.
               all: rename EID0 into WRITE.
               + (* write -> read *)
                 unfold Execution.label in WRITE. ss.
@@ -903,7 +901,6 @@ Proof.
               inv H. exploit RF2; eauto. i. des.
               destruct x as [tid1 eid1]. ss.
               inv WRITE. inv READ. destruct l; destruct l0; ss; eqvtac.
-              all: clear LABEL LABEL0.
               all: rename EID0 into WRITE.
               + (* write -> read *)
                 unfold Execution.label in WRITE. ss.
@@ -999,7 +996,6 @@ Proof.
               inv H. exploit RF2; eauto. i. des.
               destruct x as [tid1 eid1]. ss.
               inv WRITE. inv READ. destruct l; destruct l0; ss; eqvtac.
-              all: clear LABEL LABEL0.
               all: rename EID0 into WRITE.
               + (* write -> read *)
                 unfold Execution.label in WRITE. ss.
