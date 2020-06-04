@@ -579,7 +579,7 @@ Module Execution.
     destruct P1; eauto with tso.
   Qed.
 
-  (* let obs = rfe | fr | co *)
+  (* let obs = rfe | fre | co *)
   (* let dob = ([R]; po; [E]) U ([E]; po; [W]) *)
   (* let bob = [E]; po; [MF]; po; [E] ~~~> [W]; po; [dmb wr]; po; [R] *)
   (* let ob = obs | dob | bob *)
@@ -654,6 +654,7 @@ Module Execution.
     (ex.(rf)⁻¹ ⨾ ex.(co)) ∪
     ((ex.(label_rel) label_loc) ∩
      ((ex.(label_is) Label.is_read) \₁ codom_rel ex.(rf)) × (ex.(label_is) Label.is_write)).
+  Definition fre (ex:t): relation eidT := (fr ex) ∩ e.
 
   Definition rfi (ex:t): relation eidT := ex.(rf) ∩ i.
   Definition rfe (ex:t): relation eidT := ex.(rf) ∩ e.
@@ -663,7 +664,7 @@ Module Execution.
   Definition cowr (ex:t): relation eidT := po ⨾ (fr ex).
   Definition corw (ex:t): relation eidT := po^? ⨾ ex.(rf).
 
-  Definition obs (ex:t): relation eidT := (rfe ex) ∪ (fr ex) ∪ ex.(co).
+  Definition obs (ex:t): relation eidT := (rfe ex) ∪ (fre ex) ∪ ex.(co).
 
   Definition dob (ex:t): relation eidT :=
     (⦗ex.(label_is) Label.is_read⦘ ⨾
@@ -946,7 +947,7 @@ Module Valid.
         * left. right. left. econs. esplits.
           -- econs; eauto with tso.
           -- econs. esplits; eauto. econs; eauto with tso.
-        * left. left. left. right. right. econs.
+        * left. left. left. right. split; ss. right. econs.
           -- econs; eauto with tso.
           -- econs; eauto with tso. econs; eauto with tso.
       + inv LABEL0. rename eid2 into eid4. exploit EX.(CO1).
@@ -958,7 +959,7 @@ Module Valid.
         * left. right. left. econs. esplits.
           -- econs; eauto with tso.
           -- econs. esplits; eauto. econs; eauto with tso.
-        * left. left. left. right. econs. econs. econs; eauto.
+        * left. left. left. right. split; ss. econs. econs. econs; eauto.
   Qed.
 
   Lemma coherence_rw
@@ -1014,6 +1015,7 @@ Module Valid.
            | [H: Execution.dob _ _ _ |- _] => inv H
            | [H: Execution.bob _ _ _ |- _] => inv H
            | [H: Execution.fr _ _ _ |- _] => inv H
+           | [H: Execution.fre _ _ _ |- _] => inv H
            | [H: Execution.rfe _ _ _ |- _] => inv H
            | [H: (_⨾ _) _ _ |- _] => inv H
            | [H: ⦗_⦘ _ _ |- _] => inv H
@@ -1043,13 +1045,12 @@ Module Valid.
     - exploit RF2; eauto. i. des. inv WRITE. inv READ.
       destruct l; ss. destruct l0; ss. congr. congr.
       destruct l0; ss. congr. congr.
-    - exploit RF2; eauto. i. des. inv WRITE. inv READ.
-      destruct l; ss. destruct l0; ss. congr. congr.
-      destruct l0; ss. congr. congr.
-    - destruct l1; try congr; ss.
+    - exploit RF2; eauto. i. des.
+      inv READ. destruct l; ss; try congr.
+    - inv H0.
+      inv H. destruct l0; ss; try congr.
     - exploit CO2; eauto. i. des. inv LABEL0. inv LABEL1.
-      destruct l; ss. destruct l0; ss. congr. congr.
-      destruct l0; ss. congr. congr.
+      destruct l; destruct l0; ss; try congr.
   Qed.
 
   Lemma ob_barrier_ob
@@ -1069,12 +1070,10 @@ Module Valid.
     all: try by rewrite EID in EID1; inv EID1; ss.
     all: try by rewrite EID in EID2; inv EID2; ss.
     all: try by destruct l; try congr; ss.
-    - exploit RF2; eauto. i. des. inv WRITE. inv READ.
-      destruct l; ss. destruct l0; ss. congr. congr.
-      destruct l0; ss. congr. congr.
-    - exploit CO2; eauto. i. des. inv LABEL0. inv LABEL1.
-      destruct l; ss. destruct l0; ss. congr. congr.
-      destruct l0; ss. congr. congr.
+    - exploit RF2; eauto. i. des. inv READ.
+      destruct l; ss; try congr.
+    - exploit CO2; eauto. i. des. inv LABEL1.
+      destruct l; ss; try congr.
     - exploit CO2; eauto. i. des. inv LABEL0. inv LABEL1.
       destruct l; ss. destruct l0; ss. congr. congr.
       destruct l0; ss. congr. congr.

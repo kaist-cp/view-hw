@@ -63,7 +63,7 @@ Lemma sim_traces_sim_th'_fr
     (COV: lastn (S n) covl = cov2 :: cov1 :: covl')
     (VEXT: lastn (S n) vextl = vext2 :: vext1 :: vextl')
     (SIM_TH': sim_th' tid m.(Machine.mem) ex (v_gen vexts) eu1 aeu1),
-    sim_fr tid ex (v_gen vexts) eu2 aeu2.
+    sim_fre tid ex (v_gen vexts) eu2 aeu2.
 Proof.
   i. rename SIM_TH' into L.
   generalize (SIM tid). intro X. inv X; simplify.
@@ -85,8 +85,8 @@ Proof.
   assert (exists loc,
              <<LABEL1: Execution.label_is ex (fun label : Label.t => Label.is_reading loc label) (tid, eid1)>> /\
              <<LABEL2: Execution.label_is ex (fun label : Label.t => Label.is_writing loc label) eid2>>).
-  { inv FR.
-    - inv H. des.
+  { inv FR. inv H.
+    - inv H1. des.
       exploit RF2; eauto. i. des.
       exploit CO2; eauto. i. des.
       inv READ. rename EID into READ. rename LABEL2 into R_VAL.
@@ -98,11 +98,8 @@ Proof.
       exploit Label.writing_same_loc. instantiate (1 := l2). eauto. instantiate (1 := loc). ss.
       i. subst.
       esplits; econs; eauto with tso.
-    - inv H. inv H1. inv H. inv H0. inv H2. inv H1. rewrite EID1 in EID0. inv EID0. rewrite EID2 in EID. inv EID.
-      destruct l0; destruct l3; inv LABEL0; ss.
-      all: destruct (equiv_dec loc0 loc1); destruct (equiv_dec loc loc1); ss.
-      all: inv e0.
-      all: inv e1.
+    - inv H1. inv H2. inv H1. inv H3. inv H2. inv H. rewrite EID1 in EID0. inv EID0. rewrite EID2 in EID. inv EID.
+      destruct l0; destruct l1; inv LABEL2; ss; eqvtac.
       all: esplits; econs; eauto with tso.
   }
   i. des.
@@ -129,10 +126,9 @@ Proof.
   all: try by clear; rewrite List.app_length; s; lia.
   all: destruct l0; ss.
   all: destruct l1; ss.
-  all: destruct (equiv_dec loc0 loc); destruct (equiv_dec loc1 loc); ss.
-  all: inv e.
-  all: inv e0.
+  all: eqvtac.
   all: intro NTH; apply nth_error_snoc_inv_last in NTH; inv NTH.
+  all: inv FR.
   { (* read -> write *)
     rewrite EU, AEU, WL, RL, COV, VEXT in SIMTR.
     exploit sim_trace_sim_th; try exact SIMTR; eauto. intro L2.
@@ -162,7 +158,7 @@ Proof.
     intro EX2'.
     revert EID0. unfold Execution.label. s. rewrite PRE.(Valid.LABELS), IdMap.map_spec.
     generalize (ATR tid2). rewrite ATR2. intros Y Z; inv Y; ss.
-    rewrite <- H in Z. inv Z. des. simplify.
+    rewrite <- H4 in Z. inv Z. des. simplify.
     exploit L1'.(WPROP2); eauto with tso. i. des.
     exploit L1'.(WPROP3); eauto. i. des. subst.
     rewrite EX2'.(XVEXT) in *; eauto; cycle 1.
@@ -172,9 +168,7 @@ Proof.
     rewrite x4 in *. rewrite x1 in x8. inv x8.
     unguardH FR_COV. des.
     - eapply Memory.latest_lt; eauto.
-    - inv FR_COV0.
-      move EID at bottom. unfold Execution.label in EID. ss. rewrite PRE.(Valid.LABELS), IdMap.map_spec in EID.
-      rewrite <- H in EID. ss. congr.
+    - inv FR_COV0. inv H0. ss.
   }
   { (* read -> update *)
     rewrite EU, AEU, WL, RL, COV, VEXT in SIMTR.
@@ -205,7 +199,7 @@ Proof.
     intro EX2'.
     revert EID0. unfold Execution.label. s. rewrite PRE.(Valid.LABELS), IdMap.map_spec.
     generalize (ATR tid2). rewrite ATR2. intros Y Z; inv Y; ss.
-    rewrite <- H in Z. inv Z. des. simplify.
+    rewrite <- H4 in Z. inv Z. des. simplify.
     exploit L1'.(WPROP2); eauto with tso. i. des.
     exploit L1'.(WPROP3); eauto. i. des. subst.
     rewrite EX2'.(XVEXT) in *; eauto; cycle 1.
@@ -215,9 +209,7 @@ Proof.
     rewrite x4 in *. rewrite x1 in x8. inv x8.
     unguardH FR_COV. des.
     - eapply Memory.latest_lt; eauto.
-    - inv FR_COV0.
-      move EID at bottom. unfold Execution.label in EID. ss. rewrite PRE.(Valid.LABELS), IdMap.map_spec in EID.
-      rewrite <- H in EID. ss. congr.
+    - inv FR_COV0. inv H0. ss.
   }
   { (* update -> write *)
     rewrite EU, AEU, WL, RL, COV, VEXT in SIMTR.
@@ -251,7 +243,7 @@ Proof.
     intro EX2'.
     revert EID0. unfold Execution.label. s. rewrite PRE.(Valid.LABELS), IdMap.map_spec.
     generalize (ATR tid2). rewrite ATR2. intros Y Z; inv Y; ss.
-    rewrite <- H in Z. inv Z. des. simplify.
+    rewrite <- H4 in Z. inv Z. des. simplify.
     exploit L1'.(WPROP2); eauto with tso. i. des.
     exploit L1'.(WPROP3); eauto. i. des. subst.
     rewrite EX2'.(XVEXT) in *; eauto; cycle 1.
@@ -259,15 +251,13 @@ Proof.
     rewrite EX2'.(XCOV) in *; eauto; cycle 1.
     { apply List.nth_error_Some. congr. }
     rewrite x4 in *. rewrite x1 in x8. inv x8.
-    unguardH FR_COV. des.
-    - eapply Memory.latest_lt; try exact FR_COV; eauto. ss.
-      inv STEP0. rewrite LC. ii. ss. rewrite fun_add_spec in *. des_ifs; cycle 1.
-      { exfalso. apply c. ss. }
-      unfold View.ts in TS1, TS2. ss.
-      rewrite Memory.latest_ts_rec in TS1. lia.
-    - inv FR_COV0.
-      move EID at bottom. unfold Execution.label in EID. ss. rewrite PRE.(Valid.LABELS), IdMap.map_spec in EID.
-      rewrite <- H in EID. ss. congr.
+    unguardH FR_COV. des; cycle 1.
+    { inv FR_COV0. inv H0. ss. }
+    eapply Memory.latest_lt; try exact FR_COV; eauto. ss.
+    inv STEP0. rewrite LC. ii. ss. rewrite fun_add_spec in *. des_ifs; cycle 1.
+    { exfalso. apply c. ss. }
+    unfold View.ts in TS1, TS2. ss.
+    rewrite Memory.latest_ts_rec in TS1. lia.
   }
   { (* update -> update *)
     rewrite EU, AEU, WL, RL, COV, VEXT in SIMTR.
@@ -301,7 +291,7 @@ Proof.
     intro EX2'.
     revert EID0. unfold Execution.label. s. rewrite PRE.(Valid.LABELS), IdMap.map_spec.
     generalize (ATR tid2). rewrite ATR2. intros Y Z; inv Y; ss.
-    rewrite <- H in Z. inv Z. des. simplify.
+    rewrite <- H4 in Z. inv Z. des. simplify.
     exploit L1'.(WPROP2); eauto with tso. i. des.
     exploit L1'.(WPROP3); eauto. i. des. subst.
     rewrite EX2'.(XVEXT) in *; eauto; cycle 1.
@@ -309,15 +299,13 @@ Proof.
     rewrite EX2'.(XCOV) in *; eauto; cycle 1.
     { apply List.nth_error_Some. congr. }
     rewrite x4 in *. rewrite x1 in x8. inv x8.
-    unguardH FR_COV. des.
-    - eapply Memory.latest_lt; try exact FR_COV; eauto. ss.
-      inv STEP0. rewrite LC. ii. ss. rewrite fun_add_spec in *. des_ifs; cycle 1.
-      { exfalso. apply c. ss. }
-      unfold View.ts in TS1, TS2. ss.
-      rewrite Memory.latest_ts_rec in TS1. lia.
-    - inv FR_COV0. inv STEP0.
-      (* maybe easy: can't take same step twice *)
-      admit.
+    unguardH FR_COV. des; cycle 1.
+    { inv FR_COV0. inv H0. ss. }
+    eapply Memory.latest_lt; try exact FR_COV; eauto. ss.
+    inv STEP0. rewrite LC. ii. ss. rewrite fun_add_spec in *. des_ifs; cycle 1.
+    { exfalso. apply c. ss. }
+    unfold View.ts in TS1, TS2. ss.
+    rewrite Memory.latest_ts_rec in TS1. lia.
   }
   { (* read -> write *)
     rewrite EU, AEU, WL, RL, COV, VEXT in SIMTR.
@@ -348,7 +336,7 @@ Proof.
     intro EX2'.
     revert EID0. unfold Execution.label. s. rewrite PRE.(Valid.LABELS), IdMap.map_spec.
     generalize (ATR tid2). rewrite ATR2. intros Y Z; inv Y; ss.
-    rewrite <- H in Z. inv Z. des. simplify.
+    rewrite <- H4 in Z. inv Z. des. simplify.
     exploit L1'.(WPROP2); eauto with tso. i. des.
     exploit L1'.(WPROP3); eauto. i. des. subst.
     rewrite EX2'.(XVEXT) in *; eauto; cycle 1.
@@ -358,9 +346,7 @@ Proof.
     rewrite x4 in *. rewrite x1 in x8. inv x8.
     unguardH FR_COV. des.
     - eapply Memory.latest_lt; eauto.
-    - inv FR_COV0.
-      move EID at bottom. unfold Execution.label in EID. ss. rewrite PRE.(Valid.LABELS), IdMap.map_spec in EID.
-      rewrite <- H in EID. ss. congr.
+    - inv FR_COV0. inv H0. ss.
   }
   { (* read -> update *)
     rewrite EU, AEU, WL, RL, COV, VEXT in SIMTR.
@@ -391,7 +377,7 @@ Proof.
     intro EX2'.
     revert EID0. unfold Execution.label. s. rewrite PRE.(Valid.LABELS), IdMap.map_spec.
     generalize (ATR tid2). rewrite ATR2. intros Y Z; inv Y; ss.
-    rewrite <- H in Z. inv Z. des. simplify.
+    rewrite <- H4 in Z. inv Z. des. simplify.
     exploit L1'.(WPROP2); eauto with tso. i. des.
     exploit L1'.(WPROP3); eauto. i. des. subst.
     rewrite EX2'.(XVEXT) in *; eauto; cycle 1.
@@ -401,8 +387,6 @@ Proof.
     rewrite x4 in *. rewrite x1 in x8. inv x8.
     unguardH FR_COV. des.
     - eapply Memory.latest_lt; eauto.
-    - inv FR_COV0.
-      move EID at bottom. unfold Execution.label in EID. ss. rewrite PRE.(Valid.LABELS), IdMap.map_spec in EID.
-      rewrite <- H in EID. ss. congr.
+    - inv FR_COV0. inv H0. ss.
   }
 Qed.
