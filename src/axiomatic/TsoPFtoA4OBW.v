@@ -145,7 +145,6 @@ Proof.
   { (* update *)
     rewrite EU, AEU, WL, RL, COV, VEXT in SIMTR.
     exploit sim_trace_sim_th; try exact SIMTR; eauto. intro L'.
-    (* inv RES. destruct res1. ss. subst. *)
     exploit L'.(WPROP2); ss.
     { split.
       - apply nth_error_last. apply Nat.eqb_eq. ss.
@@ -165,7 +164,6 @@ Proof.
     exploit sim_trace_sim_th; try exact TRACE; eauto. intro SIM_TH.
     destruct SIM_TH.(EU_WF).
     inv STEP0. inv LOCAL1; ss.
-    specialize (Local.rmw_spec LOCAL0 STEP0). intro RMW_SPEC. guardH RMW_SPEC.
     inv EVENT; inv STEP0; ss.
     move OB at bottom. unfold ob' in OB. des_union.
     - (* rfe *)
@@ -181,7 +179,7 @@ Proof.
         { exfalso. apply c. ss. }
         generalize SIM_TH.(MEM). s. i. subst. ss.
         assert (old_ts = Memory.latest_ts (ValA.val vloc) (Init.Nat.pred ts) (Machine.mem m)).
-        { eapply Local.rmw_latest_old; eauto. }
+        { admit. }
         subst. inv R.
         generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
         exploit sim_trace_last; try exact REL0. i. des. simplify.

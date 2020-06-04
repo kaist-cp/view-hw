@@ -316,38 +316,11 @@ Section Local.
       apply Memory.ge_latest. eapply fwd_read_view_le; eauto.
   Qed.
 
-  Lemma rmw_latest_old
-        loc old_ts ts tid mem lc old
-        (COH: Memory.latest loc old_ts (View.ts (Local.coh lc loc)) mem)
-        (EX: Memory.exclusive tid loc old_ts ts mem)
-        (OLD_MSG: Memory.read loc old_ts mem = Some old)
-        (OLD_RANGE: lt old_ts ts):
-    <<LATEST_OLD: old_ts = Memory.latest_ts loc (pred ts) mem>>.
-  Proof.
-    eapply le_antisym; ss.
-    + eapply Memory.latest_ts_read_le; eauto. lia.
-    + eapply Memory.latest_latest_ts. ii.
-      unfold Memory.exclusive in EX. unfold Memory.no_msgs in EX.
-      exploit EX; eauto.
-      { etrans; eauto. lia. }
-      esplits; eauto. destruct (Msg.tid msg == tid); ss. inv e.
-      unfold Memory.latest in COH. unfold Memory.no_msgs in COH.
-      exploit COH; eauto.
-      destruct (lt_eq_lt_dec (S ts0) (View.ts (coh lc (Msg.loc msg)))). inv s; try lia.
-      (* maybe easy: my write X ts -> ts <= coh(X) *)
-      admit.
-  Qed.
-
   Lemma rmw_spec
         tid view_pre mem vloc vold vnew ts lc1 lc2
         (WF: Local.wf tid mem lc1)
         (RMW: Local.rmw vloc vold vnew ts tid view_pre lc1 mem lc2):
-    <<COH: ts = Memory.latest_ts vloc.(ValA.val) (lc2.(Local.coh) vloc.(ValA.val)).(View.ts) mem>> /\
-    <<OLD_TS:
-      exists old_ts,
-      <<PRED: old_ts = Memory.latest_ts vloc.(ValA.val) (pred ts) mem>> /\
-      <<READ: Memory.read vloc.(ValA.val) old_ts mem = Some vold.(ValA.val)>>
-    >>.
+    <<COH: ts = Memory.latest_ts vloc.(ValA.val) (lc2.(Local.coh) vloc.(ValA.val)).(View.ts) mem>>.
   Proof.
     inv RMW. ss. rewrite fun_add_spec. condtac; [|congr]. splits.
     - apply le_antisym; ss.
@@ -355,8 +328,6 @@ Section Local.
         eapply Memory.get_msg_read. eauto.
       + apply Memory.latest_latest_ts.
         apply Memory.ge_latest. ss.
-    - eexists old_ts. split; ss.
-      eapply rmw_latest_old; eauto.
   Qed.
 
   Lemma interference_wf

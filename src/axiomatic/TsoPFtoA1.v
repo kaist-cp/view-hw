@@ -899,6 +899,9 @@ Proof.
     exploit sim_rmap_weak_expr; eauto. intro Y. inv Y.
     inv VLOC. rewrite VAL0 in *. clear VAL.
 
+    assert (PRED: old_ts = Memory.latest_ts (ValA.val (sem_expr rmap0 eloc0)) (Init.Nat.pred ts) mem).
+    { admit. }
+
     (* inv LOCAL; ss; inv EVENT; inv STEP; ss. inv STATE. ss.
     destruct IH.(EU_WF). *)
     econs; ss; clear EU_WF2 AEU_WF2.
@@ -916,7 +919,8 @@ Proof.
       + i. des_ifs; eauto. apply Nat.eqb_eq in Heq. subst. ii. inv H.
         rewrite fun_add_spec in *. des_ifs; [|congr]. ss. apply c.
         specialize (Memory.latest_ts_spec (ValA.val (sem_expr rmap eloc0)) ts mem). i. des.
-        destruct ts; ss. unfold Memory.get_msg in MSG. ss. rewrite MSG. des_ifs.
+        destruct ts; ss.
+        (* unfold Memory.get_msg in MSG. ss. rewrite MSG. des_ifs. *)
       + esplits; eauto.
         * des_ifs; eauto. apply Nat.eqb_eq in Heq. subst. unfold ALocal.next_eid in *.
           assert (H: List.nth_error (ALocal.labels alc1) (length (ALocal.labels alc1)) <> None) by (ii; congr).
@@ -942,9 +946,9 @@ Proof.
         eapply IH.(WPROP2'); eauto.
       + des_ifs; cycle 1.
         { apply Nat.eqb_neq in Heq. lia. }
-        inv GET0. destruct (equiv_dec (ValA.val (sem_expr rmap0 eloc0)) loc); ss. inv e.
+        inv GET0. eqvtac.
         unguardH RMW_SPEC. des.
-        rewrite fun_add_spec in *. des_ifs; try congr. ss. rewrite <- COH0.
+        rewrite fun_add_spec in *. des_ifs; try congr. ss. rewrite <- RMW_SPEC.
         esplits; eauto.
     - i. unfold ALocal.next_eid in *. des_ifs.
       + apply Nat.eqb_eq in Heq. subst. rewrite fun_add_spec. des_ifs; [|congr]. inv e.
@@ -983,22 +987,17 @@ Proof.
       + des_ifs; cycle 1.
         { apply Nat.eqb_neq in Heq. unfold ALocal.next_eid in *. congr. }
         rewrite fun_add_spec in *. condtac; [|congr].
-        inv OLD. ss. des_ifs.
-        destruct (equiv_dec (ValA.val (sem_expr rmap0 eloc0)) loc); ss. inv e0.
-        destruct (equiv_dec (ValA.val voldv) val); ss. inv e0.
-        (* subst. rewrite VAL1 in *. *)
-        rewrite <- VAL.
-        move RMW_SPEC at bottom. desH RMW_SPEC. rewrite <- PRED.
-        exploit Memory.read_get_msg; eauto. i. des; esplits; eauto.
+        inv OLD. ss. des_ifs. eqvtac. rewrite <- VAL.
+        exploit Memory.read_get_msg; eauto. i. unguard. des; esplits; eauto.
     - i. des_ifs.
       + right. apply Nat.eqb_eq in Heq. subst.
         rewrite fun_add_spec in *. des_ifs; [|congr].
         inv VAL0. ss. subst. rewrite H0 in *.
-        move RMW_SPEC at bottom. desH RMW_SPEC. rewrite <- COH0.
+        move RMW_SPEC at bottom. desH RMW_SPEC. rewrite <- RMW_SPEC.
         inv OLD. rewrite VAL in *.
         exploit Memory.read_get_msg; eauto. i.
         assert (TS_GT: lt (Memory.latest_ts (ValA.val (sem_expr rmap0 eloc0)) (Init.Nat.pred ts) mem) ts).
-        { eapply le_lt_trans with (Init.Nat.pred ts); try lia. apply Memory.latest_ts_spec. }
+        { eapply le_lt_trans with (Init.Nat.pred ts); try lia. }
         des; esplits.
         all: try by rewrite List.nth_error_app2, Nat.sub_diag; [|refl]; ss; eauto with tso.
         all: try by eauto with tso.

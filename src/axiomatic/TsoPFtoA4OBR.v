@@ -300,7 +300,6 @@ Proof.
     {
       exploit sim_trace_sim_th; try exact TRACE; eauto. intro SIM_TH.
       destruct SIM_TH.(EU_WF).
-      specialize (Local.rmw_spec LOCAL0 STEP0). intro RMW_SPEC. guardH RMW_SPEC.
       clear LOCAL0. inv STEP0. ss.
       exploit EX2.(LABELS); eauto; ss.
       { rewrite List.app_length. s. clear. lia. }
@@ -319,7 +318,7 @@ Proof.
           { exfalso. apply c. ss. }
           generalize SIM_TH.(MEM). s. i. subst. ss.
           assert (old_ts = Memory.latest_ts (ValA.val vloc) (Init.Nat.pred ts) (Machine.mem m)).
-          { eapply Local.rmw_latest_old; eauto. }
+          { admit. }
           subst. inv R.
           generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
           exploit sim_trace_last; try exact REL0. i. des. simplify.
