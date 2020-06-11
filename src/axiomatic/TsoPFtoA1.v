@@ -414,6 +414,12 @@ Inductive sim_th
       <<READ_TS_SPEC:
           __guard__ ((ts = Time.bot /\ vold = Val.default) \/
           Memory.get_msg ts mem = Some (Msg.mk loc vold tid'))>>);
+  UPROP:
+    forall eid loc old_ts ts
+           (R: r eid = Some (loc, old_ts))
+           (W: w eid = Some (loc, ts)),
+      old_ts < ts /\
+      Memory.latest loc old_ts (pred ts) mem;
   COVPROP:
     forall eid (COV: cov eid > 0),
       AExecUnit.label_is aeu.(AExecUnit.local).(ALocal.labels) Label.is_access eid;
@@ -575,6 +581,12 @@ Proof.
             inv e. etrans; eauto. ss. apply join_l.
           * rewrite fun_add_spec. des_ifs; eauto.
             inv e. etrans; eauto. ss. apply join_l.
+      - i. eapply IH.(UPROP); eauto. des_ifs.
+        exploit IH.(WPROP3); eauto. i. des.
+        exfalso. apply Nat.eqb_eq in Heq. subst.
+        unfold ALocal.next_eid in *. ss.
+        assert (H: List.nth_error (ALocal.labels alc1) (length (ALocal.labels alc1)) <> None) by (ii; congr).
+        apply List.nth_error_Some in H. lia.
       - unfold ALocal.next_eid in *. s. i. des_ifs.
         { apply Nat.eqb_eq in Heq. subst. econs; eauto.
           - rewrite List.nth_error_app2, Nat.sub_diag; [|refl]. ss.
@@ -679,6 +691,12 @@ Proof.
             inv e. etrans; eauto. ss. apply join_l.
           * rewrite fun_add_spec. des_ifs; eauto.
             inv e. etrans; eauto. ss. apply join_l.
+      - i. eapply IH.(UPROP); eauto. des_ifs.
+        exploit IH.(WPROP3); eauto. i. des.
+        exfalso. apply Nat.eqb_eq in Heq. subst.
+        unfold ALocal.next_eid in *. ss.
+        assert (H: List.nth_error (ALocal.labels alc1) (length (ALocal.labels alc1)) <> None) by (ii; congr).
+        apply List.nth_error_Some in H. lia.
       - unfold ALocal.next_eid in *. s. i. des_ifs.
         { apply Nat.eqb_eq in Heq. subst. econs; eauto.
           - rewrite List.nth_error_app2, Nat.sub_diag; [|refl]. ss.
@@ -840,6 +858,14 @@ Proof.
         * rewrite fun_add_spec. des_ifs; eauto. inv e. etrans; eauto.
           inv WRITABLE. apply Nat.lt_le_incl. ss.
         * eapply nth_error_app_mon in x2. eauto.
+    - i. eapply IH.(UPROP); eauto. des_ifs.
+      exfalso. apply Nat.eqb_eq in Heq. subst.
+      unfold ALocal.next_eid in *. ss.
+      exploit IH.(RPROP2); eauto. i. des; ss.
+      + assert (H: List.nth_error (ALocal.labels alc1) (length (ALocal.labels alc1)) <> None) by (ii; congr).
+        apply List.nth_error_Some in H. lia.
+      + assert (H: List.nth_error (ALocal.labels alc1) (length (ALocal.labels alc1)) <> None) by (ii; congr).
+        apply List.nth_error_Some in H. lia.
     - unfold ALocal.next_eid in *. s. i. des_ifs.
       { apply Nat.eqb_eq in Heq. subst. econs; eauto.
         - rewrite List.nth_error_app2, Nat.sub_diag; [|refl]. ss.
@@ -900,7 +926,20 @@ Proof.
     inv VLOC. rewrite VAL0 in *. clear VAL.
 
     assert (PRED: old_ts = Memory.latest_ts (ValA.val (sem_expr rmap0 eloc0)) (Init.Nat.pred ts) mem).
-    { admit. }
+    { eapply le_antisym; ss.
+      + eapply Memory.latest_ts_read_le; eauto. lia.
+      + eapply Memory.latest_latest_ts. ii.
+        unfold Memory.exclusive in EX. unfold Memory.no_msgs in EX.
+        exploit EX; eauto.
+        { etrans; eauto. lia. }
+        esplits; eauto. destruct (Msg.tid msg == tid); ss. inv e.
+        unfold Memory.latest in COH. unfold Memory.no_msgs in COH.
+        exploit COH; eauto.
+        destruct (lt_eq_lt_dec (S ts0) (View.ts (Local.coh lc1 (ValA.val (sem_expr rmap0 eloc0))))). inv s; try lia.
+        inv LOCAL. rewrite <- H in l. exploit PROMISES0; try instantiate (1 := S ts0); eauto. i.
+        inv EU_WF2. inv LOCAL. ss.
+        admit.
+    }
 
     (* inv LOCAL; ss; inv EVENT; inv STEP; ss. inv STATE. ss.
     destruct IH.(EU_WF). *)
@@ -1010,6 +1049,12 @@ Proof.
           inv e. etrans; eauto. ss. unfold le. lia.
         * rewrite fun_add_spec. des_ifs; eauto.
           inv e. etrans; eauto. ss. unfold le. lia.
+    - i. des_ifs; cycle 1.
+      { exploit IH.(UPROP); eauto. }
+      rewrite fun_add_spec. condtac; ss; try congr.
+      unfold Memory.get_msg in MSG. destruct ts; ss. rewrite MSG. condtac; ss.
+      split; ss.
+      eapply Memory.latest_ts_latest. ss.
     - unfold ALocal.next_eid in *. s. i. des_ifs.
       { apply Nat.eqb_eq in Heq. subst. econs; eauto.
         - rewrite List.nth_error_app2, Nat.sub_diag; [|refl]. ss.
@@ -1080,6 +1125,7 @@ Proof.
       + rewrite <- GET1 in GET0. ss.
     - i. exploit IH.(RPROP2); eauto. s. i. des; [left|right]; esplits; eauto.
       all: eapply nth_error_app_mon; eauto.
+    - i. eapply IH.(UPROP); eauto.
     - i. apply AExecUnit.label_is_mon. eapply IH.(COVPROP); eauto.
     - i. apply AExecUnit.label_is_mon. eapply IH.(VEXTPROP); eauto.
     - i. apply nth_error_snoc_inv in LABEL1. des; cycle 1.

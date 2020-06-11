@@ -435,7 +435,11 @@ Proof.
     rewrite EID0 in x5. simplify.
     unguardH READ_TS_SPEC. des; subst; ss.
     rewrite x1 in READ_TS_SPEC. simplify.
-    admit.
+    exploit TH1.(UPROP); eauto with tso. i. des.
+    unfold Memory.get_msg in x2. destruct ts0; ss.
+    unfold Memory.get_msg in x3. destruct ts2; ss.
+    eapply x6; try exact x3; eauto. eapply le_lt_trans; eauto.
+    move TS at bottom. unfold Time.lt in TS. lia.
   - admit.
 Qed.
 

@@ -179,7 +179,19 @@ Proof.
         { exfalso. apply c. ss. }
         generalize SIM_TH.(MEM). s. i. subst. ss.
         assert (old_ts = Memory.latest_ts (ValA.val vloc) (Init.Nat.pred ts) (Machine.mem m)).
-        { admit. }
+        { eapply le_antisym; ss.
+          + eapply Memory.latest_ts_read_le; eauto. lia.
+          + eapply Memory.latest_latest_ts. ii.
+            unfold Memory.exclusive in EX. unfold Memory.no_msgs in EX.
+            exploit EX; eauto.
+            { etrans; eauto. lia. }
+            esplits; eauto. destruct (Msg.tid msg == tid); ss. inv e0.
+            unfold Memory.latest in COH. unfold Memory.no_msgs in COH.
+            exploit COH; eauto.
+            destruct (lt_eq_lt_dec (S ts0) (View.ts (Local.coh lc1 (ValA.val vloc)))). inv s; try lia.
+            inv LOCAL0. rewrite <- H in l0. exploit PROMISES0; [| | instantiate (1 := S ts0)|]; eauto. i.
+            inv STEP. inv NOPROMISE.
+        }
         subst. inv R.
         generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
         exploit sim_trace_last; try exact REL0. i. des. simplify.
