@@ -687,6 +687,58 @@ Section ExecUnit.
     - eapply state_step_incr. eauto.
     - eapply promise_step_incr. eauto.
   Qed.
+
+  Lemma state_step_promise_remained tid eu1 eu2 ts loc val
+        (WF: wf tid eu1)
+        (STEP: state_step tid eu1 eu2)
+        (LE: ts <= (eu1.(ExecUnit.local).(Local.coh) loc).(View.ts))
+        (MSG: Memory.get_msg ts eu1.(ExecUnit.mem) = Some (Msg.mk loc val tid))
+        (PROMISE: Promises.lookup ts eu1.(ExecUnit.local).(Local.promises)):
+    Promises.lookup ts eu2.(ExecUnit.local).(Local.promises).
+  Proof.
+    inv STEP. inv STEP0. inv LOCAL.
+    - rewrite LC. ss.
+    - inv STEP. rewrite LC2. ss.
+    - inv STEP. rewrite LC2. ss.
+      destruct (ts == ts0).
+      + inv e. rewrite MSG in MSG0. inv MSG0.
+        inv WRITABLE. lia.
+      + exploit Promises.unset_o. intro UNSET.
+        rewrite UNSET. eqvtac.
+    - inv STEP. rewrite LC2. ss.
+      destruct (ts == ts0).
+      + inv e. rewrite MSG in MSG0. inv MSG0.
+        inv WRITABLE. lia.
+      + exploit Promises.unset_o. intro UNSET.
+        rewrite UNSET. eqvtac.
+    - inv STEP. rewrite LC2. ss.
+    - inv STEP. rewrite LC2. ss.
+  Qed.
+
+  Lemma rtc_state_step_promise_remained tid  eu1 eu2 ts loc val
+        (WF: wf tid eu1)
+        (STEP: rtc (state_step tid) eu1 eu2)
+        (LE: ts <= (eu1.(ExecUnit.local).(Local.coh) loc).(View.ts))
+        (MSG: Memory.get_msg ts eu1.(ExecUnit.mem) = Some (Msg.mk loc val tid))
+        (PROMISE: Promises.lookup ts eu1.(ExecUnit.local).(Local.promises)):
+    Promises.lookup ts eu2.(ExecUnit.local).(Local.promises).
+  Proof.
+    induction STEP; ss. eapply IHSTEP.
+    - eapply state_step_wf; eauto.
+    - inv H. inv STEP0. inv LOCAL.
+      + rewrite LC. ss.
+      + inv STEP0. rewrite LC2. ss. rewrite fun_add_spec. condtac; ss.
+        inversion e. subst. etrans; eauto. apply join_l.
+      + inv STEP0. rewrite LC2. ss. rewrite fun_add_spec. condtac; ss.
+        inversion e. subst. inv WRITABLE. etrans; eauto. lia.
+      + inv STEP0. rewrite LC2. ss. rewrite fun_add_spec. condtac; ss.
+        inversion e. subst. inv WRITABLE. etrans; eauto. lia.
+      + inv STEP0. rewrite LC2. ss. rewrite fun_add_spec. condtac; ss.
+        inversion e. subst. etrans; eauto. apply join_l.
+      + inv STEP0. rewrite LC2. ss.
+    - inv H. inv STEP0. rewrite MEM. ss.
+    - exploit state_step_promise_remained; eauto.
+  Qed.
 End ExecUnit.
 End ExecUnit.
 
