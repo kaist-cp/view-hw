@@ -139,7 +139,7 @@ Section Local.
       (WRITABLE: writable vloc vnew tid lc1 mem1 ts view_pre)
       (MSG: Memory.get_msg ts mem1 = Some (Msg.mk loc new tid))
       (PROMISE: Promises.lookup ts lc1.(promises))
-      (LC: lc2 =
+      (LC2: lc2 =
             mk
               (fun_add loc (View.mk ts bot) lc1.(coh))
               (join lc1.(vrn) (View.mk ts bot))
@@ -163,7 +163,7 @@ Section Local.
       (VIEW_OLD: view_old = FwdItem.read_view (lc1.(fwdbank) loc) old_ts)
       (VIEW_POST: view_post = join view_pre view_old)
       (RES: res = ValA.mk _ old bot)
-      (LC: lc2 =
+      (LC2: lc2 =
             mk
               (fun_add loc (join (lc1.(coh) loc) view_post) lc1.(coh))
               (join lc1.(vrn) view_post)

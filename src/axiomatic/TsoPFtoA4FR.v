@@ -254,7 +254,7 @@ Proof.
     unguardH FR_COV. des; cycle 1.
     { inv FR_COV0. inv H0. ss. }
     eapply Memory.latest_lt; try exact FR_COV; eauto. ss.
-    inv STEP0. rewrite LC. ii. ss. rewrite fun_add_spec in *. des_ifs; cycle 1.
+    inv STEP0. rewrite LC2. ii. ss. rewrite fun_add_spec in *. des_ifs; cycle 1.
     { exfalso. apply c. ss. }
     unfold View.ts in TS1, TS2. ss.
     rewrite Memory.latest_ts_rec in TS1. lia.
@@ -302,7 +302,7 @@ Proof.
     unguardH FR_COV. des; cycle 1.
     { inv FR_COV0. inv H0. ss. }
     eapply Memory.latest_lt; try exact FR_COV; eauto. ss.
-    inv STEP0. rewrite LC. ii. ss. rewrite fun_add_spec in *. des_ifs; cycle 1.
+    inv STEP0. rewrite LC2. ii. ss. rewrite fun_add_spec in *. des_ifs; cycle 1.
     { exfalso. apply c. ss. }
     unfold View.ts in TS1, TS2. ss.
     rewrite Memory.latest_ts_rec in TS1. lia.
