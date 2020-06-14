@@ -163,8 +163,8 @@ Proof.
     rewrite X.
     exploit sim_trace_sim_th; try exact TRACE; eauto. intro SIM_TH.
     destruct SIM_TH.(EU_WF).
-    inv STEP0. inv LOCAL1; ss.
-    inv EVENT; inv STEP0; ss.
+    inversion STEP0. inv LOCAL1; ss.
+    inv EVENT. inversion STEP1; ss.
     move OB at bottom. unfold ob' in OB. des_union.
     - (* rfe *)
       rename H1 into H.
@@ -189,8 +189,17 @@ Proof.
             unfold Memory.latest in COH. unfold Memory.no_msgs in COH.
             exploit COH; eauto.
             destruct (lt_eq_lt_dec (S ts0) (View.ts (Local.coh lc1 (ValA.val vloc)))). inv s; try lia.
-            inv LOCAL0. rewrite <- H in l0. exploit PROMISES0; [| | instantiate (1 := S ts0)|]; eauto. i.
-            inv STEP. inv NOPROMISE.
+            inv LOCAL0. rewrite <- H in l0. exploit PROMISES0; [| | instantiate (1 := S ts0)|]; eauto. intro PROMISE_TS.
+            move STEP0 at bottom.
+            assert (PROMISE_TS0: Promises.lookup (S ts0) (Promises.unset ts (Local.promises lc1))).
+            { exploit Promises.unset_o. intro UNSET. rewrite UNSET. condtac; ss. inversion e0. lia. }
+            des. simplify.
+            inv STEP. inv STEP3. generalize (TPOOL tid1). intro RTC. inv RTC.
+            { admit. }
+            rewrite <- H6 in H8. simplify.
+            inv NOPROMISE.
+
+            admit.
         }
         subst. inv R.
         generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
