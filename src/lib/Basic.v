@@ -49,6 +49,14 @@ Ltac eqvtac :=
          | [H: context [@equiv_dec ?a ?b ?c ?d ?x ?y] |- _] => destruct (@equiv_dec a b c d x y) as [deq|]; ss; inv deq; clear H
          end; try subst)).
 
+Ltac cleartriv :=
+    repeat (
+      match goal with
+      | [H: ?a = ?a |- _] => clear H
+      | [H: true |- _] => clear H
+      | [H: True |- _] => clear H
+      end).
+
 Definition proj_sumbool (P Q: Prop) (a: {P} + {Q}) : bool :=
   if a then true else false.
 Arguments proj_sumbool [P Q].
