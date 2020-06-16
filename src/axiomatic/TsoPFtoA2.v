@@ -725,6 +725,21 @@ Proof.
   inv SIM; ss. lia.
 Qed.
 
+Lemma rtc_step_sim_trace
+      p mem tid tr atr wl rl covl vextl
+      n
+      eu1 eu2 l l'
+      (SIM: sim_trace p mem tid tr atr wl rl covl vextl)
+      (SIM_N: sim_trace p mem tid
+              (lastn n tr) (lastn n atr) (lastn n wl)
+              (lastn n rl) (lastn n covl) (lastn n vextl))
+      (TR: tr = eu2 :: l)
+      (TR_N: lastn n tr = eu1 :: l'):
+  rtc (ExecUnit.state_step tid) eu1 eu2.
+Proof.
+  admit.
+Qed.
+
 Inductive sim_ex tid ex (ws rs:IdMap.t (list (nat -> option (Loc.t * Time.t)))) covs vexts aeu w r cov vext: Prop := {
   LABELS:
     forall eid label

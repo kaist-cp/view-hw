@@ -715,7 +715,7 @@ Section ExecUnit.
     - inv STEP. rewrite LC2. ss.
   Qed.
 
-  Lemma rtc_state_step_promise_remained tid  eu1 eu2 ts loc val
+  Lemma rtc_state_step_promise_remained tid eu1 eu2 ts loc val
         (WF: wf tid eu1)
         (STEP: rtc (state_step tid) eu1 eu2)
         (LE: ts <= (eu1.(ExecUnit.local).(Local.coh) loc).(View.ts))
