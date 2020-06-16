@@ -231,14 +231,14 @@ Proof.
     + econs; ss. eauto using sim_rmap_weak_add, sim_rmap_weak_expr.
   - inv STEP.
     eexists _, (AExecUnit.mk (State.mk _ _) _). splits; ss.
-    + econs 5; ss. admit. (* sem_rmw armap *)
+    + econs 5; ss. eapply sim_rmap_weak_sem_rmw; eauto.
     + econs 4; ss.
     + econs; ss.
       eauto using sim_rmap_weak_add, sim_rmap_weak_expr.
     + econs; ss.
   - inv STEP.
     eexists _, (AExecUnit.mk (State.mk _ _) _). splits; ss.
-    + econs 6; ss. admit. (* sem_rmw armap *)
+    + econs 6; ss. inv RMW. econs; eauto.
     + econs 2; ss.
     + econs; ss.
       eauto using sim_rmap_weak_add, sim_rmap_weak_expr.

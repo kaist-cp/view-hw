@@ -115,6 +115,30 @@ Proof.
     inv IHe1. inv IHe2. econs; ss; try congr.
 Qed.
 
+Lemma sim_rmap_weak_sem_expr
+  rmap1 rmap2 e
+  (SIM: sim_rmap_weak rmap1 rmap2):
+  sem_expr rmap1 e = sem_expr rmap2 e.
+Proof.
+  inv SIM. induction e; ss.
+  - unfold RMap.find. specialize (RMAP reg). inv RMAP; ss.
+    inv REL. destruct a as [v1 []], b as [v2 []]. ss.
+    rewrite VAL. ss.
+  - rewrite IHe. ss.
+  - rewrite IHe1, IHe2. ss.
+Qed.
+
+Lemma sim_rmap_weak_sem_rmw
+      rmap1 rmap2 rmw vold vnew
+      (SIM: sim_rmap_weak rmap1 rmap2)
+      (SEM: sem_rmw rmap1 rmw vold vnew):
+  sem_rmw rmap2 rmw vold vnew.
+Proof.
+  inv SEM; econs; eauto.
+  3: replace (sem_expr rmap2 eammount) with (sem_expr rmap1 eammount); ss.
+  all: eapply sim_rmap_weak_sem_expr; ss.
+Qed.
+
 Inductive sim_event: forall (e1: Event.t (A:=unit)) (e2: Event.t (A:=unit)), Prop :=
 | sim_event_internal:
     sim_event Event.internal Event.internal
