@@ -437,6 +437,28 @@ Proof.
   rewrite List.rev_app_distr. s. i. inv LASTN. ss.
 Qed.
 
+Lemma lastn_length_S A n (l: list A)
+      (N: n < List.length l):
+  length (lastn (S n) l) = length (lastn n l) + 1.
+Proof.
+  unfold lastn. repeat rewrite List.rev_length. rewrite <- List.rev_length in N.
+  destruct (List.rev l); ss; try lia.
+  repeat rewrite List.firstn_length_le; ss; try lia.
+Qed.
+
+Lemma lastn_length_incr A n k (l: list A)
+      (N: n < List.length l):
+  length (lastn n l) < length (lastn (n + (S k)) l).
+Proof.
+  induction k.
+  { rewrite Nat.add_1_r. exploit lastn_length_S; try exact N; eauto. lia. }
+  replace (n + S (S k)) with (S (n + (S k))); try lia.
+  destruct (le_lt_dec (length l) (n + S k)).
+  - replace (length (lastn (S (n + S k)) l)) with (length (lastn (n + S k) l)); ss.
+    repeat rewrite lastn_all; ss. lia.
+  - etrans; eauto. exploit lastn_length_S; try exact l0; eauto. lia.
+Qed.
+
 Lemma app_some_not_eq A x
       (l : list A):
   l ++ [x] <> l.

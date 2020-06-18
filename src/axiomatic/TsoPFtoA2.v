@@ -725,19 +725,101 @@ Proof.
   inv SIM; ss. lia.
 Qed.
 
-Lemma rtc_step_sim_trace
+Lemma sim_trace_lastn_rtc_step
       p mem tid tr atr wl rl covl vextl
-      n
-      eu1 eu2 l l'
+      n k
       (SIM: sim_trace p mem tid tr atr wl rl covl vextl)
       (SIM_N: sim_trace p mem tid
-              (lastn n tr) (lastn n atr) (lastn n wl)
-              (lastn n rl) (lastn n covl) (lastn n vextl))
-      (TR: tr = eu2 :: l)
-      (TR_N: lastn n tr = eu1 :: l'):
+              (lastn (S n) tr) (lastn (S n) atr) (lastn (S n) wl)
+              (lastn (S n) rl) (lastn (S n) covl) (lastn (S n) vextl))
+      (SIM_NK: sim_trace p mem tid
+               (lastn ((S n) + k) tr) (lastn ((S n) + k) atr) (lastn ((S n) + k) wl)
+               (lastn ((S n) + k) rl) (lastn ((S n) + k) covl) (lastn ((S n) + k) vextl)):
+  forall eu1 eu2 l l'
+         (TR: lastn (S n) tr = eu1 :: l)
+         (TR2: lastn ((S n) + k) tr = eu2 :: l'),
   rtc (ExecUnit.state_step tid) eu1 eu2.
 Proof.
-  admit.
+  induction k; ss.
+  - ii. rewrite plus_comm in TR2. ss.
+    rewrite TR in TR2. inv TR2. auto.
+  - ii. rewrite <- plus_Sn_m in *. rewrite <- plus_n_Sm in *. ss.
+    exploit sim_trace_length; try exact SIM; eauto. intro X. des.
+    destruct (le_lt_dec (length tr) (S (n + k))).
+    + assert (EQ_S:
+                lastn (S (S (n + k))) tr = lastn (S (n + k)) tr /\
+                lastn (S (S (n + k))) atr = lastn (S (n + k)) atr /\
+                lastn (S (S (n + k))) wl = lastn (S (n + k)) wl /\
+                lastn (S (S (n + k))) rl = lastn (S (n + k)) rl /\
+                lastn (S (S (n + k))) covl = lastn (S (n + k)) covl /\
+                lastn (S (S (n + k))) vextl = lastn (S (n + k)) vextl).
+      { repeat rewrite lastn_all; ss; try lia. }
+      des. rewrite EQ_S, EQ_S0, EQ_S1, EQ_S2, EQ_S3, EQ_S4 in SIM_NK.
+      eapply IHk; eauto. rewrite <- EQ_S. eauto.
+    + inversion SIM_NK.
+      * exploit lastn_length_incr; eauto. intro LT_NK.
+        rewrite <- Nat.add_1_r in H0. rewrite <- H0 in LT_NK. ss.
+        assert (1 <= length (lastn (S n) tr)).
+        { rewrite TR. ss. lia. }
+        destruct k.
+        { rewrite plus_comm in LT_NK. ss. lia. }
+        exploit lastn_length_incr.
+        { instantiate (1 := tr). instantiate (1 := S n). lia. }
+        rewrite plus_Sn_m. rewrite LT_NK. lia.
+      * clear W R COV VEXT.
+        rewrite <- H0 in TR2. inversion TR2. rewrite H6 in *. clear H6 H7.
+        symmetry in H0. eapply lastn_S1 in H0; ss. rewrite <- H0 in TRACE.
+        symmetry in H. eapply lastn_S1 in H; [| eapply lt_le_trans]; eauto; try lia. rewrite <- H in TRACE.
+        symmetry in H2. eapply lastn_S1 in H2; [| eapply lt_le_trans]; eauto; try lia. rewrite <- H2 in TRACE.
+        symmetry in H3. eapply lastn_S1 in H3; [| eapply lt_le_trans]; eauto; try lia. rewrite <- H3 in TRACE.
+        symmetry in H4. eapply lastn_S1 in H4; [| eapply lt_le_trans]; eauto; try lia. rewrite <- H4 in TRACE.
+        symmetry in H5. eapply lastn_S1 in H5; [| eapply lt_le_trans]; eauto; try lia. rewrite <- H5 in TRACE.
+        etrans; cycle 1.
+        { econs 2; eauto. econs; eauto. }
+        eapply IHk; eauto.
+Qed.
+
+Lemma sim_trace_rtc_step
+      p mem tid tr atr wl rl covl vextl
+      n
+      (SIM: sim_trace p mem tid tr atr wl rl covl vextl):
+  forall eu_to l eu_from l'
+      (TR: tr = eu_to :: l)
+      (TR_N: lastn (S n) tr = eu_from :: l'),
+  rtc (ExecUnit.state_step tid) eu_from eu_to.
+Proof.
+  exploit sim_trace_length; eauto. i. des.
+  exploit sim_trace_lastn; eauto. instantiate (1 := n). intro SIM_N.
+  destruct (le_lt_dec (length tr) (S n)).
+  { exploit sim_trace_length; try exact SIM; eauto. intro X. des.
+    rewrite ? lastn_all in *; try lia. ii. rewrite TR in TR_N. inv TR_N. eauto. }
+  assert (exists k, S n + k = length tr).
+  { exists (((length tr) - (S n))). lia. }
+  des.
+  exploit lastn_all.
+  { instantiate (1 := tr). instantiate (1 := S n + k). lia. }
+  exploit lastn_all.
+  { instantiate (1 := atr). instantiate (1 := S n + k). lia. }
+  exploit lastn_all.
+  { instantiate (1 := wl). instantiate (1 := S n + k). lia. }
+  exploit lastn_all.
+  { instantiate (1 := rl). instantiate (1 := S n + k). lia. }
+  exploit lastn_all.
+  { instantiate (1 := covl). instantiate (1 := S n + k). lia. }
+  exploit lastn_all.
+  { instantiate (1 := vextl). instantiate (1 := S n + k). lia. }
+  i.
+  generalize SIM. intro SIM_NK.
+  rewrite <- x0 in SIM_NK.
+  rewrite <- x1 in SIM_NK.
+  rewrite <- x2 in SIM_NK.
+  rewrite <- x3 in SIM_NK.
+  rewrite <- x4 in SIM_NK.
+  rewrite <- x5 in SIM_NK.
+  rewrite <- x5 in TR.
+  eapply sim_trace_lastn_rtc_step.
+  3: exact SIM_NK.
+  all: eauto.
 Qed.
 
 Inductive sim_ex tid ex (ws rs:IdMap.t (list (nat -> option (Loc.t * Time.t)))) covs vexts aeu w r cov vext: Prop := {

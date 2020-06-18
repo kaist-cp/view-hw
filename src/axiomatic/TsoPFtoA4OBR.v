@@ -75,7 +75,7 @@ Proof.
   destruct b as [st_l lc_l]. destruct REL as [trt].
   rename H into PFSL. rename H1 into TRL.
   rewrite FIND_TR in H0. inversion H0. rewrite H1 in *. cleartriv. clear H1.
-  exploit rtc_step_sim_trace; [exact REL6 | exact SIMTR| | |]; eauto. intro RTC_STEP.
+  exploit sim_trace_rtc_step; try exact REL6; eauto. intro RTC_STEP.
   hexploit sim_traces_ex; eauto. intro EX2.
   inversion SIMTR; subst; simplify; [congr|].
   repeat match goal with
@@ -359,29 +359,31 @@ Proof.
           exfalso. apply c. ss.
         }
         subst.
+        unguardH LC2. inv LC2. ss.
         rewrite fun_add_spec. condtac; ss; cycle 1.
         { exfalso. apply c. ss. }
         unfold Time.le. lia.
       - (* dob *)
-        rename H1 into H.
-        unfold Execution.dob in H. rewrite ? seq_assoc in *. des_union.
-        + inv H1. des. inv H. des. inv H1.
+        unguardH LC2. inv LC2. ss.
+        unfold Execution.dob in H1. rewrite ? seq_assoc in *. des_union.
+        + inv H. des. inv H1. des. inv H2.
           rewrite L.(LC).(VWN); ss.
           * rewrite fun_add_spec. condtac; ss; cycle 1.
             { exfalso. apply c. ss. }
             inv WRITABLE. unfold Time.le. lia.
           * econs; eauto. unfold sim_local_vwn. left. econs; eauto.
-        + inv H1. des. inv H. des. inv H1.
+        + inv H. des. inv H1. des. inv H2.
           rewrite L.(LC).(VWN); ss.
           * rewrite fun_add_spec. condtac; ss; cycle 1.
             { exfalso. apply c. ss. }
             inv WRITABLE. unfold Time.le. lia.
           * econs; eauto. unfold sim_local_vwn.
-            inv H2. inv H1. destruct l0; ss.
+            inv H. inv H3. destruct l0; ss.
             -- left. econs. split; eauto. econs; eauto with tso.
             -- right. econs. split; eauto. econs; eauto with tso.
             -- right. econs. split; eauto. econs; eauto with tso.
       - (* bob *)
+        unguardH LC2. inv LC2. ss.
         unfold Execution.bob in H. rewrite ? seq_assoc in *. des_union.
         rewrite L.(LC).(VWN); ss.
         * rewrite fun_add_spec. condtac; ss; cycle 1.

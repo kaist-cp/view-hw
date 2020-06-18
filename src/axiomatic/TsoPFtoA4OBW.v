@@ -74,7 +74,7 @@ Proof.
   destruct b as [st_l lc_l]. destruct REL as [trt].
   rename H into PFSL. rename H1 into TRL.
   rewrite FIND_TR in H0. inversion H0. rewrite H1 in *. cleartriv. clear H1.
-  exploit rtc_step_sim_trace; [exact REL6 | exact SIMTR| | |]; eauto. intro RTC_STEP.
+  exploit sim_trace_rtc_step; try exact REL6; eauto. intro RTC_STEP.
   hexploit sim_traces_ex; eauto. intro EX2.
   inversion SIMTR; subst; simplify; [congr|].
   repeat match goal with
@@ -170,14 +170,12 @@ Proof.
     destruct SIM_TH.(EU_WF).
     inversion STEP0. inv LOCAL1; ss.
     inv EVENT. inversion STEP1. guardH LC2.
-    move OB at bottom. unfold ob' in OB.
-    (* too slow if use `des_union` *)
-    inversion OB. inversion H.
+    move OB at bottom. unfold ob' in OB. des_union.
     - (* rfe *)
       rename H1 into RFE.
       assert (v_gen vexts eid1 = old_ts).
       { inv RFE. destruct eid1 as [tid1 eid1]. inv H2. ss.
-        generalize H1. intro Y. rewrite RF in Y. inv Y. ss.
+        generalize H. intro Y. rewrite RF in Y. inv Y. ss.
         erewrite EX2.(XR) in R; eauto; cycle 1.
         { s. rewrite List.app_length. s. clear. lia. }
         destruct (length (ALocal.labels alc1) =? length (ALocal.labels alc1)); ss. cleartriv.
@@ -216,25 +214,27 @@ Proof.
         exploit sim_trace_last; try exact REL0. i. des. simplify.
         exploit sim_trace_sim_th; try exact REL0; eauto. intro L1.
         exploit L1.(WPROP3); eauto. i. des.
-        unfold v_gen. ss. rewrite <- H10. rewrite x4.
+        unfold v_gen. ss. rewrite <- H9. rewrite x4.
         clear - LC2. unguardH LC2. inv LC2. ss.
         rewrite fun_add_spec. destruct (equiv_dec (ValA.val vloc) (ValA.val vloc)); auto.
         exfalso. apply c. ss.
       }
       subst.
-      rewrite fun_add_spec. condtac; ss.
+      unguardH LC2. inv LC2. ss.
+      rewrite fun_add_spec. destruct (equiv_dec (ValA.val vloc) (ValA.val vloc)); auto.
       exfalso. apply c. ss.
     - (* dob *)
-      rename H1 into H.
-      unfold Execution.dob in H. rewrite ? seq_assoc in *. des_union.
-      + inv H1. des.
-        inv H1. eapply Nat.le_lt_trans.
+      unguardH LC2. inv LC2. ss.
+      unfold Execution.dob in H1. rewrite ? seq_assoc in *. des_union.
+      + inv H. des.
+        inv H3. eapply Nat.le_lt_trans.
         { apply L.(LC).(VWN); ss. econs; ss. left. ss. }
         s. rewrite fun_add_spec. condtac; [|congr].
         inv WRITABLE. ss.
-      + inv H1. des.
-        inv H1. eapply Nat.le_lt_trans.
-        { apply L.(LC).(VWN); ss. econs; ss. inv H. des. inv H1. inv H5.
+      + eapply Nat.le_lt_trans.
+        { apply L.(LC).(VWN); ss. econs; ss.
+          inv H. des. inv H1. des. inv H. inv H5.
+          inv H3. inv H4.
           destruct l0; ss.
           - left. econs; ss. econs; eauto. econs; ss. econs; eauto.
           - right. econs; ss. econs; eauto. econs; ss. econs; eauto.
@@ -243,6 +243,7 @@ Proof.
         s. rewrite fun_add_spec. condtac; [|congr].
         inv WRITABLE. ss.
     - (* bob *)
+      unguardH LC2. inv LC2. ss.
       unfold Execution.bob in H. rewrite ? seq_assoc in *.
       inv H. des. inv H1. des. inv H. des. inv H4. des.
       inv H. inv H5. inv H3. eapply Nat.le_lt_trans.
