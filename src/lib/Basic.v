@@ -453,13 +453,14 @@ Lemma lastn_sub_S1 A n (l l1 l2: list A)
           (LASTN: lastn n l = l2):
   exists l1, l = l1 ++ l2.
 Proof.
-  (* eexists (length l2 - 1). rewrite <- Nat.add_1_r.
-  replace (length l2 - 1 + 1) with (length l2); [|lia].
-  rewrite SUBL. clear SUBL.
-  unfold lastn. rewrite List.firstn_rev. rewrite List.rev_involutive.
-  rewrite List.app_length. rewrite Nat.add_comm. rewrite minus_plus.
-  rewrite List.skipn_app. rewrite List.skipn_all. rewrite minus_diag. ss. *)
-  admit.
+  revert LASTN. revert n l2.
+  induction l; i.
+  { eexists ([]). destruct l2; ss. destruct n; ss. }
+  destruct (le_lt_dec n (length l)).
+  - rewrite lastn_cons in LASTN; [| lia]. apply IHl in LASTN. des.
+    eexists (a :: l3). ss. rewrite LASTN. ss.
+  - rewrite lastn_all in LASTN; ss.
+    eexists ([]). rewrite LASTN. ss.
 Qed.
 
 Lemma lastn_length_S A n (l: list A)

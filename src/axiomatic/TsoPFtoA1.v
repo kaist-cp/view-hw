@@ -644,9 +644,7 @@ Proof.
   assert (mem1 = m.(Machine.mem)); subst.
   { exploit sim_trace_memory; eauto. }
   ss. exploit IHSIM; eauto.
-  { instantiate (1 := trt' ++ [{| ExecUnit.state := st2; ExecUnit.local := lc2; ExecUnit.mem := mem2 |}]).
-    admit.
-   }
+  { instantiate (1 := trt' ++ [eu]). rewrite <- List.app_assoc. rewrite EU. ss. }
   i. rename x into IH.
   assert (EU_WF2: ExecUnit.wf tid (ExecUnit.mk st2 lc2 mem2)).
   { destruct IH.
@@ -1023,7 +1021,6 @@ Proof.
     inv LOCAL; ss.
     generalize IH.(EU_WF). i. inv H.
     specialize (Local.rmw_spec LOCAL STEP). intro RMW_SPEC. guardH RMW_SPEC.
-    (* inv STEP. inv STATE0; inv EVENT; ss. *)
     inversion STEP. guardH LC2.
     inv STATE0; inv EVENT; ss.
     inv ASTATE_STEP.
@@ -1045,31 +1042,18 @@ Proof.
       inv LOCAL. exploit PROMISES0; [| | instantiate (1 := S ts0)|]; eauto. intro PROMISE_TS.
       assert (PROMISE_TS0: Promises.lookup (S ts0) (Local.promises lc2)).
       { rewrite LC2. ss. exploit Promises.unset_o. intro UNSET. rewrite UNSET. condtac; ss. inversion e. lia. }
-
-
       generalize (SIMS tid). intro SIM_TID. inv SIM_TID; try congr. simplify.
       generalize (TR tid). intro TR_TID. inv TR_TID; try congr. simplify.
       rewrite <- EU1 in *. rewrite <- EU in *.
-      (* exploit lastn_SN.
-      { instantiate (1 := a). simplify. destruct trt'; ss; lia. }
-      i. des. simplify. *)
-
-
       destruct b0 as [st_l lc_l]. destruct REL as [trt].
       rename H6 into PFSL. rename H0 into TRL.
       move REL6 at bottom. move SIM at bottom.
       exploit lastn_sub_S; ss.
-      (* { rewrite <- EU1 in TRL. rewrite <- EU2 in TRL. }
-      ss. *)
       { instantiate (1 := eu :: eu1 :: tr). ss. lia. }
       instantiate (1 := trt'). i. des.
       exploit sim_trace_rtc_step; try exact REL6; eauto. intro RTC_STEP.
-
-
-
       move PFSL at bottom.
       inv PF. inv NOPROMISE. generalize PFSL. intro PROMBOT. symmetry in PROMBOT. eapply PROMISES1 in PROMBOT.
-
       unguardH EU. inv EU.
       exploit ExecUnit.rtc_state_step_promise_remained.
       2: exact RTC_STEP.
@@ -1101,7 +1085,6 @@ Proof.
         rewrite fun_add_spec in *. des_ifs; [|congr]. ss. apply c.
         specialize (Memory.latest_ts_spec (ValA.val (sem_expr rmap eloc0)) ts m.(Machine.mem)). i. des.
         destruct ts; ss.
-        (* unfold Memory.get_msg in MSG. ss. rewrite MSG. des_ifs. *)
       + esplits; eauto.
         * des_ifs; eauto. apply Nat.eqb_eq in Heq. subst. unfold ALocal.next_eid in *.
           assert (H: List.nth_error (ALocal.labels alc1) (length (ALocal.labels alc1)) <> None) by (ii; congr).
