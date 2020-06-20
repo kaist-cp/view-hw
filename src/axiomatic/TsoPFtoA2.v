@@ -420,7 +420,7 @@ Proof.
     inv LABEL1.
     rewrite CO in CO0. exploit sim_traces_co2; eauto. i. des.
     inv LABEL2. inv LABEL1. rewrite EID in EID1. inv EID1. rewrite EID0 in EID2. inv EID2.
-    assert (loc0 = loc); destruct l; ss; eqvtac. clear H.
+    assert (loc0 = loc); destruct l; ss; eqvtac.
     exploit sim_traces_rf1_aux; eauto with tso. intro RF_AUX. guardH RF_AUX.
     inv CO0.
     destruct PRE.
