@@ -1036,7 +1036,7 @@ Proof.
         inv OLD. rewrite VAL in *.
         exploit Memory.read_get_msg; eauto. i.
         assert (TS_GT: lt (Memory.latest_ts (ValA.val (sem_expr rmap0 eloc0)) (Init.Nat.pred ts) mem) ts).
-        { eapply le_lt_trans with (Init.Nat.pred ts); try lia. }
+        { eapply le_lt_trans with (Init.Nat.pred ts); [apply Memory.latest_ts_spec | lia]. }
         des; esplits.
         all: try by rewrite List.nth_error_app2, Nat.sub_diag; [|refl]; ss; eauto with tso.
         all: try by eauto with tso.
@@ -1053,7 +1053,8 @@ Proof.
       { exploit IH.(UPROP); eauto. }
       rewrite fun_add_spec. condtac; ss; try congr.
       unfold Memory.get_msg in MSG. destruct ts; ss. rewrite MSG. condtac; ss.
-      split; ss.
+      split.
+      { eapply le_lt_trans with (ts); [apply Memory.latest_ts_spec | lia]. }
       eapply Memory.latest_ts_latest. ss.
     - unfold ALocal.next_eid in *. s. i. des_ifs.
       { apply Nat.eqb_eq in Heq. subst. econs; eauto.
