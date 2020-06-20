@@ -487,12 +487,9 @@ Proof.
     - rewrite IdMap.mapi_spec, STMT in FIND. inv FIND. s. i.
       left. splits; ss. destruct ts; ss.
       eapply Machine.promises_from_mem_lookup. eauto.
-    - rewrite IdMap.mapi_spec, STMT in FIND. inv FIND. s. i. des.
-      destruct eid; ss.
-    - rewrite IdMap.mapi_spec, STMT in FIND. inv FIND. s. i. des.
-      destruct eid; ss.
-    - rewrite IdMap.mapi_spec, STMT in FIND. inv FIND. s. i. des.
-      destruct eid; ss.
+    - i. des. destruct eid; ss.
+    - i. des. destruct eid; ss.
+    - i. des. destruct eid; ss.
     - unfold Time.bot. i. lia.
     - unfold Time.bot. i. lia.
     - i. destruct iid1; ss.
