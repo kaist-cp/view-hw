@@ -436,6 +436,32 @@ Proof.
   rewrite List.rev_app_distr. s. i. inv LASTN. ss.
 Qed.
 
+Lemma lastn_sub_S A (l l1 l2: list A)
+      (SUBL: l = l1 ++ l2)
+      (LENGTH: List.length l2 > 0):
+  exists n, lastn (S n) l = l2.
+Proof.
+  eexists (length l2 - 1). rewrite <- Nat.add_1_r.
+  replace (length l2 - 1 + 1) with (length l2); [|lia].
+  rewrite SUBL. clear SUBL.
+  unfold lastn. rewrite List.firstn_rev. rewrite List.rev_involutive.
+  rewrite List.app_length. rewrite Nat.add_comm. rewrite minus_plus.
+  rewrite List.skipn_app. rewrite List.skipn_all. rewrite minus_diag. ss.
+Qed.
+
+Lemma lastn_sub_S1 A n (l l1 l2: list A)
+          (LASTN: lastn n l = l2):
+  exists l1, l = l1 ++ l2.
+Proof.
+  (* eexists (length l2 - 1). rewrite <- Nat.add_1_r.
+  replace (length l2 - 1 + 1) with (length l2); [|lia].
+  rewrite SUBL. clear SUBL.
+  unfold lastn. rewrite List.firstn_rev. rewrite List.rev_involutive.
+  rewrite List.app_length. rewrite Nat.add_comm. rewrite minus_plus.
+  rewrite List.skipn_app. rewrite List.skipn_all. rewrite minus_diag. ss. *)
+  admit.
+Qed.
+
 Lemma lastn_length_S A n (l: list A)
       (N: n < List.length l):
   length (lastn (S n) l) = length (lastn n l) + 1.

@@ -148,7 +148,10 @@ Proof.
     exploit sim_trace_length; eauto. s. intro LEN. guardH LEN.
     simplify. exploit sim_trace_lastn; eauto. instantiate (1 := 0).
     rewrite EU, AEU, WL, RL, COV, VEXT. i.
-    exploit sim_trace_sim_th; eauto. intro TH.
+    exploit sim_trace_sim_th; eauto. intro TH_tmp.
+    exploit lastn_sub_S1; try exact EU; eauto. intro TRT. des.
+    exploit TH_tmp; eauto.
+    clear TH_tmp. intro TH.
     inv x0.
     unfold Machine.init_with_promises in FIND. ss. rewrite IdMap.mapi_spec, STMT in FIND. inv FIND.
     econs; ss.
@@ -171,7 +174,10 @@ Proof.
         all: try by clear -LEN; unguardH LEN; des; s; lia.
         intro EX.
         exploit sim_trace_last; eauto. i. des. simplify.
-        exploit sim_trace_sim_th; eauto. intro L.
+        exploit sim_trace_sim_th; eauto. intro TH_tmp.
+        exploit TH_tmp; eauto.
+        { instantiate (1 := []). ss. }
+        clear TH_tmp. intro L.
         exploit L.(WPROP1); eauto.
         { instantiate (3 := S view). unfold Memory.get_msg. eauto. }
         generalize (TR tid). rewrite <- H0. intro X. inv X. des. simplify. s. destruct b.
@@ -583,11 +589,11 @@ Proof.
   replace aeus with PRE'.(Valid.aeus) in ATR; [|subst; ss].
   exists ex'. exists PRE'. exists (v_gen covs). exists (v_gen vexts).
   generalize STEP. intro X. inversion X.
-  generalize (sim_traces_co1 PRE' SIM ATR). intro CO1.
-  generalize (sim_traces_co2 PRE' SIM ATR). intro CO2.
+  generalize (sim_traces_co1 STEP PRE' SIM TR ATR). intro CO1.
+  generalize (sim_traces_co2 STEP PRE' SIM TR ATR). intro CO2.
   generalize (sim_traces_rf1 STEP PRE' NOPROMISE SIM TR ATR). intro RF1.
-  generalize (sim_traces_rf2 PRE' SIM ATR). intro RF2.
-  generalize (sim_traces_rf_wf SIM). intro RF_WF.
+  generalize (sim_traces_rf2 STEP PRE' SIM TR ATR). intro RF2.
+  generalize (sim_traces_rf_wf STEP SIM TR). intro RF_WF.
   replace (co_gen ws) with (ex'.(Execution.co)) in CO1, CO2;[|subst; ss].
   replace (rf_gen ws rs) with (ex'.(Execution.rf)) in RF1, RF2, RF_WF; [|subst; ss].
   esplits; eauto.

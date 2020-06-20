@@ -79,8 +79,8 @@ Proof.
          end.
   exploit sim_trace_sim_state_weak; eauto. intro STATE1.
 
-  destruct eu1 as [[stmts1 rmap1] lc1 mem1].
-  destruct eu2 as [[stmts2 rmap2] lc2 mem2].
+  destruct eu1 as [[stmts1 rmap1] lc1 mem1] eqn: EU1. guardH EU1.
+  destruct eu2 as [[stmts2 rmap2] lc2 mem2] eqn: EU2. guardH EU2.
   destruct aeu1 as [[astmts1 armap1] alc1].
   destruct aeu2 as [[astmts2 armap2] alc2].
   ss. inv STEP0. ss. subst.
@@ -96,7 +96,11 @@ Proof.
       apply sim_rmap_expr. apply L.
     + econs; ss; try by apply L.
   - (* read *)
-    exploit sim_trace_sim_th; try exact TRACE; eauto. intro SIM_TH.
+    exploit sim_trace_sim_th; try exact TRACE; eauto. intro TH_tmp.
+    exploit lastn_sub_S1; try exact EU; eauto. intro TRT. des.
+    exploit TH_tmp; eauto.
+    { instantiate (1 := l1 ++ [eu2]). rewrite <- List.app_assoc. rewrite EU2. ss. }
+    clear TH_tmp. intro SIM_TH.
     destruct SIM_TH.(EU_WF). ss.
     generalize (Local.read_spec LOCAL0 STEP0). intro READ_SPEC.
     generalize SIM_TH.(MEM). s. i. rewrite H in READ_SPEC.
@@ -130,7 +134,10 @@ Proof.
                 generalize (ATR tid1). intro ATR1. inv ATR1; try congr. des. simplify.
                 generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
                 exploit sim_trace_last; try exact REL0. i. des. simplify.
-                exploit sim_trace_sim_th; try exact REL0; eauto. intro L1.
+                exploit sim_trace_sim_th; try exact REL0; eauto. intro TH_tmp.
+                exploit TH_tmp; eauto.
+                { instantiate (1 := []). ss. }
+                clear TH_tmp. intro L1.
                 rewrite RF in H0. inv H0. ss. simplify.
                 exploit WPROP3; eauto. i. des. simplify.
                 unfold v_gen. ss. rewrite <- H8. rewrite x2.
@@ -151,7 +158,10 @@ Proof.
                 generalize (ATR tid1). intro ATR1. inv ATR1; try congr. des. simplify.
                 generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
                 exploit sim_trace_last; try exact REL0. i. des. simplify.
-                exploit sim_trace_sim_th; try exact REL0; eauto. intro L1.
+                exploit sim_trace_sim_th; try exact REL0; eauto. intro TH_tmp.
+                exploit TH_tmp; eauto.
+                { instantiate (1 := []). ss. }
+                clear TH_tmp. intro L1.
                 rewrite RF in H0. inv H0. ss. simplify.
                 exploit WPROP3; eauto. i. des. simplify.
                 unfold v_gen. ss. rewrite <- H8. rewrite x2.
@@ -172,7 +182,10 @@ Proof.
                 generalize (ATR tid1). intro ATR1. inv ATR1; try congr. des. simplify.
                 generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
                 exploit sim_trace_last; try exact REL0. i. des. simplify.
-                exploit sim_trace_sim_th; try exact REL0; eauto. intro L1.
+                exploit sim_trace_sim_th; try exact REL0; eauto. intro TH_tmp.
+                exploit TH_tmp; eauto.
+                { instantiate (1 := []). ss. }
+                clear TH_tmp. intro L1.
                 rewrite RF in H0. inv H0. ss. simplify.
                 exploit WPROP3; eauto. i. des. simplify.
                 unfold v_gen. ss. rewrite <- H8. rewrite x2.
@@ -193,7 +206,10 @@ Proof.
                 generalize (ATR tid1). intro ATR1. inv ATR1; try congr. des. simplify.
                 generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
                 exploit sim_trace_last; try exact REL0. i. des. simplify.
-                exploit sim_trace_sim_th; try exact REL0; eauto. intro L1.
+                exploit sim_trace_sim_th; try exact REL0; eauto. intro TH_tmp.
+                exploit TH_tmp; eauto.
+                { instantiate (1 := []). ss. }
+                clear TH_tmp. intro L1.
                 rewrite RF in H0. inv H0. ss. simplify.
                 exploit WPROP3; eauto. i. des. simplify.
                 unfold v_gen. ss. rewrite <- H8. rewrite x2.
@@ -225,7 +241,10 @@ Proof.
                 generalize (ATR tid1). intro ATR1. inv ATR1; try congr. des. simplify.
                 generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
                 exploit sim_trace_last; try exact REL0. i. des. simplify.
-                exploit sim_trace_sim_th; try exact REL0; eauto. intro L1.
+                exploit sim_trace_sim_th; try exact REL0; eauto. intro TH_tmp.
+                exploit TH_tmp; eauto.
+                { instantiate (1 := []). ss. }
+                clear TH_tmp. intro L1.
                 rewrite RF in H0. inv H0. ss. simplify.
                 exploit WPROP3; eauto. i. des. simplify.
                 unfold v_gen. ss. rewrite <- H8. rewrite x2.
@@ -246,7 +265,10 @@ Proof.
                 generalize (ATR tid1). intro ATR1. inv ATR1; try congr. des. simplify.
                 generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
                 exploit sim_trace_last; try exact REL0. i. des. simplify.
-                exploit sim_trace_sim_th; try exact REL0; eauto. intro L1.
+                exploit sim_trace_sim_th; try exact REL0; eauto. intro TH_tmp.
+                exploit TH_tmp; eauto.
+                { instantiate (1 := []). ss. }
+                clear TH_tmp. intro L1.
                 rewrite RF in H0. inv H0. ss. simplify.
                 exploit WPROP3; eauto. i. des. simplify.
                 unfold v_gen. ss. rewrite <- H8. rewrite x2.
@@ -267,7 +289,10 @@ Proof.
                 generalize (ATR tid1). intro ATR1. inv ATR1; try congr. des. simplify.
                 generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
                 exploit sim_trace_last; try exact REL0. i. des. simplify.
-                exploit sim_trace_sim_th; try exact REL0; eauto. intro L1.
+                exploit sim_trace_sim_th; try exact REL0; eauto. intro TH_tmp.
+                exploit TH_tmp; eauto.
+                { instantiate (1 := []). ss. }
+                clear TH_tmp. intro L1.
                 rewrite RF in H0. inv H0. ss. simplify.
                 exploit WPROP3; eauto. i. des. simplify.
                 unfold v_gen. ss. rewrite <- H8. rewrite x2.
@@ -288,7 +313,10 @@ Proof.
                 generalize (ATR tid1). intro ATR1. inv ATR1; try congr. des. simplify.
                 generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
                 exploit sim_trace_last; try exact REL0. i. des. simplify.
-                exploit sim_trace_sim_th; try exact REL0; eauto. intro L1.
+                exploit sim_trace_sim_th; try exact REL0; eauto. intro TH_tmp.
+                exploit TH_tmp; eauto.
+                { instantiate (1 := []). ss. }
+                clear TH_tmp. intro L1.
                 rewrite RF in H0. inv H0. ss. simplify.
                 exploit WPROP3; eauto. i. des. simplify.
                 unfold v_gen. ss. rewrite <- H8. rewrite x2.
@@ -420,7 +448,11 @@ Proof.
         destruct l; ss.
       * clear -H. lia.
   - (* write *)
-    exploit sim_trace_sim_th; try exact TRACE; eauto. intro SIM_TH.
+    exploit sim_trace_sim_th; try exact TRACE; eauto. intro TH_tmp.
+    exploit lastn_sub_S1; try exact EU; eauto. intro TRT. des.
+    exploit TH_tmp; eauto.
+    { instantiate (1 := l1 ++ [eu2]). rewrite <- List.app_assoc. rewrite EU2. ss. }
+    clear TH_tmp. intro SIM_TH.
     inv STEP0. inv ASTATE_STEP; inv ALOCAL_STEP; ss; inv EVENT; inv RES; ss. splits.
     { econs; ss. apply sim_rmap_add; try apply L. econs; ss. }
     destruct L.(LC). ss. econs; ss.
@@ -618,7 +650,11 @@ Proof.
         exfalso. apply c0. ss.
       * clear -H. lia.
   - (* rmw *)
-    exploit sim_trace_sim_th; try exact TRACE; eauto. intro SIM_TH.
+    exploit sim_trace_sim_th; try exact TRACE; eauto. intro TH_tmp.
+    exploit lastn_sub_S1; try exact EU; eauto. intro TRT. des.
+    exploit TH_tmp; eauto.
+    { instantiate (1 := l1 ++ [eu2]). rewrite <- List.app_assoc. rewrite EU2. ss. }
+    clear TH_tmp. intro SIM_TH.
     generalize STEP0. intro STEP0'. inv STEP0'.
     inv ASTATE_STEP; inv ALOCAL_STEP; ss; inv EVENT; ss. splits.
     { econs; ss. inv RMAP. apply L. }
@@ -654,7 +690,10 @@ Proof.
                 generalize (ATR (fst x)). intro ATR1. inv ATR1; try congr. des. simplify.
                 generalize (SIM (fst x)). intro SIM1. inv SIM1; simplify.
                 exploit sim_trace_last; try exact REL0. i. des. simplify.
-                exploit sim_trace_sim_th; try exact REL0; eauto. intro L1.
+                exploit sim_trace_sim_th; try exact REL0; eauto. intro TH_tmp.
+                exploit TH_tmp; eauto.
+                { instantiate (1 := []). ss. }
+                clear TH_tmp. intro L1.
                 rewrite RF in H0. inv H0. ss. simplify.
                 exploit WPROP3; eauto. i. des. simplify.
                 unfold v_gen. ss. rewrite <- H8. rewrite x2.
@@ -690,7 +729,10 @@ Proof.
                 generalize (ATR (fst x)). intro ATR1. inv ATR1; try congr. des. simplify.
                 generalize (SIM (fst x)). intro SIM1. inv SIM1; simplify.
                 exploit sim_trace_last; try exact REL0. i. des. simplify.
-                exploit sim_trace_sim_th; try exact REL0; eauto. intro L1.
+                exploit sim_trace_sim_th; try exact REL0; eauto. intro TH_tmp.
+                exploit TH_tmp; eauto.
+                { instantiate (1 := []). ss. }
+                clear TH_tmp. intro L1.
                 rewrite RF in H0. inv H0. ss. simplify.
                 exploit WPROP3; eauto. i. des. simplify.
                 unfold v_gen. ss. rewrite <- H8. rewrite x2.
@@ -877,7 +919,11 @@ Proof.
         exfalso. apply c0. ss.
       * clear -H. lia.
   - (* rmw_failure *)
-    exploit sim_trace_sim_th; try exact TRACE; eauto. intro SIM_TH.
+    exploit sim_trace_sim_th; try exact TRACE; eauto. intro TH_tmp.
+    exploit lastn_sub_S1; try exact EU; eauto. intro TRT. des.
+    exploit TH_tmp; eauto.
+    { instantiate (1 := l1 ++ [eu2]). rewrite <- List.app_assoc. rewrite EU2. ss. }
+    clear TH_tmp. intro SIM_TH.
     destruct SIM_TH.(EU_WF). ss.
     generalize (Local.rmw_failure_spec LOCAL0 STEP0). intro RMW_FAILURE_SPEC.
     generalize SIM_TH.(MEM). s. i. rewrite H in RMW_FAILURE_SPEC.
@@ -910,7 +956,10 @@ Proof.
                 generalize (ATR tid1). intro ATR1. inv ATR1; try congr. des. simplify.
                 generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
                 exploit sim_trace_last; try exact REL0. i. des. simplify.
-                exploit sim_trace_sim_th; try exact REL0; eauto. intro L1.
+                exploit sim_trace_sim_th; try exact REL0; eauto. intro TH_tmp.
+                exploit TH_tmp; eauto.
+                { instantiate (1 := []). ss. }
+                clear TH_tmp. intro L1.
                 rewrite RF in H0. inv H0. ss. simplify.
                 exploit WPROP3; eauto. i. des. simplify.
                 unfold v_gen. ss. rewrite <- H8. rewrite x2.
@@ -931,7 +980,10 @@ Proof.
                 generalize (ATR tid1). intro ATR1. inv ATR1; try congr. des. simplify.
                 generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
                 exploit sim_trace_last; try exact REL0. i. des. simplify.
-                exploit sim_trace_sim_th; try exact REL0; eauto. intro L1.
+                exploit sim_trace_sim_th; try exact REL0; eauto. intro TH_tmp.
+                exploit TH_tmp; eauto.
+                { instantiate (1 := []). ss. }
+                clear TH_tmp. intro L1.
                 rewrite RF in H0. inv H0. ss. simplify.
                 exploit WPROP3; eauto. i. des. simplify.
                 unfold v_gen. ss. rewrite <- H8. rewrite x2.
@@ -952,7 +1004,10 @@ Proof.
                 generalize (ATR tid1). intro ATR1. inv ATR1; try congr. des. simplify.
                 generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
                 exploit sim_trace_last; try exact REL0. i. des. simplify.
-                exploit sim_trace_sim_th; try exact REL0; eauto. intro L1.
+                exploit sim_trace_sim_th; try exact REL0; eauto. intro TH_tmp.
+                exploit TH_tmp; eauto.
+                { instantiate (1 := []). ss. }
+                clear TH_tmp. intro L1.
                 rewrite RF in H0. inv H0. ss. simplify.
                 exploit WPROP3; eauto. i. des. simplify.
                 unfold v_gen. ss. rewrite <- H8. rewrite x2.
@@ -973,7 +1028,10 @@ Proof.
                 generalize (ATR tid1). intro ATR1. inv ATR1; try congr. des. simplify.
                 generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
                 exploit sim_trace_last; try exact REL0. i. des. simplify.
-                exploit sim_trace_sim_th; try exact REL0; eauto. intro L1.
+                exploit sim_trace_sim_th; try exact REL0; eauto. intro TH_tmp.
+                exploit TH_tmp; eauto.
+                { instantiate (1 := []). ss. }
+                clear TH_tmp. intro L1.
                 rewrite RF in H0. inv H0. ss. simplify.
                 exploit WPROP3; eauto. i. des. simplify.
                 unfold v_gen. ss. rewrite <- H8. rewrite x2.
@@ -1005,7 +1063,10 @@ Proof.
                 generalize (ATR tid1). intro ATR1. inv ATR1; try congr. des. simplify.
                 generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
                 exploit sim_trace_last; try exact REL0. i. des. simplify.
-                exploit sim_trace_sim_th; try exact REL0; eauto. intro L1.
+                exploit sim_trace_sim_th; try exact REL0; eauto. intro TH_tmp.
+                exploit TH_tmp; eauto.
+                { instantiate (1 := []). ss. }
+                clear TH_tmp. intro L1.
                 rewrite RF in H0. inv H0. ss. simplify.
                 exploit WPROP3; eauto. i. des. simplify.
                 unfold v_gen. ss. rewrite <- H8. rewrite x2.
@@ -1026,7 +1087,10 @@ Proof.
                 generalize (ATR tid1). intro ATR1. inv ATR1; try congr. des. simplify.
                 generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
                 exploit sim_trace_last; try exact REL0. i. des. simplify.
-                exploit sim_trace_sim_th; try exact REL0; eauto. intro L1.
+                exploit sim_trace_sim_th; try exact REL0; eauto. intro TH_tmp.
+                exploit TH_tmp; eauto.
+                { instantiate (1 := []). ss. }
+                clear TH_tmp. intro L1.
                 rewrite RF in H0. inv H0. ss. simplify.
                 exploit WPROP3; eauto. i. des. simplify.
                 unfold v_gen. ss. rewrite <- H8. rewrite x2.
@@ -1047,7 +1111,10 @@ Proof.
                 generalize (ATR tid1). intro ATR1. inv ATR1; try congr. des. simplify.
                 generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
                 exploit sim_trace_last; try exact REL0. i. des. simplify.
-                exploit sim_trace_sim_th; try exact REL0; eauto. intro L1.
+                exploit sim_trace_sim_th; try exact REL0; eauto. intro TH_tmp.
+                exploit TH_tmp; eauto.
+                { instantiate (1 := []). ss. }
+                clear TH_tmp. intro L1.
                 rewrite RF in H0. inv H0. ss. simplify.
                 exploit WPROP3; eauto. i. des. simplify.
                 unfold v_gen. ss. rewrite <- H8. rewrite x2.
@@ -1068,7 +1135,10 @@ Proof.
                 generalize (ATR tid1). intro ATR1. inv ATR1; try congr. des. simplify.
                 generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
                 exploit sim_trace_last; try exact REL0. i. des. simplify.
-                exploit sim_trace_sim_th; try exact REL0; eauto. intro L1.
+                exploit sim_trace_sim_th; try exact REL0; eauto. intro TH_tmp.
+                exploit TH_tmp; eauto.
+                { instantiate (1 := []). ss. }
+                clear TH_tmp. intro L1.
                 rewrite RF in H0. inv H0. ss. simplify.
                 exploit WPROP3; eauto. i. des. simplify.
                 unfold v_gen. ss. rewrite <- H8. rewrite x2.

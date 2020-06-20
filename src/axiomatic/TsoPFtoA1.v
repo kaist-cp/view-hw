@@ -465,22 +465,153 @@ Proof.
   eapply sim_state_weak_init.
 Qed.
 
+Lemma sim_trace_lastn
+      p mem tid tr atr wl rl covl vextl
+      n
+      (SIM: sim_trace p mem tid tr atr wl rl covl vextl):
+  sim_trace p mem tid
+            (lastn (S n) tr) (lastn (S n) atr) (lastn (S n) wl)
+            (lastn (S n) rl) (lastn (S n) covl) (lastn (S n) vextl).
+Proof.
+  revert n atr wl rl covl vextl SIM. induction tr; i; [by inv SIM|].
+  exploit sim_trace_length; eauto. s. i. des.
+  destruct (le_lt_dec (length tr) n).
+  { rewrite ? lastn_all in *; ss; try lia. }
+  exploit sim_trace_last; eauto. i. des. simplify. ss.
+  rewrite ? lastn_cons; try lia. eapply IHtr.
+  inv SIM; ss. lia.
+Qed.
+
+Lemma sim_trace_lastn_rtc_step
+      p mem tid tr atr wl rl covl vextl
+      n k
+      (SIM: sim_trace p mem tid tr atr wl rl covl vextl)
+      (SIM_N: sim_trace p mem tid
+              (lastn (S n) tr) (lastn (S n) atr) (lastn (S n) wl)
+              (lastn (S n) rl) (lastn (S n) covl) (lastn (S n) vextl))
+      (SIM_NK: sim_trace p mem tid
+               (lastn ((S n) + k) tr) (lastn ((S n) + k) atr) (lastn ((S n) + k) wl)
+               (lastn ((S n) + k) rl) (lastn ((S n) + k) covl) (lastn ((S n) + k) vextl)):
+  forall eu1 eu2 l l'
+         (TR: lastn (S n) tr = eu1 :: l)
+         (TR2: lastn ((S n) + k) tr = eu2 :: l'),
+  rtc (ExecUnit.state_step tid) eu1 eu2.
+Proof.
+  induction k; ss.
+  - ii. rewrite plus_comm in TR2. ss.
+    rewrite TR in TR2. inv TR2. auto.
+  - ii. rewrite <- plus_Sn_m in *. rewrite <- plus_n_Sm in *. ss.
+    exploit sim_trace_length; try exact SIM; eauto. intro X. des.
+    destruct (le_lt_dec (length tr) (S (n + k))).
+    + assert (EQ_S:
+                lastn (S (S (n + k))) tr = lastn (S (n + k)) tr /\
+                lastn (S (S (n + k))) atr = lastn (S (n + k)) atr /\
+                lastn (S (S (n + k))) wl = lastn (S (n + k)) wl /\
+                lastn (S (S (n + k))) rl = lastn (S (n + k)) rl /\
+                lastn (S (S (n + k))) covl = lastn (S (n + k)) covl /\
+                lastn (S (S (n + k))) vextl = lastn (S (n + k)) vextl).
+      { repeat rewrite lastn_all; ss; try lia. }
+      des. rewrite EQ_S, EQ_S0, EQ_S1, EQ_S2, EQ_S3, EQ_S4 in SIM_NK.
+      eapply IHk; eauto. rewrite <- EQ_S. eauto.
+    + inversion SIM_NK.
+      * exploit lastn_length_incr; eauto. intro LT_NK.
+        rewrite <- Nat.add_1_r in H0. rewrite <- H0 in LT_NK. ss.
+        assert (1 <= length (lastn (S n) tr)).
+        { rewrite TR. ss. lia. }
+        destruct k.
+        { rewrite plus_comm in LT_NK. ss. lia. }
+        exploit lastn_length_incr.
+        { instantiate (1 := tr). instantiate (1 := S n). lia. }
+        rewrite plus_Sn_m. rewrite LT_NK. lia.
+      * clear W R COV VEXT.
+        rewrite <- H0 in TR2. inversion TR2. rewrite H6 in *. clear H6 H7.
+        symmetry in H0. eapply lastn_S1 in H0; ss. rewrite <- H0 in TRACE.
+        symmetry in H. eapply lastn_S1 in H; [| eapply lt_le_trans]; eauto; try lia. rewrite <- H in TRACE.
+        symmetry in H2. eapply lastn_S1 in H2; [| eapply lt_le_trans]; eauto; try lia. rewrite <- H2 in TRACE.
+        symmetry in H3. eapply lastn_S1 in H3; [| eapply lt_le_trans]; eauto; try lia. rewrite <- H3 in TRACE.
+        symmetry in H4. eapply lastn_S1 in H4; [| eapply lt_le_trans]; eauto; try lia. rewrite <- H4 in TRACE.
+        symmetry in H5. eapply lastn_S1 in H5; [| eapply lt_le_trans]; eauto; try lia. rewrite <- H5 in TRACE.
+        etrans; cycle 1.
+        { econs 2; eauto. econs; eauto. }
+        eapply IHk; eauto.
+Qed.
+
+Lemma sim_trace_rtc_step
+      p mem tid tr atr wl rl covl vextl
+      n
+      (SIM: sim_trace p mem tid tr atr wl rl covl vextl):
+  forall eu_to l eu_from l'
+      (TR: tr = eu_to :: l)
+      (TR_N: lastn (S n) tr = eu_from :: l'),
+  rtc (ExecUnit.state_step tid) eu_from eu_to.
+Proof.
+  exploit sim_trace_length; eauto. i. des.
+  exploit sim_trace_lastn; eauto. instantiate (1 := n). intro SIM_N.
+  destruct (le_lt_dec (length tr) (S n)).
+  { exploit sim_trace_length; try exact SIM; eauto. intro X. des.
+    rewrite ? lastn_all in *; try lia. ii. rewrite TR in TR_N. inv TR_N. eauto. }
+  assert (exists k, S n + k = length tr).
+  { exists (((length tr) - (S n))). lia. }
+  des.
+  exploit lastn_all.
+  { instantiate (1 := tr). instantiate (1 := S n + k). lia. }
+  exploit lastn_all.
+  { instantiate (1 := atr). instantiate (1 := S n + k). lia. }
+  exploit lastn_all.
+  { instantiate (1 := wl). instantiate (1 := S n + k). lia. }
+  exploit lastn_all.
+  { instantiate (1 := rl). instantiate (1 := S n + k). lia. }
+  exploit lastn_all.
+  { instantiate (1 := covl). instantiate (1 := S n + k). lia. }
+  exploit lastn_all.
+  { instantiate (1 := vextl). instantiate (1 := S n + k). lia. }
+  i.
+  generalize SIM. intro SIM_NK.
+  rewrite <- x0 in SIM_NK.
+  rewrite <- x1 in SIM_NK.
+  rewrite <- x2 in SIM_NK.
+  rewrite <- x3 in SIM_NK.
+  rewrite <- x4 in SIM_NK.
+  rewrite <- x5 in SIM_NK.
+  rewrite <- x5 in TR.
+  eapply sim_trace_lastn_rtc_step.
+  3: exact SIM_NK.
+  all: eauto.
+Qed.
+
 Lemma sim_trace_sim_th
-      p mem tid
-      tr eu tr'
+      (* p mem tid
+      tr eu tr' *)
+      p m tid
+      trs tr eu tr' trt
+      atrs atr aeu atr'
+      ws wl w wl'
+      rs rl r rl'
+      covs covl cov covl'
+      vexts vextl vext vextl'
+      (* p m tid
+      trs tr eu tr' trt
       atr aeu atr'
       wl w wl'
       rl r rl'
       covl cov covl'
-      vextl vext vextl'
-      (SIM: sim_trace p mem tid tr atr wl rl covl vextl)
+      vextl vext vextl' *)
+      (PF: Machine.pf_exec p m)
+      (SIM: sim_trace p m.(Machine.mem) tid tr atr wl rl covl vextl)
+      (SIMS: sim_traces p m.(Machine.mem) trs atrs ws rs covs vexts)
+      (TR: IdMap.Forall2
+           (fun _ tr sl => exists l, tr = (ExecUnit.mk (fst sl) (snd sl) m.(Machine.mem)) :: l)
+           trs m.(Machine.tpool))
+      (TRS: Some trt = IdMap.find tid trs)
       (EU: tr = eu :: tr')
       (AEU: atr = aeu :: atr')
       (RL: rl = r :: rl')
       (WL: wl = w :: wl')
       (COV: covl = cov :: covl')
       (VEXT: vextl = vext :: vextl'):
-  sim_th p mem tid eu aeu w r cov vext.
+  forall trt' (TRT: trt = trt' ++ tr),
+    sim_th p m.(Machine.mem) tid eu aeu w r cov vext.
+  (* sim_th p mem tid eu aeu w r cov vext. *)
 Proof.
   revert r rl' w wl' eu tr' aeu atr' cov covl' vext vextl' RL WL EU AEU COV VEXT. induction SIM.
   { i. simplify. ss. econs; ss.
@@ -506,13 +637,16 @@ Proof.
   }
   clear LOCAL.
   i. simplify.
-  destruct eu1 as [st1 lc1 mem1].
-  destruct eu as [st2 lc2 mem2].
+  destruct eu1 as [st1 lc1 mem1] eqn: EU1. guardH EU1.
+  destruct eu as [st2 lc2 mem2] eqn: EU. guardH EU.
   destruct aeu1 as [ast1 alc1].
   destruct aeu as [ast2 alc2].
-  assert (mem1 = mem); subst.
+  assert (mem1 = m.(Machine.mem)); subst.
   { exploit sim_trace_memory; eauto. }
   ss. exploit IHSIM; eauto.
+  { instantiate (1 := trt' ++ [{| ExecUnit.state := st2; ExecUnit.local := lc2; ExecUnit.mem := mem2 |}]).
+    admit.
+   }
   i. rename x into IH.
   assert (EU_WF2: ExecUnit.wf tid (ExecUnit.mk st2 lc2 mem2)).
   { destruct IH.
@@ -746,7 +880,7 @@ Proof.
       des; [left|right]; splits; ss.
       + i. des_ifs; eauto. apply Nat.eqb_eq in Heq. subst. ii. inv H.
         rewrite fun_add_spec in *. des_ifs; [|congr]. ss. apply c.
-        specialize (Memory.latest_ts_spec (ValA.val vloc0) ts mem). i. des.
+        specialize (Memory.latest_ts_spec (ValA.val vloc0) ts m.(Machine.mem)). i. des.
         destruct ts; ss. unfold Memory.get_msg in MSG. ss. rewrite MSG. des_ifs.
       + esplits; eauto.
         * des_ifs; eauto. apply Nat.eqb_eq in Heq. subst. unfold ALocal.next_eid in *.
@@ -763,7 +897,7 @@ Proof.
         * inv VLOC. rewrite VAL. eauto.
         * rewrite fun_add_spec in *. des_ifs; [|congr]. ss.
           inv VLOC. inv VVAL. rewrite <- VAL, <- VAL0.
-          specialize (Memory.latest_ts_spec (ValA.val vloc0) ts mem). i. des.
+          specialize (Memory.latest_ts_spec (ValA.val vloc0) ts m.(Machine.mem)). i. des.
           destruct ts; ss. unfold Memory.get_msg in MSG. ss.
           rewrite MSG. ss. des_ifs.
     - i. des. unfold ALocal.next_eid in *. apply nth_error_snoc_inv in GET. des.
@@ -777,7 +911,7 @@ Proof.
         * rewrite fun_add_spec in *. des_ifs; [|congr]. ss.
           inv VLOC. inv VVAL. rewrite <- VAL.
           instantiate (1 := ValA.val vval0).
-          specialize (Memory.latest_ts_spec (ValA.val vloc0) ts mem). i. des.
+          specialize (Memory.latest_ts_spec (ValA.val vloc0) ts m.(Machine.mem)). i. des.
           destruct ts; ss. unfold Memory.get_msg in MSG. ss.
           rewrite MSG. ss. des_ifs.
     - i. unfold ALocal.next_eid in *. des_ifs.
@@ -796,7 +930,7 @@ Proof.
           inv WRITABLE. apply Nat.lt_le_incl. ss.
         * eapply nth_error_app_mon. eauto.
     - i. unfold ALocal.next_eid in *.
-      specialize (Memory.latest_ts_spec (ValA.val vloc0) ts mem). i. des.
+      specialize (Memory.latest_ts_spec (ValA.val vloc0) ts m.(Machine.mem)). i. des.
       exploit Memory.latest_ts_read_le; [|refl|i; exploit le_antisym; try eapply LE; eauto; i].
       { eapply Memory.get_msg_read; eauto. }
       des_ifs.
@@ -889,30 +1023,68 @@ Proof.
     inv LOCAL; ss.
     generalize IH.(EU_WF). i. inv H.
     specialize (Local.rmw_spec LOCAL STEP). intro RMW_SPEC. guardH RMW_SPEC.
-    inv STEP. inv STATE0; inv EVENT; ss.
+    (* inv STEP. inv STATE0; inv EVENT; ss. *)
+    inversion STEP. guardH LC2.
+    inv STATE0; inv EVENT; ss.
     inv ASTATE_STEP.
     exploit sim_trace_sim_state_weak; eauto. s. intro Y. inv Y. ss. inv STMTS.
     exploit sim_rmap_weak_expr; eauto. intro Y. inv Y.
     inv VLOC. rewrite VAL0 in *. clear VAL.
 
-    assert (PRED: old_ts = Memory.latest_ts (ValA.val (sem_expr rmap0 eloc0)) (Init.Nat.pred ts) mem).
+    assert (PRED: old_ts = Memory.latest_ts (ValA.val (sem_expr rmap0 eloc0)) (Init.Nat.pred ts) m.(Machine.mem)).
     { eapply le_antisym; ss.
-      + eapply Memory.latest_ts_read_le; eauto. lia.
-      + eapply Memory.latest_latest_ts. ii.
-        unfold Memory.exclusive in EX. unfold Memory.no_msgs in EX.
-        exploit EX; eauto.
-        { etrans; eauto. lia. }
-        esplits; eauto. destruct (Msg.tid msg == tid); ss. inv e.
-        unfold Memory.latest in COH. unfold Memory.no_msgs in COH.
-        exploit COH; eauto.
-        destruct (lt_eq_lt_dec (S ts0) (View.ts (Local.coh lc1 (ValA.val (sem_expr rmap0 eloc0))))). inv s; try lia.
-        inv LOCAL. rewrite <- H in l. exploit PROMISES0; try instantiate (1 := S ts0); eauto. i.
-        inv EU_WF2. inv LOCAL. ss.
-        admit.
-    }
+      { eapply Memory.latest_ts_read_le; eauto. lia. }
+      eapply Memory.latest_latest_ts. ii.
+      unfold Memory.exclusive in EX. unfold Memory.no_msgs in EX.
+      exploit EX; eauto.
+      { etrans; eauto. lia. }
+      esplits; eauto. destruct msg as [ts' val' tidtmp]. destruct (tidtmp == tid); ss. inv e.
+      unfold Memory.latest in COH. unfold Memory.no_msgs in COH.
+      exploit COH; eauto.
+      destruct (lt_eq_lt_dec (S ts0) (View.ts (Local.coh lc1 (ValA.val (sem_expr rmap0 eloc0))))). inv s; try lia.
+      inv LOCAL. exploit PROMISES0; [| | instantiate (1 := S ts0)|]; eauto. intro PROMISE_TS.
+      assert (PROMISE_TS0: Promises.lookup (S ts0) (Local.promises lc2)).
+      { rewrite LC2. ss. exploit Promises.unset_o. intro UNSET. rewrite UNSET. condtac; ss. inversion e. lia. }
 
-    (* inv LOCAL; ss; inv EVENT; inv STEP; ss. inv STATE. ss.
-    destruct IH.(EU_WF). *)
+
+      generalize (SIMS tid). intro SIM_TID. inv SIM_TID; try congr. simplify.
+      generalize (TR tid). intro TR_TID. inv TR_TID; try congr. simplify.
+      rewrite <- EU1 in *. rewrite <- EU in *.
+      (* exploit lastn_SN.
+      { instantiate (1 := a). simplify. destruct trt'; ss; lia. }
+      i. des. simplify. *)
+
+
+      destruct b0 as [st_l lc_l]. destruct REL as [trt].
+      rename H6 into PFSL. rename H0 into TRL.
+      move REL6 at bottom. move SIM at bottom.
+      exploit lastn_sub_S; ss.
+      (* { rewrite <- EU1 in TRL. rewrite <- EU2 in TRL. }
+      ss. *)
+      { instantiate (1 := eu :: eu1 :: tr). ss. lia. }
+      instantiate (1 := trt'). i. des.
+      exploit sim_trace_rtc_step; try exact REL6; eauto. intro RTC_STEP.
+
+
+
+      move PFSL at bottom.
+      inv PF. inv NOPROMISE. generalize PFSL. intro PROMBOT. symmetry in PROMBOT. eapply PROMISES1 in PROMBOT.
+
+      unguardH EU. inv EU.
+      exploit ExecUnit.rtc_state_step_promise_remained.
+      2: exact RTC_STEP.
+      4: exact PROMISE_TS0.
+      { ss. }
+      { instantiate (1 := ValA.val (sem_expr rmap0 eloc0)). rewrite LC2. ss.
+        rewrite fun_add_spec. condtac; cycle 1.
+        { exfalso. apply c0. ss. }
+        etrans; eauto. ss. lia.
+      }
+      { unfold Memory.get_msg. ss. rewrite MSG0. ss. }
+      unfold Promises.lookup. ss. rewrite PROMBOT. ss.
+    }
+    unguardH LC2. inv LC2.
+
     econs; ss; clear EU_WF2 AEU_WF2.
     - i. exploit IH.(WPROP1); eauto. s. i. rewrite Promises.unset_o. des_ifs.
       { inv e. right. rewrite MSG in GET. inv GET. esplits; ss.
@@ -927,7 +1099,7 @@ Proof.
       des; [left|right]; splits; ss.
       + i. des_ifs; eauto. apply Nat.eqb_eq in Heq. subst. ii. inv H.
         rewrite fun_add_spec in *. des_ifs; [|congr]. ss. apply c.
-        specialize (Memory.latest_ts_spec (ValA.val (sem_expr rmap eloc0)) ts mem). i. des.
+        specialize (Memory.latest_ts_spec (ValA.val (sem_expr rmap eloc0)) ts m.(Machine.mem)). i. des.
         destruct ts; ss.
         (* unfold Memory.get_msg in MSG. ss. rewrite MSG. des_ifs. *)
       + esplits; eauto.
@@ -944,7 +1116,7 @@ Proof.
         ss. eqvtac. esplits; eauto.
         rewrite fun_add_spec in *. des_ifs; try congr. ss.
         inv NEW. rewrite <- VAL.
-        specialize (Memory.latest_ts_spec (ValA.val (sem_expr rmap eloc0)) ts mem). i. des.
+        specialize (Memory.latest_ts_spec (ValA.val (sem_expr rmap eloc0)) ts m.(Machine.mem)). i. des.
         destruct ts; ss. unfold Memory.get_msg in MSG. ss.
         rewrite MSG. ss. des_ifs.
     - i. des. unfold ALocal.next_eid in *. apply nth_error_snoc_inv in GET. des.
@@ -972,7 +1144,7 @@ Proof.
           inv WRITABLE. apply Nat.lt_le_incl. rewrite <- VAL0. ss.
         * eapply nth_error_app_mon. eauto.
     - i. unfold ALocal.next_eid in *.
-      specialize (Memory.latest_ts_spec (ValA.val (sem_expr rmap0 eloc0)) ts mem). i. des.
+      specialize (Memory.latest_ts_spec (ValA.val (sem_expr rmap0 eloc0)) ts m.(Machine.mem)). i. des.
       exploit Memory.latest_ts_read_le; [|refl|i; exploit le_antisym; try eapply LE; eauto; i].
       { eapply Memory.get_msg_read; eauto. }
       des_ifs.
@@ -994,7 +1166,7 @@ Proof.
       + des_ifs; cycle 1.
         { apply Nat.eqb_neq in Heq. unfold ALocal.next_eid in *. congr. }
         rewrite fun_add_spec in *. condtac; [|congr].
-        inv OLD. ss. des_ifs. eqvtac. rewrite <- VAL.
+        inv OLD. ss. eqvtac. rewrite <- VAL.
         exploit Memory.read_get_msg; eauto. i. unguard. des; esplits; eauto.
     - i. des_ifs.
       + right. apply Nat.eqb_eq in Heq. subst.
@@ -1003,7 +1175,7 @@ Proof.
         move RMW_SPEC at bottom. desH RMW_SPEC. rewrite <- RMW_SPEC.
         inv OLD. rewrite VAL in *.
         exploit Memory.read_get_msg; eauto. i.
-        assert (TS_GT: lt (Memory.latest_ts (ValA.val (sem_expr rmap0 eloc0)) (Init.Nat.pred ts) mem) ts).
+        assert (TS_GT: lt (Memory.latest_ts (ValA.val (sem_expr rmap0 eloc0)) (Init.Nat.pred ts) m.(Machine.mem)) ts).
         { eapply le_lt_trans with (Init.Nat.pred ts); [apply Memory.latest_ts_spec | lia]. }
         des; esplits.
         all: try by rewrite List.nth_error_app2, Nat.sub_diag; [|refl]; ss; eauto with tso.
@@ -1048,7 +1220,7 @@ Proof.
         all: try apply Nat.eqb_neq in X0; ss; try lia.
         rewrite fun_add_spec. des_ifs; [|congr].
         inv REL. ss.
-        assert (Time.lt (cov1 iid1) (Memory.latest_ts (ValA.val (sem_expr rmap eloc0)) ts mem)).
+        assert (Time.lt (cov1 iid1) (Memory.latest_ts (ValA.val (sem_expr rmap eloc0)) ts m.(Machine.mem))).
         { destruct label1; ss; eqvtac.
           - exploit IH.(RPROP1); eauto with tso. i. des.
             exploit IH.(RPROP2); eauto. s. i. des; cycle 1.
