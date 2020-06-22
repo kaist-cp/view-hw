@@ -10,7 +10,7 @@ build: sflib Makefile.coq
 	$(MAKE) -f Makefile.coq all
 
 quick: sflib-quick Makefile.coq
-	$(MAKE) -f Makefile.coq quick
+	$(MAKE) -f Makefile.coq vio
 
 sflib: lib/sflib
 	$(MAKE) -C lib/sflib
