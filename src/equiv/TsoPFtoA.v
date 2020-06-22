@@ -29,7 +29,6 @@ Require Import PromisingArch.equiv.TsoPFtoA3.
 Require Import PromisingArch.equiv.TsoPFtoA4OBW.
 Require Import PromisingArch.equiv.TsoPFtoA4OBR.
 Require Import PromisingArch.equiv.TsoPFtoA4FR.
-(* Require Import PromisingArch.equiv.PFtoA4Atomic. *)
 Require Import PromisingArch.equiv.TsoPFtoA4SL.
 
 Set Implicit Arguments.
@@ -43,7 +42,6 @@ Lemma sim_traces_sim_th'_step
       (PRE: Valid.pre_ex p ex)
       (CO: ex.(Execution.co) = co_gen ws)
       (RF: ex.(Execution.rf) = rf_gen ws rs)
-      (* (INTERNAL: acyclic (Execution.internal ex)) *)
       (CO1: Valid.co1 ex)
       (CO2: Valid.co2 ex)
       (RF1: Valid.rf1 ex)
@@ -78,7 +76,6 @@ Proof.
   - eapply sim_traces_sim_th'_ob_write; eauto.
   - eapply sim_traces_sim_th'_ob_read; eauto.
   - eapply sim_traces_sim_th'_fr; eauto.
-  (* - eapply sim_traces_sim_th'_atomic; eauto. *)
 Qed.
 
 Lemma sim_traces_sim_th'
@@ -89,7 +86,6 @@ Lemma sim_traces_sim_th'
       (PRE: Valid.pre_ex p ex)
       (CO: ex.(Execution.co) = co_gen ws)
       (RF: ex.(Execution.rf) = rf_gen ws rs)
-      (* (INTERNAL: acyclic (Execution.internal ex)) *)
       (CO1: Valid.co1 ex)
       (CO2: Valid.co2 ex)
       (RF1: Valid.rf1 ex)
@@ -195,7 +191,6 @@ Proof.
     - ii. ss. lia.
     - ii. ss. lia.
     - ii. ss. lia.
-    (* - ii. ss. lia. *)
   }
   i. simplify.
   exploit sim_trace_length; eauto. intro LEN. guardH LEN.
@@ -226,7 +221,6 @@ Lemma sim_traces_vext_valid
       (PRE: Valid.pre_ex p ex)
       (CO: ex.(Execution.co) = co_gen ws)
       (RF: ex.(Execution.rf) = rf_gen ws rs)
-      (* (INTERNAL: acyclic (Execution.internal ex)) *)
       (CO1: Valid.co1 ex)
       (CO2: Valid.co2 ex)
       (RF1: Valid.rf1 ex)
@@ -252,13 +246,6 @@ Lemma sim_traces_vext_valid
       (OB: ob' ex eid1 eid2)
       (EID2: ex.(Execution.label_is) Label.is_read eid2),
       Time.le ((v_gen vexts) eid1) ((v_gen vexts) eid2)>>.
-      (* /\
-  <<ATOMIC:
-    forall eid1 eid2 eid
-      (ATOMIC: ex.(Execution.rmw) eid1 eid2)
-      (FRE: Execution.fre ex eid1 eid)
-      (COE: Execution.coe ex eid eid2),
-      False>>. *)
 Proof.
   splits; i.
   - destruct eid1 as [tid1 eid1].
@@ -333,12 +320,12 @@ Lemma sim_traces_valid_rf_refl
       (ATR: IdMap.Forall2
               (fun _ atr aeu => exists l, atr = aeu :: l)
               atrs (Valid.aeus PRE)):
-  <<RF_REFL: forall eid1 eid2
+  <<RF_REFL:
+      forall eid1 eid2
              (RF: Execution.rf ex eid1 eid2),
-             Time.eq ((v_gen covs) eid1) ((v_gen covs) eid2) /\
-             ex.(Execution.label_is_not) Label.is_write eid2 \/
-             Time.lt ((v_gen covs) eid1) ((v_gen covs) eid2) /\
-             ex.(Execution.label_is) Label.is_write eid2>>.
+        Time.eq ((v_gen covs) eid1) ((v_gen covs) eid2) /\ ex.(Execution.label_is_not) Label.is_write eid2
+        \/
+        Time.lt ((v_gen covs) eid1) ((v_gen covs) eid2) /\ ex.(Execution.label_is) Label.is_write eid2>>.
 Proof.
   generalize STEP. intro X. inv X. ii.
   exploit sim_traces_cov_rf; eauto.
@@ -432,7 +419,6 @@ Lemma sim_traces_valid_external_atomic
       (PRE: Valid.pre_ex p ex)
       (CO: ex.(Execution.co) = co_gen ws)
       (RF: ex.(Execution.rf) = rf_gen ws rs)
-      (* (INTERNAL: acyclic (Execution.internal ex)) *)
       (CO1: Valid.co1 ex)
       (CO2: Valid.co2 ex)
       (RF1: Valid.rf1 ex)
@@ -452,8 +438,6 @@ Lemma sim_traces_valid_external_atomic
       (Time.lt ((v_gen vexts) eid1) ((v_gen vexts) eid2) /\ ex.(Execution.label_is) Label.is_write eid2) \/
       (Time.le ((v_gen vexts) eid1) ((v_gen vexts) eid2) /\ ex.(Execution.label_is) Label.is_read eid2
         /\ ex.(Execution.label_is_not) Label.is_write eid2)>>.
-      (* /\
-  <<ATOMIC: le (ex.(Execution.rmw) ∩ ((Execution.fre ex) ⨾ (Execution.coe ex))) bot>>. *)
 Proof.
   generalize STEP. intro X. inv X. splits.
   exploit sim_traces_vext_valid; eauto. i. des.
@@ -476,8 +460,6 @@ Proof.
     + exploit FRE; eauto with tso.
     + exploit sim_traces_vext_co; eauto with tso.
     + exploit OB_WRITE; eauto with tso.
-  (* - exploit sim_traces_vext_valid; eauto. i. des.
-    ii. inv H. inv H1. des. exfalso. eauto. *)
 Qed.
 
 Lemma corw_irrefl
@@ -576,7 +558,6 @@ Lemma promising_pf_valid
          ex.(Execution.label_is) Label.is_write eid1 /\
          ex.(Execution.label_is) Label.is_read eid2 /\
          ex.(Execution.label_is_not) Label.is_write eid2)>> /\
-    (* <<ATOMIC: le (ex.(Execution.rmw) ∩ ((Execution.fre ex) ⨾ (Execution.coe ex))) bot>> /\ *)
     <<STATE: IdMap.Forall2
                (fun tid sl aeu => sim_state_weak (fst sl) aeu.(AExecUnit.state))
                m.(Machine.tpool) PRE.(Valid.aeus)>>.

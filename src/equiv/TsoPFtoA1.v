@@ -577,8 +577,6 @@ Proof.
 Qed.
 
 Lemma sim_trace_sim_th
-      (* p mem tid
-      tr eu tr' *)
       p m tid
       trs tr eu tr' trt
       atrs atr aeu atr'
@@ -586,13 +584,6 @@ Lemma sim_trace_sim_th
       rs rl r rl'
       covs covl cov covl'
       vexts vextl vext vextl'
-      (* p m tid
-      trs tr eu tr' trt
-      atr aeu atr'
-      wl w wl'
-      rl r rl'
-      covl cov covl'
-      vextl vext vextl' *)
       (PF: Machine.pf_exec p m)
       (SIM: sim_trace p m.(Machine.mem) tid tr atr wl rl covl vextl)
       (SIMS: sim_traces p m.(Machine.mem) trs atrs ws rs covs vexts)
@@ -608,7 +599,6 @@ Lemma sim_trace_sim_th
       (VEXT: vextl = vext :: vextl'):
   forall trt' (TRT: trt = trt' ++ tr),
     sim_th p m.(Machine.mem) tid eu aeu w r cov vext.
-  (* sim_th p mem tid eu aeu w r cov vext. *)
 Proof.
   revert r rl' w wl' eu tr' aeu atr' cov covl' vext vextl' RL WL EU AEU COV VEXT. induction SIM.
   { i. simplify. ss. econs; ss.

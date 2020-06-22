@@ -98,7 +98,6 @@ Definition sim_view_eq (vext: eidT -> Time.t) (view: Time.t) (eids: eidT -> Prop
 Inductive sim_val (tid:Id.t) (vext:eidT -> Time.t) (vala:ValA.t (A:=unit)) (avala:ValA.t (A:=unit)): Prop :=
 | sim_val_intro
     (VAL: vala.(ValA.val) = avala.(ValA.val))
-    (* (VIEW: sim_view vext vala.(ValA.annot).(View.ts) (fun eid => (fst eid) = tid /\ avala.(ValA.annot) (snd eid))) *)
 .
 Hint Constructors sim_val.
 
@@ -204,16 +203,6 @@ Definition sim_fre
     (FR: Execution.fre ex (tid, eid1) eid2),
     Time.lt (vext (tid, eid1)) (vext eid2).
 
-(* Definition sim_atomic
-           (tid:Id.t) (ex:Execution.t) (vext: eidT -> Time.t)
-           (eu:ExecUnit.t) (aeu:AExecUnit.t): Prop :=
-  forall eid1 eid2 eid
-    (LABEL: eid2 < List.length aeu.(AExecUnit.local).(ALocal.labels))
-    (ATOMIC: ex.(Execution.rmw) eid1 (tid, eid2))
-    (FRE: Execution.fre ex eid1 eid)
-    (COE: Execution.coe ex eid (tid, eid2)),
-    False. *)
-
 Inductive sim_th'
           (tid:Id.t) (mem:Memory.t) (ex:Execution.t) (vext: eidT -> Time.t)
           (eu:ExecUnit.t) (aeu:AExecUnit.t): Prop := {
@@ -222,6 +211,5 @@ Inductive sim_th'
   OBW: sim_ob_write tid ex vext eu aeu;
   OBR: sim_ob_read tid ex vext eu aeu;
   FRE: sim_fre tid ex vext eu aeu;
-  (* ATOMIC: sim_atomic tid ex vext eu aeu; *)
 }.
 Hint Constructors sim_th'.
