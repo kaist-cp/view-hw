@@ -518,6 +518,22 @@ Section View.
 End View.
 End View.
 
+Ltac viewtac :=
+  repeat
+    (try match goal with
+         | [|- join _ _ <= _] => apply join_spec
+         | [|- bot <= _] => apply bot_spec
+         | [|- ifc ?c _ <= _] => destruct c; s
+
+         | [|- Time.join _ _ <= _] => apply join_spec
+         | [|- Time.bot <= _] => apply bot_spec
+
+         | [|- context[View.ts (join _ _)]] => rewrite View.ts_join
+         | [|- context[View.ts bot]] => rewrite View.ts_bot
+         | [|- context[View.ts (ifc _ _)]] => rewrite View.ts_ifc
+         end;
+     ss; eauto).
+
 Module Promises.
   Definition t := Id.t -> bool.
 

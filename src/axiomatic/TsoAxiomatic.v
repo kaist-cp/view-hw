@@ -680,7 +680,6 @@ Module Execution.
      ⦗ex.(label_is) (Label.is_barrier_c Barrier.is_dmb_wr)⦘ ⨾
      po ⨾
      ⦗ex.(label_is) Label.is_read⦘.
-    (* TODO: only read, not update *)
 
   Definition ob (ex:t): relation eidT :=
     (obs ex) ∪ (dob ex) ∪ (bob ex).
