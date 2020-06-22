@@ -15,7 +15,7 @@ Require Import PromisingArch.lib.Basic.
 Require Import PromisingArch.lib.Order.
 Require Import PromisingArch.lib.Time.
 Require Import PromisingArch.lib.Lang.
-Require Import PromisingArch.promising.TsoPromising2.
+Require Import PromisingArch.promising.TsoPromising.
 Require Import PromisingArch.promising.CommonPromising.
 Require Import PromisingArch.promising.TsoStateExecFacts.
 
