@@ -16,38 +16,10 @@ Require Import PromisingArch.lib.HahnRelationsMore.
 Require Import PromisingArch.lib.Order.
 Require Import PromisingArch.lib.Time.
 Require Import PromisingArch.lib.Lang.
-Require Import PromisingArch.promising.TsoPromising.
-Require Import PromisingArch.promising.CommonPromising.
-Require Import PromisingArch.promising.StateExecFacts.
 Require Import PromisingArch.axiomatic.TsoAxiomatic.
 
 Set Implicit Arguments.
 
-
-Inductive inverse A (rel:relation A) (codom:A -> Prop) (a:A): Prop :=
-| inverse_intro
-    a'
-    (REL: rel a a')
-    (CODOM: codom a')
-.
-Hint Constructors inverse.
-
-Lemma inverse_mon A (r1 r2:relation A)
-      (REL: r1 ⊆ r2):
-  inverse r1 <2= inverse r2.
-Proof.
-  i. inv PR. econs; eauto.
-Qed.
-
-Lemma inverse_union A (r1 r2:relation A) s:
-  inverse (r1 ∪ r2) s = inverse r1 s \1/ inverse r2 s.
-Proof.
-  funext. i. propext. econs; i.
-  - inv H. inv REL; eauto.
-  - des; inv H; econs; eauto.
-    + left. ss.
-    + right. ss.
-Qed.
 
 Lemma inverse_step
       r tid n:

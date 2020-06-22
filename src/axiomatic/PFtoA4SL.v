@@ -21,7 +21,7 @@ Require Import PromisingArch.promising.Promising.
 Require Import PromisingArch.promising.CommonPromising.
 Require Import PromisingArch.promising.StateExecFacts.
 Require Import PromisingArch.axiomatic.Axiomatic.
-Require Import PromisingArch.axiomatic.CommonAxiomatic.
+Require Import PromisingArch.axiomatic.SimLocal.
 Require Import PromisingArch.axiomatic.PFtoA1.
 Require Import PromisingArch.axiomatic.PFtoA2.
 Require Import PromisingArch.axiomatic.PFtoA3.
@@ -520,7 +520,7 @@ Proof.
             exploit (Valid.rmw_is_po PRE); eauto. i. inv x1. destruct x. ss. subst.
             exploit EX2.(RMW); ss; eauto.
             { rewrite List.app_length. s. clear. lia. }
-            i. inv x0; ss. 
+            i. inv x0; ss.
             exploit sim_trace_sim_th; try exact TRACE; eauto. intro M.
             destruct M.(AEU_WF). ss. exploit RMW_LIMIT; eauto. clear. lia.
       }

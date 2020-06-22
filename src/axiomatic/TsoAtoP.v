@@ -19,7 +19,7 @@ Require Import PromisingArch.lib.Lang.
 Require Import PromisingArch.promising.TsoPromising.
 Require Import PromisingArch.promising.CommonPromising.
 Require Import PromisingArch.axiomatic.TsoAxiomatic.
-Require Import PromisingArch.axiomatic.TsoCommonAxiomatic.
+Require Import PromisingArch.axiomatic.TsoSimLocal.
 
 Set Implicit Arguments.
 

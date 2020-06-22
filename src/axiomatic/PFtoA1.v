@@ -20,7 +20,7 @@ Require Import PromisingArch.promising.Promising.
 Require Import PromisingArch.promising.CommonPromising.
 Require Import PromisingArch.promising.StateExecFacts.
 Require Import PromisingArch.axiomatic.Axiomatic.
-Require Import PromisingArch.axiomatic.CommonAxiomatic.
+Require Import PromisingArch.axiomatic.SimLocal.
 
 Set Implicit Arguments.
 

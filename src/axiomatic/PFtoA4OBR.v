@@ -20,7 +20,7 @@ Require Import PromisingArch.lib.Lang.
 Require Import PromisingArch.promising.Promising.
 Require Import PromisingArch.promising.StateExecFacts.
 Require Import PromisingArch.axiomatic.Axiomatic.
-Require Import PromisingArch.axiomatic.CommonAxiomatic.
+Require Import PromisingArch.axiomatic.SimLocal.
 Require Import PromisingArch.axiomatic.PFtoA1.
 Require Import PromisingArch.axiomatic.PFtoA2.
 Require Import PromisingArch.axiomatic.PFtoA3.
