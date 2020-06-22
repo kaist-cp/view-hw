@@ -65,33 +65,26 @@ Proof.
   inv SIM. condtac; eauto.
 Qed.
 
-Lemma sim_rmap_weak_expr
-      rmap armap e
-      (SIM: sim_rmap_weak rmap armap):
-  sim_val_weak (sem_expr rmap e) (sem_expr armap e).
-Proof.
-  inv SIM. induction e; s.
-  - (* const *)
-    econs; ss.
-  - (* reg *)
-    specialize (RMAP reg). unfold RMap.find. inv RMAP; ss.
-  - (* op1 *)
-    inv IHe. econs; ss. congr.
-  - (* op2 *)
-    inv IHe1. inv IHe2. econs; ss; try congr.
-Qed.
-
 Lemma sim_rmap_weak_sem_expr
   rmap1 rmap2 e
   (SIM: sim_rmap_weak rmap1 rmap2):
   sem_expr rmap1 e = sem_expr rmap2 e.
 Proof.
+
   inv SIM. induction e; ss.
   - unfold RMap.find. specialize (RMAP reg). inv RMAP; ss.
     inv REL. destruct a as [v1 []], b as [v2 []]. ss.
     rewrite VAL. ss.
   - rewrite IHe. ss.
   - rewrite IHe1, IHe2. ss.
+Qed.
+
+Lemma sim_rmap_weak_expr
+      rmap armap e
+      (SIM: sim_rmap_weak rmap armap):
+  sim_val_weak (sem_expr rmap e) (sem_expr armap e).
+Proof.
+  exploit sim_rmap_weak_sem_expr; eauto. intro SEM. rewrite SEM. ss.
 Qed.
 
 Lemma sim_rmap_weak_sem_rmw
