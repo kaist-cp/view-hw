@@ -1361,7 +1361,7 @@ Proof.
                 (FIND1: IdMap.find tid p = Some stmts),
              IdMap.find tid m.(Machine.tpool) =
              Some (State.init stmts,
-                   Local.init_with_promises (Machine.promises_from_mem tid (Machine.mem m)))).
+                   Local.init_with_promises (Promises.promises_from_mem tid (Machine.mem m)))).
   { i. rewrite TPOOL, FIND1, MEM0. ss. }
   assert (OUT: forall tid st lc
                  (FIND1: IdMap.find tid p = None)
@@ -1407,7 +1407,7 @@ Proof.
           <<STEP: rtc (ExecUnit.state_step (A:=unit) tid)
                       (ExecUnit.mk
                          (State.init stmts)
-                         (Local.init_with_promises (Machine.promises_from_mem tid (Machine.mem m)))
+                         (Local.init_with_promises (Promises.promises_from_mem tid (Machine.mem m)))
                          (Machine.mem m))
                       (ExecUnit.mk st2 lc2 (Machine.mem m))>> /\
           <<TERMINAL: Valid.is_terminal EX -> State.is_terminal st2>> /\
@@ -1453,14 +1453,14 @@ Proof.
   exploit (@sim_eu_rtc_step p ex ob tid); eauto.
   { instantiate (1 := ExecUnit.mk
                         (State.init stmts)
-                        (Local.init_with_promises (Machine.promises_from_mem tid (mem_of_ex ex ob)))
+                        (Local.init_with_promises (Promises.promises_from_mem tid (mem_of_ex ex ob)))
                         (mem_of_ex ex ob)).
     econs; ss.
     - econs; ss. econs. ii. rewrite ? IdMap.gempty. ss.
     - econs; eauto; ss.
       + right. splits; ss. ii. inv H. inv REL1. inv H. inv H1. ss. lia.
       + econs; i.
-        { destruct view; ss. apply Machine.promises_from_mem_spec in H. des.
+        { destruct view; ss. apply Promises.promises_from_mem_spec in H. des.
           exploit in_mem_of_ex; swap 1 2; eauto.
           { eapply Permutation_NoDup; [by symmetry; eauto|].
             eapply Execution.eids_spec; eauto.
@@ -1469,7 +1469,7 @@ Proof.
         }
         { des. inv WRITE. destruct l; ss. exploit label_write_mem_of_ex; eauto. i. des.
           rewrite VIEW in VIEW0. inv VIEW0.
-          unfold Memory.get_msg in MSG. ss. apply Machine.promises_from_mem_spec. eauto.
+          unfold Memory.get_msg in MSG. ss. apply Promises.promises_from_mem_spec. eauto.
         }
   }
   { clear. econs; ss.
@@ -1478,11 +1478,11 @@ Proof.
     - econs; ss; i; try by apply bot_spec.
       + econs; esplits; ss.
       + destruct ts; ss.
-        rewrite Machine.promises_from_mem_spec in IN. des.
+        rewrite Promises.promises_from_mem_spec in IN. des.
         apply lt_le_S. rewrite <- List.nth_error_Some. ii. congr.
       + destruct ts; ss.
         unfold Memory.get_msg in MSG. ss. destruct msg. ss. subst.
-        apply Machine.promises_from_mem_lookup in MSG. auto. }
+        apply Promises.promises_from_mem_lookup in MSG. auto. }
   { apply AExecUnit.wf_init. }
   i. des. destruct eu2 as [state2 local2 mem2]. inv SIM. ss. subst.
   esplits; eauto.

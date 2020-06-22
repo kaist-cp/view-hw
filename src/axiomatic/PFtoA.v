@@ -172,7 +172,7 @@ Proof.
         * inv H1. des. inv H1. ss. lia.
       + ii. inv EID. inv REL. inv H1. inv H7. ss. lia.
       + right. esplits; eauto. ii. inv H1. inv REL. inv H1. inv H7. ss. lia.
-      + i. destruct view; ss. exploit Machine.promises_from_mem_inv; eauto. i. des.
+      + i. destruct view; ss. exploit Promises.promises_from_mem_inv; eauto. i. des.
         hexploit sim_traces_ex; try exact SIM.
         all: try rewrite lastn_all; ss.
         all: eauto.
@@ -202,10 +202,10 @@ Proof.
   i. simplify.
   exploit sim_trace_length; eauto. intro LEN. guardH LEN.
   exploit lastn_S1; try exact EU; [unguardH LEN; des; lia|].
-  exploit lastn_S1; try exact AEU; [unguardH LEN; des; lia|i]. 
-  exploit lastn_S1; try exact WL; [unguardH LEN; des; lia|i]. 
+  exploit lastn_S1; try exact AEU; [unguardH LEN; des; lia|i].
+  exploit lastn_S1; try exact WL; [unguardH LEN; des; lia|i].
   exploit lastn_S1; try exact RL; [unguardH LEN; des; lia|i].
-  exploit lastn_S1; try exact COV; [unguardH LEN; des; lia|i]. 
+  exploit lastn_S1; try exact COV; [unguardH LEN; des; lia|i].
   exploit lastn_S1; try exact VEXT; [unguardH LEN; des; lia|i].
   subst. exploit sim_trace_lastn; eauto. instantiate (1 := n). i.
   exploit sim_trace_last; eauto. i. des.

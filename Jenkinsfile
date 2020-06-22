@@ -1,10 +1,3 @@
-def setupRust() {
-    sh "rustup component add rustfmt clippy"
-    sh "rustup install nightly"
-    sh "cargo update"
-    sh "cargo"
-}
-
 pipeline {
     agent none
 

@@ -658,4 +658,126 @@ Module Promises.
       generalize (Pos.succ_pred_or x). i. des; [congr|].
       rewrite H in *. ss.
   Qed.
+
+  Definition promises_from_mem
+             (tid:Id.t) (mem: Memory.t): t.
+  Proof.
+    induction mem using list_rev_rect.
+    - exact bot.
+    - destruct x.
+      apply (if tid0 == tid
+             then Promises.set (S (List.length (List.rev mem))) IHmem
+             else IHmem).
+  Defined.
+
+  Lemma promises_from_mem_nil tid:
+    promises_from_mem tid Memory.empty = bot.
+  Proof.
+    unfold promises_from_mem, list_rev_rect, eq_rect. ss.
+    match goal with
+    | [|- context[match ?c with | eq_refl => _ end]] => destruct c
+    end; ss.
+  Qed.
+
+  Lemma promises_from_mem_snoc tid mem msg:
+    promises_from_mem tid (mem ++ [msg]) =
+    if msg.(Msg.tid) == tid
+    then set (S (List.length mem)) (promises_from_mem tid mem)
+    else promises_from_mem tid mem.
+  Proof.
+    unfold promises_from_mem at 1, list_rev_rect, eq_rect.
+    match goal with
+    | [|- context[match ?c with | eq_refl => _ end]] => destruct c
+    end; ss.
+    rewrite List.rev_involutive, List.rev_app_distr. ss.
+    destruct msg. s. condtac.
+    - inversion e. subst. rewrite ? List.rev_length.
+      f_equal.
+      unfold promises_from_mem, list_rev_rect, eq_rect.
+      match goal with
+      | [|- context[match ?c with | eq_refl => _ end]] => destruct c
+      end; ss.
+    - unfold promises_from_mem, list_rev_rect, eq_rect.
+      match goal with
+      | [|- context[match ?c with | eq_refl => _ end]] => destruct c
+      end; ss.
+  Qed.
+
+  Lemma promises_from_mem_inv
+        ts tid mem
+        (LOOKUP: lookup (S ts) (promises_from_mem tid mem)):
+    exists loc val, List.nth_error mem ts = Some (Msg.mk loc val tid).
+  Proof.
+    revert LOOKUP. induction mem using List.rev_ind.
+    { rewrite promises_from_mem_nil, lookup_bot. ss. }
+    rewrite promises_from_mem_snoc. condtac.
+    { rewrite set_o. condtac.
+      - inversion e. inversion e0. subst.
+        rewrite List.nth_error_app2; [|lia].
+        rewrite Nat.sub_diag. ss.
+        destruct x. esplits; eauto.
+      - i. exploit IHmem; eauto.  i. des.
+        rewrite List.nth_error_app1; eauto.
+        apply List.nth_error_Some. congr.
+    }
+    i. exploit IHmem; eauto.  i. des.
+    rewrite List.nth_error_app1; eauto.
+    apply List.nth_error_Some. congr.
+  Qed.
+
+  Lemma promises_from_mem_lookup
+        mem ts loc val tid
+        (GET: List.nth_error mem ts = Some (Msg.mk loc val tid)):
+    lookup (S ts) (promises_from_mem tid mem).
+  Proof.
+    revert GET. induction mem using List.rev_ind.
+    { i. apply List.nth_error_In in GET. inv GET. }
+    rewrite promises_from_mem_snoc. condtac.
+    - rewrite Promises.set_o. condtac.
+      + inversion e. inversion e0. subst.
+        rewrite List.nth_error_app2; [|lia].
+        rewrite Nat.sub_diag. ss.
+      + i. apply IHmem.
+        erewrite <- List.nth_error_app1; eauto.
+        assert (H: ts < List.length (mem ++ [x])).
+        { rewrite <- List.nth_error_Some. ii. congr. }
+        rewrite List.app_length in H.
+        rewrite Nat.add_1_r in H. inv H; try lia.
+        exfalso. apply c. ss.
+    - i. apply IHmem.
+      destruct (Nat.eq_dec ts (List.length mem)) eqn:Heq.
+      + inv Heq. rewrite List.nth_error_app2 in GET; try lia.
+        rewrite Nat.sub_diag in GET. ss. inv GET. ss.
+        exfalso. apply c. ss.
+      + rewrite List.nth_error_app1 in GET; auto.
+        assert (H: ts < List.length (mem ++ [x])).
+        { rewrite <- List.nth_error_Some. ii. congr. }
+        rewrite List.app_length in H.
+        rewrite Nat.add_1_r in H. inv H; try lia; congr.
+  Qed.
+
+  Lemma promises_from_mem_spec
+        ts tid mem:
+    lookup (S ts) (promises_from_mem tid mem) <->
+    exists loc val, List.nth_error mem ts = Some (Msg.mk loc val tid).
+  Proof.
+    induction mem using List.rev_ind.
+    { econs.
+      - rewrite promises_from_mem_nil, lookup_bot. ss.
+      - i. des. destruct ts; ss.
+    }
+    rewrite promises_from_mem_snoc. econs.
+    - condtac.
+      + inversion e. subst. rewrite set_o. condtac.
+        * inversion e0. subst. i.
+          rewrite List.nth_error_app2, Nat.sub_diag; [|lia]. ss.
+          destruct x. ss. eauto.
+        * intro Y. apply IHmem in Y. des.
+          esplits; eauto. apply nth_error_app_mon. eauto.
+      + intro Y. apply IHmem in Y. des.
+        esplits; eauto. apply nth_error_app_mon. eauto.
+    - i. des. apply nth_error_snoc_inv in H. des; ss.
+      { condtac; eauto. rewrite set_o. condtac; eauto. }
+      subst. condtac; ss; [|congr]. rewrite set_o. condtac; [|congr]. ss.
+  Qed.
 End Promises.
