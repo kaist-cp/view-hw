@@ -20,17 +20,17 @@ Require Import PromisingArch.lib.Lang.
 Require Import PromisingArch.promising.Promising.
 Require Import PromisingArch.promising.CommonPromising.
 Require Import PromisingArch.promising.StateExecFacts.
-Require Import PromisingArch.promising.PtoPF.
 Require Import PromisingArch.axiomatic.Axiomatic.
 Require Import PromisingArch.axiomatic.SimLocal.
-Require Import PromisingArch.axiomatic.PFtoA1.
-Require Import PromisingArch.axiomatic.PFtoA2.
-Require Import PromisingArch.axiomatic.PFtoA3.
-Require Import PromisingArch.axiomatic.PFtoA4OBW.
-Require Import PromisingArch.axiomatic.PFtoA4OBR.
-Require Import PromisingArch.axiomatic.PFtoA4FR.
-Require Import PromisingArch.axiomatic.PFtoA4Atomic.
-Require Import PromisingArch.axiomatic.PFtoA4SL.
+Require Import PromisingArch.equiv.PtoPF.
+Require Import PromisingArch.equiv.PFtoA1.
+Require Import PromisingArch.equiv.PFtoA2.
+Require Import PromisingArch.equiv.PFtoA3.
+Require Import PromisingArch.equiv.PFtoA4OBW.
+Require Import PromisingArch.equiv.PFtoA4OBR.
+Require Import PromisingArch.equiv.PFtoA4FR.
+Require Import PromisingArch.equiv.PFtoA4Atomic.
+Require Import PromisingArch.equiv.PFtoA4SL.
 
 Set Implicit Arguments.
 

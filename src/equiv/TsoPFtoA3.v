@@ -22,8 +22,8 @@ Require Import PromisingArch.promising.CommonPromising.
 Require Import PromisingArch.promising.TsoStateExecFacts.
 Require Import PromisingArch.axiomatic.TsoAxiomatic.
 Require Import PromisingArch.axiomatic.TsoSimLocal.
-Require Import PromisingArch.axiomatic.TsoPFtoA1.
-Require Import PromisingArch.axiomatic.TsoPFtoA2.
+Require Import PromisingArch.equiv.TsoPFtoA1.
+Require Import PromisingArch.equiv.TsoPFtoA2.
 
 Set Implicit Arguments.
 
