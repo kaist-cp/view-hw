@@ -77,12 +77,6 @@ Inductive sim_state_weak (state:State.t (A:=unit)) (astate:State.t (A:=unit)): P
 .
 Hint Constructors sim_state_weak.
 
-Inductive sim_local_weak (local: Local.t) (alocal: ALocal.t): Prop :=
-| sim_local_weak_none
-| sim_local_weak_some
-.
-Hint Constructors sim_local_weak.
-
 Lemma sim_state_weak_init stmts:
   sim_state_weak (State.init stmts) (State.init stmts).
 Proof.

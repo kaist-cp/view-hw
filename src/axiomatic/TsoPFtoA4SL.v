@@ -85,7 +85,7 @@ Proof.
   destruct aeu2 as [[astmts2 armap2] alc2].
   ss. inv STEP0. ss. subst.
   inv STATE. inv STATE1. ss. subst.
-  inv STATE0; inv LOCAL0; ss; inv EVENT0; inv EVENT; ss.
+  inv STATE0; inv LOCAL; ss; inv EVENT0; inv EVENT; ss.
   - (* skip *)
     inv ASTATE_STEP; inv ALOCAL_STEP; ss; inv EVENT; ss. splits.
     + econs; ss. apply L.
@@ -102,9 +102,9 @@ Proof.
     { instantiate (1 := l1 ++ [eu2]). rewrite <- List.app_assoc. rewrite EU2. ss. }
     clear TH_tmp. intro SIM_TH.
     destruct SIM_TH.(EU_WF). ss.
-    generalize (Local.read_spec LOCAL0 STEP0). intro READ_SPEC.
+    generalize (Local.read_spec LOCAL STEP0). intro READ_SPEC.
     generalize SIM_TH.(MEM). s. i. rewrite H in READ_SPEC.
-    guardH READ_SPEC. clear LOCAL0 H.
+    guardH READ_SPEC. clear LOCAL H.
     inv STEP0. inv ASTATE_STEP; inv ALOCAL_STEP; ss; inv EVENT; ss. splits.
     { econs; ss. apply sim_rmap_add; try apply L.
       inv VAL. ss.
@@ -925,9 +925,9 @@ Proof.
     { instantiate (1 := l1 ++ [eu2]). rewrite <- List.app_assoc. rewrite EU2. ss. }
     clear TH_tmp. intro SIM_TH.
     destruct SIM_TH.(EU_WF). ss.
-    generalize (Local.rmw_failure_spec LOCAL0 STEP0). intro RMW_FAILURE_SPEC.
+    generalize (Local.rmw_failure_spec LOCAL STEP0). intro RMW_FAILURE_SPEC.
     generalize SIM_TH.(MEM). s. i. rewrite H in RMW_FAILURE_SPEC.
-    guardH RMW_FAILURE_SPEC. clear LOCAL0 H.
+    guardH RMW_FAILURE_SPEC. clear LOCAL H.
     generalize STEP0. intro STEP0'. inv STEP0'.
     inv ASTATE_STEP; inv ALOCAL_STEP; ss; inv EVENT; ss. splits.
     { econs; ss. inv RMAP. apply L. }

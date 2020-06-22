@@ -42,7 +42,6 @@ Inductive sim_trace (p: program) (mem: Memory.t) (tid: Id.t):
     (ALOCAL_STEP: ALocal.step ae aeu1.(AExecUnit.local) aeu2.(AExecUnit.local))
     (EVENT: sim_event e ae)
     (STATE: sim_state_weak eu2.(ExecUnit.state) aeu2.(AExecUnit.state))
-    (LOCAL: sim_local_weak eu2.(ExecUnit.local) aeu2.(AExecUnit.local))
     (W: w2 = match e with
              | Event.write _ _ vloc _ (ValA.mk _ 0 _)
              | Event.rmw _ _ vloc _ _ =>
@@ -192,14 +191,12 @@ Ltac simplify :=
 Lemma promising_pf_sim_step
       tid e (eu1 eu2:ExecUnit.t) aeu1
       (STATE1: sim_state_weak eu1.(ExecUnit.state) aeu1.(AExecUnit.state))
-      (LOCAL1: sim_local_weak eu1.(ExecUnit.local) aeu1.(AExecUnit.local))
       (STEP: ExecUnit.state_step0 tid e e eu1 eu2):
   exists ae aeu2,
     <<ASTATE_STEP: State.step ae aeu1.(AExecUnit.state) aeu2.(AExecUnit.state)>> /\
     <<ALOCAL_STEP: ALocal.step ae aeu1.(AExecUnit.local) aeu2.(AExecUnit.local)>> /\
     <<EVENT: sim_event e ae>> /\
-    <<STATE2: sim_state_weak eu2.(ExecUnit.state) aeu2.(AExecUnit.state)>> /\
-    <<LOCAL2: sim_local_weak eu2.(ExecUnit.local) aeu2.(AExecUnit.local)>>.
+    <<STATE2: sim_state_weak eu2.(ExecUnit.state) aeu2.(AExecUnit.state)>>.
 Proof.
   destruct eu1 as [st1 lc1 mem1].
   destruct eu2 as [st2 lc2 mem2].
@@ -635,7 +632,6 @@ Proof.
         unfold Memory.get_msg in *. ss. destruct msg.
         exploit Promises.promises_from_mem_lookup; eauto. ss. subst. ss.
   }
-  clear LOCAL.
   i. simplify.
   destruct eu1 as [st1 lc1 mem1] eqn: EU1. guardH EU1.
   destruct eu as [st2 lc2 mem2] eqn: EU. guardH EU.

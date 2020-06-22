@@ -122,7 +122,7 @@ Proof.
     rewrite EX2.(XVEXT); s; cycle 1.
     { rewrite List.app_length. s. clear. lia. }
     rewrite X.
-    inv STEP0. ss. subst. inv LOCAL0; inv EVENT; inv STEP0; ss.
+    inv STEP0. ss. subst. inv LOCAL; inv EVENT; inv STEP0; ss.
     move OB at bottom. unfold ob' in OB. des_union.
     - (* rfe *)
       rename H1 into H.
@@ -176,7 +176,7 @@ Proof.
     { instantiate (1 := l1 ++ [eu2]). rewrite <- List.app_assoc. rewrite EU2. ss. }
     clear TH_tmp. intro SIM_TH.
     destruct SIM_TH.(EU_WF).
-    inversion STEP0. inv LOCAL1; ss.
+    inversion STEP0. inv LOCAL0; ss.
     inv EVENT. inversion STEP1. guardH LC2.
     move OB at bottom. unfold ob' in OB. des_union.
     - (* rfe *)
@@ -199,7 +199,7 @@ Proof.
           unfold Memory.latest in COH. unfold Memory.no_msgs in COH.
           exploit COH; eauto.
           destruct (lt_eq_lt_dec (S ts0) (View.ts (Local.coh lc1 (ValA.val vloc)))). inv s; try lia.
-          inv LOCAL0. exploit PROMISES0; [| | instantiate (1 := S ts0)|]; eauto. intro PROMISE_TS.
+          inv LOCAL. exploit PROMISES0; [| | instantiate (1 := S ts0)|]; eauto. intro PROMISE_TS.
           assert (PROMISE_TS0: Promises.lookup (S ts0) (Local.promises lc2)).
           { rewrite LC2. ss. exploit Promises.unset_o. intro UNSET. rewrite UNSET. condtac; ss. inversion e. lia. }
           move PFSL at bottom.

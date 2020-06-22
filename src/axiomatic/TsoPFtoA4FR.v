@@ -146,10 +146,10 @@ Proof.
     i. des. inv x0. rewrite EX2.(XVEXT) in *; s; cycle 1.
     { rewrite List.app_length. s. clear. lia. }
     rewrite X.
-    inv STEP0. ss. subst. inv LOCAL0; inv EVENT; cycle 1.
+    inv STEP0. ss. subst. inv LOCAL; inv EVENT; cycle 1.
     { inv STATE1. inv STATE0. ss. }
     generalize L1.(EU_WF). intro WF. inv WF. ss.
-    generalize (Local.read_spec LOCAL0 STEP0). i. des. subst.
+    generalize (Local.read_spec LOCAL STEP0). i. des. subst.
     exploit sim_traces_cov_fr; eauto.
     { inv STEP. ss. }
     rewrite EX2.(XCOV) in *; s; cycle 1.
@@ -196,10 +196,10 @@ Proof.
     i. des. inv x0. rewrite EX2.(XVEXT) in *; s; cycle 1.
     { rewrite List.app_length. s. clear. lia. }
     rewrite X.
-    inv STEP0. ss. subst. inv LOCAL0; inv EVENT; cycle 1.
+    inv STEP0. ss. subst. inv LOCAL; inv EVENT; cycle 1.
     { inv STATE1. inv STATE0. ss. }
     generalize L1.(EU_WF). intro WF. inv WF. ss.
-    generalize (Local.read_spec LOCAL0 STEP0). i. des. subst.
+    generalize (Local.read_spec LOCAL STEP0). i. des. subst.
     exploit sim_traces_cov_fr; eauto.
     { inv STEP. ss. }
     rewrite EX2.(XCOV) in *; s; cycle 1.
@@ -250,9 +250,9 @@ Proof.
     i. des. inv x0. rewrite EX2.(XVEXT) in *; s; cycle 1.
     { rewrite List.app_length. s. clear. lia. }
     rewrite X.
-    inv STEP0. ss. subst. inv LOCAL0; inv EVENT.
+    inv STEP0. ss. subst. inv LOCAL; inv EVENT.
     generalize L1.(EU_WF). intro WF. inv WF. ss.
-    generalize (Local.rmw_spec LOCAL0 STEP0). i. des. subst.
+    generalize (Local.rmw_spec LOCAL STEP0). i. des. subst.
     exploit sim_traces_cov_fr; eauto.
     { inv STEP. ss. }
     rewrite EX2.(XCOV) in *; s; cycle 1.
@@ -307,9 +307,9 @@ Proof.
     i. des. inv x0. rewrite EX2.(XVEXT) in *; s; cycle 1.
     { rewrite List.app_length. s. clear. lia. }
     rewrite X.
-    inv STEP0. ss. subst. inv LOCAL0; inv EVENT.
+    inv STEP0. ss. subst. inv LOCAL; inv EVENT.
     generalize L1.(EU_WF). intro WF. inv WF. ss.
-    generalize (Local.rmw_spec LOCAL0 STEP0). i. des. subst.
+    generalize (Local.rmw_spec LOCAL STEP0). i. des. subst.
     exploit sim_traces_cov_fr; eauto.
     { inv STEP. ss. }
     rewrite EX2.(XCOV) in *; s; cycle 1.
@@ -360,10 +360,10 @@ Proof.
     i. des. inv x0. rewrite EX2.(XVEXT) in *; s; cycle 1.
     { rewrite List.app_length. s. clear. lia. }
     rewrite X.
-    inv STEP0. ss. subst. inv LOCAL0; inv EVENT.
+    inv STEP0. ss. subst. inv LOCAL; inv EVENT.
     { inv STATE1. inv STATE0. ss. }
     generalize L1.(EU_WF). intro WF. inv WF. ss.
-    generalize (Local.rmw_failure_spec LOCAL0 STEP0). i. des. subst.
+    generalize (Local.rmw_failure_spec LOCAL STEP0). i. des. subst.
     exploit sim_traces_cov_fr; eauto.
     { inv STEP. ss. }
     rewrite EX2.(XCOV) in *; s; cycle 1.
@@ -410,10 +410,10 @@ Proof.
     i. des. inv x0. rewrite EX2.(XVEXT) in *; s; cycle 1.
     { rewrite List.app_length. s. clear. lia. }
     rewrite X.
-    inv STEP0. ss. subst. inv LOCAL0; inv EVENT.
+    inv STEP0. ss. subst. inv LOCAL; inv EVENT.
     { inv STATE1. inv STATE0. ss. }
     generalize L1.(EU_WF). intro WF. inv WF. ss.
-    generalize (Local.rmw_failure_spec LOCAL0 STEP0). i. des. subst.
+    generalize (Local.rmw_failure_spec LOCAL STEP0). i. des. subst.
     exploit sim_traces_cov_fr; eauto.
     { inv STEP. ss. }
     rewrite EX2.(XCOV) in *; s; cycle 1.

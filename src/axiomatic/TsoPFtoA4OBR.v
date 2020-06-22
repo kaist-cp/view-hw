@@ -119,15 +119,15 @@ Proof.
     rewrite EX2.(XVEXT); s; cycle 1.
     { rewrite List.app_length. s. clear. lia. }
     rewrite X.
-    inv STEP0. ss. subst. inv LOCAL0; inv EVENT.
+    inv STEP0. ss. subst. inv LOCAL; inv EVENT.
     { (* read *)
       exploit sim_trace_sim_th; try exact TRACE; eauto. intro TH_tmp.
       exploit TH_tmp; eauto.
       { instantiate (1 := l1 ++ [eu2]). rewrite <- List.app_assoc. rewrite EU2. ss. }
       clear TH_tmp. intro SIM_TH.
       destruct SIM_TH.(EU_WF).
-      specialize (Local.read_spec LOCAL0 STEP0). intro READ_SPEC. guardH READ_SPEC.
-      clear LOCAL0. inv STEP0. ss.
+      specialize (Local.read_spec LOCAL STEP0). intro READ_SPEC. guardH READ_SPEC.
+      clear LOCAL. inv STEP0. ss.
       exploit EX2.(LABELS); eauto; ss.
       { rewrite List.app_length. s. clear. lia. }
       i.
@@ -219,8 +219,8 @@ Proof.
       { instantiate (1 := l1 ++ [eu2]). rewrite <- List.app_assoc. rewrite EU2. ss. }
       clear TH_tmp. intro SIM_TH.
       destruct SIM_TH.(EU_WF).
-      specialize (Local.rmw_failure_spec LOCAL0 STEP0). intro RMW_FAILURE_SPEC. guardH RMW_FAILURE_SPEC.
-      clear LOCAL0. inv STEP0. ss.
+      specialize (Local.rmw_failure_spec LOCAL STEP0). intro RMW_FAILURE_SPEC. guardH RMW_FAILURE_SPEC.
+      clear LOCAL. inv STEP0. ss.
       exploit EX2.(LABELS); eauto; ss.
       { rewrite List.app_length. s. clear. lia. }
       i.
@@ -330,7 +330,7 @@ Proof.
     rewrite EX2.(XVEXT); s; cycle 1.
     { rewrite List.app_length. s. clear. lia. }
     rewrite X.
-    inversion STEP0. inv LOCAL0; ss. subst. inv EVENT.
+    inversion STEP0. inv LOCAL; ss. subst. inv EVENT.
     {
       exploit sim_trace_sim_th; try exact TRACE; eauto. intro TH_tmp.
       exploit TH_tmp; eauto.
@@ -362,7 +362,7 @@ Proof.
             unfold Memory.latest in COH. unfold Memory.no_msgs in COH.
             exploit COH; eauto.
             destruct (lt_eq_lt_dec (S ts0) (View.ts (Local.coh lc1 (ValA.val vloc)))). inv s; try lia.
-            inv LOCAL0. exploit PROMISES0; [| | instantiate (1 := S ts0)|]; eauto. intro PROMISE_TS.
+            inv LOCAL. exploit PROMISES0; [| | instantiate (1 := S ts0)|]; eauto. intro PROMISE_TS.
             assert (PROMISE_TS0: Promises.lookup (S ts0) (Local.promises lc2)).
             { rewrite LC2. ss. exploit Promises.unset_o. intro UNSET. rewrite UNSET. condtac; ss. inversion e. lia. }
             move PFSL at bottom.
@@ -447,15 +447,15 @@ Proof.
     rewrite EX2.(XVEXT); s; cycle 1.
     { rewrite List.app_length. s. clear. lia. }
     rewrite X.
-    inv STEP0. ss. subst. inv LOCAL0; inv EVENT.
+    inv STEP0. ss. subst. inv LOCAL; inv EVENT.
     { (* read *)
       exploit sim_trace_sim_th; try exact TRACE; eauto. intro TH_tmp.
       exploit TH_tmp; eauto.
       { instantiate (1 := l1 ++ [eu2]). rewrite <- List.app_assoc. rewrite EU2. ss. }
       clear TH_tmp. intro SIM_TH.
       destruct SIM_TH.(EU_WF).
-      specialize (Local.read_spec LOCAL0 STEP0). intro READ_SPEC. guardH READ_SPEC.
-      clear LOCAL0. inv STEP0. ss.
+      specialize (Local.read_spec LOCAL STEP0). intro READ_SPEC. guardH READ_SPEC.
+      clear LOCAL. inv STEP0. ss.
       exploit EX2.(LABELS); eauto; ss.
       { rewrite List.app_length. s. clear. lia. }
       i.
@@ -547,8 +547,8 @@ Proof.
       { instantiate (1 := l1 ++ [eu2]). rewrite <- List.app_assoc. rewrite EU2. ss. }
       clear TH_tmp. intro SIM_TH.
       destruct SIM_TH.(EU_WF).
-      specialize (Local.rmw_failure_spec LOCAL0 STEP0). intro RMW_FAILURE_SPEC. guardH RMW_FAILURE_SPEC.
-      clear LOCAL0. inv STEP0. ss.
+      specialize (Local.rmw_failure_spec LOCAL STEP0). intro RMW_FAILURE_SPEC. guardH RMW_FAILURE_SPEC.
+      clear LOCAL. inv STEP0. ss.
       exploit EX2.(LABELS); eauto; ss.
       { rewrite List.app_length. s. clear. lia. }
       i.
