@@ -1015,43 +1015,19 @@ Proof.
     inv VLOC. rewrite VAL0 in *. clear VAL.
 
     assert (PRED: old_ts = Memory.latest_ts (ValA.val (sem_expr rmap0 eloc0)) (Init.Nat.pred ts) m.(Machine.mem)).
-    { eapply le_antisym; ss.
-      { eapply Memory.latest_ts_read_le; eauto. lia. }
-      eapply Memory.latest_latest_ts. ii.
-      unfold Memory.exclusive in EX. unfold Memory.no_msgs in EX.
-      exploit EX; eauto.
-      { etrans; eauto. lia. }
-      esplits; eauto. destruct msg as [ts' val' tidtmp]. destruct (tidtmp == tid); ss. inv e.
-      unfold Memory.latest in COH. unfold Memory.no_msgs in COH.
-      exploit COH; eauto.
-      destruct (lt_eq_lt_dec (S ts0) (View.ts (Local.coh lc1 (ValA.val (sem_expr rmap0 eloc0))))). inv s; try lia.
-      inv LOCAL. exploit PROMISES0; [| | instantiate (1 := S ts0)|]; eauto. intro PROMISE_TS.
-      assert (PROMISE_TS0: Promises.lookup (S ts0) (Local.promises lc2)).
-      { rewrite LC2. ss. exploit Promises.unset_o. intro UNSET. rewrite UNSET. condtac; ss. inversion e. lia. }
-      generalize (SIMS tid). intro SIM_TID. inv SIM_TID; try congr. simplify.
+    { generalize (SIMS tid). intro SIM_TID. inv SIM_TID; try congr. simplify.
       generalize (TR tid). intro TR_TID. inv TR_TID; try congr. simplify.
       rewrite <- EU1 in *. rewrite <- EU in *.
-      destruct b0 as [st_l lc_l]. destruct REL as [trt].
-      rename H6 into PFSL. rename H0 into TRL.
-      move REL6 at bottom. move SIM at bottom.
       exploit lastn_sub_S; ss.
       { instantiate (1 := eu :: eu1 :: tr). ss. lia. }
       instantiate (1 := trt'). i. des.
       exploit sim_trace_rtc_step; try exact REL6; eauto. intro RTC_STEP.
-      move PFSL at bottom.
-      inv PF. inv NOPROMISE. generalize PFSL. intro PROMBOT. symmetry in PROMBOT. eapply PROMISES1 in PROMBOT.
-      unguardH EU. inv EU.
-      exploit ExecUnit.rtc_state_step_promise_remained.
-      2: exact RTC_STEP.
-      4: exact PROMISE_TS0.
-      { ss. }
-      { instantiate (1 := ValA.val (sem_expr rmap0 eloc0)). rewrite LC2. ss.
-        rewrite fun_add_spec. condtac; cycle 1.
-        { exfalso. apply c0. ss. }
-        etrans; eauto. ss. lia.
-      }
-      { unfold Memory.get_msg. ss. rewrite MSG0. ss. }
-      unfold Promises.lookup. ss. rewrite PROMBOT. ss.
+      replace (m.(Machine.mem)) with (ExecUnit.mem eu1); cycle 1.
+      { rewrite EU1. ss. }
+      rewrite <- VAL0.
+      eapply ExecUnit.no_promise_rmw_spec; try exact RTC_STEP; try rewrite EU1; try rewrite EU; eauto.
+      inv PF. inv NOPROMISE. generalize H6. intro PROMBOT.
+      symmetry in PROMBOT. destruct b0. eapply PROMISES in PROMBOT. ss.
     }
     unguardH LC2. inv LC2.
 

@@ -443,6 +443,75 @@ Section Local.
     - eapply rmw_failure_incr. eauto.
     - eapply dmb_incr. eauto.
   Qed.
+
+  Lemma step_wf
+        tid e mem lc1 lc2
+        (STEP: step e tid mem lc1 lc2)
+        (WF: wf tid mem lc1):
+    wf tid mem lc2.
+  Proof.
+    assert (FWDVIEW: forall loc ts,
+               Memory.latest loc ts (View.ts (coh lc1 loc)) mem ->
+               ts <= length mem ->
+               View.ts (FwdItem.read_view (fwdbank lc1 loc) ts) <= length mem).
+    { i. rewrite fwd_read_view_le; eauto. }
+    inv WF. inv STEP; ss; inv STEP0.
+    - exploit FWDVIEW; eauto.
+      { eapply Memory.read_wf. eauto. }
+      i. econs; viewtac.
+      + i. rewrite fun_add_spec. condtac; viewtac.
+      + i. exploit FWDBANK; eauto. intro Y. inv Y. des.
+        econs; eauto. rewrite TS, fun_add_spec. condtac; ss. inversion e. subst.
+        apply Memory.latest_ts_mon. apply join_l.
+      + i. eapply PROMISES0; eauto. eapply Time.le_lt_trans; [|by eauto].
+        rewrite fun_add_spec. condtac; ss. inversion e. rewrite H0. apply join_l.
+    - inv WRITABLE.
+      econs; viewtac; rewrite <- ? TS0, <- ? TS1.
+      + i. rewrite fun_add_spec. condtac; viewtac.
+      + i. rewrite ? fun_add_spec. condtac; viewtac.
+        inversion e. subst.
+        econs; viewtac.
+        { unfold Memory.get_msg in MSG. destruct ts; ss. rewrite MSG. condtac; ss. }
+        { revert MSG. unfold Memory.read, Memory.get_msg.
+          destruct ts; ss. i. rewrite MSG. ss. eexists. des_ifs.
+        }
+      + i. revert IN. rewrite Promises.unset_o. condtac; ss. eauto.
+      + i. rewrite Promises.unset_o. rewrite fun_add_spec in TS. condtac.
+        { inversion e. subst. rewrite MSG in MSG0. destruct msg. inv MSG0. ss.
+          revert TS. condtac; ss; intuition.
+        }
+        { eapply PROMISES0; eauto. revert TS. condtac; ss. i.
+          inversion e. rewrite H0. rewrite COH0. ss.
+        }
+    - inv WRITABLE.
+      econs; viewtac; rewrite <- ? TS0, <- ? TS1.
+      + i. rewrite fun_add_spec. condtac; viewtac.
+      + i. rewrite ? fun_add_spec. condtac; viewtac.
+        inversion e. subst.
+        econs; viewtac.
+        { unfold Memory.get_msg in MSG. destruct ts; ss. rewrite MSG. condtac; ss. }
+        { revert MSG. unfold Memory.read, Memory.get_msg.
+          destruct ts; ss. i. rewrite MSG. ss. eexists. des_ifs.
+        }
+      + i. revert IN. rewrite Promises.unset_o. condtac; ss. eauto.
+      + i. rewrite Promises.unset_o. rewrite fun_add_spec in TS. condtac.
+        { inversion e. subst. rewrite MSG in MSG0. destruct msg. inv MSG0. ss.
+        revert TS. condtac; ss; intuition.
+        }
+        { eapply PROMISES0; eauto. revert TS. condtac; ss. i.
+        inversion e. rewrite H0. rewrite COH1. ss.
+        }
+    - exploit FWDVIEW; eauto.
+      { eapply Memory.read_wf. eauto. }
+      i. econs; viewtac.
+      + i. rewrite fun_add_spec. condtac; viewtac.
+      + i. exploit FWDBANK; eauto. intro Y. inv Y. des.
+        econs; eauto. rewrite TS, fun_add_spec. condtac; ss. inversion e. subst.
+        apply Memory.latest_ts_mon. apply join_l.
+      + i. eapply PROMISES0; eauto. eapply Time.le_lt_trans; [|by eauto].
+        rewrite fun_add_spec. condtac; ss. inversion e. rewrite H0. apply join_l.
+    - econs; viewtac.
+  Qed.
 End Local.
 End Local.
 
@@ -490,99 +559,13 @@ Section ExecUnit.
   .
   Hint Constructors wf.
 
-  Lemma read_wf
-        ts loc val mem
-        (READ: Memory.read loc ts mem = Some val):
-    ts <= List.length mem.
-  Proof.
-    revert READ. unfold Memory.read. destruct ts; [lia|]. s.
-    destruct (nth_error mem ts) eqn:NTH; ss. condtac; ss.
-    i. eapply List.nth_error_Some. congr.
-  Qed.
-
-  Lemma get_msg_wf
-        ts msg mem
-        (READ: Memory.get_msg ts mem = Some msg):
-    ts <= List.length mem.
-  Proof.
-    revert READ. unfold Memory.get_msg. destruct ts; [lia|]. s.
-    destruct (nth_error mem ts) eqn:NTH; ss. i. inv READ.
-    eapply List.nth_error_Some. congr.
-  Qed.
-
   Lemma state_step0_wf tid e eu1 eu2
         (STEP: state_step0 tid e e eu1 eu2)
         (WF: wf tid eu1):
     wf tid eu2.
   Proof.
-    destruct eu1 as [state1 local1 mem1].
-    destruct eu2 as [state2 local2 mem2].
-    inv WF. inv STEP. ss. subst.
-
-    assert (FWDVIEW: forall loc ts,
-               Memory.latest loc ts (View.ts (Local.coh local1 loc)) mem1 ->
-               ts <= length mem1 ->
-               View.ts (FwdItem.read_view (Local.fwdbank local1 loc) ts) <= length mem1).
-    { i. rewrite Local.fwd_read_view_le; eauto. }
-    generalize LOCAL. intro WF_LOCAL1.
-    inversion STATE; inv LOCAL0; inv EVENT; inv LOCAL; ss.
-    - inv STEP. ss.
-      exploit FWDVIEW; eauto.
-      { eapply read_wf. eauto. }
-      i. econs; ss. econs; viewtac.
-      + i. rewrite fun_add_spec. condtac; viewtac.
-      + i. exploit FWDBANK; eauto. intro Y. inv Y. des.
-        econs; eauto. rewrite TS, fun_add_spec. condtac; ss. inversion e. subst.
-        apply Memory.latest_ts_mon. apply join_l.
-      + i. eapply PROMISES0; eauto. eapply Time.le_lt_trans; [|by eauto].
-        rewrite fun_add_spec. condtac; ss. inversion e. rewrite H0. apply join_l.
-    - inv STEP. inv WRITABLE. econs; ss.
-      econs; viewtac; rewrite <- ? TS0, <- ? TS1.
-      + i. rewrite fun_add_spec. condtac; viewtac.
-      + i. rewrite ? fun_add_spec. condtac; viewtac.
-        inversion e. subst.
-        econs; viewtac.
-        { unfold Memory.get_msg in MSG. destruct ts; ss. rewrite MSG. condtac; ss. }
-        { revert MSG. unfold Memory.read, Memory.get_msg.
-          destruct ts; ss. i. rewrite MSG. ss. eexists. des_ifs.
-        }
-      + i. revert IN. rewrite Promises.unset_o. condtac; ss. eauto.
-      + i. rewrite Promises.unset_o. rewrite fun_add_spec in TS. condtac.
-        { inversion e. subst. rewrite MSG in MSG0. destruct msg. inv MSG0. ss.
-          revert TS. condtac; ss; intuition.
-        }
-        { eapply PROMISES0; eauto. revert TS. condtac; ss. i.
-          inversion e. rewrite H0. rewrite COH0. ss.
-        }
-    - inv STEP. inv WRITABLE. econs; ss.
-      econs; viewtac; rewrite <- ? TS0, <- ? TS1.
-      + i. rewrite fun_add_spec. condtac; viewtac.
-      + i. rewrite ? fun_add_spec. condtac; viewtac.
-        inversion e. subst.
-        econs; viewtac.
-        { unfold Memory.get_msg in MSG. destruct ts; ss. rewrite MSG. condtac; ss. }
-        { revert MSG. unfold Memory.read, Memory.get_msg.
-          destruct ts; ss. i. rewrite MSG. ss. eexists. des_ifs.
-        }
-      + i. revert IN. rewrite Promises.unset_o. condtac; ss. eauto.
-      + i. rewrite Promises.unset_o. rewrite fun_add_spec in TS. condtac.
-        { inversion e. subst. rewrite MSG in MSG0. destruct msg. inv MSG0. ss.
-        revert TS. condtac; ss; intuition.
-        }
-        { eapply PROMISES0; eauto. revert TS. condtac; ss. i.
-        inversion e. rewrite H0. rewrite COH1. ss.
-        }
-    - inv STEP. econs. ss.
-      exploit FWDVIEW; eauto.
-      { eapply read_wf. eauto. }
-      i. econs; viewtac.
-      + i. rewrite fun_add_spec. condtac; viewtac.
-      + i. exploit FWDBANK; eauto. intro Y. inv Y. des.
-        econs; eauto. rewrite TS, fun_add_spec. condtac; ss. inversion e. subst.
-        apply Memory.latest_ts_mon. apply join_l.
-      + i. eapply PROMISES0; eauto. eapply Time.le_lt_trans; [|by eauto].
-        rewrite fun_add_spec. condtac; ss. inversion e. rewrite H0. apply join_l.
-    - inv STEP. econs; ss. econs; viewtac.
+    inv WF. inv STEP. econs; ss.
+    rewrite MEM. eapply Local.step_wf; eauto.
   Qed.
 
   Lemma state_step_wf tid eu1 eu2
@@ -700,7 +683,7 @@ Section ExecUnit.
   Qed.
 
   Lemma rtc_state_step_promise_remained tid eu1 eu2 ts loc val
-        (WF: wf tid eu1)
+        (WF: Local.wf tid eu1.(ExecUnit.mem) eu1.(ExecUnit.local))
         (STEP: rtc (state_step tid) eu1 eu2)
         (LE: ts <= (eu1.(ExecUnit.local).(Local.coh) loc).(View.ts))
         (MSG: Memory.get_msg ts eu1.(ExecUnit.mem) = Some (Msg.mk loc val tid))
@@ -722,6 +705,51 @@ Section ExecUnit.
       + inv STEP0. rewrite LC2. ss.
     - inv H. inv STEP0. rewrite MEM. ss.
     - exploit state_step_promise_remained; eauto.
+  Qed.
+
+  Lemma rtc_state_step_mem
+        tid eu1 eu2
+        (STEP: rtc (ExecUnit.state_step tid) eu1 eu2):
+    eu1.(ExecUnit.mem) = eu2.(ExecUnit.mem).
+  Proof.
+    induction STEP; ss.
+    inv H. inv STEP0. rewrite <- MEM. ss.
+  Qed.
+
+  Lemma no_promise_rmw_spec
+        eu1 eu2 eu_last
+        vloc vold vnew old_ts ts tid view_pre
+        (WF: Local.wf tid eu1.(ExecUnit.mem) eu1.(ExecUnit.local))
+        (MEM: eu1.(ExecUnit.mem) = eu2.(ExecUnit.mem))
+        (RMW_STEP: Local.rmw vloc vold vnew old_ts ts tid view_pre eu1.(ExecUnit.local) eu1.(ExecUnit.mem) eu2.(ExecUnit.local))
+        (RTC_STEP: rtc (ExecUnit.state_step tid) eu2 eu_last)
+        (NOPROMISE: eu_last.(ExecUnit.local).(Local.promises) = bot):
+      old_ts = Memory.latest_ts (ValA.val vloc) (Init.Nat.pred ts) (eu1.(ExecUnit.mem)).
+  Proof.
+    generalize RMW_STEP. intro RMW. inv RMW.
+    eapply le_antisym; ss.
+    { eapply Memory.latest_ts_read_le; eauto. lia. }
+    eapply Memory.latest_latest_ts. ii.
+    unfold Memory.exclusive in EX. unfold Memory.no_msgs in EX. exploit EX; eauto.
+    { etrans; eauto. lia. }
+    split; ss. destruct msg as [ts' val' tidtmp]. destruct (tidtmp == tid); ss. inv e.
+    unfold Memory.latest in COH. unfold Memory.no_msgs in COH. exploit COH; eauto.
+    destruct (lt_eq_lt_dec (S ts0) (View.ts (Local.coh (ExecUnit.local eu1) (ValA.val vloc)))). inv s; try lia.
+    inversion WF.
+    exploit PROMISES0; [| | instantiate (1 := S ts0)|]; eauto. intro PROMISE_TS.
+    assert (PROMISE_TS0: Promises.lookup (S ts0) (Local.promises (ExecUnit.local eu2))).
+    { rewrite LC2. ss. exploit Promises.unset_o. intro UNSET. rewrite UNSET. condtac; ss. inversion e. lia. }
+    exploit ExecUnit.rtc_state_step_promise_remained; try exact PROMISE_TS0; eauto.
+    { rewrite <- MEM. eapply Local.step_wf; eauto. econs 4; eauto. }
+    { instantiate (1 := ValA.val vloc). rewrite LC2. ss.
+      rewrite fun_add_spec. condtac; cycle 1.
+      { exfalso. apply c. ss. }
+      etrans; eauto. ss. lia.
+    }
+    { rewrite <- MEM. unfold Memory.get_msg. ss. rewrite MSG0. ss. }
+    unfold Promises.lookup. ss. rewrite NOPROMISE. ss.
+    Grab Existential Variables.
+    all: auto.
   Qed.
 End ExecUnit.
 End ExecUnit.
@@ -1070,43 +1098,5 @@ Module Machine.
     rewrite Promises.promises_from_mem_snoc. s.
     repeat condtac; try congr.
     inversion e. subst. rewrite FIND. destruct (IdMap.find tid p); ss. i. inv H. ss.
-  Qed.
-
-  Lemma no_promise_rmw_latest_ts
-        m eu1 eu2 eu_last st_last
-        vloc vold vnew old_ts ts tid view_pre lc1 lc2
-        (NOPROMISE: Machine.no_promise m)
-        (SL_LAST: IdMap.find tid (Machine.tpool m) = Some (st_last, eu_last.(ExecUnit.local)))
-        (LC1: lc1 = eu1.(ExecUnit.local))
-        (LC2: lc2 = eu2.(ExecUnit.local))
-        (MEM: eu2.(ExecUnit.mem) = Machine.mem m)
-        (RMW: Local.rmw vloc vold vnew old_ts ts tid view_pre lc1 (Machine.mem m) lc2)
-        (STEP: rtc (ExecUnit.state_step tid) eu2 eu_last)
-        (WF1: Local.wf tid (Machine.mem m) eu1.(ExecUnit.local))
-        (WF2: ExecUnit.wf tid eu2):
-    old_ts = Memory.latest_ts (ValA.val vloc) (Init.Nat.pred ts) (Machine.mem m).
-  Proof.
-    inversion RMW. guardH LC0. inv LOC.
-    eapply le_antisym; ss.
-    { inv RMW. eapply Memory.latest_ts_read_le; eauto. lia. }
-    eapply Memory.latest_latest_ts. ii.
-    unfold Memory.exclusive in EX. unfold Memory.no_msgs in EX. exploit EX; eauto.
-    { etrans; eauto. lia. }
-    split; ss. destruct msg as [ts' val' tidtmp]. destruct (tidtmp == tid); ss. inv e.
-    unfold Memory.latest in COH. unfold Memory.no_msgs in COH. exploit COH; eauto.
-    destruct (lt_eq_lt_dec (S ts0) (View.ts (Local.coh (ExecUnit.local eu1) (ValA.val vloc)))). inv s; try lia.
-    inv WF1. exploit PROMISES0; [| | instantiate (1 := S ts0)|]; eauto. intro PROMISE_TS.
-    assert (PROMISE_TS0: Promises.lookup (S ts0) (Local.promises (ExecUnit.local eu2))).
-    { rewrite LC0. ss. exploit Promises.unset_o. intro UNSET. rewrite UNSET. condtac; ss. inversion e. lia. }
-    exploit ExecUnit.rtc_state_step_promise_remained; try exact STEP; try exact PROMISE_TS0; eauto.
-    { instantiate (1 := ValA.val vloc). rewrite LC0. ss.
-      rewrite fun_add_spec. condtac; cycle 1.
-      { exfalso. apply c. ss. }
-      etrans; eauto. ss. lia.
-    }
-    { rewrite MEM. unfold Memory.get_msg. ss. rewrite MSG0. ss. }
-    unfold Promises.lookup. ss.
-    inv NOPROMISE. specialize (PROMISES1 tid st_last eu_last.(ExecUnit.local)).
-    apply PROMISES1 in SL_LAST. rewrite SL_LAST. ss.
   Qed.
 End Machine.

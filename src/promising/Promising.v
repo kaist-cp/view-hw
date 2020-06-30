@@ -667,26 +667,6 @@ Section ExecUnit.
     induction e; viewtac. apply RMAP.
   Qed.
 
-  Lemma read_wf
-        ts loc val mem
-        (READ: Memory.read loc ts mem = Some val):
-    ts <= List.length mem.
-  Proof.
-    revert READ. unfold Memory.read. destruct ts; [lia|]. s.
-    destruct (nth_error mem ts) eqn:NTH; ss. condtac; ss.
-    i. eapply List.nth_error_Some. congr.
-  Qed.
-
-  Lemma get_msg_wf
-        ts msg mem
-        (READ: Memory.get_msg ts mem = Some msg):
-    ts <= List.length mem.
-  Proof.
-    revert READ. unfold Memory.get_msg. destruct ts; [lia|]. s.
-    destruct (nth_error mem ts) eqn:NTH; ss. i. inv READ.
-    eapply List.nth_error_Some. congr.
-  Qed.
-
   Lemma state_step0_wf tid e1 e2 eu1 eu2
         (STEP: state_step0 tid e1 e2 eu1 eu2)
         (EVENT: eqts_event e1 e2)
@@ -710,7 +690,7 @@ Section ExecUnit.
       exploit Local.read_spec; eauto. intro READ_SPEC. guardH READ_SPEC.
       inv STEP. ss. subst.
       exploit FWDVIEW; eauto.
-      { eapply read_wf. eauto. }
+      { eapply Memory.read_wf. eauto. }
       i. econs; ss.
       + apply rmap_add_wf; viewtac.
         rewrite TS, <- TS0. viewtac.
@@ -737,8 +717,8 @@ Section ExecUnit.
     - inv RES. inv VIEW. inv VVAL. inv VIEW. inv VLOC. inv VIEW.
       inv STEP. inv WRITABLE. econs; ss.
       + apply rmap_add_wf; viewtac.
-        rewrite TS. unfold ifc. condtac; [|by apply bot_spec]. eapply get_msg_wf. eauto.
-      + econs; viewtac; rewrite <- ? TS0, <- ? TS1; eauto using get_msg_wf, expr_wf.
+        rewrite TS. unfold ifc. condtac; [|by apply bot_spec]. eapply Memory.get_msg_wf. eauto.
+      + econs; viewtac; rewrite <- ? TS0, <- ? TS1; eauto using Memory.get_msg_wf, expr_wf.
         * i. rewrite fun_add_spec. condtac; viewtac.
         * i. rewrite ? fun_add_spec. condtac; viewtac.
           inversion e. subst.

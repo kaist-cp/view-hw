@@ -433,6 +433,26 @@ Module Memory.
       condtac; ss. inversion e. subst. i. inv MSG1.
       eapply LATEST2; eauto.
   Qed.
+
+  Lemma read_wf
+        ts loc val mem
+        (READ: read loc ts mem = Some val):
+    ts <= List.length mem.
+  Proof.
+    revert READ. unfold read. destruct ts; [lia|]. s.
+    destruct (nth_error mem ts) eqn:NTH; ss. condtac; ss.
+    i. eapply List.nth_error_Some. congr.
+  Qed.
+
+  Lemma get_msg_wf
+        ts msg mem
+        (READ: get_msg ts mem = Some msg):
+    ts <= List.length mem.
+  Proof.
+    revert READ. unfold get_msg. destruct ts; [lia|]. s.
+    destruct (nth_error mem ts) eqn:NTH; ss. i. inv READ.
+    eapply List.nth_error_Some. congr.
+  Qed.
 End Memory.
 
 Module View.

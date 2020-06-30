@@ -37,7 +37,6 @@ Lemma sim_traces_sim_th'_ob_read
       (PRE: Valid.pre_ex p ex)
       (CO: ex.(Execution.co) = co_gen ws)
       (RF: ex.(Execution.rf) = rf_gen ws rs)
-      (* (INTERNAL: acyclic (Execution.internal ex)) *)
       (CO1: Valid.co1 ex)
       (CO2: Valid.co2 ex)
       (RF1: Valid.rf1 ex)
@@ -351,42 +350,14 @@ Proof.
           { s. rewrite List.app_length. s. clear. lia. }
           destruct (length (ALocal.labels alc1) =? length (ALocal.labels alc1)); ss.
           generalize SIM_TH.(MEM). s. i. subst. ss.
-          exploit Machine.no_promise_rmw_latest_ts; eauto.
-          { inversion STEP. eauto. }
-          { symmetry in PFSL. exact PFSL. }
-          all: ss.
-          { instantiate (1 := eu1). rewrite EU1. eauto. }
-          {   }
           assert (old_ts = Memory.latest_ts (ValA.val vloc) (Init.Nat.pred ts) (Machine.mem m)).
-          { eapply le_antisym; ss.
-            { eapply Memory.latest_ts_read_le; eauto. lia. }
-            eapply Memory.latest_latest_ts. ii.
-            unfold Memory.exclusive in EX. unfold Memory.no_msgs in EX.
-            exploit EX; eauto.
-            { etrans; eauto. lia. }
-            esplits; eauto. destruct msg as [ts' val' tidtmp']. destruct (tidtmp' == tid); ss. inv e.
-            unfold Memory.latest in COH. unfold Memory.no_msgs in COH.
-            exploit COH; eauto.
-            destruct (lt_eq_lt_dec (S ts0) (View.ts (Local.coh lc1 (ValA.val vloc)))). inv s; try lia.
-            inv LOCAL. exploit PROMISES0; [| | instantiate (1 := S ts0)|]; eauto. intro PROMISE_TS.
-            assert (PROMISE_TS0: Promises.lookup (S ts0) (Local.promises lc2)).
-            { rewrite LC2. ss. exploit Promises.unset_o. intro UNSET. rewrite UNSET. condtac; ss. inversion e. lia. }
-            move PFSL at bottom.
-            inv STEP. inv NOPROMISE. generalize PFSL. intro PROMBOT. symmetry in PROMBOT. eapply PROMISES1 in PROMBOT.
-            move RTC_STEP at bottom.
-            exploit ExecUnit.rtc_state_step_promise_remained.
-            2: exact RTC_STEP.
-            4: exact PROMISE_TS0.
-            { eapply ExecUnit.state_step0_wf; eauto. econs. ss. }
-            { instantiate (1 := ValA.val vloc). rewrite LC2. ss.
-              rewrite fun_add_spec. condtac; cycle 1.
-              { exfalso. apply c. ss. }
-              etrans; eauto. ss. lia.
-            }
-            { unfold Memory.get_msg. ss. rewrite MSG0. ss. }
-            unfold Promises.lookup. ss. rewrite PROMBOT. ss.
+          { replace (Machine.mem m) with (ExecUnit.mem eu1); cycle 1.
+            { rewrite EU1. ss. }
+            eapply ExecUnit.no_promise_rmw_spec; try exact RTC_STEP; try rewrite EU1; eauto.
+            inv STEP. inv NOPROMISE. generalize PFSL. intro PROMBOT.
+            symmetry in PROMBOT. eapply PROMISES in PROMBOT. ss.
           }
-          subst. inv R.
+          i. subst. inv R.
           generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
           exploit sim_trace_last; try exact REL0. i. des. simplify.
           exploit sim_trace_sim_th; try exact REL0; eauto. intro TH_tmp.

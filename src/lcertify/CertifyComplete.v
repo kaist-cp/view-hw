@@ -65,7 +65,7 @@ Proof.
       }
     - econs; ss.
       + rewrite app_nil_r. ss.
-      + i. exploit ExecUnit.get_msg_wf; eauto. lia.
+      + i. exploit Memory.get_msg_wf; eauto. lia.
       + i. destruct n1; ss.
   }
 
@@ -135,7 +135,7 @@ Proof.
       }
     - econs; ss.
       + rewrite app_nil_r. ss.
-      + i. exploit ExecUnit.get_msg_wf; eauto. lia.
+      + i. exploit Memory.get_msg_wf; eauto. lia.
       + i. destruct n1; ss.
   }
 

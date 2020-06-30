@@ -56,7 +56,7 @@ Proof.
         inv LOCAL0.
         { econs 1; eauto. }
         { econs 2; eauto. instantiate (1 := ts). inv STEP. ss.
-          exploit ExecUnit.read_wf; try exact MSG. i.
+          exploit Memory.read_wf; try exact MSG. i.
           econs; eauto; ss.
           - ii. eapply COH; eauto.
             rewrite nth_error_app1 in MSG0; ss.
@@ -71,7 +71,7 @@ Proof.
         }
         { econs 3; eauto. instantiate (1 := view_pre). instantiate (1 := ts).
           inv STEP. inv WRITABLE. ss.
-          exploit ExecUnit.get_msg_wf; try exact MSG. i.
+          exploit Memory.get_msg_wf; try exact MSG. i.
           econs; eauto; ss.
           - econs; eauto.
           - rewrite <- MSG. unfold Memory.get_msg. destruct ts; ss.
@@ -82,9 +82,9 @@ Proof.
         }
         { econs 4; eauto. instantiate (1 := view_pre). instantiate (1 := ts). instantiate (1 := old_ts).
           inv STEP.
-          exploit ExecUnit.read_wf; try exact OLD_MSG. i.
+          exploit Memory.read_wf; try exact OLD_MSG. i.
           inv WRITABLE. ss.
-          exploit ExecUnit.get_msg_wf; try exact MSG. i.
+          exploit Memory.get_msg_wf; try exact MSG. i.
           econs; try exact OLD_RANGE; ss.
           - ii. eapply COH; eauto.
             rewrite nth_error_app1 in MSG0; ss.
@@ -102,7 +102,7 @@ Proof.
             ii. subst. lia.
         }
         { econs 5; eauto. instantiate (1 := old_ts). instantiate (1 := vold). inv STEP. ss.
-          exploit ExecUnit.read_wf; try exact OLD_MSG. i.
+          exploit Memory.read_wf; try exact OLD_MSG. i.
           econs; eauto; ss.
           - ii. eapply COH; eauto.
             rewrite nth_error_app1 in MSG; ss.
