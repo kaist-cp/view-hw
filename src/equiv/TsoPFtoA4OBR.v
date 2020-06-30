@@ -351,6 +351,12 @@ Proof.
           { s. rewrite List.app_length. s. clear. lia. }
           destruct (length (ALocal.labels alc1) =? length (ALocal.labels alc1)); ss.
           generalize SIM_TH.(MEM). s. i. subst. ss.
+          exploit Machine.no_promise_rmw_latest_ts; eauto.
+          { inversion STEP. eauto. }
+          { symmetry in PFSL. exact PFSL. }
+          all: ss.
+          { instantiate (1 := eu1). rewrite EU1. eauto. }
+          {   }
           assert (old_ts = Memory.latest_ts (ValA.val vloc) (Init.Nat.pred ts) (Machine.mem m)).
           { eapply le_antisym; ss.
             { eapply Memory.latest_ts_read_le; eauto. lia. }

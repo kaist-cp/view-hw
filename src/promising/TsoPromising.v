@@ -126,9 +126,9 @@ Section Local.
   .
   Hint Constructors fulfill.
 
-  Inductive rmw (vloc vold vnew:ValA.t (A:=unit)) (ts:Time.t) (tid:Id.t) (view_pre:View.t (A:=unit)) (lc1:t) (mem1:Memory.t) (lc2:t): Prop :=
+  Inductive rmw (vloc vold vnew:ValA.t (A:=unit)) (old_ts:Time.t) (ts:Time.t) (tid:Id.t) (view_pre:View.t (A:=unit)) (lc1:t) (mem1:Memory.t) (lc2:t): Prop :=
   | rmw_intro
-      loc old new old_ts
+      loc old new
       (LOC: loc = vloc.(ValA.val))
       (COH: Memory.latest loc old_ts (lc1.(coh) loc).(View.ts) mem1)
       (OLD_RANGE: lt old_ts ts)
@@ -202,9 +202,9 @@ Section Local.
       (EVENT: event = Event.write false ord vloc vval res)
       (STEP: fulfill vloc vval res ts tid view_pre lc1 mem lc2)
   | step_rmw
-      vloc vold vnew ts ordr ordw view_pre
+      vloc vold vnew old_ts ts ordr ordw view_pre
       (EVENT: event = Event.rmw ordr ordw vloc vold vnew)
-      (STEP: rmw vloc vold vnew ts tid view_pre lc1 mem lc2)
+      (STEP: rmw vloc vold vnew old_ts ts tid view_pre lc1 mem lc2)
   | step_rmw_failure
       vloc vold old_ts ord res
       (EVENT: event = Event.read false true ord vloc res)
@@ -317,9 +317,9 @@ Section Local.
   Qed.
 
   Lemma rmw_spec
-        tid view_pre mem vloc vold vnew ts lc1 lc2
+        tid view_pre mem vloc vold vnew old_ts ts lc1 lc2
         (WF: Local.wf tid mem lc1)
-        (RMW: Local.rmw vloc vold vnew ts tid view_pre lc1 mem lc2):
+        (RMW: Local.rmw vloc vold vnew old_ts ts tid view_pre lc1 mem lc2):
     <<COH: ts = Memory.latest_ts vloc.(ValA.val) (lc2.(Local.coh) vloc.(ValA.val)).(View.ts) mem>>.
   Proof.
     inv RMW. ss. rewrite fun_add_spec. condtac; [|congr]. splits.
@@ -403,8 +403,8 @@ Section Local.
   Qed.
 
   Lemma rmw_incr
-        vloc vold vnew ts tid view_pre lc1 mem lc2
-        (LC: rmw vloc vold vnew ts tid view_pre lc1 mem lc2):
+        vloc vold vnew old_ts ts tid view_pre lc1 mem lc2
+        (LC: rmw vloc vold vnew old_ts ts tid view_pre lc1 mem lc2):
     le lc1 lc2.
   Proof.
     inv LC. econs; ss; try refl; try apply join_l.
@@ -1070,5 +1070,43 @@ Module Machine.
     rewrite Promises.promises_from_mem_snoc. s.
     repeat condtac; try congr.
     inversion e. subst. rewrite FIND. destruct (IdMap.find tid p); ss. i. inv H. ss.
+  Qed.
+
+  Lemma no_promise_rmw_latest_ts
+        m eu1 eu2 eu_last st_last
+        vloc vold vnew old_ts ts tid view_pre lc1 lc2
+        (NOPROMISE: Machine.no_promise m)
+        (SL_LAST: IdMap.find tid (Machine.tpool m) = Some (st_last, eu_last.(ExecUnit.local)))
+        (LC1: lc1 = eu1.(ExecUnit.local))
+        (LC2: lc2 = eu2.(ExecUnit.local))
+        (MEM: eu2.(ExecUnit.mem) = Machine.mem m)
+        (RMW: Local.rmw vloc vold vnew old_ts ts tid view_pre lc1 (Machine.mem m) lc2)
+        (STEP: rtc (ExecUnit.state_step tid) eu2 eu_last)
+        (WF1: Local.wf tid (Machine.mem m) eu1.(ExecUnit.local))
+        (WF2: ExecUnit.wf tid eu2):
+    old_ts = Memory.latest_ts (ValA.val vloc) (Init.Nat.pred ts) (Machine.mem m).
+  Proof.
+    inversion RMW. guardH LC0. inv LOC.
+    eapply le_antisym; ss.
+    { inv RMW. eapply Memory.latest_ts_read_le; eauto. lia. }
+    eapply Memory.latest_latest_ts. ii.
+    unfold Memory.exclusive in EX. unfold Memory.no_msgs in EX. exploit EX; eauto.
+    { etrans; eauto. lia. }
+    split; ss. destruct msg as [ts' val' tidtmp]. destruct (tidtmp == tid); ss. inv e.
+    unfold Memory.latest in COH. unfold Memory.no_msgs in COH. exploit COH; eauto.
+    destruct (lt_eq_lt_dec (S ts0) (View.ts (Local.coh (ExecUnit.local eu1) (ValA.val vloc)))). inv s; try lia.
+    inv WF1. exploit PROMISES0; [| | instantiate (1 := S ts0)|]; eauto. intro PROMISE_TS.
+    assert (PROMISE_TS0: Promises.lookup (S ts0) (Local.promises (ExecUnit.local eu2))).
+    { rewrite LC0. ss. exploit Promises.unset_o. intro UNSET. rewrite UNSET. condtac; ss. inversion e. lia. }
+    exploit ExecUnit.rtc_state_step_promise_remained; try exact STEP; try exact PROMISE_TS0; eauto.
+    { instantiate (1 := ValA.val vloc). rewrite LC0. ss.
+      rewrite fun_add_spec. condtac; cycle 1.
+      { exfalso. apply c. ss. }
+      etrans; eauto. ss. lia.
+    }
+    { rewrite MEM. unfold Memory.get_msg. ss. rewrite MSG0. ss. }
+    unfold Promises.lookup. ss.
+    inv NOPROMISE. specialize (PROMISES1 tid st_last eu_last.(ExecUnit.local)).
+    apply PROMISES1 in SL_LAST. rewrite SL_LAST. ss.
   Qed.
 End Machine.

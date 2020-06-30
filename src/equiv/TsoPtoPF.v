@@ -80,7 +80,7 @@ Proof.
           - f_equal. apply Promises.set_unset.
             ii. subst. lia.
         }
-        { econs 4; eauto. instantiate (1 := view_pre). instantiate (1 := ts).
+        { econs 4; eauto. instantiate (1 := view_pre). instantiate (1 := ts). instantiate (1 := old_ts).
           inv STEP.
           exploit ExecUnit.read_wf; try exact OLD_MSG. i.
           inv WRITABLE. ss.
