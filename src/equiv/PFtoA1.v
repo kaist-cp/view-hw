@@ -20,7 +20,7 @@ Require Import PromisingArch.promising.Promising.
 Require Import PromisingArch.promising.CommonPromising.
 Require Import PromisingArch.promising.StateExecFacts.
 Require Import PromisingArch.axiomatic.Axiomatic.
-Require Import PromisingArch.axiomatic.CommonAxiomatic.
+Require Import PromisingArch.axiomatic.SimLocal.
 
 Set Implicit Arguments.
 
@@ -503,7 +503,7 @@ Proof.
   { i. simplify. ss. econs; ss.
     - rewrite IdMap.mapi_spec, STMT in FIND. inv FIND. s. i.
       left. splits; ss. destruct ts; ss.
-      eapply Machine.promises_from_mem_lookup. eauto.
+      eapply Promises.promises_from_mem_lookup. eauto.
     - rewrite IdMap.mapi_spec, STMT in FIND. inv FIND. s. i.
       destruct eid; ss.
     - rewrite IdMap.mapi_spec, STMT in FIND. inv FIND. s. i.
@@ -519,11 +519,11 @@ Proof.
         (* * eexists. unfold bot. unfold fun_bot. unfold Memory.read. ss. *)
         * econs; esplits; ss.
         * destruct ts; ss.
-          rewrite Machine.promises_from_mem_spec in IN. des.
+          rewrite Promises.promises_from_mem_spec in IN. des.
           apply lt_le_S. rewrite <- List.nth_error_Some. ii. congr.
         * destruct ts; ss.
           unfold Memory.get_msg in *. ss. destruct msg.
-          exploit Machine.promises_from_mem_lookup; eauto. ss. subst. ss.
+          exploit Promises.promises_from_mem_lookup; eauto. ss. subst. ss.
     - rewrite IdMap.mapi_spec, STMT in FIND. inv FIND.
       econs; ss.
       + ii. unfold RMap.init in N. unfold RMap.find in N.

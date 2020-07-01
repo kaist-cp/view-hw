@@ -1,5 +1,5 @@
 COQMODULE    := PromisingArch
-COQDIRS      := lib promising axiomatic lcertify
+COQDIRS      := lib promising axiomatic equiv lcertify
 COQTHEORIES  := lib/sflib/*.v lib/hahn/*.v $(foreach dir, $(COQDIRS), src/$(dir)/*.v)
 
 .PHONY: all theories clean
@@ -10,7 +10,7 @@ build: sflib Makefile.coq
 	$(MAKE) -f Makefile.coq all
 
 quick: sflib-quick Makefile.coq
-	$(MAKE) -f Makefile.coq quick
+	$(MAKE) -f Makefile.coq vio
 
 sflib: lib/sflib
 	$(MAKE) -C lib/sflib

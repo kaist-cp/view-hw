@@ -20,8 +20,8 @@ Require Import PromisingArch.promising.Promising.
 Require Import PromisingArch.promising.CommonPromising.
 Require Import PromisingArch.promising.StateExecFacts.
 Require Import PromisingArch.axiomatic.Axiomatic.
-Require Import PromisingArch.axiomatic.CommonAxiomatic.
-Require Import PromisingArch.axiomatic.PFtoA1.
+Require Import PromisingArch.axiomatic.SimLocal.
+Require Import PromisingArch.equiv.PFtoA1.
 
 Set Implicit Arguments.
 
@@ -692,10 +692,10 @@ Proof.
   exploit sim_trace_last; eauto. i. des.
   exploit IHn'; try exact HDTR; eauto; [lia|]. i.
   replace (S (length atr - 1 - n')) with (S (S (length atr - S (S n')))) in * by lia.
-  exploit lastn_S1; try exact HDTR; [unguardH LEN; des; lia|i]. 
-  exploit lastn_S1; try exact HDATR; [unguardH LEN; des; lia|i]. 
-  exploit lastn_S1; try exact HDWL; [unguardH LEN; des; lia|i]. 
-  exploit lastn_S1; try exact HDRL; [unguardH LEN; des; lia|i]. 
+  exploit lastn_S1; try exact HDTR; [unguardH LEN; des; lia|i].
+  exploit lastn_S1; try exact HDATR; [unguardH LEN; des; lia|i].
+  exploit lastn_S1; try exact HDWL; [unguardH LEN; des; lia|i].
+  exploit lastn_S1; try exact HDRL; [unguardH LEN; des; lia|i].
   exploit lastn_S1; try exact HDCOVL; [unguardH LEN; des; lia|i].
   exploit lastn_S1; try exact HDVEXTL; [unguardH LEN; des; lia|i].
   repeat match goal with

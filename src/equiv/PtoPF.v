@@ -59,7 +59,7 @@ Proof.
         inv LOCAL0.
         { econs 1; eauto. }
         { econs 2; eauto. instantiate (1 := ts). inv STEP. ss.
-          exploit ExecUnit.read_wf; try exact MSG. i.
+          exploit Memory.read_wf; try exact MSG. i.
           econs; eauto; ss.
           - ii. eapply COH; eauto.
             rewrite nth_error_app1 in MSG0; ss.
@@ -75,7 +75,7 @@ Proof.
         }
         { econs 3; eauto. instantiate (1 := view_pre). instantiate (1 := ts).
           inv STEP. inv WRITABLE. ss.
-          exploit ExecUnit.get_msg_wf; try exact MSG. i.
+          exploit Memory.get_msg_wf; try exact MSG. i.
           econs; eauto; ss.
           - econs; eauto.
             i. exploit EX; eauto. i. des.
@@ -123,7 +123,7 @@ Proof.
         { econs 3; eauto. inv STEP. inv WRITABLE. econs; eauto.
           - econs; ss.
             i. exploit EX; eauto. i. des. esplits; eauto.
-            exploit ExecUnit.get_msg_wf; eauto. i.
+            exploit Memory.get_msg_wf; eauto. i.
             ii. des. rewrite nth_error_app1 in MSG0; [|lia].
             eapply EX0; eauto.
           - apply Memory.get_msg_mon. ss.
