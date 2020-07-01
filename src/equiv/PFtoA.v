@@ -20,17 +20,17 @@ Require Import PromisingArch.lib.Lang.
 Require Import PromisingArch.promising.Promising.
 Require Import PromisingArch.promising.CommonPromising.
 Require Import PromisingArch.promising.StateExecFacts.
-Require Import PromisingArch.promising.PtoPF.
 Require Import PromisingArch.axiomatic.Axiomatic.
-Require Import PromisingArch.axiomatic.CommonAxiomatic.
-Require Import PromisingArch.axiomatic.PFtoA1.
-Require Import PromisingArch.axiomatic.PFtoA2.
-Require Import PromisingArch.axiomatic.PFtoA3.
-Require Import PromisingArch.axiomatic.PFtoA4OBW.
-Require Import PromisingArch.axiomatic.PFtoA4OBR.
-Require Import PromisingArch.axiomatic.PFtoA4FR.
-Require Import PromisingArch.axiomatic.PFtoA4Atomic.
-Require Import PromisingArch.axiomatic.PFtoA4SL.
+Require Import PromisingArch.axiomatic.SimLocal.
+Require Import PromisingArch.equiv.PtoPF.
+Require Import PromisingArch.equiv.PFtoA1.
+Require Import PromisingArch.equiv.PFtoA2.
+Require Import PromisingArch.equiv.PFtoA3.
+Require Import PromisingArch.equiv.PFtoA4OBW.
+Require Import PromisingArch.equiv.PFtoA4OBR.
+Require Import PromisingArch.equiv.PFtoA4FR.
+Require Import PromisingArch.equiv.PFtoA4Atomic.
+Require Import PromisingArch.equiv.PFtoA4SL.
 
 Set Implicit Arguments.
 
@@ -172,7 +172,7 @@ Proof.
         * inv H1. des. inv H1. ss. lia.
       + ii. inv EID. inv REL. inv H1. inv H7. ss. lia.
       + right. esplits; eauto. ii. inv H1. inv REL. inv H1. inv H7. ss. lia.
-      + i. destruct view; ss. exploit Machine.promises_from_mem_inv; eauto. i. des.
+      + i. destruct view; ss. exploit Promises.promises_from_mem_inv; eauto. i. des.
         hexploit sim_traces_ex; try exact SIM.
         all: try rewrite lastn_all; ss.
         all: eauto.
@@ -202,10 +202,10 @@ Proof.
   i. simplify.
   exploit sim_trace_length; eauto. intro LEN. guardH LEN.
   exploit lastn_S1; try exact EU; [unguardH LEN; des; lia|].
-  exploit lastn_S1; try exact AEU; [unguardH LEN; des; lia|i]. 
-  exploit lastn_S1; try exact WL; [unguardH LEN; des; lia|i]. 
+  exploit lastn_S1; try exact AEU; [unguardH LEN; des; lia|i].
+  exploit lastn_S1; try exact WL; [unguardH LEN; des; lia|i].
   exploit lastn_S1; try exact RL; [unguardH LEN; des; lia|i].
-  exploit lastn_S1; try exact COV; [unguardH LEN; des; lia|i]. 
+  exploit lastn_S1; try exact COV; [unguardH LEN; des; lia|i].
   exploit lastn_S1; try exact VEXT; [unguardH LEN; des; lia|i].
   subst. exploit sim_trace_lastn; eauto. instantiate (1 := n). i.
   exploit sim_trace_last; eauto. i. des.

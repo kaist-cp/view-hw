@@ -335,7 +335,7 @@ Proof.
       eapply Local.wf_promises_above; eauto. apply WF.
   - econs; ss.
     + rewrite app_nil_r. ss.
-    + i. exploit ExecUnit.get_msg_wf; eauto. lia.
+    + i. exploit Memory.get_msg_wf; eauto. lia.
     + i. destruct n1; ss.
 Qed.
 

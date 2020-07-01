@@ -122,6 +122,13 @@ Module Label.
     s. destruct (equiv_dec loc loc); ss. exfalso. apply c. ss.
   Qed.
 
+  Lemma read_is_reading_val loc val:
+    is_reading_val loc val (read loc val).
+  Proof.
+    s. destruct (equiv_dec loc loc); destruct (equiv_dec val val); ss; exfalso.
+    all: apply c; ss.
+  Qed.
+
   Lemma reading_exists_val
         loc l
         (RDING: is_reading loc l):
@@ -163,6 +170,13 @@ Module Label.
     s. destruct (equiv_dec loc loc); ss. exfalso. apply c. ss.
   Qed.
 
+  Lemma write_is_writing_val loc val:
+    is_writing_val loc val (write loc val).
+  Proof.
+    s. destruct (equiv_dec loc loc); destruct (equiv_dec val val); ss; exfalso.
+    all: apply c; ss.
+  Qed.
+
   Lemma writing_exists_val
         loc l
         (WRING: is_writing loc l):
@@ -180,6 +194,25 @@ Module Label.
     is_writing loc l.
   Proof.
     destruct l; ss; destruct (equiv_dec loc0 loc); ss.
+  Qed.
+
+  Lemma update_is_reading loc vold vnew:
+    is_reading loc (update loc vold vnew).
+  Proof.
+    s. destruct (equiv_dec loc loc); ss. exfalso. apply c. ss.
+  Qed.
+
+  Lemma update_is_writing loc vold vnew:
+    is_writing loc (update loc vold vnew).
+  Proof.
+    s. destruct (equiv_dec loc loc); ss. exfalso. apply c. ss.
+  Qed.
+
+  Lemma update_is_writing_val loc vold vnew:
+    is_writing_val loc vnew (update loc vold vnew).
+  Proof.
+    s. destruct (equiv_dec loc loc); destruct (equiv_dec vnew vnew); ss; exfalso.
+    all: apply c; ss.
   Qed.
 
   Lemma accessing_is_access
@@ -208,10 +241,22 @@ Module Label.
     s. destruct (equiv_dec loc loc); ss. exfalso. apply c. ss.
   Qed.
 
+  Lemma writing_same_loc loc1 loc2 l
+    (W1: is_writing loc1 l)
+    (W2: is_writing loc2 l):
+    loc1 = loc2.
+  Proof.
+    destruct l; ss.
+    - destruct (equiv_dec loc loc1); ss. inv e. destruct (equiv_dec loc1 loc2); ss.
+    - destruct (equiv_dec loc loc1); ss. inv e. destruct (equiv_dec loc1 loc2); ss.
+  Qed.
+
   Hint Resolve
-       reading_is_read reading_is_accessing read_is_reading reading_exists_val reading_val_is_reading
-       writing_is_write writing_is_accessing write_is_writing writing_exists_val writing_val_is_writing
+       reading_is_read reading_is_accessing read_is_reading read_is_reading_val reading_exists_val reading_val_is_reading
+       writing_is_write writing_is_accessing write_is_writing write_is_writing_val writing_exists_val writing_val_is_writing
+       update_is_reading update_is_writing update_is_writing_val
        accessing_is_access read_is_accessing write_is_accessing update_is_accessing
+       writing_same_loc
     : tso.
 End Label.
 
@@ -233,29 +278,29 @@ Module ALocal.
                mk
                  alocal1.(labels))
   | step_read
-      vloc res
-      (EVENT: event = Event.read false false OrdR.pln vloc (ValA.mk _ res tt))
+      rmw_fail vloc res ord
+      (EVENT: event = Event.read false rmw_fail ord vloc (ValA.mk _ res tt))
       (ALOCAL: alocal2 =
                mk
                  (alocal1.(labels) ++ [Label.read vloc.(ValA.val) res]))
   | step_write
-      ord vloc vval
+      vloc vval ord
       (EVENT: event = Event.write false ord vloc vval (ValA.mk _ 0 tt))
       (ALOCAL: alocal2 =
                mk
                  (alocal1.(labels) ++ [Label.write vloc.(ValA.val) vval.(ValA.val)]))
   | step_update
-      ordr ordw vloc voldv vnewv
+      vloc voldv vnewv ordr ordw
       (EVENT: event = Event.rmw ordr ordw vloc voldv vnewv)
       (ALOCAL: alocal2 =
                mk
                  (alocal1.(labels) ++ [Label.update vloc.(ValA.val) voldv.(ValA.val) vnewv.(ValA.val)]))
-  | step_barrier
-      b
-      (EVENT: event = Event.barrier b)
+  | step_dmb
+      rr rw wr ww
+      (EVENT: event = Event.barrier (Barrier.dmb rr rw wr ww))
       (ALOCAL: alocal2 =
                mk
-                 (alocal1.(labels) ++ [Label.barrier b]))
+                 (alocal1.(labels) ++ [Label.barrier (Barrier.dmb rr rw wr ww)]))
   .
   Hint Constructors step : tso.
 
@@ -377,27 +422,19 @@ Module AExecUnit.
       + destruct local1. refl.
     - splits.
       + inv WF. econs; ss.
-        all: try rewrite List.app_length; s.
-        all: unfold ALocal.next_eid in *.
-      + econs; ss.
-        * esplits; eauto.
+      + econs; ss. eauto.
     - splits.
       + inv WF. econs; ss.
-        all: try rewrite List.app_length; s.
-        all: unfold ALocal.next_eid in *.
-      + econs; ss.
-        * esplits; eauto.
+      + econs; ss. eauto.
     - splits.
       + inv WF. econs; ss.
-        all: try rewrite List.app_length; s.
-        all: unfold ALocal.next_eid in *.
-      + econs; ss.
-        * esplits; eauto.
+      + econs; ss. eauto.
     - splits.
       + inv WF. econs; ss.
-        all: try rewrite List.app_length; s.
-        all: unfold ALocal.next_eid in *.
-      + econs; ss. eexists; eauto.
+      + econs; ss. eauto.
+    - splits.
+      + inv WF. econs; ss.
+      + econs; ss. eauto.
     - splits.
       + inv WF. econs; ss.
       + destruct local1. refl.
@@ -498,6 +535,14 @@ Module Execution.
   .
   Hint Constructors label_is : tso.
 
+  Inductive label_is_not (ex:t) (pred:Label.t -> Prop) (eid:eidT): Prop :=
+  | label_is_not_intro
+      l
+      (EID: label eid ex = Some l)
+      (LABEL: pred l -> False)
+  .
+  Hint Constructors label_is : tso.
+
   Inductive label_rel (ex:t) (rel:relation Label.t) (eid1 eid2:eidT): Prop :=
   | label_rel_intro
       l1 l2
@@ -534,7 +579,7 @@ Module Execution.
     destruct P1; eauto with tso.
   Qed.
 
-  (* let obs = rfe | fr | co *)
+  (* let obs = rfe | fre | co *)
   (* let dob = ([R]; po; [E]) U ([E]; po; [W]) *)
   (* let bob = [E]; po; [MF]; po; [E] ~~~> [W]; po; [dmb wr]; po; [R] *)
   (* let ob = obs | dob | bob *)
@@ -604,17 +649,22 @@ Module Execution.
   .
   Hint Constructors e : tso.
 
+  Definition po_loc (ex:t): relation eidT := po ∩ ex.(label_rel) label_loc.
   Definition fr (ex:t): relation eidT :=
     (ex.(rf)⁻¹ ⨾ ex.(co)) ∪
     ((ex.(label_rel) label_loc) ∩
      ((ex.(label_is) Label.is_read) \₁ codom_rel ex.(rf)) × (ex.(label_is) Label.is_write)).
+  Definition fre (ex:t): relation eidT := (fr ex) ∩ e.
 
+  Definition rfi (ex:t): relation eidT := ex.(rf) ∩ i.
   Definition rfe (ex:t): relation eidT := ex.(rf) ∩ e.
+
+  Definition internal (ex:t): relation eidT := (po_loc ex) ∪ (fr ex) ∪ ex.(co) ∪ ex.(rf).
 
   Definition cowr (ex:t): relation eidT := po ⨾ (fr ex).
   Definition corw (ex:t): relation eidT := po^? ⨾ ex.(rf).
 
-  Definition obs (ex:t): relation eidT := (rfe ex) ∪ (fr ex) ∪ ex.(co).
+  Definition obs (ex:t): relation eidT := (rfe ex) ∪ (fre ex) ∪ ex.(co).
 
   Definition dob (ex:t): relation eidT :=
     (⦗ex.(label_is) Label.is_read⦘ ⨾
@@ -896,7 +946,7 @@ Module Valid.
         * left. right. left. econs. esplits.
           -- econs; eauto with tso.
           -- econs. esplits; eauto. econs; eauto with tso.
-        * left. left. left. right. right. econs.
+        * left. left. left. right. split; ss. right. econs.
           -- econs; eauto with tso.
           -- econs; eauto with tso. econs; eauto with tso.
       + inv LABEL0. rename eid2 into eid4. exploit EX.(CO1).
@@ -908,7 +958,7 @@ Module Valid.
         * left. right. left. econs. esplits.
           -- econs; eauto with tso.
           -- econs. esplits; eauto. econs; eauto with tso.
-        * left. left. left. right. econs. econs. econs; eauto.
+        * left. left. left. right. split; ss. econs. econs. econs; eauto.
   Qed.
 
   Lemma coherence_rw
@@ -958,11 +1008,13 @@ Module Valid.
   Ltac obtac :=
     repeat
       (try match goal with
+           | [H: Execution.internal _ _ _ |- _] => inv H
            | [H: Execution.ob _ _ _ |- _] => inv H
            | [H: Execution.obs _ _ _ |- _] => inv H
            | [H: Execution.dob _ _ _ |- _] => inv H
            | [H: Execution.bob _ _ _ |- _] => inv H
            | [H: Execution.fr _ _ _ |- _] => inv H
+           | [H: Execution.fre _ _ _ |- _] => inv H
            | [H: Execution.rfe _ _ _ |- _] => inv H
            | [H: (_⨾ _) _ _ |- _] => inv H
            | [H: ⦗_⦘ _ _ |- _] => inv H
@@ -992,13 +1044,12 @@ Module Valid.
     - exploit RF2; eauto. i. des. inv WRITE. inv READ.
       destruct l; ss. destruct l0; ss. congr. congr.
       destruct l0; ss. congr. congr.
-    - exploit RF2; eauto. i. des. inv WRITE. inv READ.
-      destruct l; ss. destruct l0; ss. congr. congr.
-      destruct l0; ss. congr. congr.
-    - destruct l1; try congr; ss.
+    - exploit RF2; eauto. i. des.
+      inv READ. destruct l; ss; try congr.
+    - inv H0.
+      inv H. destruct l0; ss; try congr.
     - exploit CO2; eauto. i. des. inv LABEL0. inv LABEL1.
-      destruct l; ss. destruct l0; ss. congr. congr.
-      destruct l0; ss. congr. congr.
+      destruct l; destruct l0; ss; try congr.
   Qed.
 
   Lemma ob_barrier_ob
@@ -1018,12 +1069,10 @@ Module Valid.
     all: try by rewrite EID in EID1; inv EID1; ss.
     all: try by rewrite EID in EID2; inv EID2; ss.
     all: try by destruct l; try congr; ss.
-    - exploit RF2; eauto. i. des. inv WRITE. inv READ.
-      destruct l; ss. destruct l0; ss. congr. congr.
-      destruct l0; ss. congr. congr.
-    - exploit CO2; eauto. i. des. inv LABEL0. inv LABEL1.
-      destruct l; ss. destruct l0; ss. congr. congr.
-      destruct l0; ss. congr. congr.
+    - exploit RF2; eauto. i. des. inv READ.
+      destruct l; ss; try congr.
+    - exploit CO2; eauto. i. des. inv LABEL1.
+      destruct l; ss; try congr.
     - exploit CO2; eauto. i. des. inv LABEL0. inv LABEL1.
       destruct l; ss. destruct l0; ss. congr. congr.
       destruct l0; ss. congr. congr.
@@ -1076,6 +1125,34 @@ Module Valid.
       + destruct t; try by contradict x0; econs; eauto.
         exploit barrier_ob_po; eauto with tso. i. inv x2. lia.
       + exfalso. eapply ob_label; eauto.
+  Qed.
+
+  Lemma ob_read_read_po
+        p ex
+        eid1 eid2
+        (PRE: pre_ex p ex)
+        (CO1: co1 ex)
+        (CO2: co2 ex)
+        (RF1: rf1 ex)
+        (RF2: rf2 ex)
+        (RF_WF: rf_wf ex)
+        (* (INTERNAL: acyclic (Execution.internal ex)) *)
+        (OB: Execution.ob ex eid1 eid2)
+        (EID1: ex.(Execution.label_is) Label.is_read eid1)
+        (EID1': ex.(Execution.label_is_not) Label.is_write eid1)
+        (EID2: ex.(Execution.label_is) Label.is_read eid2)
+        (EID2': ex.(Execution.label_is_not) Label.is_write eid2):
+    Execution.po eid1 eid2.
+  Proof.
+    inv EID1. inv EID1'. rewrite EID in EID0. inv EID0.
+    inv EID2. inv EID2'. rewrite EID1 in EID0. inv EID0.
+    destruct l; ss. destruct l0; ss.
+    all: obtac; try congr.
+    all: try by etrans; eauto.
+    - exploit RF2; eauto. i. des. inv WRITE. rewrite EID in EID0. destruct l; ss.
+    - exploit CO2; eauto. i. des. inv LABEL4. rewrite EID1 in EID0. destruct l; ss.
+    - rewrite EID1 in EID0. inv EID0. ss.
+    - exploit CO2; eauto. i. des. inv LABEL4. rewrite EID1 in EID0. destruct l; ss.
   Qed.
 End Valid.
 

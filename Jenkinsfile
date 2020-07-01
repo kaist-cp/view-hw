@@ -1,10 +1,3 @@
-def setupRust() {
-    sh "rustup component add rustfmt clippy"
-    sh "rustup install nightly"
-    sh "cargo update"
-    sh "cargo"
-}
-
 pipeline {
     agent none
 
@@ -14,7 +7,7 @@ pipeline {
                 stage('Quick') {
                     agent {
                         docker {
-                            image 'coqorg/coq:8.10.2'
+                            image 'coqorg/coq:8.11.2'
                         }
                     }
                     steps {
@@ -25,7 +18,7 @@ pipeline {
                 stage('Full') {
                     agent {
                         docker {
-                            image 'coqorg/coq:8.10.2'
+                            image 'coqorg/coq:8.11.2'
                         }
                     }
                     steps {

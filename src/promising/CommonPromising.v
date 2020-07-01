@@ -199,7 +199,7 @@ Module Memory.
   Proof.
     destruct ts3; ss.
     destruct (le_lt_dec (S ts3) ts2); ss.
-    exfalso. eapply LATEST; eauto. 
+    exfalso. eapply LATEST; eauto.
   Qed.
 
   Lemma ge_latest loc ts1 ts2 mem
@@ -318,6 +318,16 @@ Module Memory.
     - eapply IHto; eauto. eapply latest_mon2; eauto.
   Qed.
 
+  Lemma latest_ts_rec
+        loc to mem:
+    latest_ts loc (latest_ts loc to mem) mem = latest_ts loc to mem.
+  Proof.
+    induction to; ss.
+    destruct (nth_error mem to) eqn:NTH; ss. destruct t0.
+    destruct (Loc.eq_dec loc0 loc); ss. rewrite NTH.
+    destruct (Loc.eq_dec loc0 loc); ss.
+  Qed.
+
   Lemma latest_ts_read_lt
         loc from to mem v val
         (LATEST: latest_ts loc to mem = from)
@@ -423,6 +433,26 @@ Module Memory.
       condtac; ss. inversion e. subst. i. inv MSG1.
       eapply LATEST2; eauto.
   Qed.
+
+  Lemma read_wf
+        ts loc val mem
+        (READ: read loc ts mem = Some val):
+    ts <= List.length mem.
+  Proof.
+    revert READ. unfold read. destruct ts; [lia|]. s.
+    destruct (nth_error mem ts) eqn:NTH; ss. condtac; ss.
+    i. eapply List.nth_error_Some. congr.
+  Qed.
+
+  Lemma get_msg_wf
+        ts msg mem
+        (READ: get_msg ts mem = Some msg):
+    ts <= List.length mem.
+  Proof.
+    revert READ. unfold get_msg. destruct ts; [lia|]. s.
+    destruct (nth_error mem ts) eqn:NTH; ss. i. inv READ.
+    eapply List.nth_error_Some. congr.
+  Qed.
 End Memory.
 
 Module View.
@@ -507,3 +537,283 @@ Section View.
   Qed.
 End View.
 End View.
+
+Ltac viewtac :=
+  repeat
+    (try match goal with
+         | [|- join _ _ <= _] => apply join_spec
+         | [|- bot <= _] => apply bot_spec
+         | [|- ifc ?c _ <= _] => destruct c; s
+
+         | [|- Time.join _ _ <= _] => apply join_spec
+         | [|- Time.bot <= _] => apply bot_spec
+
+         | [|- context[View.ts (join _ _)]] => rewrite View.ts_join
+         | [|- context[View.ts bot]] => rewrite View.ts_bot
+         | [|- context[View.ts (ifc _ _)]] => rewrite View.ts_ifc
+         end;
+     ss; eauto).
+
+Module Promises.
+  Definition t := Id.t -> bool.
+
+  Definition id_of_time (ts:Time.t): option positive :=
+    option_map Pos.of_succ_nat (Time.pred_opt ts).
+
+  Lemma id_of_time_inj ts ts'
+        (EQ: id_of_time ts = id_of_time ts'):
+    ts = ts'.
+  Proof.
+    revert EQ. unfold id_of_time, Time.pred_opt.
+    destruct ts, ts'; ss. i. inv EQ.
+    f_equal. apply SuccNat2Pos.inj. ss.
+  Qed.
+
+  Lemma id_of_time_le ts ts' p p'
+        (P: id_of_time ts = Some p)
+        (P': id_of_time ts' = Some p')
+        (LE: (p <= p')%positive):
+    ts <= ts'.
+  Proof.
+    revert P P' LE. unfold id_of_time, Time.pred_opt.
+    destruct ts, ts'; ss. i. inv P. inv P'. lia.
+  Qed.
+
+  Lemma id_of_time_lt ts ts' p p'
+        (P: id_of_time ts = Some p)
+        (P': id_of_time ts' = Some p')
+        (LE: (p < p')%positive):
+    ts < ts'.
+  Proof.
+    revert P P' LE. unfold id_of_time, Time.pred_opt.
+    destruct ts, ts'; ss. i. inv P. inv P'. lia.
+  Qed.
+
+  Definition lookup (ts:Time.t) (promises:t): bool :=
+    match id_of_time ts with
+    | None => false
+    | Some ts => promises ts
+    end.
+
+  Definition set (ts:Time.t) (promises:t): t :=
+    match id_of_time ts with
+    | None => promises
+    | Some ts => fun_add ts true promises
+    end.
+
+  Lemma set_o ts' ts promises:
+    lookup ts' (set ts promises) =
+    if ts' == ts
+    then ts' <> 0
+    else lookup ts' promises.
+  Proof.
+    unfold lookup, set.
+    destruct (id_of_time ts') eqn:X', (id_of_time ts) eqn:X, (equiv_dec ts' ts); ss;
+      destruct ts, ts'; ss;
+      try rewrite fun_add_spec in *.
+    - inv e. rewrite X in X'. inv X'. condtac; ss. congr.
+    - condtac; ss. inversion e. subst.
+      rewrite <- X' in X. apply id_of_time_inj in X. inv X. intuition.
+  Qed.
+
+  Definition unset (ts:Time.t) (promises:t): t :=
+    match id_of_time ts with
+    | None => promises
+    | Some ts => fun_add ts false promises
+    end.
+
+  Lemma unset_o ts' ts promises:
+    lookup ts' (unset ts promises) =
+    if ts' == ts
+    then false
+    else lookup ts' promises.
+  Proof.
+    unfold lookup, unset.
+    destruct (id_of_time ts') eqn:X', (id_of_time ts) eqn:X, (equiv_dec ts' ts); ss;
+      destruct ts, ts'; ss;
+      try rewrite fun_add_spec in *.
+    - inv e. rewrite X in X'. inv X'. condtac; intuition.
+    - condtac; ss. inversion e. subst.
+      rewrite <- X' in X. apply id_of_time_inj in X. inv X. intuition.
+  Qed.
+
+  Definition clear_below (ts:Time.t) (promises:t): t :=
+    match id_of_time ts with
+    | None => promises
+    | Some ts => fun i =>
+                  if Pos.leb i ts
+                  then false
+                  else promises i
+    end.
+
+  Lemma clear_below_o ts' ts promises:
+    lookup ts' (clear_below ts promises) = lookup ts' promises && Time.ltb ts ts'.
+  Proof.
+    unfold lookup, clear_below.
+    destruct (id_of_time ts') eqn:X', (id_of_time ts) eqn:X; destruct ts, ts'; ss.
+    - destruct (Pos.leb_spec0 p p0); ss.
+      + exploit id_of_time_le; try exact l; eauto.
+        destruct (promises p), (S ts <? S ts') eqn:CMP; ss.
+        apply Time.ltb_lt in CMP. lia.
+      + assert ((p0 < p)%positive) by lia.
+        exploit id_of_time_lt; try exact H; eauto.
+        destruct (promises p), (S ts <? S ts') eqn:CMP; ss.
+        apply Time.ltb_ge in CMP. lia.
+    - destruct (promises p); ss.
+  Qed.
+
+  Lemma set_unset a b promises
+        (DIFF: a <> b):
+    set a (unset b promises) = unset b (set a promises).
+  Proof.
+    funext. i. unfold set, unset.
+    destruct a, b; ss.
+    rewrite ? fun_add_spec. repeat condtac; ss.
+    inversion e. inversion e0. subst.
+    apply SuccNat2Pos.inj in H0. congr.
+  Qed.
+
+  Lemma lookup_bot view:
+    lookup view bot = false.
+  Proof.
+    unfold lookup. destruct (id_of_time view); ss.
+  Qed.
+
+  Lemma ext p1 p2
+        (EQ: forall i, lookup i p1 = lookup i p2):
+    p1 = p2.
+  Proof.
+    funext. i. specialize (EQ (Pos.to_nat x)).
+    unfold lookup, id_of_time in *.
+    destruct (Id.eq_dec 1 x).
+    { subst. ss. }
+    exploit (Pos2Nat.inj_pred x); [lia|].
+    destruct (Pos.to_nat x) eqn:NAT; ss.
+    - destruct x; ss. destruct x; ss.
+    - i. subst. rewrite Pos2SuccNat.id_succ in *.
+      generalize (Pos.succ_pred_or x). i. des; [congr|].
+      rewrite H in *. ss.
+  Qed.
+
+  Definition promises_from_mem
+             (tid:Id.t) (mem: Memory.t): t.
+  Proof.
+    induction mem using list_rev_rect.
+    - exact bot.
+    - destruct x.
+      apply (if tid0 == tid
+             then Promises.set (S (List.length (List.rev mem))) IHmem
+             else IHmem).
+  Defined.
+
+  Lemma promises_from_mem_nil tid:
+    promises_from_mem tid Memory.empty = bot.
+  Proof.
+    unfold promises_from_mem, list_rev_rect, eq_rect. ss.
+    match goal with
+    | [|- context[match ?c with | eq_refl => _ end]] => destruct c
+    end; ss.
+  Qed.
+
+  Lemma promises_from_mem_snoc tid mem msg:
+    promises_from_mem tid (mem ++ [msg]) =
+    if msg.(Msg.tid) == tid
+    then set (S (List.length mem)) (promises_from_mem tid mem)
+    else promises_from_mem tid mem.
+  Proof.
+    unfold promises_from_mem at 1, list_rev_rect, eq_rect.
+    match goal with
+    | [|- context[match ?c with | eq_refl => _ end]] => destruct c
+    end; ss.
+    rewrite List.rev_involutive, List.rev_app_distr. ss.
+    destruct msg. s. condtac.
+    - inversion e. subst. rewrite ? List.rev_length.
+      f_equal.
+      unfold promises_from_mem, list_rev_rect, eq_rect.
+      match goal with
+      | [|- context[match ?c with | eq_refl => _ end]] => destruct c
+      end; ss.
+    - unfold promises_from_mem, list_rev_rect, eq_rect.
+      match goal with
+      | [|- context[match ?c with | eq_refl => _ end]] => destruct c
+      end; ss.
+  Qed.
+
+  Lemma promises_from_mem_inv
+        ts tid mem
+        (LOOKUP: lookup (S ts) (promises_from_mem tid mem)):
+    exists loc val, List.nth_error mem ts = Some (Msg.mk loc val tid).
+  Proof.
+    revert LOOKUP. induction mem using List.rev_ind.
+    { rewrite promises_from_mem_nil, lookup_bot. ss. }
+    rewrite promises_from_mem_snoc. condtac.
+    { rewrite set_o. condtac.
+      - inversion e. inversion e0. subst.
+        rewrite List.nth_error_app2; [|lia].
+        rewrite Nat.sub_diag. ss.
+        destruct x. esplits; eauto.
+      - i. exploit IHmem; eauto.  i. des.
+        rewrite List.nth_error_app1; eauto.
+        apply List.nth_error_Some. congr.
+    }
+    i. exploit IHmem; eauto.  i. des.
+    rewrite List.nth_error_app1; eauto.
+    apply List.nth_error_Some. congr.
+  Qed.
+
+  Lemma promises_from_mem_lookup
+        mem ts loc val tid
+        (GET: List.nth_error mem ts = Some (Msg.mk loc val tid)):
+    lookup (S ts) (promises_from_mem tid mem).
+  Proof.
+    revert GET. induction mem using List.rev_ind.
+    { i. apply List.nth_error_In in GET. inv GET. }
+    rewrite promises_from_mem_snoc. condtac.
+    - rewrite Promises.set_o. condtac.
+      + inversion e. inversion e0. subst.
+        rewrite List.nth_error_app2; [|lia].
+        rewrite Nat.sub_diag. ss.
+      + i. apply IHmem.
+        erewrite <- List.nth_error_app1; eauto.
+        assert (H: ts < List.length (mem ++ [x])).
+        { rewrite <- List.nth_error_Some. ii. congr. }
+        rewrite List.app_length in H.
+        rewrite Nat.add_1_r in H. inv H; try lia.
+        exfalso. apply c. ss.
+    - i. apply IHmem.
+      destruct (Nat.eq_dec ts (List.length mem)) eqn:Heq.
+      + inv Heq. rewrite List.nth_error_app2 in GET; try lia.
+        rewrite Nat.sub_diag in GET. ss. inv GET. ss.
+        exfalso. apply c. ss.
+      + rewrite List.nth_error_app1 in GET; auto.
+        assert (H: ts < List.length (mem ++ [x])).
+        { rewrite <- List.nth_error_Some. ii. congr. }
+        rewrite List.app_length in H.
+        rewrite Nat.add_1_r in H. inv H; try lia; congr.
+  Qed.
+
+  Lemma promises_from_mem_spec
+        ts tid mem:
+    lookup (S ts) (promises_from_mem tid mem) <->
+    exists loc val, List.nth_error mem ts = Some (Msg.mk loc val tid).
+  Proof.
+    induction mem using List.rev_ind.
+    { econs.
+      - rewrite promises_from_mem_nil, lookup_bot. ss.
+      - i. des. destruct ts; ss.
+    }
+    rewrite promises_from_mem_snoc. econs.
+    - condtac.
+      + inversion e. subst. rewrite set_o. condtac.
+        * inversion e0. subst. i.
+          rewrite List.nth_error_app2, Nat.sub_diag; [|lia]. ss.
+          destruct x. ss. eauto.
+        * intro Y. apply IHmem in Y. des.
+          esplits; eauto. apply nth_error_app_mon. eauto.
+      + intro Y. apply IHmem in Y. des.
+        esplits; eauto. apply nth_error_app_mon. eauto.
+    - i. des. apply nth_error_snoc_inv in H. des; ss.
+      { condtac; eauto. rewrite set_o. condtac; eauto. }
+      subst. condtac; ss; [|congr]. rewrite set_o. condtac; [|congr]. ss.
+  Qed.
+End Promises.

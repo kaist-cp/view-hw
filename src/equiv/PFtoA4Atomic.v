@@ -21,11 +21,11 @@ Require Import PromisingArch.promising.Promising.
 Require Import PromisingArch.promising.CommonPromising.
 Require Import PromisingArch.promising.StateExecFacts.
 Require Import PromisingArch.axiomatic.Axiomatic.
-Require Import PromisingArch.axiomatic.CommonAxiomatic.
-Require Import PromisingArch.axiomatic.PFtoA1.
-Require Import PromisingArch.axiomatic.PFtoA2.
-Require Import PromisingArch.axiomatic.PFtoA3.
-Require Import PromisingArch.axiomatic.PFtoA4FR.
+Require Import PromisingArch.axiomatic.SimLocal.
+Require Import PromisingArch.equiv.PFtoA1.
+Require Import PromisingArch.equiv.PFtoA2.
+Require Import PromisingArch.equiv.PFtoA3.
+Require Import PromisingArch.equiv.PFtoA4FR.
 
 Set Implicit Arguments.
 

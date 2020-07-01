@@ -19,6 +19,9 @@ Require Import HahnRelationsBasic.
 Set Implicit Arguments.
 
 
+Axiom devil: False.
+Ltac admit := exfalso; clear; case devil.
+
 Ltac refl := reflexivity.
 Ltac congr := congruence.
 Ltac etrans := etransitivity.
@@ -42,6 +45,19 @@ Ltac condtac :=
     let X := fresh "X" in
     destruct c eqn:X
   end.
+
+Ltac cleartriv :=
+    repeat (
+      match goal with
+      | [H: ?a = ?a |- _] => clear H
+      | [H: True |- _] => clear H
+      end).
+
+Ltac eqvtac :=
+  repeat (repeat
+  (match goal with
+         | [H: context [@equiv_dec ?a ?b ?c ?d ?x ?y] |- _] => destruct (@equiv_dec a b c d x y) as [deq|]; ss; inv deq
+         end; try subst; cleartriv)).
 
 Definition proj_sumbool (P Q: Prop) (a: {P} + {Q}) : bool :=
   if a then true else false.
@@ -421,6 +437,55 @@ Proof.
   destruct (List.nth_error (List.rev l) n) eqn:NTH; ss.
   revert LASTN. unfold lastn. erewrite List_firstn_S; eauto.
   rewrite List.rev_app_distr. s. i. inv LASTN. ss.
+Qed.
+
+Lemma lastn_sub_S A (l l1 l2: list A)
+      (SUBL: l = l1 ++ l2)
+      (LENGTH: List.length l2 > 0):
+  exists n, lastn (S n) l = l2.
+Proof.
+  eexists (length l2 - 1). rewrite <- Nat.add_1_r.
+  replace (length l2 - 1 + 1) with (length l2); [|lia].
+  rewrite SUBL. clear SUBL.
+  unfold lastn. rewrite List.firstn_rev. rewrite List.rev_involutive.
+  rewrite List.app_length. rewrite Nat.add_comm. rewrite minus_plus.
+  rewrite List.skipn_app. rewrite List.skipn_all. rewrite minus_diag. ss.
+Qed.
+
+Lemma lastn_sub_S1 A n (l l1 l2: list A)
+          (LASTN: lastn n l = l2):
+  exists l1, l = l1 ++ l2.
+Proof.
+  revert LASTN. revert n l2.
+  induction l; i.
+  { eexists ([]). destruct l2; ss. destruct n; ss. }
+  destruct (le_lt_dec n (length l)).
+  - rewrite lastn_cons in LASTN; [| lia]. apply IHl in LASTN. des.
+    eexists (a :: l3). ss. rewrite LASTN. ss.
+  - rewrite lastn_all in LASTN; ss.
+    eexists ([]). rewrite LASTN. ss.
+Qed.
+
+Lemma lastn_length_S A n (l: list A)
+      (N: n < List.length l):
+  length (lastn (S n) l) = length (lastn n l) + 1.
+Proof.
+  unfold lastn. repeat rewrite List.rev_length. rewrite <- List.rev_length in N.
+  destruct (List.rev l); ss; try lia.
+  repeat rewrite List.firstn_length_le; ss; try lia.
+Qed.
+
+Lemma lastn_length_incr A n k (l: list A)
+      (N: n < List.length l):
+  length (lastn n l) < length (lastn (n + (S k)) l).
+Proof.
+  induction k.
+  { rewrite Nat.add_1_r. exploit lastn_length_S; try exact N; eauto. lia. }
+  replace (n + S (S k)) with (S (n + (S k))); try lia.
+  destruct (le_lt_dec (length l) (n + S k)).
+  - replace (length (lastn (S (n + S k)) l)) with (length (lastn (n + S k) l)); ss.
+    repeat rewrite lastn_all; ss. lia.
+  - etrans; eauto. exploit lastn_length_S; try exact l0; eauto. lia.
 Qed.
 
 Lemma app_some_not_eq A x
@@ -836,5 +901,27 @@ Module IdSet.
   Qed.
 End IdSet.
 
-Axiom devil: False.
-Ltac admit := exfalso; clear; case devil.
+Inductive inverse A (rel:relation A) (codom:A -> Prop) (a:A): Prop :=
+| inverse_intro
+    a'
+    (REL: rel a a')
+    (CODOM: codom a')
+.
+Hint Constructors inverse.
+
+Lemma inverse_mon A (r1 r2:relation A)
+      (REL: r1 ⊆ r2):
+  inverse r1 <2= inverse r2.
+Proof.
+  i. inv PR. econs; eauto.
+Qed.
+
+Lemma inverse_union A (r1 r2:relation A) s:
+  inverse (r1 ∪ r2) s = inverse r1 s \1/ inverse r2 s.
+Proof.
+  funext. i. propext. econs; i.
+  - inv H. inv REL; eauto.
+  - des; inv H; econs; eauto.
+    + left. ss.
+    + right. ss.
+Qed.

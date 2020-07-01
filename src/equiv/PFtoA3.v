@@ -21,9 +21,9 @@ Require Import PromisingArch.promising.Promising.
 Require Import PromisingArch.promising.CommonPromising.
 Require Import PromisingArch.promising.StateExecFacts.
 Require Import PromisingArch.axiomatic.Axiomatic.
-Require Import PromisingArch.axiomatic.CommonAxiomatic.
-Require Import PromisingArch.axiomatic.PFtoA1.
-Require Import PromisingArch.axiomatic.PFtoA2.
+Require Import PromisingArch.axiomatic.SimLocal.
+Require Import PromisingArch.equiv.PFtoA1.
+Require Import PromisingArch.equiv.PFtoA2.
 
 Set Implicit Arguments.
 
@@ -67,7 +67,7 @@ Lemma nth_error_last A (l: list A) a n
   List.nth_error (l ++ [a]) n = Some a.
 Proof.
   apply Nat.eqb_eq in N. subst.
-  rewrite List.nth_error_app2, Nat.sub_diag; ss. 
+  rewrite List.nth_error_app2, Nat.sub_diag; ss.
 Qed.
 
 Lemma nth_error_not_last A (l: list A) a b n

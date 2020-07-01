@@ -21,10 +21,10 @@ Require Import PromisingArch.promising.Promising.
 Require Import PromisingArch.promising.CommonPromising.
 Require Import PromisingArch.promising.StateExecFacts.
 Require Import PromisingArch.axiomatic.Axiomatic.
-Require Import PromisingArch.axiomatic.CommonAxiomatic.
-Require Import PromisingArch.axiomatic.PFtoA1.
-Require Import PromisingArch.axiomatic.PFtoA2.
-Require Import PromisingArch.axiomatic.PFtoA3.
+Require Import PromisingArch.axiomatic.SimLocal.
+Require Import PromisingArch.equiv.PFtoA1.
+Require Import PromisingArch.equiv.PFtoA2.
+Require Import PromisingArch.equiv.PFtoA3.
 
 Set Implicit Arguments.
 
@@ -248,7 +248,7 @@ Proof.
       { exploit sim_trace_sim_th; try exact TRACE; eauto. intro L1.
         destruct L1.(AEU_WF). ss. exploit RMW_LIMIT; eauto. clear. lia. }
       destruct ex0; ss. inv H. exploit EX; eauto. i. des. rewrite H2 in x. inv x.
-      inv x3. des. destruct a; ss. 
+      inv x3. des. destruct a; ss.
       generalize L.(LC).(EXBANK). s. rewrite H2. intro Y. inv Y. des.
       inv REL. apply Label.is_reading_inv in LABEL1. des. subst.
       exploit EX2.(LABELS); eauto; ss.
