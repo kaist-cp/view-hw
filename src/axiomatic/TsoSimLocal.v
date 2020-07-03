@@ -279,21 +279,6 @@ Proof.
       destruct l; ss; econs; eauto with tso.
 Qed.
 
-Definition sim_local_vro ex :=
-  ⦗ex.(Execution.label_is) (Label.is_kinda_read)⦘ ⨾ Execution.po.
-
-Lemma sim_local_vro_step ex:
-  sim_local_vro ex =
-  (sim_local_vro ex ∪ ⦗ex.(Execution.label_is) (Label.is_kinda_read)⦘) ⨾
-  Execution.po_adj.
-Proof.
-  unfold sim_local_vro. rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
-  rewrite Execution.po_po_adj at 1.
-  rewrite (clos_refl_union Execution.po), union_seq, eq_seq.
-  rewrite ? (seq_union' (Execution.po ⨾ Execution.po_adj) Execution.po_adj), ? seq_assoc, ? union_assoc.
-  refl.
-Qed.
-
 Definition sim_local_vwo ex :=
   ⦗ex.(Execution.label_is) (Label.is_kinda_write)⦘ ⨾ Execution.po.
 

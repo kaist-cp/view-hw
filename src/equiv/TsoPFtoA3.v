@@ -153,10 +153,6 @@ Inductive sim_local (tid:Id.t) (mem: Memory.t) (ex: Execution.t) (vext: eidT -> 
          vext
          local.(Local.vwn).(View.ts)
          (inverse (sim_local_vwn ex) (eq (tid, List.length (alocal.(ALocal.labels)))));
-  VRO: sim_view
-         vext
-         local.(Local.vro).(View.ts)
-         (inverse (sim_local_vro ex) (eq (tid, List.length (alocal.(ALocal.labels)))));
   VWO: sim_view
          vext
          local.(Local.vwo).(View.ts)

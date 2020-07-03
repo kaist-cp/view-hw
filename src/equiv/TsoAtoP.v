@@ -274,10 +274,6 @@ Inductive sim_local (tid:Id.t) (ex:Execution.t) (ob: list eidT) (alocal:ALocal.t
          ex ob
          (inverse (sim_local_vwn ex) (eq (tid, List.length (alocal.(ALocal.labels)))))
          local.(Local.vwn).(View.ts);
-  VRO: sim_view
-         ex ob
-         (inverse (sim_local_vro ex) (eq (tid, List.length (alocal.(ALocal.labels)))))
-         local.(Local.vro).(View.ts);
   VWO: sim_view
          ex ob
          (inverse (sim_local_vwo ex) (eq (tid, List.length (alocal.(ALocal.labels)))))
@@ -707,13 +703,6 @@ Proof.
         { eapply sim_view_le; [|exact SIM_LOCAL.(VWN)]. eauto. }
         eapply sim_view_le; [|exact SIM_EXT2].
         i. subst. right. left. econs; eauto. econs; eauto with tso.
-      * (* sim_local vro *)
-        rewrite List.app_length, Nat.add_1_r.
-        rewrite sim_local_vro_step. rewrite inverse_step.
-        rewrite ? inverse_union. apply sim_view_join; eauto.
-        { eapply sim_view_le; [|exact SIM_LOCAL.(VRO)]. eauto. }
-        eapply sim_view_le; [|exact SIM_EXT2].
-        i. subst. right. econs; eauto. econs; eauto with tso.
       * (* sim_local vwo *)
         rewrite List.app_length, Nat.add_1_r.
         rewrite sim_local_vwo_step. rewrite inverse_step.
@@ -802,9 +791,6 @@ Proof.
           - econs; eauto. econs; eauto with tso.
           - refl.
         }
-      * rewrite List.app_length, Nat.add_1_r.
-        rewrite sim_local_vro_step. rewrite inverse_step.
-        rewrite ? inverse_union. eapply sim_view_le; [|exact SIM_LOCAL.(VRO)]. eauto.
       * rewrite List.app_length, Nat.add_1_r.
         rewrite sim_local_vwo_step. rewrite inverse_step.
         rewrite ? inverse_union. apply sim_view_join.
@@ -1002,12 +988,6 @@ Proof.
           - econs; eauto. econs; eauto with tso.
           - refl.
         }
-      * rewrite List.app_length, Nat.add_1_r.
-        rewrite sim_local_vro_step. rewrite inverse_step.
-        rewrite ? inverse_union. apply sim_view_join; eauto.
-        { eapply sim_view_le; [|exact SIM_LOCAL.(VRO)]. eauto. }
-        eapply sim_view_le; [|exact SIM_EXT1].
-        i. subst. right. econs; eauto. econs; eauto with tso.
       * rewrite List.app_length, Nat.add_1_r.
         rewrite sim_local_vwo_step. rewrite inverse_step.
         rewrite ? inverse_union. apply sim_view_join.
@@ -1212,13 +1192,6 @@ Proof.
         { eapply sim_view_le; [|exact SIM_LOCAL.(VWN)]. eauto. }
         eapply sim_view_le; [|exact SIM_EXT2].
         i. subst. right. left. econs; eauto. econs; eauto with tso.
-      * (* sim_local vro *)
-        rewrite List.app_length, Nat.add_1_r.
-        rewrite sim_local_vro_step. rewrite inverse_step.
-        rewrite ? inverse_union. apply sim_view_join; eauto.
-        { eapply sim_view_le; [|exact SIM_LOCAL.(VRO)]. eauto. }
-        eapply sim_view_le; [|exact SIM_EXT2].
-        i. subst. right. econs; eauto. econs; eauto with tso.
       * (* sim_local vwo *)
         rewrite List.app_length, Nat.add_1_r.
         rewrite sim_local_vwo_step. rewrite inverse_step.
@@ -1261,11 +1234,6 @@ Proof.
       rewrite sim_local_vrn_step. rewrite inverse_step.
       rewrite ? inverse_union. repeat apply sim_view_join; eauto using sim_view_bot.
       { eapply sim_view_le; [|exact SIM_LOCAL.(VRN)]. eauto. }
-      { destruct rr; eauto using sim_view_bot.
-        eapply sim_view_le; [|exact SIM_LOCAL.(VRO)].
-        left.
-        inv PR. econs; eauto. econs; eauto.
-      }
       { destruct wr; eauto using sim_view_bot.
         eapply sim_view_le; [|exact SIM_LOCAL.(VWO)].
         right. right. rewrite seq_assoc.
@@ -1276,11 +1244,6 @@ Proof.
       rewrite sim_local_vwn_step. rewrite inverse_step.
       rewrite ? inverse_union. repeat apply sim_view_join; eauto using sim_view_bot.
       { eapply sim_view_le; [|exact SIM_LOCAL.(VWN)]. eauto. }
-      { destruct rw; eauto using sim_view_bot.
-        eapply sim_view_le; [|exact SIM_LOCAL.(VRO)].
-        left.
-        inv PR. econs; eauto. econs; eauto.
-      }
       { destruct ww; eauto using sim_view_bot.
         eapply sim_view_le; [|exact SIM_LOCAL.(VWO)].
         left.
@@ -1288,9 +1251,6 @@ Proof.
         inv REL. des. inv H. econs; splits; eauto.
         econs; eauto.
       }
-    + rewrite List.app_length, Nat.add_1_r. s.
-      rewrite sim_local_vro_step. rewrite inverse_step.
-      rewrite ? inverse_union. eapply sim_view_le; [|exact SIM_LOCAL.(VRO)]. eauto.
     + rewrite List.app_length, Nat.add_1_r. s.
       rewrite sim_local_vwo_step. rewrite inverse_step.
       rewrite ? inverse_union. eapply sim_view_le; [|exact SIM_LOCAL.(VWO)]. eauto.

@@ -161,7 +161,6 @@ Proof.
         * inv H1. des. inv H1. ss. lia.
         * inv H1. des. inv H1. ss. lia.
       + ii. inv EID. inv REL. inv H1. inv H7. ss. lia.
-      + ii. inv EID. inv REL. inv H1. inv H7. ss. lia.
       + right. esplits; eauto. ii. inv H1. inv REL. inv H1. inv H7. ss. lia.
       + i. destruct view; ss. exploit Promises.promises_from_mem_inv; eauto. i. des.
         hexploit sim_traces_ex; try exact SIM.
