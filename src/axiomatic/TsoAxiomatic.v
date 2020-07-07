@@ -27,8 +27,40 @@ Module Label.
   | write (loc:Loc.t) (val:Val.t)
   | update (loc:Loc.t) (vold vnew:Val.t)
   | barrier (b:Barrier.t)
+  | flush (loc:Loc.t)
+  | writeback (loc:Loc.t)
   .
   Hint Constructors t : tso.
+
+  Definition is_read (label:t): bool :=
+    match label with
+    | read _ _ => true
+    | _ => false
+    end.
+
+  Definition is_write (label:t): bool :=
+    match label with
+    | update _ _ _ => true
+    | _ => false
+    end.
+
+  Definition is_update (label:t): bool :=
+    match label with
+    | update _ _ _ => true
+    | _ => false
+    end.
+
+  Definition is_flush (label:t): bool :=
+    match label with
+    | flush _ => true
+    | _ => false
+    end.
+
+  Definition is_writeback (label:t): bool :=
+    match label with
+    | writeback _ => true
+    | _ => false
+    end.
 
   Definition is_kinda_read (label:t): bool :=
     match label with
@@ -97,6 +129,40 @@ Module Label.
   Definition is_barrier_c (c:Barrier.t -> bool) (label:t): bool :=
     match label with
     | barrier b => c b
+    | _ => false
+    end.
+
+  Definition is_kinda_write_flush (label:t): bool :=
+    match label with
+    | write _ _ => true
+    | update _ _ _ => true
+    | flush _ => true
+    | _ => false
+    end.
+
+  Definition is_persist (label:t): bool :=
+    match label with
+    | flush _ => true
+    | writeback _ => true
+    | _ => false
+    end.
+
+  Definition is_access_persist (label:t): bool :=
+    match label with
+    | read _ _ => true
+    | write _ _ => true
+    | update _ _ _ => true
+    | flush _ => true
+    | writeback _ => true
+    | _ => false
+    end.
+
+  Definition is_kinda_write_persist (label:t): bool :=
+    match label with
+    | write _ _ => true
+    | update _ _ _ => true
+    | flush _ => true
+    | writeback _ => true
     | _ => false
     end.
 
@@ -251,12 +317,46 @@ Module Label.
     - destruct (equiv_dec loc loc1); ss. inv e. destruct (equiv_dec loc1 loc2); ss.
   Qed.
 
+  Lemma is_writeback_is_persist
+        l
+        (LABEL: is_writeback l):
+    is_persist l.
+  Proof.
+    destruct l; ss.
+  Qed.
+
+  Lemma is_persist_is_kinda_write_persist
+        l
+        (LABEL: is_persist l):
+    is_kinda_write_persist l.
+  Proof.
+    destruct l; ss.
+  Qed.
+
+  Lemma is_kinda_write_flush_is_kinda_write_persist
+        l
+        (LABEL: is_kinda_write_flush l):
+    is_kinda_write_persist l.
+  Proof.
+    destruct l; ss.
+  Qed.
+
+  Lemma is_kinda_write_persist_is_access_persist
+        l
+        (LABEL: is_kinda_write_persist l):
+    is_access_persist l.
+  Proof.
+    destruct l; ss.
+  Qed.
+
   Hint Resolve
        kinda_reading_is_kinda_read kinda_reading_is_accessing read_is_kinda_reading read_is_kinda_reading_val kinda_reading_exists_val kinda_reading_val_is_kinda_reading
        kinda_writing_is_kinda_write kinda_writing_is_accessing write_is_kinda_writing write_is_kinda_writing_val kinda_writing_exists_val kinda_writing_val_is_kinda_writing
        update_is_kinda_reading update_is_kinda_writing update_is_kinda_writing_val
        accessing_is_access read_is_accessing write_is_accessing update_is_accessing
        kinda_writing_same_loc
+       is_writeback_is_persist is_persist_is_kinda_write_persist
+       is_kinda_write_flush_is_kinda_write_persist is_kinda_write_persist_is_access_persist
     : tso.
 End Label.
 
@@ -301,6 +401,18 @@ Module ALocal.
       (ALOCAL: alocal2 =
                mk
                  (alocal1.(labels) ++ [Label.barrier (Barrier.dmb rr rw wr ww)]))
+  | step_flush
+      vloc
+      (EVENT: event = Event.flush vloc)
+      (ALOCAL: alocal2 =
+               mk
+                 (alocal1.(labels) ++ [Label.flush vloc.(ValA.val)]))
+  | step_writeback
+      vloc
+      (EVENT: event = Event.writeback vloc)
+      (ALOCAL: alocal2 =
+               mk
+                 (alocal1.(labels) ++ [Label.writeback vloc.(ValA.val)]))
   .
   Hint Constructors step : tso.
 
@@ -420,6 +532,12 @@ Module AExecUnit.
     - splits.
       + inv WF. econs; ss.
       + destruct local1. refl.
+    - splits.
+      + inv WF. econs; ss.
+      + econs; ss. eauto.
+    - splits.
+      + inv WF. econs; ss.
+      + econs; ss. eauto.
     - splits.
       + inv WF. econs; ss.
       + econs; ss. eauto.
@@ -650,6 +768,9 @@ Module Execution.
   Hint Constructors e : tso.
 
   Definition po_loc (ex:t): relation eidT := po ∩ ex.(label_rel) label_loc.
+  (* TODO: add real cacheline *)
+  Definition po_cl (ex:t): relation eidT := po ∩ ex.(label_rel) label_loc.
+
   Definition fr (ex:t): relation eidT :=
     (ex.(rf)⁻¹ ⨾ ex.(co)) ∪
     ((ex.(label_rel) label_loc) ∩
@@ -673,14 +794,50 @@ Module Execution.
      ⦗ex.(label_is) Label.is_kinda_write⦘).
 
   Definition bob (ex:t): relation eidT :=
-    ⦗ex.(label_is) Label.is_kinda_write⦘ ⨾
+    ⦗ex.(label_is) Label.is_access_persist⦘ ⨾
      po ⨾
-     ⦗ex.(label_is) (Label.is_barrier_c Barrier.is_dmb_wr)⦘ ⨾
+     ⦗ex.(label_is) (Label.is_barrier_c Barrier.is_mfence)⦘ ⨾
      po ⨾
-     ⦗ex.(label_is) Label.is_kinda_read⦘.
+     ⦗ex.(label_is) Label.is_access_persist⦘ ∪
+    ⦗ex.(label_is) Label.is_kinda_write_persist⦘⨾
+     po ⨾
+     ⦗ex.(label_is) (Label.is_barrier_c Barrier.is_sfence)⦘ ⨾
+     po ⨾
+     ⦗ex.(label_is) Label.is_kinda_write_persist⦘.
+
+  Definition pob (ex:t): relation eidT :=
+    (⦗ex.(label_is) Label.is_kinda_write_flush⦘ ⨾
+     po ⨾
+     ⦗ex.(label_is) Label.is_kinda_write_flush⦘) ∪
+
+    (⦗ex.(label_is) Label.is_flush⦘ ⨾
+     (po_cl ex) ⨾
+     ⦗ex.(label_is) Label.is_writeback⦘) ∪
+    (⦗ex.(label_is) Label.is_writeback⦘ ⨾
+     (po_cl ex) ⨾
+     ⦗ex.(label_is) Label.is_flush⦘) ∪
+
+    (⦗ex.(label_is) Label.is_update⦘ ⨾
+     po ⨾
+     ⦗ex.(label_is) Label.is_writeback⦘) ∪
+     (⦗ex.(label_is) Label.is_writeback⦘ ⨾
+     po ⨾
+     ⦗ex.(label_is) Label.is_update⦘) ∪
+
+    (⦗ex.(label_is) Label.is_write⦘ ⨾
+     po ⨾
+     ⦗ex.(label_is) Label.is_writeback⦘) ∪
+
+    (⦗ex.(label_is) Label.is_read⦘ ⨾
+     po ⨾
+     ⦗ex.(label_is) Label.is_persist⦘).
 
   Definition ob (ex:t): relation eidT :=
-    (obs ex) ∪ (dob ex) ∪ (bob ex).
+    (obs ex) ∪ (dob ex) ∪ (bob ex) ∪ (pob ex).
+
+  (* TODO: define nvo*)
+  (* Definition nvo (ex:t): realation eidT := *)
+
 End Execution.
 
 Inductive tid_lift (tid:Id.t) (rel:relation nat) (eid1 eid2:eidT): Prop :=
@@ -819,10 +976,10 @@ Module Valid.
     inv I. ss. subst.
     destruct (lt_eq_lt_dec iid2 iid1); ss.
     exfalso. eapply EX.(EXTERNAL). apply t_step_rt. esplits.
-    { left. left. right. eauto. }
+    { left. left. left. right. eauto. }
     exploit EX.(CO2); eauto. i. des. inv LABEL. inv LABEL0.
     destruct s.
-    + econs 1. left. right. right. econs. esplits.
+    + econs 1. left. left. right. right. econs. esplits.
       * econs; eauto with tso.
       * econs. esplits; cycle 1.
         { econs; eauto with tso. }
@@ -862,8 +1019,8 @@ Module Valid.
     i. des; ss.
     { subst. apply po_irrefl in PO. inv PO. }
     exfalso. eapply EX.(EXTERNAL). apply t_step_rt. esplits.
-    - left. left. right. eauto.
-    - econs. left. right. right. econs. esplits.
+    - left. left. left. right. eauto.
+    - econs. left. left. right. right. econs. esplits.
       + econs; eauto with tso.
       + econs. esplits; eauto. econs; eauto with tso.
   Qed.
@@ -940,11 +1097,11 @@ Module Valid.
       exploit EX.(RF1); eauto with tso. i. des.
       + exfalso. exploit EX.(EXTERNAL); eauto. instantiate (1 := (tid3, iid3)).
         apply t_step_rt. econs; eauto. esplits; [|etrans; [econs|econs]].
-        * left. left. left. left. econs; eauto with tso.
-        * left. right. left. econs. esplits.
+        * left. left. left. left. left. econs; eauto with tso.
+        * left. left. right. left. econs. esplits.
           -- econs; eauto with tso.
           -- econs. esplits; eauto. econs; eauto with tso.
-        * left. left. left. right. split; ss. right. econs.
+        * left. left. left. left. right. split; ss. right. econs.
           -- econs; eauto with tso.
           -- econs; eauto with tso. econs; eauto with tso.
       + inv LABEL0. rename eid2 into eid4. exploit EX.(CO1).
@@ -952,11 +1109,11 @@ Module Valid.
         intro X. rewrite <- or_assoc in X. destruct X; [by esplits; eauto|].
         exfalso. exploit EX.(EXTERNAL); eauto. instantiate (1 := (tid3, iid3)).
         apply t_step_rt. econs; eauto. esplits; [|etrans; [econs|econs]].
-        * left. left. left. left. econs; eauto with tso.
-        * left. right. left. econs. esplits.
+        * left. left. left. left. left. econs; eauto with tso.
+        * left. left. right. left. econs. esplits.
           -- econs; eauto with tso.
           -- econs. esplits; eauto. econs; eauto with tso.
-        * left. left. left. right. split; ss. econs. econs. econs; eauto.
+        * left. left. left. left. right. split; ss. econs. econs. econs; eauto.
   Qed.
 
   Lemma coherence_rw
@@ -982,12 +1139,12 @@ Module Valid.
       inv PO. inv e. rewrite TID in H1. eapply coi_is_po in H0; eauto with tso.
     - (* rfe *)
       exfalso. eapply EX.(EXTERNAL). apply t_step_rt. esplits.
-      { left. left. left. left. econs; eauto with tso. }
+      { left. left. left. left. left. econs; eauto with tso. }
       etrans.
-      + instantiate (1 := eid2). econs. left. right. left. econs. econs.
+      + instantiate (1 := eid2). econs. left. left. right. left. econs. econs.
         * econs; eauto with tso.
         * econs; eauto. econs; eauto. econs; eauto with tso.
-      + econs. left. left. right. eauto.
+      + econs. left. left. left. right. eauto.
   Qed.
 
   Lemma rf_inv_write
@@ -1010,6 +1167,7 @@ Module Valid.
            | [H: Execution.obs _ _ _ |- _] => inv H
            | [H: Execution.dob _ _ _ |- _] => inv H
            | [H: Execution.bob _ _ _ |- _] => inv H
+           | [H: Execution.pob _ _ _ |- _] => inv H
            | [H: Execution.fr _ _ _ |- _] => inv H
            | [H: Execution.fre _ _ _ |- _] => inv H
            | [H: Execution.rfe _ _ _ |- _] => inv H
@@ -1043,10 +1201,12 @@ Module Valid.
       destruct l0; ss. congr. congr.
     - exploit RF2; eauto. i. des.
       inv READ. destruct l; ss; try congr.
-    - inv H0.
-      inv H. destruct l0; ss; try congr.
+    - inv H.
+      inv H0. destruct l0; ss; try congr.
     - exploit CO2; eauto. i. des. inv LABEL0. inv LABEL1.
       destruct l; destruct l0; ss; try congr.
+    - inv H. ss.
+    - inv H1. ss.
   Qed.
 
   Lemma ob_barrier_ob
@@ -1065,7 +1225,6 @@ Module Valid.
     obtac.
     all: try by rewrite EID in EID1; inv EID1; ss.
     all: try by rewrite EID in EID2; inv EID2; ss.
-    all: try by destruct l; try congr; ss.
     - exploit RF2; eauto. i. des. inv READ.
       destruct l; ss; try congr.
     - exploit CO2; eauto. i. des. inv LABEL1.
@@ -1106,10 +1265,10 @@ Module Valid.
         (RF2: rf2 exec)
         (CYCLE: (Execution.ob exec)⁺ eid eid):
     exists eid_nb,
-      (Execution.ob exec ∩ (Execution.label_is_rel exec Label.is_access))⁺ eid_nb eid_nb.
+      (Execution.ob exec ∩ (Execution.label_is_rel exec Label.is_access_persist))⁺ eid_nb eid_nb.
   Proof.
     exploit minimalize_cycle; eauto.
-    { instantiate (1 := Execution.label_is exec Label.is_access).
+    { instantiate (1 := Execution.label_is exec Label.is_access_persist).
       i. destruct (Execution.label b exec) eqn:LABEL.
       - destruct t; try by contradict H1; econs; eauto.
         eapply ob_barrier_ob; eauto with tso.
@@ -1149,6 +1308,8 @@ Module Valid.
     - exploit CO2; eauto. i. des. inv LABEL4. rewrite EID1 in EID0. destruct l; ss.
     - rewrite EID1 in EID0. inv EID0. ss.
     - exploit CO2; eauto. i. des. inv LABEL4. rewrite EID1 in EID0. destruct l; ss.
+    - inv H. ss.
+    - inv H1. ss.
   Qed.
 End Valid.
 
