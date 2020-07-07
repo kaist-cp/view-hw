@@ -963,6 +963,7 @@ Module Execution.
   Definition ob (ex:t): relation eidT :=
     (obs ex) ∪ (dob ex) ∪ (aob ex) ∪ (bob ex) ∪ (pob ex).
 
+  (* TODO: add real cacheline *)
   Definition fl (ex:t): relation eidT :=
     (⦗ex.(label_is) Label.is_write⦘ ⨾
      (ob ex ∩ ex.(label_rel) label_loc) ⨾
