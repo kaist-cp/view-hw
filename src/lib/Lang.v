@@ -122,6 +122,19 @@ Module Barrier.
     | dmb rr rw wr ww => ww
     | _ => false
     end.
+
+  (* for x86 *)
+  Definition is_mfence (b:t): bool :=
+    match b with
+    | dmb rr rw wr ww => andb wr ww
+    | _ => false
+    end.
+
+  Definition is_sfence (b:t): bool :=
+    match b with
+    | dmb rr rw wr ww => ww
+    | _ => false
+    end.
 End Barrier.
 
 Inductive rmwT :=
@@ -137,6 +150,8 @@ Inductive instrT :=
 | instr_store (ex:bool) (ord:OrdW.t) (res:Id.t) (eloc:exprT) (eval:exprT)
 | instr_rmw (ordr:OrdR.t) (ordw:OrdW.t) (res:Id.t) (eloc:exprT) (rmw:rmwT)
 | instr_barrier (b:Barrier.t)
+| instr_flush (eloc:exprT)
+| instr_writeback (eloc:exprT)
 .
 Hint Constructors instrT.
 Coercion instr_barrier: Barrier.t >-> instrT.
@@ -248,6 +263,8 @@ Module Event.
   | write (ex:bool) (ord:OrdW.t) (vloc:ValA.t (A:=A)) (vval:ValA.t (A:=A)) (res:ValA.t (A:=A))
   | rmw (ordr:OrdR.t) (ordw:OrdW.t) (vloc:ValA.t (A:=A)) (old new:ValA.t (A:=A))
   | barrier (b:Barrier.t)
+  | flush (vloc:ValA.t (A:=A))
+  | writeback (vloc:ValA.t (A:=A))
   .
 End Event.
 
@@ -313,6 +330,18 @@ Section State.
       b stmts rmap:
       step (Event.barrier b)
            (mk ((stmt_instr (instr_barrier b))::stmts) rmap)
+           (mk stmts rmap)
+  | step_flush
+      eloc stmts rmap vloc
+      (LOC: vloc = sem_expr rmap eloc):
+      step (Event.flush vloc)
+           (mk ((stmt_instr (instr_flush eloc))::stmts) rmap)
+           (mk stmts rmap)
+  | step_writeback
+      eloc stmts rmap vloc
+      (LOC: vloc = sem_expr rmap eloc):
+      step (Event.writeback vloc)
+           (mk ((stmt_instr (instr_writeback eloc))::stmts) rmap)
            (mk stmts rmap)
   | step_if
       cond vcond s1 s2 stmts rmap stmts'
