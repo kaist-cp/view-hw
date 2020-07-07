@@ -96,30 +96,59 @@ Module Barrier.
   Inductive t :=
   | isb
   | dmb (rr rw wr ww:bool)
+  | dsb (rr rw wr ww:bool)
   .
   Hint Constructors t.
 
-  Definition is_dmb_rr (b:t): bool :=
+  Definition is_dmb_dsb_rr (b:t): bool :=
     match b with
     | dmb rr rw wr ww => rr
+    | dsb rr rw wr ww => rr
     | _ => false
     end.
 
-  Definition is_dmb_rw (b:t): bool :=
+  Definition is_dmb_dsb_rw (b:t): bool :=
     match b with
     | dmb rr rw wr ww => rw
+    | dsb rr rw wr ww => rw
     | _ => false
     end.
 
-  Definition is_dmb_wr (b:t): bool :=
+  Definition is_dmb_dsb_wr (b:t): bool :=
     match b with
     | dmb rr rw wr ww => wr
+    | dsb rr rw wr ww => wr
     | _ => false
     end.
 
-  Definition is_dmb_ww (b:t): bool :=
+  Definition is_dmb_dsb_ww (b:t): bool :=
     match b with
     | dmb rr rw wr ww => ww
+    | dsb rr rw wr ww => ww
+    | _ => false
+    end.
+
+  Definition is_dsb_rr (b:t): bool :=
+    match b with
+    | dsb rr rw wr ww => rr
+    | _ => false
+    end.
+
+  Definition is_dsb_rw (b:t): bool :=
+    match b with
+    | dsb rr rw wr ww => rw
+    | _ => false
+    end.
+
+  Definition is_dsb_wr (b:t): bool :=
+    match b with
+    | dsb rr rw wr ww => wr
+    | _ => false
+    end.
+
+  Definition is_dsb_ww (b:t): bool :=
+    match b with
+    | dsb rr rw wr ww => ww
     | _ => false
     end.
 
