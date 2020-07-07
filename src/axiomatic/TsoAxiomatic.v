@@ -28,7 +28,7 @@ Module Label.
   | update (loc:Loc.t) (vold vnew:Val.t)
   | barrier (b:Barrier.t)
   | flush (loc:Loc.t)
-  | writeback (loc:Loc.t)
+  | flushopt (loc:Loc.t)
   .
   Hint Constructors t : tso.
 
@@ -56,9 +56,9 @@ Module Label.
     | _ => false
     end.
 
-  Definition is_writeback (label:t): bool :=
+  Definition is_flushopt (label:t): bool :=
     match label with
-    | writeback _ => true
+    | flushopt _ => true
     | _ => false
     end.
 
@@ -143,7 +143,7 @@ Module Label.
   Definition is_persist (label:t): bool :=
     match label with
     | flush _ => true
-    | writeback _ => true
+    | flushopt _ => true
     | _ => false
     end.
 
@@ -153,7 +153,7 @@ Module Label.
     | write _ _ => true
     | update _ _ _ => true
     | flush _ => true
-    | writeback _ => true
+    | flushopt _ => true
     | _ => false
     end.
 
@@ -162,7 +162,7 @@ Module Label.
     | write _ _ => true
     | update _ _ _ => true
     | flush _ => true
-    | writeback _ => true
+    | flushopt _ => true
     | _ => false
     end.
 
@@ -317,9 +317,9 @@ Module Label.
     - destruct (equiv_dec loc loc1); ss. inv e. destruct (equiv_dec loc1 loc2); ss.
   Qed.
 
-  Lemma is_writeback_is_persist
+  Lemma is_flushopt_is_persist
         l
-        (LABEL: is_writeback l):
+        (LABEL: is_flushopt l):
     is_persist l.
   Proof.
     destruct l; ss.
@@ -355,7 +355,7 @@ Module Label.
        update_is_kinda_reading update_is_kinda_writing update_is_kinda_writing_val
        accessing_is_access read_is_accessing write_is_accessing update_is_accessing
        kinda_writing_same_loc
-       is_writeback_is_persist is_persist_is_kinda_write_persist
+       is_flushopt_is_persist is_persist_is_kinda_write_persist
        is_kinda_write_flush_is_kinda_write_persist is_kinda_write_persist_is_access_persist
     : tso.
 End Label.
@@ -407,12 +407,12 @@ Module ALocal.
       (ALOCAL: alocal2 =
                mk
                  (alocal1.(labels) ++ [Label.flush vloc.(ValA.val)]))
-  | step_writeback
+  | step_flushopt
       vloc
-      (EVENT: event = Event.writeback vloc)
+      (EVENT: event = Event.flushopt vloc)
       (ALOCAL: alocal2 =
                mk
-                 (alocal1.(labels) ++ [Label.writeback vloc.(ValA.val)]))
+                 (alocal1.(labels) ++ [Label.flushopt vloc.(ValA.val)]))
   .
   Hint Constructors step : tso.
 
@@ -812,21 +812,21 @@ Module Execution.
 
     (⦗ex.(label_is) Label.is_flush⦘ ⨾
      (po_cl ex) ⨾
-     ⦗ex.(label_is) Label.is_writeback⦘) ∪
-    (⦗ex.(label_is) Label.is_writeback⦘ ⨾
+     ⦗ex.(label_is) Label.is_flushopt⦘) ∪
+    (⦗ex.(label_is) Label.is_flushopt⦘ ⨾
      (po_cl ex) ⨾
      ⦗ex.(label_is) Label.is_flush⦘) ∪
 
     (⦗ex.(label_is) Label.is_update⦘ ⨾
      po ⨾
-     ⦗ex.(label_is) Label.is_writeback⦘) ∪
-     (⦗ex.(label_is) Label.is_writeback⦘ ⨾
+     ⦗ex.(label_is) Label.is_flushopt⦘) ∪
+     (⦗ex.(label_is) Label.is_flushopt⦘ ⨾
      po ⨾
      ⦗ex.(label_is) Label.is_update⦘) ∪
 
     (⦗ex.(label_is) Label.is_write⦘ ⨾
      po ⨾
-     ⦗ex.(label_is) Label.is_writeback⦘) ∪
+     ⦗ex.(label_is) Label.is_flushopt⦘) ∪
 
     (⦗ex.(label_is) Label.is_read⦘ ⨾
      po ⨾

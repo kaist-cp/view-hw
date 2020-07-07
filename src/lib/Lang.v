@@ -151,7 +151,7 @@ Inductive instrT :=
 | instr_rmw (ordr:OrdR.t) (ordw:OrdW.t) (res:Id.t) (eloc:exprT) (rmw:rmwT)
 | instr_barrier (b:Barrier.t)
 | instr_flush (eloc:exprT)
-| instr_writeback (eloc:exprT)
+| instr_flushopt (eloc:exprT)
 .
 Hint Constructors instrT.
 Coercion instr_barrier: Barrier.t >-> instrT.
@@ -264,7 +264,7 @@ Module Event.
   | rmw (ordr:OrdR.t) (ordw:OrdW.t) (vloc:ValA.t (A:=A)) (old new:ValA.t (A:=A))
   | barrier (b:Barrier.t)
   | flush (vloc:ValA.t (A:=A))
-  | writeback (vloc:ValA.t (A:=A))
+  | flushopt (vloc:ValA.t (A:=A))
   .
 End Event.
 
@@ -337,11 +337,11 @@ Section State.
       step (Event.flush vloc)
            (mk ((stmt_instr (instr_flush eloc))::stmts) rmap)
            (mk stmts rmap)
-  | step_writeback
+  | step_flushopt
       eloc stmts rmap vloc
       (LOC: vloc = sem_expr rmap eloc):
-      step (Event.writeback vloc)
-           (mk ((stmt_instr (instr_writeback eloc))::stmts) rmap)
+      step (Event.flushopt vloc)
+           (mk ((stmt_instr (instr_flushopt eloc))::stmts) rmap)
            (mk stmts rmap)
   | step_if
       cond vcond s1 s2 stmts rmap stmts'
