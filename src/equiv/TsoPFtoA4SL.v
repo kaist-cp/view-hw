@@ -607,7 +607,7 @@ Proof.
           + econs; ss.
           + exploit EX2.(LABELS_REV); ss.
             { apply nth_error_last. apply Nat.eqb_eq. ss. }
-            i. econs; eauto. inv VLOC. rewrite VAL0. apply Label.write_is_writing.
+            i. econs; eauto. inv VLOC. rewrite VAL0. apply Label.write_is_kinda_writing.
           + i. inv PO. inv PO0. ss. subst. clear -N N0. lia.
         - rewrite EX2.(XVEXT); cycle 1.
           { ss. rewrite List.app_length. ss. clear. lia. }
@@ -877,7 +877,7 @@ Proof.
           + econs; ss.
           + exploit EX2.(LABELS_REV); ss.
             { apply nth_error_last. apply Nat.eqb_eq. ss. }
-            i. econs; eauto. inv VLOC. rewrite VAL. apply Label.update_is_writing.
+            i. econs; eauto. inv VLOC. rewrite VAL. apply Label.update_is_kinda_writing.
           + i. inv PO. inv PO0. ss. subst. clear -N N0. lia.
         - rewrite EX2.(XVEXT); cycle 1.
           { ss. rewrite List.app_length. ss. clear. lia. }

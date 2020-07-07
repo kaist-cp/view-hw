@@ -44,7 +44,7 @@ Proof. apply filter_map_app. Qed.
 Lemma mem_of_ex_in_length
       ex ob eid
       (IN: List.In eid ob)
-      (EID: ex.(Execution.label_is) Label.is_write eid):
+      (EID: ex.(Execution.label_is) Label.is_kinda_write eid):
   length (mem_of_ex ex ob) <> 0.
 Proof.
   eapply filter_map_in_length; eauto.
@@ -81,8 +81,8 @@ Lemma view_of_eid_ob_write_write
       ex ob eid1 eid2 view
       (VIEW1: view_of_eid ex ob eid1 = Some view)
       (VIEW2: view_of_eid ex ob eid2 = Some view)
-      (WRITE1: Execution.label_is ex (Label.is_write) eid1)
-      (WRITE2: Execution.label_is ex (Label.is_write) eid2):
+      (WRITE1: Execution.label_is ex (Label.is_kinda_write) eid1)
+      (WRITE2: Execution.label_is ex (Label.is_kinda_write) eid2):
   eid1 = eid2.
 Proof.
   exploit view_of_eid_inv; try exact VIEW1; eauto. i. des.
@@ -169,7 +169,7 @@ Lemma view_of_eid_ob_write
       (OB: rel eid1 eid2)
       (VIEW1: view_of_eid ex ob eid1 = Some view1)
       (VIEW2: view_of_eid ex ob eid2 = Some view2)
-      (WRITE2: Execution.label_is ex (Label.is_writing loc) eid2):
+      (WRITE2: Execution.label_is ex (Label.is_kinda_writing loc) eid2):
   view1 < view2.
 Proof.
   exploit view_of_eid_inv; try exact VIEW1; eauto. i. des.
@@ -293,7 +293,7 @@ Inductive sim_local (tid:Id.t) (ex:Execution.t) (ob: list eidT) (alocal:ALocal.t
       Promises.lookup view local.(Local.promises) <->
       (exists n,
           <<N: (length alocal.(ALocal.labels)) <= n>> /\
-          <<WRITE: ex.(Execution.label_is) Label.is_write (tid, n)>> /\
+          <<WRITE: ex.(Execution.label_is) Label.is_kinda_write (tid, n)>> /\
           <<VIEW: view_of_eid ex ob (tid, n) = Some view>>);
 }.
 Hint Constructors sim_local.
@@ -325,7 +325,7 @@ Qed.
 Lemma label_write_mem_of_ex_msg
       eid ex ob loc val
       (OB: Permutation ob (Execution.eids ex))
-      (LABEL: Execution.label_is ex (Label.is_writing_val loc val) eid):
+      (LABEL: Execution.label_is ex (Label.is_kinda_writing_val loc val) eid):
   exists n,
     <<VIEW: view_of_eid ex ob eid = Some (S n)>> /\
     <<MSG: List.nth_error (mem_of_ex ex ob) n = Some (Msg.mk loc val (fst eid))>>.
@@ -372,7 +372,7 @@ Qed.
 Lemma label_write_mem_of_ex
       eid ex ob loc val
       (OB: Permutation ob (Execution.eids ex))
-      (LABEL: Execution.label_is ex (Label.is_writing_val loc val) eid):
+      (LABEL: Execution.label_is ex (Label.is_kinda_writing_val loc val) eid):
   exists n,
     <<VIEW: view_of_eid ex ob eid = Some (S n)>> /\
     <<READ: Memory.read loc (S n) (mem_of_ex ex ob) = Some val>> /\
@@ -389,7 +389,7 @@ Lemma read_msg_exist_ts
       (OB: Permutation ob (Execution.eids ex))
       (LINEARIZED: linearized (Execution.ob ex) ob)
       (SIM_LOCAL: sim_local tid ex ob alocal local)
-      (READ: Execution.label_is ex (fun label : Label.t => Label.is_reading_val loc val label)
+      (READ: Execution.label_is ex (fun label : Label.t => Label.is_kinda_reading_val loc val label)
              (tid, length (ALocal.labels alocal))):
   exists ts,
     <<READ: Memory.read loc ts (mem_of_ex ex ob) = Some val>> /\
@@ -498,7 +498,7 @@ Lemma read_msg_latest_coh
       (EX: Valid.ex p ex)
       (LINEARIZED: linearized (Execution.ob ex) ob)
       (SIM_LOCAL: sim_local tid ex ob alocal local)
-      (READING: Execution.label_is ex (fun label : Label.t => Label.is_reading loc label)
+      (READING: Execution.label_is ex (fun label : Label.t => Label.is_kinda_reading loc label)
              (tid, length (ALocal.labels alocal)))
       (MSG: ts > 0 ->
             exists eid : eidT,
@@ -962,7 +962,7 @@ Proof.
           { exploit Valid.coherence_ww; try exact H0; eauto with tso.
             i. eapply view_of_eid_ob_write; eauto.
             - left. left. right. ss.
-            - econs; eauto. apply Label.write_is_writing.
+            - econs; eauto. apply Label.write_is_kinda_writing.
           }
           { inv H1.
             exploit EX.(Valid.RF2); eauto. i. des.
@@ -981,7 +981,7 @@ Proof.
             all: try by econs; eauto; eauto with tso.
             i. eapply view_of_eid_ob_write; eauto.
             - left. left. right. ss.
-            - econs; eauto. apply Label.write_is_writing.
+            - econs; eauto. apply Label.write_is_kinda_writing.
           }
           { inv H1.
             exploit EX.(Valid.RF2); eauto. i. des.
@@ -1001,7 +1001,7 @@ Proof.
           rewrite VIEW0. inv EID.
           apply lt_n_Sm_le. eapply view_of_eid_ob_write; eauto.
           - eapply sim_local_vwn_spec; eauto with tso.
-          - econs; eauto. apply Label.write_is_writing.
+          - econs; eauto. apply Label.write_is_kinda_writing.
         }
     + econs; ss. econs; ss.
       * i. rewrite List.app_length, Nat.add_1_r.

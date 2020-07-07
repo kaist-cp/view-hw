@@ -354,18 +354,18 @@ Inductive sim_th
         exists eid l,
           w eid = Some (loc, ts) /\
           List.nth_error aeu.(AExecUnit.local).(ALocal.labels) eid = Some l /\
-          Label.is_writing_val loc val l));
+          Label.is_kinda_writing_val loc val l));
   WPROP2:
     forall eid loc val l
       (GET: List.nth_error aeu.(AExecUnit.local).(ALocal.labels) eid = Some l /\
-            Label.is_writing_val loc val l),
+            Label.is_kinda_writing_val loc val l),
     exists ts,
       w eid = Some (loc, ts) /\
       Memory.get_msg ts mem = Some (Msg.mk loc val tid);
   WPROP2':
     forall eid loc l
       (GET: List.nth_error aeu.(AExecUnit.local).(ALocal.labels) eid = Some l /\
-            Label.is_writing loc l),
+            Label.is_kinda_writing loc l),
     exists ts val,
       w eid = Some (loc, ts) /\
       Memory.get_msg ts mem = Some (Msg.mk loc val tid);
@@ -377,7 +377,7 @@ Inductive sim_th
       le ts (eu.(ExecUnit.local).(Local.coh) loc).(View.ts) /\
       exists val l,
         List.nth_error aeu.(AExecUnit.local).(ALocal.labels) eid = Some l /\
-        Label.is_writing_val loc val l /\
+        Label.is_kinda_writing_val loc val l /\
         Memory.get_msg ts mem = Some (Msg.mk loc val tid);
   WPROP4:
     forall eid1 loc1 eid2 loc2 ts (W1: w eid1 = Some (loc1, ts)) (W2: w eid2 = Some (loc2, ts)),
@@ -385,7 +385,7 @@ Inductive sim_th
   RPROP1:
     forall eid loc val l
       (GET: List.nth_error aeu.(AExecUnit.local).(ALocal.labels) eid = Some l /\
-            Label.is_reading_val loc val l),
+            Label.is_kinda_reading_val loc val l),
     exists ts tid',
       r eid = Some (loc, ts) /\
       <<READ_TS_SPEC:
@@ -397,8 +397,8 @@ Inductive sim_th
     le ts (eu.(ExecUnit.local).(Local.coh) loc).(View.ts) /\
     exists l val tid',
       List.nth_error aeu.(AExecUnit.local).(ALocal.labels) eid = Some l /\
-      Label.is_reading_val loc val l /\
-      ~ Label.is_write l /\
+      Label.is_kinda_reading_val loc val l /\
+      ~ Label.is_kinda_write l /\
       <<READ_TS_SPEC:
           __guard__ ((ts = Time.bot /\ val = Val.default) \/
           Memory.get_msg ts mem = Some (Msg.mk loc val tid'))>>) \/
@@ -406,8 +406,8 @@ Inductive sim_th
     le ts (eu.(ExecUnit.local).(Local.coh) loc).(View.ts) /\
     exists l vold tid',
       List.nth_error aeu.(AExecUnit.local).(ALocal.labels) eid = Some l /\
-      Label.is_reading_val loc vold l /\
-      Label.is_write l /\
+      Label.is_kinda_reading_val loc vold l /\
+      Label.is_kinda_write l /\
       <<READ_TS_SPEC:
           __guard__ ((ts = Time.bot /\ vold = Val.default) \/
           Memory.get_msg ts mem = Some (Msg.mk loc vold tid'))>>);
@@ -430,10 +430,10 @@ Inductive sim_th
      (LABEL2: List.nth_error aeu.(AExecUnit.local).(ALocal.labels) iid2 = Some label2)
      (REL: Execution.label_loc label1 label2),
       <<PO_LOC_WRITE:
-        Label.is_write label2 ->
+        Label.is_kinda_write label2 ->
         Time.lt (cov iid1) (cov iid2)>> /\
       <<PO_LOC_READ:
-        Label.is_read label2 /\ ~ Label.is_write label2 ->
+        Label.is_kinda_read label2 /\ ~ Label.is_kinda_write label2 ->
         Time.le (cov iid1) (cov iid2)>>;
   EU_WF: ExecUnit.wf tid eu;
   AEU_WF: AExecUnit.wf aeu;
@@ -900,7 +900,7 @@ Proof.
           rewrite MSG. ss. des_ifs.
     - i. unfold ALocal.next_eid in *. des_ifs.
       + apply Nat.eqb_eq in Heq. subst. rewrite fun_add_spec. des_ifs; [|congr]. inv e.
-        destruct ts; ss. esplits; eauto using Label.write_is_writing_val.
+        destruct ts; ss. esplits; eauto using Label.write_is_kinda_writing_val.
         * unfold Memory.get_msg in MSG. ss. rewrite MSG. des_ifs.
           unfold Time.lt, Time.bot. lia.
         * unfold Memory.get_msg in MSG. ss. rewrite MSG. des_ifs.
@@ -1076,7 +1076,7 @@ Proof.
         esplits; eauto.
     - i. unfold ALocal.next_eid in *. des_ifs.
       + apply Nat.eqb_eq in Heq. subst. rewrite fun_add_spec. des_ifs; [|congr]. inv e.
-        destruct ts; ss. esplits; eauto using Label.update_is_writing_val.
+        destruct ts; ss. esplits; eauto using Label.update_is_kinda_writing_val.
         * unfold Memory.get_msg in MSG. ss. rewrite MSG. des_ifs.
           unfold Time.lt, Time.bot. lia.
         * unfold Memory.get_msg in MSG. ss. rewrite MSG. des_ifs.

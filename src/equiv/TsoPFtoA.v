@@ -239,12 +239,12 @@ Lemma sim_traces_vext_valid
   <<OB_WRITE:
     forall eid1 eid2
       (OB: ob' ex eid1 eid2)
-      (EID2: ex.(Execution.label_is) Label.is_write eid2),
+      (EID2: ex.(Execution.label_is) Label.is_kinda_write eid2),
       Time.lt ((v_gen vexts) eid1) ((v_gen vexts) eid2)>> /\
   <<OB_READ:
     forall eid1 eid2
       (OB: ob' ex eid1 eid2)
-      (EID2: ex.(Execution.label_is) Label.is_read eid2),
+      (EID2: ex.(Execution.label_is) Label.is_kinda_read eid2),
       Time.le ((v_gen vexts) eid1) ((v_gen vexts) eid2)>>.
 Proof.
   splits; i.
@@ -323,9 +323,9 @@ Lemma sim_traces_valid_rf_refl
   <<RF_REFL:
       forall eid1 eid2
              (RF: Execution.rf ex eid1 eid2),
-        Time.eq ((v_gen covs) eid1) ((v_gen covs) eid2) /\ ex.(Execution.label_is_not) Label.is_write eid2
+        Time.eq ((v_gen covs) eid1) ((v_gen covs) eid2) /\ ex.(Execution.label_is_not) Label.is_kinda_write eid2
         \/
-        Time.lt ((v_gen covs) eid1) ((v_gen covs) eid2) /\ ex.(Execution.label_is) Label.is_write eid2>>.
+        Time.lt ((v_gen covs) eid1) ((v_gen covs) eid2) /\ ex.(Execution.label_is) Label.is_kinda_write eid2>>.
 Proof.
   generalize STEP. intro X. inv X. ii.
   exploit sim_traces_cov_rf; eauto.
@@ -357,7 +357,7 @@ Lemma sim_traces_valid_porf
 Proof.
   generalize STEP. intro X. inv X. ii.
   exploit sim_traces_cov_po_loc; eauto. i. des.
-  assert (MID_WRITE: Execution.label_is ex (fun label : Label.t => Label.is_write label) mid).
+  assert (MID_WRITE: Execution.label_is ex (fun label : Label.t => Label.is_kinda_write label) mid).
   { exploit RF2; eauto. i. des. inv WRITE. eauto with tso. }
   eapply PO_LOC_WRITE in MID_WRITE.
   exploit sim_traces_cov_rf; eauto. i.
@@ -435,9 +435,9 @@ Lemma sim_traces_valid_external_atomic
       (OB: Execution.ob ex eid1 eid2)
       (LABEL1: Execution.label_is ex Label.is_access eid1)
       (LABEL2: Execution.label_is ex Label.is_access eid2),
-      (Time.lt ((v_gen vexts) eid1) ((v_gen vexts) eid2) /\ ex.(Execution.label_is) Label.is_write eid2) \/
-      (Time.le ((v_gen vexts) eid1) ((v_gen vexts) eid2) /\ ex.(Execution.label_is) Label.is_read eid2
-        /\ ex.(Execution.label_is_not) Label.is_write eid2)>>.
+      (Time.lt ((v_gen vexts) eid1) ((v_gen vexts) eid2) /\ ex.(Execution.label_is) Label.is_kinda_write eid2) \/
+      (Time.le ((v_gen vexts) eid1) ((v_gen vexts) eid2) /\ ex.(Execution.label_is) Label.is_kinda_read eid2
+        /\ ex.(Execution.label_is_not) Label.is_kinda_write eid2)>>.
 Proof.
   generalize STEP. intro X. inv X. splits.
   exploit sim_traces_vext_valid; eauto. i. des.
@@ -469,9 +469,9 @@ Lemma corw_irrefl
           forall eid1 eid2
           (RF: Execution.rf ex eid1 eid2),
         Time.eq (cov eid1) (cov eid2) /\
-        ex.(Execution.label_is_not) Label.is_write eid2 \/
+        ex.(Execution.label_is_not) Label.is_kinda_write eid2 \/
         Time.lt (cov eid1) (cov eid2) /\
-        ex.(Execution.label_is) Label.is_write eid2)
+        ex.(Execution.label_is) Label.is_kinda_write eid2)
       (PORF:
           forall eid1 mid eid2
           (PO_LOC: Execution.po_loc ex eid1 mid)
@@ -512,8 +512,8 @@ Proof.
       exploit RF2; eauto. i. des.
       exploit CO2; eauto. i. des.
       inv WRITE. inv LABEL. rewrite EID in EID0. inv EID0.
-      eapply Label.writing_val_is_writing in LABEL1.
-      exploit Label.writing_same_loc; [exact LABEL1|exact LABEL2|]. i. subst.
+      eapply Label.kinda_writing_val_is_kinda_writing in LABEL1.
+      exploit Label.kinda_writing_same_loc; [exact LABEL1|exact LABEL2|]. i. subst.
       inv READ. inv LABEL0. econs; eauto. econs; eauto with tso.
     - inv H. inv H1. inv LABEL. econs; eauto. econs; eauto. econs; eauto.
   }
@@ -533,9 +533,9 @@ Lemma promising_pf_valid
     <<RF_REFL: forall eid1 eid2
                (RF: Execution.rf ex eid1 eid2),
                Time.eq (cov eid1) (cov eid2) /\
-               ex.(Execution.label_is_not) Label.is_write eid2 \/
+               ex.(Execution.label_is_not) Label.is_kinda_write eid2 \/
                Time.lt (cov eid1) (cov eid2) /\
-               ex.(Execution.label_is) Label.is_write eid2>> /\
+               ex.(Execution.label_is) Label.is_kinda_write eid2>> /\
     <<PORF: forall eid1 mid eid2
             (PO_LOC: Execution.po_loc ex eid1 mid)
             (RF: Execution.rf ex mid eid2),
@@ -550,14 +550,14 @@ Lemma promising_pf_valid
         Time.lt (vext eid1) (vext eid2) \/
         (Time.le (vext eid1) (vext eid2) /\
          Execution.po eid1 eid2 /\
-         ex.(Execution.label_is) Label.is_read eid1 /\
-         ex.(Execution.label_is_not) Label.is_write eid1 /\
-         ex.(Execution.label_is) Label.is_read eid2 /\
-         ex.(Execution.label_is_not) Label.is_write eid2) \/
+         ex.(Execution.label_is) Label.is_kinda_read eid1 /\
+         ex.(Execution.label_is_not) Label.is_kinda_write eid1 /\
+         ex.(Execution.label_is) Label.is_kinda_read eid2 /\
+         ex.(Execution.label_is_not) Label.is_kinda_write eid2) \/
         (Time.le (vext eid1) (vext eid2) /\
-         ex.(Execution.label_is) Label.is_write eid1 /\
-         ex.(Execution.label_is) Label.is_read eid2 /\
-         ex.(Execution.label_is_not) Label.is_write eid2)>> /\
+         ex.(Execution.label_is) Label.is_kinda_write eid1 /\
+         ex.(Execution.label_is) Label.is_kinda_read eid2 /\
+         ex.(Execution.label_is_not) Label.is_kinda_write eid2)>> /\
     <<STATE: IdMap.Forall2
                (fun tid sl aeu => sim_state_weak (fst sl) aeu.(AExecUnit.state))
                m.(Machine.tpool) PRE.(Valid.aeus)>>.
