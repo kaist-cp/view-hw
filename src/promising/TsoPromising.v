@@ -46,14 +46,15 @@ Section Local.
     vro: View.t (A:=unit);
     vwo: View.t (A:=unit);
     fwdbank: Loc.t -> (FwdItem.t);
+    persist: Loc.t -> View.t (A:=unit);
     promises: Promises.t;
   }.
   Hint Constructors t.
 
-  Definition init: t := mk bot bot bot bot bot (fun _ => FwdItem.init) bot.
+  Definition init: t := mk bot bot bot bot bot (fun _ => FwdItem.init) bot bot.
 
   Definition init_with_promises (promises: Promises.t): Local.t :=
-    mk bot bot bot bot bot (fun _ => FwdItem.init) promises.
+    mk bot bot bot bot bot (fun _ => FwdItem.init) bot promises.
 
   Inductive promise (loc:Loc.t) (val:Val.t) (ts:Time.t) (tid:Id.t) (lc1:t) (mem1:Memory.t) (lc2:t) (mem2:Memory.t): Prop :=
   | promise_intro
@@ -65,6 +66,7 @@ Section Local.
               lc1.(vro)
               lc1.(vwo)
               lc1.(fwdbank)
+              lc1.(persist)
               (Promises.set ts lc1.(promises)))
       (MEM2: Memory.append (Msg.mk loc val tid) mem1 = (ts, mem2))
   .
@@ -90,6 +92,7 @@ Section Local.
               (join lc1.(vro) view_post)
               lc1.(vwo)
               lc1.(fwdbank)
+              lc1.(persist)
               lc1.(promises))
   .
   Hint Constructors read.
@@ -122,10 +125,12 @@ Section Local.
               lc1.(vro)
               (join lc1.(vwo) (View.mk ts bot))
               (fun_add loc (FwdItem.mk ts) lc1.(fwdbank))
+              lc1.(persist)
               (Promises.unset ts lc1.(promises)))
   .
   Hint Constructors fulfill.
 
+  (* TODO: join global persistency view with lc2.persist(all) *)
   Inductive rmw (vloc vold vnew:ValA.t (A:=unit)) (old_ts:Time.t) (ts:Time.t) (tid:Id.t) (view_pre:View.t (A:=unit)) (lc1:t) (mem1:Memory.t) (lc2:t): Prop :=
   | rmw_intro
       loc old new
@@ -147,6 +152,7 @@ Section Local.
               (join lc1.(vro) (View.mk ts bot)) (* vro is about what point this thread had seen while taking read step, not just msg view itself*)
               (join lc1.(vwo) (View.mk ts bot))
               (fun_add loc (FwdItem.mk ts) lc1.(fwdbank))
+              (fun_add loc (View.mk ts bot) lc1.(persist))
               (Promises.unset ts lc1.(promises)))
   .
   Hint Constructors rmw.
@@ -171,10 +177,13 @@ Section Local.
               (join lc1.(vro) view_post)
               lc1.(vwo)
               lc1.(fwdbank)
+              lc1.(persist)
               lc1.(promises))
   .
   Hint Constructors rmw_failure.
 
+  (* TODO: separate mf, sf *)
+  (* TODO: join global persistency view with lc2.persist(all) *)
   Inductive dmb (rr rw wr ww:bool) (lc1 lc2:t): Prop :=
   | dmb_intro
       (LC2: lc2 =
@@ -185,9 +194,47 @@ Section Local.
               lc1.(vro)
               lc1.(vwo)
               lc1.(fwdbank)
+              lc1.(persist)
               lc1.(promises))
   .
   Hint Constructors dmb.
+
+  (* TODO: join global persistency view with lc2.persist(loc) *)
+  Inductive flush (vloc:ValA.t (A:=unit)) (lc1:t) (lc2:t): Prop :=
+  | flush_intro
+      loc view_post
+      (LOC: loc = vloc.(ValA.val))
+      (VIEW_POST: view_post = View.mk (lc1.(coh) loc).(View.ts) bot)
+      (LC2: lc2 =
+            mk
+              lc1.(coh)
+              lc1.(vrn)
+              lc1.(vwn)
+              lc1.(vro)
+              lc1.(vwo)
+              lc1.(fwdbank)
+              (fun_add loc view_post lc1.(persist))
+              lc1.(promises))
+  .
+  Hint Constructors flush.
+
+  Inductive flushopt (vloc:ValA.t (A:=unit)) (lc1:t) (lc2:t): Prop :=
+  | flushopt_intro
+      loc view_post
+      (LOC: loc = vloc.(ValA.val))
+      (VIEW_POST: view_post = View.mk (lc1.(coh) loc).(View.ts) bot)
+      (LC2: lc2 =
+            mk
+              lc1.(coh)
+              lc1.(vrn)
+              lc1.(vwn)
+              lc1.(vro)
+              lc1.(vwo)
+              lc1.(fwdbank)
+              (fun_add loc view_post lc1.(persist))
+              lc1.(promises))
+  .
+  Hint Constructors flush.
 
   Inductive step (event:Event.t (A:=unit)) (tid:Id.t) (mem:Memory.t) (lc1 lc2:t): Prop :=
   | step_internal
@@ -213,6 +260,14 @@ Section Local.
       rr rw wr ww
       (EVENT: event = Event.barrier (Barrier.dmb rr rw wr ww))
       (STEP: dmb rr rw wr ww lc1 lc2)
+  | step_flush
+      vloc
+      (EVENT: event = Event.flush vloc)
+      (STEP: flush vloc lc1 lc2)
+  | step_flushopt
+      vloc
+      (EVENT: event = Event.flushopt vloc)
+      (STEP: flushopt vloc lc1 lc2)
   .
   Hint Constructors step.
 
@@ -230,6 +285,7 @@ Section Local.
       (VRO: lc.(vro).(View.ts) <= List.length mem)
       (VWO: lc.(vwo).(View.ts) <= List.length mem)
       (FWDBANK: forall loc, wf_fwdbank loc mem (lc.(coh) loc).(View.ts) (lc.(fwdbank) loc))
+      (PERSIST: forall loc, (lc.(persist) loc).(View.ts) <= List.length mem)
       (PROMISES: forall ts (IN: Promises.lookup ts lc.(promises)), ts <= List.length mem)
       (PROMISES: forall ts msg
                    (MSG: Memory.get_msg ts mem = Some msg)
@@ -343,6 +399,7 @@ Section Local.
     - destruct (FWDBANK loc). des. econs; esplits; eauto.
       + rewrite TS, Memory.latest_ts_append. ss.
       + apply Memory.read_mon. eauto.
+    - rewrite PERSIST. lia.
     - exploit PROMISES; eauto. lia.
     - apply Memory.get_msg_app_inv in MSG. des.
       + eapply PROMISES0; eauto.
@@ -431,6 +488,22 @@ Section Local.
     inv LC. econs; ss; try refl; try apply join_l.
   Qed.
 
+  Lemma flush_incr
+        vloc lc1 lc2
+        (LC: flush vloc lc1 lc2):
+    le lc1 lc2.
+  Proof.
+    inv LC. econs; ss; try refl; try apply join_l.
+  Qed.
+
+  Lemma flushopt_incr
+        vloc lc1 lc2
+        (LC: flushopt vloc lc1 lc2):
+    le lc1 lc2.
+  Proof.
+    inv LC. econs; ss; try refl; try apply join_l.
+  Qed.
+
   Lemma step_incr
         e tid mem lc1 lc2
         (LC: step e tid mem lc1 lc2):
@@ -442,6 +515,8 @@ Section Local.
     - eapply rmw_incr. eauto.
     - eapply rmw_failure_incr. eauto.
     - eapply dmb_incr. eauto.
+    - eapply flush_incr. eauto.
+    - eapply flushopt_incr. eauto.
   Qed.
 
   Lemma step_wf
@@ -493,6 +568,7 @@ Section Local.
         { revert MSG. unfold Memory.read, Memory.get_msg.
           destruct ts; ss. i. rewrite MSG. ss. eexists. des_ifs.
         }
+      + i. rewrite fun_add_spec. condtac; viewtac.
       + i. revert IN. rewrite Promises.unset_o. condtac; ss. eauto.
       + i. rewrite Promises.unset_o. rewrite fun_add_spec in TS. condtac.
         { inversion e. subst. rewrite MSG in MSG0. destruct msg. inv MSG0. ss.
@@ -511,6 +587,10 @@ Section Local.
       + i. eapply PROMISES0; eauto. eapply Time.le_lt_trans; [|by eauto].
         rewrite fun_add_spec. condtac; ss. inversion e. rewrite H0. apply join_l.
     - econs; viewtac.
+    - econs; viewtac.
+      i. rewrite fun_add_spec. condtac; viewtac.
+    - econs; viewtac.
+      i. rewrite fun_add_spec. condtac; viewtac.
   Qed.
 End Local.
 End Local.
@@ -591,6 +671,7 @@ Section ExecUnit.
     - i. destruct (FWDBANK loc0). des. econs; esplits; ss.
       + rewrite TS. apply Memory.latest_ts_append.
       + apply Memory.read_mon; eauto.
+    - i. rewrite PERSIST. lia.
     - i. revert IN. rewrite Promises.set_o. condtac.
       + inversion e. i. inv IN. lia.
       + i. exploit PROMISES; eauto. lia.
@@ -680,6 +761,8 @@ Section ExecUnit.
         rewrite UNSET. eqvtac.
     - inv STEP. rewrite LC2. ss.
     - inv STEP. rewrite LC2. ss.
+    - inv STEP. rewrite LC2. ss.
+    - inv STEP. rewrite LC2. ss.
   Qed.
 
   Lemma rtc_state_step_promise_remained tid eu1 eu2 ts loc val
@@ -702,6 +785,8 @@ Section ExecUnit.
         inversion e. subst. inv WRITABLE. etrans; eauto. lia.
       + inv STEP0. rewrite LC2. ss. rewrite fun_add_spec. condtac; ss.
         inversion e. subst. etrans; eauto. apply join_l.
+      + inv STEP0. rewrite LC2. ss.
+      + inv STEP0. rewrite LC2. ss.
       + inv STEP0. rewrite LC2. ss.
     - inv H. inv STEP0. rewrite MEM. ss.
     - exploit state_step_promise_remained; eauto.
@@ -886,6 +971,7 @@ Module Machine.
       + i. destruct (FWDBANK loc0). des. econs; esplits; ss.
         { rewrite TS. apply Memory.latest_ts_append. }
         { apply Memory.read_mon; eauto. }
+      + i. rewrite PERSIST. lia.
       + i. exploit PROMISES; eauto. lia.
       + i. apply Memory.get_msg_snoc_inv in MSG. des.
         { eapply PROMISES0; eauto. }
