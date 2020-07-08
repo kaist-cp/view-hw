@@ -199,6 +199,7 @@ Section Local.
   .
   Hint Constructors dmb.
 
+  (* TODO: + same cacheline *)
   (* TODO: join global persistency view with lc2.persist(loc) *)
   Inductive flush (vloc:ValA.t (A:=unit)) (lc1:t) (lc2:t): Prop :=
   | flush_intro
@@ -218,6 +219,7 @@ Section Local.
   .
   Hint Constructors flush.
 
+  (* TODO: + same cacheline *)
   Inductive flushopt (vloc:ValA.t (A:=unit)) (lc1:t) (lc2:t): Prop :=
   | flushopt_intro
       loc view_post
