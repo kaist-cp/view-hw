@@ -261,7 +261,7 @@ Module ALocal.
                  alocal1.(data)
                  alocal1.(ctrl)
                  alocal1.(rmw)
-                 None)
+                 alocal1.(exbank))
   .
   Hint Constructors step.
 
@@ -618,6 +618,9 @@ Module AExecUnit.
           { apply nth_error_app_mon. eauto. }
           { apply nth_error_app_mon. eauto. }
           { i. rewrite List.nth_error_app1; eauto. etrans; [apply C|]. apply List.nth_error_Some. congr. }
+        * i. exploit EXBANK'; eauto. lia.
+        * ii. apply nth_error_snoc_inv in H. des; ss.
+          eapply EXBANK; eauto.
       + econs; ss. eauto.
     - splits.
       + inv WF. econs; ss.
