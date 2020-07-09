@@ -182,7 +182,6 @@ Section Local.
   .
   Hint Constructors rmw_failure.
 
-  (* TODO: separate mf, sf *)
   (* TODO: join global persistency view with lc2.persist(all) *)
   Inductive dmb (rr rw wr ww:bool) (lc1 lc2:t): Prop :=
   | dmb_intro

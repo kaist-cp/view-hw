@@ -805,12 +805,12 @@ Module Execution.
   Definition bob (ex:t): relation eidT :=
     ⦗ex.(label_is) Label.is_access_persist⦘ ⨾
      po ⨾
-     ⦗ex.(label_is) (Label.is_barrier_c Barrier.is_mfence)⦘ ⨾
+     ⦗ex.(label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_wr)⦘ ⨾
      po ⨾
      ⦗ex.(label_is) Label.is_access_persist⦘ ∪
     ⦗ex.(label_is) Label.is_kinda_write_persist⦘⨾
      po ⨾
-     ⦗ex.(label_is) (Label.is_barrier_c Barrier.is_sfence)⦘ ⨾
+     ⦗ex.(label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_ww)⦘ ⨾
      po ⨾
      ⦗ex.(label_is) Label.is_kinda_write_persist⦘.
 
