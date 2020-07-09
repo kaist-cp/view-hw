@@ -104,6 +104,12 @@ Module Label.
     | _ => false
     end.
 
+  Definition is_updating (loc:Loc.t) (label:t): bool :=
+    match label with
+    | update loc' _ _ => loc' == loc
+    | _ => false
+    end.
+
   Definition is_access (label:t): bool :=
     match label with
     | read _ _ => true
@@ -144,6 +150,13 @@ Module Label.
     match label with
     | flush _ => true
     | flushopt _ => true
+    | _ => false
+    end.
+
+  Definition is_persisting (loc:Loc.t) (label:t): bool :=
+    match label with
+    | flush loc' => loc' == loc
+    | flushopt loc' => loc' == loc
     | _ => false
     end.
 
@@ -262,6 +275,12 @@ Module Label.
     destruct l; ss; destruct (equiv_dec loc0 loc); ss.
   Qed.
 
+  Lemma update_is_updating loc vold vnew:
+    is_updating loc (update loc vold vnew).
+  Proof.
+    s. destruct (equiv_dec loc loc); ss. exfalso. apply c. ss.
+  Qed.
+
   Lemma update_is_kinda_reading loc vold vnew:
     is_kinda_reading loc (update loc vold vnew).
   Proof.
@@ -317,6 +336,12 @@ Module Label.
     - destruct (equiv_dec loc loc1); ss. inv e. destruct (equiv_dec loc1 loc2); ss.
   Qed.
 
+  Lemma flush_is_persisting loc:
+    is_persisting loc (flush loc).
+  Proof.
+    s. destruct (equiv_dec loc loc); ss. exfalso. apply c. ss.
+  Qed.
+
   Lemma is_flushopt_is_persist
         l
         (LABEL: is_flushopt l):
@@ -360,9 +385,10 @@ Module Label.
   Hint Resolve
        kinda_reading_is_kinda_read kinda_reading_is_accessing read_is_kinda_reading read_is_kinda_reading_val kinda_reading_exists_val kinda_reading_val_is_kinda_reading
        kinda_writing_is_kinda_write kinda_writing_is_accessing write_is_kinda_writing write_is_kinda_writing_val kinda_writing_exists_val kinda_writing_val_is_kinda_writing
-       update_is_kinda_reading update_is_kinda_writing update_is_kinda_writing_val
+       update_is_updating update_is_kinda_reading update_is_kinda_writing update_is_kinda_writing_val
        accessing_is_access read_is_accessing write_is_accessing update_is_accessing
        kinda_writing_same_loc
+       flush_is_persisting
        is_flushopt_is_persist is_persist_is_kinda_write_persist
        is_kinda_write_is_kinda_write_flush
        is_kinda_write_flush_is_kinda_write_persist is_kinda_write_persist_is_access_persist
