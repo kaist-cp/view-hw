@@ -333,6 +333,14 @@ Module Label.
     destruct l; ss.
   Qed.
 
+  Lemma is_kinda_write_is_kinda_write_flush
+        l
+        (LABEL: is_kinda_write l):
+    is_kinda_write_flush l.
+  Proof.
+    destruct l; ss.
+  Qed.
+
   Lemma is_kinda_write_flush_is_kinda_write_persist
         l
         (LABEL: is_kinda_write_flush l):
@@ -356,6 +364,7 @@ Module Label.
        accessing_is_access read_is_accessing write_is_accessing update_is_accessing
        kinda_writing_same_loc
        is_flushopt_is_persist is_persist_is_kinda_write_persist
+       is_kinda_write_is_kinda_write_flush
        is_kinda_write_flush_is_kinda_write_persist is_kinda_write_persist_is_access_persist
     : tso.
 End Label.
