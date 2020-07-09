@@ -595,7 +595,30 @@ Module AExecUnit.
         * ii. apply nth_error_snoc_inv in H. des; ss.
           eapply EXBANK; eauto.
       + econs; ss. eexists; eauto.
-    - admit.
+    - splits.
+      + inv WF. econs; ss.
+        all: try rewrite List.app_length; s.
+        all: unfold ALocal.next_eid in *.
+        * ii. apply label_is_mon. exploit REG; eauto.
+        * i. exploit ADDR_LIMIT; eauto. lia.
+        * ii. eapply times_mon; [| |by apply ADDR_LABEL].
+          { apply label_is_mon. }
+          { apply label_is_mon. }
+        * i. exploit DATA_LIMIT; eauto. lia.
+        * ii. eapply times_mon; [| |by apply DATA_LABEL].
+          { apply label_is_mon. }
+          { apply label_is_mon. }
+        * i. exploit CTRL_LIMIT; eauto. lia.
+        * ii. econs; ss.
+          { apply label_is_mon. eapply CTRL_LABEL. eauto. }
+          { apply label_is_mon. eapply CTRL_LABEL. eauto. }
+        * i. exploit RMW_LIMIT; eauto. lia.
+        * i. apply nth_error_snoc_inv in LABEL. des; eauto. inv LABEL0.
+        * i. exploit RMW2; eauto. i. des. esplits.
+          { apply nth_error_app_mon. eauto. }
+          { apply nth_error_app_mon. eauto. }
+          { i. rewrite List.nth_error_app1; eauto. etrans; [apply C|]. apply List.nth_error_Some. congr. }
+      + econs; ss. eauto.
     - splits.
       + inv WF. econs; ss.
         all: try rewrite List.app_length; s.

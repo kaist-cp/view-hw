@@ -157,7 +157,7 @@ Definition sim_local_vrn ex :=
 
   (⦗ex.(Execution.label_is) Label.is_kinda_write⦘ ⨾
    Execution.po ⨾
-   ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_wr)⦘ ⨾
+   ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_mfence)⦘ ⨾
    Execution.po).
 
 Lemma sim_local_vrn_step ex:
@@ -167,7 +167,7 @@ Lemma sim_local_vrn_step ex:
 
    (⦗ex.(Execution.label_is) Label.is_kinda_write⦘ ⨾
      Execution.po ⨾
-     ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_wr)⦘))) ⨾
+     ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_mfence)⦘))) ⨾
   Execution.po_adj.
 Proof.
   unfold sim_local_vrn. rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
