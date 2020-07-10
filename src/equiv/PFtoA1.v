@@ -264,9 +264,28 @@ Proof.
     + inv LOCAL1; [econs 1|econs 2]; eauto; ss.
       rewrite List.nth_error_app1; eauto.
       eapply List.nth_error_Some. ii. congr.
+  - inv STEP.
+    eexists _, (AExecUnit.mk (State.mk _ _) _). splits; ss.
+    + econs 7; ss.
+    + econs 5; ss.
+    + econs; ss.
+    + econs; ss.
+    + inv LOCAL1; [econs 1|econs 2]; eauto; ss.
+      rewrite List.nth_error_app1; eauto.
+      eapply List.nth_error_Some. ii. congr.
+  - inv STEP.
+    eexists _, (AExecUnit.mk (State.mk _ _) _). splits; ss.
+    + econs 9. ss.
+    + econs 7; ss.
+    + econs; ss.
+      eauto using sim_rmap_weak_expr.
+    + econs; ss.
+    + inv LOCAL1; [econs 1|econs 2]; eauto; ss.
+      rewrite List.nth_error_app1; eauto.
+      eapply List.nth_error_Some. ii. congr.
   - inv LC.
     eexists _, (AExecUnit.mk (State.mk _ _) _). splits; ss.
-    + econs 8; ss.
+    + econs 10; ss.
     + econs 6; ss.
     + econs; ss.
       exploit sim_rmap_weak_expr; eauto. intro X. inv X.
@@ -275,7 +294,7 @@ Proof.
       rewrite List.nth_error_app1; eauto.
       eapply List.nth_error_Some. ii. congr.
   - eexists _, (AExecUnit.mk (State.mk _ _) _). splits; ss.
-    + econs 9. ss.
+    + econs 11. ss.
     + econs; ss.
     + ss.
     + ss.
@@ -807,10 +826,53 @@ Proof.
         { subst. inv REL. inv Y. }
         eapply IH.(PO); eauto.
     }
+    { (* dsb *)
+      inv STEP. inv ASTATE_STEP. ss. inv EVENT. econs; ss.
+      - i. exploit IH.(WPROP1); eauto. s. i. des; [left|right]; esplits; eauto.
+        eapply nth_error_app_mon. eauto.
+      - i. exploit IH.(WPROP2); eauto.
+        apply nth_error_snoc_inv in GET. des; eauto. congr.
+      - i. exploit IH.(WPROP3); eauto. s. i. des. esplits; eauto.
+        eapply nth_error_app_mon. eauto.
+      - eapply IH.(WPROP4).
+      - i. exploit IH.(RPROP1); eauto.
+        apply nth_error_snoc_inv in GET. des; eauto. congr.
+      - i. exploit IH.(RPROP2); eauto. s. i. des. esplits; eauto.
+        eapply nth_error_app_mon. eauto.
+      - i. apply AExecUnit.label_is_mon. eapply IH.(COVPROP); eauto.
+      - i. apply AExecUnit.label_is_mon. eapply IH.(VEXTPROP); eauto.
+      - i. apply nth_error_snoc_inv in LABEL1. des; cycle 1.
+        { subst. inv REL. inv X. }
+        apply nth_error_snoc_inv in LABEL2. des; cycle 1.
+        { subst. inv REL. inv Y. }
+        eapply IH.(PO); eauto.
+    }
   }
   { (* control *)
     inv LOCAL; ss. inv LC. inv STATE0. inv ASTATE_STEP. ss. inv EVENT.
     econs; ss.
+    - i. exploit IH.(WPROP1); eauto. s. i. des; [left|right]; esplits; eauto.
+      eapply nth_error_app_mon. eauto.
+    - i. exploit IH.(WPROP2); eauto.
+      apply nth_error_snoc_inv in GET. des; eauto. congr.
+    - i. exploit IH.(WPROP3); eauto. i. des. esplits; eauto.
+      eapply nth_error_app_mon. eauto.
+    - eapply IH.(WPROP4).
+    - i. exploit IH.(RPROP1); eauto.
+      apply nth_error_snoc_inv in GET. des; eauto. congr.
+    - i. exploit IH.(RPROP2); eauto. s. i. des. esplits; eauto.
+      eapply nth_error_app_mon. eauto.
+    - i. apply AExecUnit.label_is_mon. eapply IH.(COVPROP); eauto.
+    - i. apply AExecUnit.label_is_mon. eapply IH.(VEXTPROP); eauto.
+    - i. apply nth_error_snoc_inv in LABEL1. des; cycle 1.
+      { subst. inv REL. inv X. }
+      apply nth_error_snoc_inv in LABEL2. des; cycle 1.
+      { subst. inv REL. inv Y. }
+      eapply IH.(PO); eauto.
+  }
+  { (* flushopt *)
+    inv LOCAL; ss.
+    inv STEP. inv ASTATE_STEP. ss. inv EVENT. econs; ss.
     - i. exploit IH.(WPROP1); eauto. s. i. des; [left|right]; esplits; eauto.
       eapply nth_error_app_mon. eauto.
     - i. exploit IH.(WPROP2); eauto.

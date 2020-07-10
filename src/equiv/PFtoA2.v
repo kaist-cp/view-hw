@@ -561,6 +561,7 @@ Proof.
            | [|- v_gen _ _ = _] => try by erewrite XCOV0; eauto; tac; lia
            | [|- _ _ = _ _] => try by erewrite XW0; eauto; tac; lia
            end.
+  (* read *)
   - exploit ADDR0; eauto; tac; try lia.
     inv x; ss. inv H. lia.
   - rewrite XCOV0; eauto; tac; try lia.
@@ -571,6 +572,8 @@ Proof.
     condtac; ss. apply Nat.eqb_eq in X. lia.
   - eapply LABELS_REV0; eauto. apply nth_error_app_mon. ss.
   - eapply ADDR_REV0; eauto. left. ss.
+
+  (* write *)
   - exploit ADDR0; eauto; tac; try lia.
     inv x; ss. inv H. lia.
   - exploit DATA0; eauto; tac; try lia.
@@ -591,15 +594,26 @@ Proof.
   - eapply ADDR_REV0; eauto. left. ss.
   - eapply DATA_REV0; eauto. left. ss.
   - eapply RMW_REV0; eauto. left. ss.
+
+  (* write exclusive *)
   - rewrite XCOV0; eauto; tac; try lia.
     inv RES. destruct res1. ss. subst. ss.
   - rewrite XVEXT0; eauto; tac; try lia.
     inv RES. destruct res1. ss. subst. ss.
   - erewrite XW0; eauto; tac; try lia.
     inv RES. destruct res1. ss. subst. ss.
+
+  (* barrier *)
   - rewrite XVEXT0; eauto; tac; try lia.
   - erewrite XR0; eauto; tac; try lia.
   - eapply LABELS_REV0; eauto. apply nth_error_app_mon. ss.
+
+  (* flushopt *)
+  - rewrite XVEXT0; eauto; tac; try lia.
+  - erewrite XR0; eauto; tac; try lia.
+  - eapply LABELS_REV0; eauto. apply nth_error_app_mon. ss.
+
+  (* control *)
   - exploit CTRL0; eauto; tac; try lia.
     inv x; ss. inv H. lia.
   - rewrite XVEXT0; eauto; tac; try lia.

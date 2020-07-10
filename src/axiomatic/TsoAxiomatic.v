@@ -828,6 +828,7 @@ Module Execution.
      po ⨾
      ⦗ex.(label_is) Label.is_kinda_write⦘).
 
+  (* TODO: paper sync, MF, SF *)
   Definition bob (ex:t): relation eidT :=
     ⦗ex.(label_is) Label.is_access_persist⦘ ⨾
      po ⨾
