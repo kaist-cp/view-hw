@@ -29,7 +29,7 @@ Set Implicit Arguments.
 
 
 Definition ob' (ex: Execution.t): relation eidT :=
-  Execution.rfe ex ∪ Execution.dob ex ∪ Execution.bob ex.
+  Execution.rfe ex ∪ Execution.dob ex ∪ Execution.bob ex ∪ Execution.pob ex.
 
 Ltac des_union :=
   repeat
@@ -48,15 +48,17 @@ Lemma ob_ob'
 Proof.
   split; i.
   - des_union.
-    + right. left. left. auto.
+    + right. left. left. left. auto.
     + left. left. auto.
     + left. right. auto.
+    + right. left. left. right. auto.
     + right. left. right. auto.
     + right. right. auto.
   - unfold ob' in *. des_union.
+    + left. left. left. left. right. auto.
     + left. left. left. right. auto.
+    + left. left. left. left. left. auto.
     + left. left. right. auto.
-    + left. left. left. left. auto.
     + left. right. auto.
     + right. auto.
 Qed.

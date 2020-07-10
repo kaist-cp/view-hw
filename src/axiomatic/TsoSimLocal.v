@@ -131,6 +131,14 @@ Inductive sim_event: forall (e1: Event.t (A:=unit)) (e2: Event.t (A:=unit)), Pro
     b1 b2
     (BARRIER: b1 = b2):
     sim_event (Event.barrier b1) (Event.barrier b2)
+| sim_event_flush
+    vloc1 vloc2
+    (VLOC: sim_val_weak vloc1 vloc2):
+    sim_event (Event.flush vloc1) (Event.flush vloc2)
+| sim_event_flushopt
+    vloc1 vloc2
+    (VLOC: sim_val_weak vloc1 vloc2):
+    sim_event (Event.flushopt vloc1) (Event.flushopt vloc2)
 .
 Hint Constructors sim_event.
 

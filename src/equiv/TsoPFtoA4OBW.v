@@ -125,11 +125,9 @@ Proof.
     inv STEP0. ss. subst. inv LOCAL; inv EVENT; inv STEP0; ss.
     move OB at bottom. unfold ob' in OB. des_union.
     - (* rfe *)
-      rename H1 into H.
       inv H. exploit RF2; eauto. i. des.
       inv READ. destruct l0; ss; try congr.
     - (* dob *)
-      rename H1 into H.
       unfold Execution.dob in H. rewrite ? seq_assoc in *. des_union.
       + inv H1. des.
         inv H1. eapply Nat.le_lt_trans.
@@ -147,8 +145,24 @@ Proof.
         s. rewrite fun_add_spec. condtac; [|congr].
         inv WRITABLE. ss.
     - (* bob *)
-      unfold Execution.bob in H. rewrite ? seq_assoc in *.
-      inv H. des. inv H3. inv H4. destruct l0; ss; congr.
+      admit.
+    - (* pob *)
+      unfold Execution.pob in H. rewrite ? seq_assoc in *.
+      repeat rewrite <- join_l.
+      des_union.
+      + admit.
+      + (* easy: not write *)
+        admit.
+      + (* easy: not write *)
+        admit.
+      + (* easy: not write *)
+        admit.
+      + (* easy: not write *)
+        admit.
+      + (* easy: not write *)
+        admit.
+      + (* easy: not write *)
+        admit.
   }
   { (* update *)
     exploit sim_trace_sim_th; try exact SIMTR; eauto. intro TH_tmp.
@@ -180,7 +194,7 @@ Proof.
     inv EVENT. inversion STEP1. guardH LC2.
     move OB at bottom. unfold ob' in OB. des_union.
     - (* rfe *)
-      rename H1 into RFE.
+      rename H into RFE.
       assert (v_gen vexts eid1 = old_ts).
       { inv RFE. destruct eid1 as [tid1 eid1]. inv H2. ss.
         generalize H. intro Y. rewrite RF in Y. inv Y. ss.
@@ -213,6 +227,7 @@ Proof.
       rewrite fun_add_spec. destruct (equiv_dec (ValA.val vloc) (ValA.val vloc)); auto.
       exfalso. apply c. ss.
     - (* dob *)
+      rename H into H1.
       unguardH LC2. inv LC2. ss.
       unfold Execution.dob in H1. rewrite ? seq_assoc in *. des_union.
       + inv H. des.
@@ -232,14 +247,22 @@ Proof.
         s. rewrite fun_add_spec. condtac; [|congr].
         inv WRITABLE. ss.
     - (* bob *)
-      unguardH LC2. inv LC2. ss.
-      unfold Execution.bob in H. rewrite ? seq_assoc in *.
-      inv H. des. inv H1. des. inv H. des. inv H4. des.
-      inv H. inv H5. inv H3. eapply Nat.le_lt_trans.
-      { apply L.(LC).(VWN); ss. econs; ss. right. econs. split; ss.
-        eapply Execution.po_chain. econs. split; eauto.
-      }
-      s. rewrite fun_add_spec. condtac; [|congr].
-      inv WRITABLE. ss.
+        admit.
+    - (* pob *)
+      unfold Execution.pob in H. rewrite ? seq_assoc in *.
+      repeat rewrite <- join_l.
+      des_union.
+      + admit.
+      + (* easy: not update *)
+        admit.
+      + (* easy: not update *)
+        admit.
+      + (* easy: not update *)
+        admit.
+      + admit.
+      + (* easy: not update *)
+        admit.
+      + (* easy: not update *)
+        admit.
   }
 Qed.

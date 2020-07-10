@@ -647,10 +647,13 @@ Grab Existential Variables.
 { (* external *)
   ii. exploit Valid.ob_cycle; eauto. i. des. rename x1 into NONBARRIER.
   clear - EXTERNAL NONBARRIER.
-  exploit EXTERNAL; eauto. i. des.
+  (* 아마 이 증명은 틀렸을 것임 *)
+  admit.
+  (* exploit EXTERNAL; eauto.
+  i. des.
   - inv x; lia.
   - inv x0. lia.
-  - inv x0. inv x2. rewrite EID in EID0. inv EID0. congr.
+  - inv x0. inv x2. rewrite EID in EID0. inv EID0. congr. *)
 }
 { (* corw *)
   eapply corw_irrefl; eauto.
