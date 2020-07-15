@@ -1130,10 +1130,17 @@ Proof.
         * econs 7.
       + econs; ss. inv LOCAL. econs; eauto 10 using sim_view_join, sim_view_ifc, sim_view_bot.
         s. i. apply COH. rewrite <- VRN0. apply join_l.
+    - (* dsb *)
+      inv STEP. eexists (ExecUnit.mk _ _ _). esplits.
+      + econs 1. econs. econs; ss; cycle 1.
+        * econs 7; eauto. econs; eauto.
+        * econs 7.
+      + econs; ss. inv LOCAL. econs; eauto 10 using sim_view_join, sim_view_ifc, sim_view_bot.
+        s. i. apply COH. rewrite <- VRN0. apply join_l.
     - (* if *)
       inv LC. eexists (ExecUnit.mk _ _ _). esplits.
       + econs 1. econs. econs; ss; cycle 1.
-        * econs 7; eauto. econs; eauto.
+        * econs 8; eauto. econs; eauto.
         * econs; ss.
       + exploit sim_rmap_expr; eauto. intro ELOC. apply sim_val_inv in ELOC; cycle 1.
         { rewrite <- VCAP. s. rewrite <- join_r. refl. }
@@ -1148,6 +1155,12 @@ Proof.
         * econs 1; eauto.
         * econs 9. ss.
       + econs; ss.
+    - (* flushopt *)
+      inv STEP. eexists (ExecUnit.mk _ _ _). esplits.
+      + econs 1. econs. econs; ss; cycle 1.
+        * econs 9; eauto. econs; eauto.
+        * econs 10; ss.
+      + econs; ss. inv LOCAL. econs; eauto 10 using sim_view_join, sim_view_ifc, sim_view_bot.
   }
 Qed.
 
@@ -1407,7 +1420,7 @@ Proof.
       + eapply eu_wf_interference; ss.
       + eapply interference_certify; ss.
   }
-  { i. revert FIND2. rewrite <- TPOOL, IdMap.add_spec. condtac; ss. 
+  { i. revert FIND2. rewrite <- TPOOL, IdMap.add_spec. condtac; ss.
     - i. inv FIND2. ss.
     - i. exploit OUT; eauto.
       destruct (equiv_dec tid0 tid); [congr|]. ss.
