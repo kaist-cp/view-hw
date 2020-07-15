@@ -1234,12 +1234,12 @@ Proof.
       rewrite sim_local_vrn_step. rewrite inverse_step.
       rewrite ? inverse_union. repeat apply sim_view_join; eauto using sim_view_bot.
       { eapply sim_view_le; [|exact SIM_LOCAL.(VRN)]. eauto. }
-      { destruct wr; eauto using sim_view_bot.
-        eapply sim_view_le; [|exact SIM_LOCAL.(VWO)].
-        right. right. rewrite seq_assoc.
-        inv PR. econs; eauto. econs; splits; eauto.
-        econs; eauto with tso.
-      }
+      destruct wr; eauto using sim_view_bot.
+      eapply sim_view_le; [|exact SIM_LOCAL.(VWO)].
+      right. right. rewrite seq_assoc.
+      inv PR. inv REL. des. inv H. inv H2.
+      econs; eauto. econs. splits; econs; eauto with tso.
+      split; eauto. econs; eauto. econs; eauto with tso.
     + rewrite List.app_length, Nat.add_1_r. s.
       rewrite sim_local_vwn_step. rewrite inverse_step.
       rewrite ? inverse_union. repeat apply sim_view_join; eauto using sim_view_bot.

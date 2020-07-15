@@ -148,7 +148,18 @@ Proof.
         inv WRITABLE. ss.
     - (* bob *)
       unfold Execution.bob in H. rewrite ? seq_assoc in *.
-      inv H. des. inv H3. inv H4. destruct l0; ss; congr.
+      inv H. des. inv H1. des. inv H. des. inv H4. des.
+      inv H. inv H5. inv H3. eapply Nat.le_lt_trans.
+      { apply L.(LC).(VWN); ss. econs; ss.
+        exploit Execution.po_chain.
+        { econs. split; try exact H4. econs 2. eauto. }
+        intro PO. inv H7. destruct l0; ss.
+        - left. econs. econs; eauto. econs; eauto with tso.
+        - right. econs. econs; eauto. econs; eauto with tso.
+        - right. econs. econs; eauto. econs; eauto with tso.
+      }
+      s. rewrite fun_add_spec. condtac; [|congr].
+      inv WRITABLE. ss.
   }
   { (* update *)
     exploit sim_trace_sim_th; try exact SIMTR; eauto. intro TH_tmp.
@@ -236,8 +247,13 @@ Proof.
       unfold Execution.bob in H. rewrite ? seq_assoc in *.
       inv H. des. inv H1. des. inv H. des. inv H4. des.
       inv H. inv H5. inv H3. eapply Nat.le_lt_trans.
-      { apply L.(LC).(VWN); ss. econs; ss. right. econs. split; ss.
-        eapply Execution.po_chain. econs. split; eauto.
+      { apply L.(LC).(VWN); ss. econs; ss.
+        exploit Execution.po_chain.
+        { econs. split; try exact H4. econs 2. eauto. }
+        intro PO. inv H7. destruct l0; ss.
+        - left. econs. econs; eauto. econs; eauto with tso.
+        - right. econs. econs; eauto. econs; eauto with tso.
+        - right. econs. econs; eauto. econs; eauto with tso.
       }
       s. rewrite fun_add_spec. condtac; [|congr].
       inv WRITABLE. ss.

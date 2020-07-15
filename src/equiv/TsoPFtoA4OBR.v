@@ -304,11 +304,16 @@ Proof.
         unfold Execution.bob in H. rewrite ? seq_assoc in *. des_union.
         rewrite L.(LC).(VWN); ss.
         * rewrite fun_add_spec. condtac; ss; cycle 1.
-            { exfalso. apply c. ss. }
-            inv WRITABLE. unfold Time.le. lia.
-          * econs; eauto. unfold sim_local_vwn.
-            inv H. inv H1. inv H. inv H1. inv H. des. inv H1. des. inv H2. inv H4.
-            right. econs. split; eauto. eapply Execution.po_chain. econs. split; eauto.
+          { exfalso. apply c. ss. }
+          inv WRITABLE. unfold Time.le. lia.
+        * econs; eauto. unfold sim_local_vwn.
+          inv H. inv H1. inv H. inv H1. inv H. des. inv H1. des. inv H2. inv H4. inv H.
+          exploit Execution.po_chain.
+          { econs. split; try exact H1. econs 2. eauto. }
+          intro PO. inv H4. destruct l0; ss.
+          -- left. econs. econs; eauto. econs; eauto with tso.
+          -- right. econs. econs; eauto. econs; eauto with tso.
+          -- right. econs. econs; eauto. econs; eauto with tso.
     }
   }
   { (* rmw_failure *)

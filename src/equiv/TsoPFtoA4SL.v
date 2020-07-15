@@ -728,7 +728,13 @@ Proof.
         { rewrite List.app_length. s. lia. }
         rewrite List.nth_error_app2, Nat.sub_diag; ss. i. simplify.
         destruct wr0; ss.
-        rewrite <- join_r, <- join_l. apply L. econs; eauto. econs; eauto.
+        inv H0. inv H2. destruct l; ss.
+        -- rewrite <- join_l. apply L.
+           econs; eauto. left. econs. econs; eauto. econs; eauto with tso.
+        -- rewrite <- join_r, <- join_l. apply L.
+           econs; eauto. econs. econs; eauto. econs; eauto with tso.
+        -- rewrite <- join_r, <- join_l. apply L.
+           econs; eauto. econs. econs; eauto. econs; eauto with tso.
     + rewrite List.app_length, Nat.add_1_r.
       i. rewrite sim_local_vwn_step. rewrite inverse_step.
       rewrite ? inverse_union. ii. des.
