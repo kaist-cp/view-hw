@@ -950,6 +950,18 @@ Module Execution.
 
   (* TODO: define nvo*)
   (* Definition nvo (ex:t): realation eidT := *)
+
+  Lemma po_cl_chain ex: (po_cl ex)⨾ (po_cl ex)^? ⊆ (po_cl ex).
+  Proof.
+    ii. inv H. des. inv H0.
+    econs.
+    - inv H. destruct x, x0, y. ss. subst.
+      inv H1; inv H; ss. inv H0. ss. subst. econs; ss. lia.
+    - inv H2. inv H1; [econs; eauto |].
+      inv H0. inv H2.
+      inv LABEL. inv LABEL0. rewrite EID2 in EID0. inv EID0.
+      destruct l0; ss; eqvtac; econs; eauto.
+  Qed.
 End Execution.
 
 Inductive tid_lift (tid:Id.t) (rel:relation nat) (eid1 eid2:eidT): Prop :=
@@ -1474,8 +1486,8 @@ Module Valid.
     - exploit RF2; eauto. i. des. congr.
     - exploit RF2; eauto. i. des. congr.
     - revert H. unfold ifc. condtac; ss. eapply rmw_spec. eauto.
-    - rewrite EID in EID0. inv EID0. ss.
-    - rewrite EID in EID0. inv EID0. ss.
+    - inv H1. ss.
+    - inv H1. ss.
   Qed.
 
   Lemma ob_barrier_ob
@@ -1536,8 +1548,8 @@ Module Valid.
     - exploit RF2; eauto. i. des. congr.
     - exploit RF2; eauto. i. des. congr.
     - revert H. unfold ifc. condtac; ss. eapply rmw_spec. eauto.
-    - rewrite EID in EID0. inv EID0. ss.
-    - rewrite EID in EID0. inv EID0. ss.
+    - inv H1. ss.
+    - inv H1. ss.
   Qed.
 
   Lemma ob_ctrl_ob
@@ -1570,6 +1582,86 @@ Module Valid.
     - left. right. left. left. right. econs. splits; [by econs; eauto|]. etrans; eauto.
     - revert H. unfold ifc. condtac; ss. i. exploit rmw_spec; eauto. i. des.
       inv LABEL2. rewrite EID in EID0. inv EID0. des. ss.
+  Qed.
+
+  Lemma flushopt_ob_po
+        p exec
+        eid1 eid2
+        (EX: pre_ex p exec)
+        (CO2: co2 exec)
+        (RF2: rf2 exec)
+        (EID1: Execution.label_is exec Label.is_flushopt eid1)
+        (OB: Execution.ob exec eid1 eid2):
+    Execution.po eid1 eid2.
+  Proof.
+    inv EID1. destruct l; ss. unfold co2, rf2 in *.
+    obtac; ss.
+    all: try by etrans; eauto.
+    - exploit RF2; eauto. i. des. congr.
+    - exploit RF2; eauto. i. des. congr.
+    - destruct l1; try congr; ss.
+    - exploit CO2; eauto. i. des. congr.
+    - eapply addr_label in H; eauto. des. inv EID1. destruct l; ss; congr.
+    - eapply data_label in H; eauto. des. inv EID1. destruct l; ss; congr.
+    - eapply ctrl_is_po; eauto.
+    - etrans; eauto. eapply addr_is_po; eauto.
+    - etrans; eauto. eapply ctrl_is_po; eauto.
+    - etrans; eauto. etrans; eauto. eapply addr_is_po; eauto.
+    - exploit RF2; eauto. i. des. congr.
+    - exploit RF2; eauto. i. des. congr.
+    - revert H. unfold ifc. condtac; ss. eapply rmw_spec. eauto.
+    - inv H1. ss.
+    - inv H1. ss.
+  Qed.
+
+  Lemma ob_flushopt_ob
+        p exec
+        eid1 eid2 eid3
+        (PRE: pre_ex p exec)
+        (CO2: co2 exec)
+        (RF2: rf2 exec)
+        (EID2: Execution.label_is exec Label.is_flushopt eid2)
+        (OB1: Execution.ob exec eid1 eid2)
+        (OB2: Execution.ob exec eid2 eid3):
+    <<OB: Execution.ob exec eid1 eid3>>.
+  Proof.
+    inv EID2. destruct l; ss. exploit flushopt_ob_po; eauto. i.
+    unfold co2, rf2 in *. guardH OB2.
+    obtac.
+    all: try by rewrite EID in EID1; inv EID1; ss.
+    all: try by rewrite EID in EID2; inv EID2; ss.
+    all: try by destruct l; try congr; ss.
+    - exploit RF2; eauto. i. des. congr.
+    - exploit CO2; eauto. i. des. congr.
+    - exploit CO2; eauto. i. des. congr.
+    - inv H1.
+      + eapply addr_label in H; eauto. des. inv EID2. destruct l; ss; try congr.
+      + inv H0. exploit RF2; eauto. i. des. congr.
+    - inv H1.
+      + eapply data_label in H; eauto. des. inv EID2. destruct l; ss. congr.
+      + inv H0. exploit RF2; eauto. i. des. congr.
+    - exploit RF2; eauto. i. des. congr.
+    - left. right. left. left. right. econs. splits; [by econs; eauto|]. etrans; eauto.
+    - revert H. unfold ifc. condtac; ss. i. exploit rmw_spec; eauto. i. des.
+      inv LABEL2. rewrite EID in EID0. inv EID0. des. ss.
+    - inversion H1. unguardH OB2. obtac.
+      all: try by rewrite EID in EID1; inv EID1; ss.
+      all: try by rewrite EID in EID2; inv EID2; ss.
+      all: try by destruct l2; try congr; ss.
+      all: try by destruct l3; try congr; ss.
+      exploit Execution.po_cl_chain.
+      { econs. econs; try exact H1. econs 2. eauto. }
+      intro PO_CL.
+      right. left. econs. econs; econs; eauto. econs; eauto. econs; eauto.
+    - inversion H1. unguardH OB2. obtac.
+      all: try by rewrite EID in EID1; inv EID1; ss.
+      all: try by rewrite EID in EID2; inv EID2; ss.
+      all: try by destruct l2; try congr; ss.
+      all: try by destruct l3; try congr; ss.
+      exploit Execution.po_cl_chain.
+      { econs. econs; try exact H1. econs 2. eauto. }
+      intro PO_CL.
+      right. right. econs. econs; econs; eauto. econs; eauto. econs; eauto.
   Qed.
 
   Lemma ob_label
@@ -1612,7 +1704,7 @@ Module Valid.
       - destruct t; try by contradict H1; econs; eauto.
         + eapply ob_barrier_ob; eauto.
         + eapply ob_ctrl_ob; eauto.
-        + admit. (* maybe wrong *)
+        + eapply ob_flushopt_ob; eauto.
       - exfalso. eapply ob_label; eauto.
     }
     i. des.
@@ -1622,7 +1714,7 @@ Module Valid.
       + destruct t; try by contradict x0; econs; eauto.
         * exploit barrier_ob_po; eauto. i. inv x2. lia.
         * exploit ctrl_ob_po; eauto. i. inv x2. lia.
-        * admit.
+        * exploit flushopt_ob_po; eauto. i. inv x2. lia.
       + exfalso. eapply ob_label; eauto.
   Qed.
 
