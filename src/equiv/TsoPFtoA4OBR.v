@@ -191,8 +191,9 @@ Proof.
           exploit L2.(WPROP2'); eauto. i. des.
           exploit L1.(WPROP3); eauto. i. des.
           exploit L2.(WPROP3); eauto. i. des.
-          rewrite x11, x18 in H2. inv H2.
-          rewrite H in x22. rewrite x15 in x22. inv x22. ss. }
+          rewrite x10, x17 in H2. inv H2.
+          rewrite H in x21. rewrite x14 in x21. inv x21. ss.
+        }
         subst.
         inv WRITE. inv PO. ss. subst. inv H. inv H3. ss.
       + rewrite H1. refl.
@@ -228,9 +229,7 @@ Proof.
     exploit L'.(RPROP2); eauto.
     { rewrite X. eauto. }
     s. rewrite X. i. des.
-    { apply nth_error_snoc_inv_last in x2. inv x2.
-      exfalso. apply x4. eauto with tso.
-    }
+    { apply nth_error_snoc_inv_last in x2. inv x2. ss. }
     apply nth_error_snoc_inv_last in x2. inv x2.
     rewrite EX2.(XVEXT); s; cycle 1.
     { rewrite List.app_length. s. clear. lia. }
@@ -403,8 +402,9 @@ Proof.
           exploit L2.(WPROP2'); eauto. i. des.
           exploit L1.(WPROP3); eauto. i. des.
           exploit L2.(WPROP3); eauto. i. des.
-          rewrite x11, x18 in H2. inv H2.
-          rewrite H in x22. rewrite x15 in x22. inv x22. ss. }
+          rewrite x10, x17 in H2. inv H2.
+          rewrite H in x21. rewrite x14 in x21. inv x21. ss.
+        }
         subst.
         inv WRITE. inv PO. ss. subst. inv H. inv H3. ss.
       + rewrite H1. refl.

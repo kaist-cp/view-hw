@@ -30,6 +30,24 @@ Module Label.
   .
   Hint Constructors t : tso.
 
+  Definition is_read (label:t): bool :=
+    match label with
+    | read _ _ => true
+    | _ => false
+    end.
+
+  Definition is_reading (loc:Loc.t) (label:t): bool :=
+    match label with
+    | read loc' _ => loc' == loc
+    | _ => false
+    end.
+
+  Definition is_reading_val (loc:Loc.t) (val:Val.t) (label:t): bool :=
+    match label with
+    | read loc' val' => (loc' == loc) && (val' == val)
+    | _ => false
+    end.
+
   Definition is_kinda_read (label:t): bool :=
     match label with
     | read _ _ => true
@@ -122,6 +140,13 @@ Module Label.
     s. destruct (equiv_dec loc loc); ss. exfalso. apply c. ss.
   Qed.
 
+  Lemma read_is_reading_val loc val:
+    is_reading_val loc val (read loc val).
+  Proof.
+    s. destruct (equiv_dec loc loc); destruct (equiv_dec val val); ss; exfalso.
+    all: apply c; ss.
+  Qed.
+
   Lemma read_is_kinda_reading_val loc val:
     is_kinda_reading_val loc val (read loc val).
   Proof.
@@ -138,6 +163,22 @@ Module Label.
     destruct l; ss; destruct (equiv_dec loc0 loc); ss.
     - eexists val. destruct (equiv_dec val val); ss. exfalso. apply c. ss.
     - eexists vold. destruct (equiv_dec vold vold); ss. exfalso. apply c. ss.
+  Qed.
+
+  Lemma reading_val_is_reading
+        loc val l
+        (RDING: is_reading_val loc val l):
+    is_reading loc l.
+  Proof.
+    destruct l; ss; destruct (equiv_dec loc0 loc); ss.
+  Qed.
+
+  Lemma reading_is_read
+        loc l
+        (RDING: is_reading loc l):
+    is_read l.
+  Proof.
+    destruct l; ss.
   Qed.
 
   Lemma kinda_reading_val_is_kinda_reading
@@ -252,6 +293,7 @@ Module Label.
   Qed.
 
   Hint Resolve
+       read_is_reading_val reading_val_is_reading reading_is_read
        kinda_reading_is_kinda_read kinda_reading_is_accessing read_is_kinda_reading read_is_kinda_reading_val kinda_reading_exists_val kinda_reading_val_is_kinda_reading
        kinda_writing_is_kinda_write kinda_writing_is_accessing write_is_kinda_writing write_is_kinda_writing_val kinda_writing_exists_val kinda_writing_val_is_kinda_writing
        update_is_kinda_reading update_is_kinda_writing update_is_kinda_writing_val
@@ -532,14 +574,6 @@ Module Execution.
       l
       (EID: label eid ex = Some l)
       (LABEL: pred l)
-  .
-  Hint Constructors label_is : tso.
-
-  Inductive label_is_not (ex:t) (pred:Label.t -> Prop) (eid:eidT): Prop :=
-  | label_is_not_intro
-      l
-      (EID: label eid ex = Some l)
-      (LABEL: pred l -> False)
   .
   Hint Constructors label_is : tso.
 
@@ -1134,21 +1168,21 @@ Module Valid.
         (RF2: rf2 ex)
         (RF_WF: rf_wf ex)
         (OB: Execution.ob ex eid1 eid2)
-        (EID1: ex.(Execution.label_is) Label.is_kinda_read eid1)
-        (EID1': ex.(Execution.label_is_not) Label.is_kinda_write eid1)
-        (EID2: ex.(Execution.label_is) Label.is_kinda_read eid2)
-        (EID2': ex.(Execution.label_is_not) Label.is_kinda_write eid2):
+        (EID1: ex.(Execution.label_is) Label.is_read eid1)
+        (EID2: ex.(Execution.label_is) Label.is_read eid2):
     Execution.po eid1 eid2.
   Proof.
-    inv EID1. inv EID1'. rewrite EID in EID0. inv EID0.
-    inv EID2. inv EID2'. rewrite EID1 in EID0. inv EID0.
+    inv EID1. inv EID2.
     destruct l; ss. destruct l0; ss.
     all: obtac; try congr.
     all: try by etrans; eauto.
-    - exploit RF2; eauto. i. des. inv WRITE. rewrite EID in EID0. destruct l; ss.
-    - exploit CO2; eauto. i. des. inv LABEL4. rewrite EID1 in EID0. destruct l; ss.
+    - exploit RF2; eauto. i. des.
+      inv WRITE. rewrite EID in EID1. destruct l; ss.
+    - exploit CO2; eauto. i. des.
+      inv LABEL2. rewrite EID0 in EID1. destruct l; ss.
     - rewrite EID1 in EID0. inv EID0. ss.
-    - exploit CO2; eauto. i. des. inv LABEL4. rewrite EID1 in EID0. destruct l; ss.
+    - exploit CO2; eauto. i. des.
+      inv LABEL2. rewrite EID0 in EID1. destruct l; ss.
   Qed.
 End Valid.
 

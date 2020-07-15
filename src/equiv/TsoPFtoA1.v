@@ -397,8 +397,7 @@ Inductive sim_th
     le ts (eu.(ExecUnit.local).(Local.coh) loc).(View.ts) /\
     exists l val tid',
       List.nth_error aeu.(AExecUnit.local).(ALocal.labels) eid = Some l /\
-      Label.is_kinda_reading_val loc val l /\
-      ~ Label.is_kinda_write l /\
+      Label.is_reading_val loc val l /\
       <<READ_TS_SPEC:
           __guard__ ((ts = Time.bot /\ val = Val.default) \/
           Memory.get_msg ts mem = Some (Msg.mk loc val tid'))>>) \/
@@ -433,7 +432,7 @@ Inductive sim_th
         Label.is_kinda_write label2 ->
         Time.lt (cov iid1) (cov iid2)>> /\
       <<PO_LOC_READ:
-        Label.is_kinda_read label2 /\ ~ Label.is_kinda_write label2 ->
+        Label.is_read label2 ->
         Time.le (cov iid1) (cov iid2)>>;
   EU_WF: ExecUnit.wf tid eu;
   AEU_WF: AExecUnit.wf aeu;
@@ -983,8 +982,7 @@ Proof.
       + subst. repeat condtac; ss.
         all: try apply Nat.eqb_eq in X; ss; subst; try lia.
         all: try apply Nat.eqb_neq in X0; ss; try lia.
-        splits; ss; cycle 1.
-        { i. des. inv H. }
+        splits; ss.
         rewrite fun_add_spec. des_ifs; [|congr].
         inv REL. destruct label1; ss; eqvtac.
         * exploit IH.(RPROP1); eauto with tso. i. des.
@@ -1181,8 +1179,7 @@ Proof.
             destruct ts; ss. unfold Memory.get_msg in MSG. ss. rewrite MSG. des_ifs; try congr.
             eapply Nat.le_lt_trans; eauto. inv WRITABLE. rewrite VAL0 in *. ss.
         }
-        rewrite VAL0 in *.
-        split; ss. ii. unfold Time.lt in H. unfold Time.le. lia.
+        rewrite VAL0 in *. split; ss.
       + subst. repeat condtac; ss.
         all: try apply Nat.eqb_eq in X; ss; try lia.
   }

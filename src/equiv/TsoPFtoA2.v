@@ -269,11 +269,11 @@ Proof.
     rewrite READ_TS_SPEC in x6. inv x6.
     generalize (ATR tid1). intro ATR1. inv ATR1; try congr.
     generalize (ATR tid2). intro ATR2. inv ATR2; try congr.
-    des. simplify. destruct PRE, ex. ss.
-    rewrite LABELS. esplits.
-    + econs; eauto. unfold Execution.label in *. ss.
+    des. simplify. destruct PRE, ex. ss. rewrite LABELS.
+    destruct l0; ss. eqvtac. esplits.
+    + econs; eauto with tso. unfold Execution.label in *. ss.
       repeat rewrite IdMap.map_spec.
-      rewrite <- H8. ss.
+      rewrite <- H8. eauto.
     + econs; eauto. unfold Execution.label in *. ss.
       repeat rewrite IdMap.map_spec.
       rewrite <- H13. ss.
@@ -370,7 +370,7 @@ Lemma sim_traces_cov_rf
     forall eid1 eid2
       (RF: ex.(Execution.rf) eid1 eid2),
       Time.eq ((v_gen covs) eid1) ((v_gen covs) eid2) /\
-      ex.(Execution.label_is_not) Label.is_kinda_write eid2 \/
+      ex.(Execution.label_is) Label.is_read eid2 \/
       Time.lt ((v_gen covs) eid1) ((v_gen covs) eid2) /\
       ex.(Execution.label_is) Label.is_kinda_write eid2>>.
 Proof.
@@ -691,8 +691,7 @@ Proof.
             destruct ((tid1, iid1) == (tid2, iid2)); ss. inv e.
             move EID at bottom.
             exploit sim_trace_last; try exact REL6; eauto. i. des. simplify.
-            rewrite x17 in EID. inv EID.
-            exfalso. apply x19. eauto with tso.
+            rewrite x17 in EID. inv EID. ss.
           * move CO1 at bottom. unguardH CO1. des; [right | left |].
             -- inv CO1. rewrite <- H6 in H11. inv H11. split; ss.
             -- rewrite <- CO in CO1. exploit sim_traces_cov_co; eauto. i. split; ss.
@@ -723,7 +722,7 @@ Lemma sim_traces_cov_po_loc
        ex.(Execution.label_is) Label.is_kinda_write eid2 ->
        Time.lt ((v_gen covs) eid1) ((v_gen covs) eid2)>> /\
      <<PO_LOC_READ:
-       ex.(Execution.label_is) Label.is_kinda_read eid2 /\ ex.(Execution.label_is_not) Label.is_kinda_write eid2 ->
+       ex.(Execution.label_is) Label.is_read eid2 ->
        Time.le ((v_gen covs) eid1) ((v_gen covs) eid2)>>.
 Proof.
   i. destruct eid1 as [tid1 iid1], eid2 as [tid2 iid2]. inv PO_LOC. inv H. ss. subst.
@@ -734,15 +733,14 @@ Proof.
   exploit sim_trace_sim_th; eauto. intro TH_tmp.
   exploit TH_tmp; eauto. { instantiate (1 := []). ss. } clear TH_tmp. intro TH.
   exploit TH.(PO); eauto. i. des.
-  unfold v_gen. s. rewrite <- H7. splits; i.
+  unfold v_gen. s. rewrite <- H7.
+  splits; i.
   - inv H1. unfold Execution.label in *. ss.
-    rewrite PRE.(Valid.LABELS), IdMap.map_spec, <- H in *. inv EID.
-    rewrite EID2 in H2. inv H2. eauto.
-  - inv H1. inv H2. inv H4. unfold Execution.label in *. ss.
     rewrite PRE.(Valid.LABELS), IdMap.map_spec, <- H in *.
-    inv EID. rewrite EID2 in H2. inv H2.
-    inv EID0. rewrite EID2 in H2. inv H2.
-    eauto with tso.
+    inv EID. rewrite EID2 in H2. inv H2. eauto.
+  - inv H1. unfold Execution.label in *. ss.
+    rewrite PRE.(Valid.LABELS), IdMap.map_spec, <- H in *.
+    inv EID. rewrite EID2 in H2. inv H2. eauto.
 Qed.
 
 Lemma sim_traces_vext_co
