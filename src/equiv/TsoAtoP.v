@@ -331,42 +331,24 @@ Lemma label_write_mem_of_ex_msg
     <<MSG: List.nth_error (mem_of_ex ex ob) n = Some (Msg.mk loc val (fst eid))>>.
 Proof.
   generalize (Execution.eids_spec ex). i. des. rename NODUP into NODUP0.
-  specialize (LABEL0 eid).
-  inv LABEL. destruct l; ss; destruct (equiv_dec loc0 loc); ss; try inv e.
-  - destruct (equiv_dec val0 val); ss. inv e.
-    rewrite EID in LABEL0.
-    inv LABEL0. clear H0. exploit H; [congr|]. clear H. intro IN0.
-    symmetry in OB. exploit Permutation_in; eauto. intro IN.
-    exploit HahnList.Permutation_nodup; eauto. intro NODUP.
-    generalize (List_in_find_pos _ ob IN). i. des.
-    unfold view_of_eid. rewrite H.
-    exploit List_find_pos_inv; eauto. i. des.
-    destruct (equiv_dec a eid); [|done]. inversion e. subst.
-    esplits.
-    + unfold option_map. erewrite List_firstn_S; eauto.
-      rewrite mem_of_ex_app, List.app_length.
-      unfold mem_of_ex at 2. s. rewrite EID. s. rewrite Nat.add_1_r. ss.
-    + rewrite <- (List.firstn_skipn n ob) at 1.
-      rewrite mem_of_ex_app, List.nth_error_app2; [|lia].
-      erewrite Nat.sub_diag, List_skipn_cons; eauto. s.
-      unfold mem_of_ex. s. rewrite EID. ss.
-  - destruct (equiv_dec vnew val); ss. inv e.
-    rewrite EID in LABEL0.
-    inv LABEL0. clear H0. exploit H; [congr|]. clear H. intro IN0.
-    symmetry in OB. exploit Permutation_in; eauto. intro IN.
-    exploit HahnList.Permutation_nodup; eauto. intro NODUP.
-    generalize (List_in_find_pos _ ob IN). i. des.
-    unfold view_of_eid. rewrite H.
-    exploit List_find_pos_inv; eauto. i. des.
-    destruct (equiv_dec a eid); [|done]. inversion e. subst.
-    esplits.
-    + unfold option_map. erewrite List_firstn_S; eauto.
-      rewrite mem_of_ex_app, List.app_length.
-      unfold mem_of_ex at 2. s. rewrite EID. s. rewrite Nat.add_1_r. ss.
-    + rewrite <- (List.firstn_skipn n ob) at 1.
-      rewrite mem_of_ex_app, List.nth_error_app2; [|lia].
-      erewrite Nat.sub_diag, List_skipn_cons; eauto. s.
-      unfold mem_of_ex. s. rewrite EID. ss.
+  specialize (LABEL0 eid). inv LABEL. rewrite EID in LABEL0.
+  inv LABEL0. clear H0. exploit H; [congr|]. clear H. intro IN0.
+  symmetry in OB. exploit Permutation_in; eauto. intro IN.
+  exploit HahnList.Permutation_nodup; eauto. intro NODUP.
+  generalize (List_in_find_pos _ ob IN). i. des.
+  unfold view_of_eid. rewrite H.
+  exploit List_find_pos_inv; eauto. i. des.
+  destruct (equiv_dec a eid); [|done]. inversion e. subst.
+  esplits.
+  - unfold option_map. erewrite List_firstn_S; eauto.
+    rewrite mem_of_ex_app, List.app_length.
+    unfold mem_of_ex at 2. s. rewrite EID.
+    destruct l; try rewrite Nat.add_1_r; ss.
+  - rewrite <- (List.firstn_skipn n ob) at 1.
+    rewrite mem_of_ex_app, List.nth_error_app2; [|lia].
+    erewrite Nat.sub_diag, List_skipn_cons; eauto. s.
+    unfold mem_of_ex. s. rewrite EID.
+    destruct l; ss; eqvtac; ss.
 Qed.
 
 Lemma label_write_mem_of_ex
@@ -422,75 +404,40 @@ Proof.
       exfalso. eapply EX.(Valid.COWR). econs. esplits; eauto with tso.
       right. repeat econs; eauto with tso.
     }
-    splits; ss.
-    { lia. }
+    splits; ss; [lia |].
     rewrite FWD. econs 1. ss.
   }
-  inv LABEL0. destruct l0; ss; destruct (equiv_dec loc0 loc); ss; inv e.
-  - destruct (equiv_dec val0 val); ss. inv e.
-    exploit label_write_mem_of_ex; eauto with tso. i. des.
-    esplits; eauto.
-    { i. inv H. }
-    econs 2; try exact VIEW; eauto; ss.
-    generalize (SIM_LOCAL.(FWDBANK) loc). i. des.
-    {(* fwdbank = Some *)
-      destruct (Local.fwdbank local loc) eqn:FWD.
-      ss. unfold FwdItem.read_view. s. condtac.
-      - (* forwarded *)
-        apply bot_spec.
-      - (* not forwarded *)
-        eapply view_of_eid_ob; eauto.
-        destruct eid2. destruct (t == tid); cycle 1.
-        { left. left. left. left. econs; ss. }
-        inv e.
-        exploit rfi_sim_local_fwd; eauto with tso.
-        { econs; eauto with tso. }
-        i. exploit sim_local_fwd_functional; [exact WRITE|exact x0|]. i. subst.
-        rewrite VIEW0 in TS. congr.
-    }
-    { (* fwdbank = None *)
-      rewrite H. s. eapply view_of_eid_ob; eauto.
+  inv LABEL0.
+  exploit label_write_mem_of_ex; eauto with tso. i. des.
+  esplits; eauto.
+  { i. inv H. }
+  econs 2; try exact VIEW; eauto; ss.
+  generalize (SIM_LOCAL.(FWDBANK) loc). i. des.
+  {(* fwdbank = Some *)
+    destruct (Local.fwdbank local loc) eqn:FWD.
+    ss. unfold FwdItem.read_view. s. condtac.
+    - (* forwarded *)
+      apply bot_spec.
+    - (* not forwarded *)
+      eapply view_of_eid_ob; eauto.
       destruct eid2. destruct (t == tid); cycle 1.
       { left. left. left. left. econs; ss. }
-      inv e. exfalso. eapply H0. econs; eauto. econs. splits.
-      - econs; eauto. econs; eauto with tso.
-      - exploit rfi_sim_local_fwd; eauto with tso.
-        { econs; eauto with tso. }
-        intro X. apply X.
-    }
-  - destruct (equiv_dec vnew val); ss. inv e.
-    exploit label_write_mem_of_ex; eauto with tso. i. des.
-    esplits; eauto.
-    { i. inv H. }
-    econs 2; try exact VIEW; eauto; ss.
-    generalize (SIM_LOCAL.(FWDBANK) loc). i. des.
-    {(* fwdbank = Some *)
-      destruct (Local.fwdbank local loc) eqn:FWD.
-      ss. unfold FwdItem.read_view. s. condtac.
-      - (* forwarded *)
-        apply bot_spec.
-      - (* not forwarded *)
-        eapply view_of_eid_ob; eauto.
-        destruct eid2. destruct (t == tid); cycle 1.
-        { left. left. left. left. econs; ss. }
-        inv e.
-        assert (RFI: Execution.rfi ex (tid, n0) (tid, length (ALocal.labels alocal))).
-        { econs; eauto with tso. }
-        exploit rfi_sim_local_fwd; try exact RFI; eauto with tso.
-        i. exploit sim_local_fwd_functional; [exact WRITE|exact x0|]. i. subst.
-        rewrite VIEW0 in TS. congr.
-    }
-    { (* fwdbank = None *)
-      rewrite H. s. eapply view_of_eid_ob; eauto.
-      destruct eid2. destruct (t == tid); cycle 1.
-      { left. left. left. left. econs; ss. }
-      inv e. exfalso. eapply H0. econs; eauto. econs. splits.
-      - econs; eauto. econs; eauto with tso.
-      - assert (RFI: Execution.rfi ex (tid, n0) (tid, length (ALocal.labels alocal))).
-        { econs; eauto with tso. }
-        exploit rfi_sim_local_fwd; try exact RFI; eauto with tso.
-        intro X. apply X.
-    }
+      inv e.
+      exploit rfi_sim_local_fwd; eauto with tso.
+      { econs; eauto with tso. }
+      i. exploit sim_local_fwd_functional; [exact WRITE|exact x0|]. i. subst.
+      rewrite VIEW0 in TS. congr.
+  }
+  { (* fwdbank = None *)
+    rewrite H. s. eapply view_of_eid_ob; eauto.
+    destruct eid2. destruct (t == tid); cycle 1.
+    { left. left. left. left. econs; ss. }
+    inv e. exfalso. eapply H0. econs; eauto. econs. splits.
+    - econs; eauto. econs; eauto with tso.
+    - exploit rfi_sim_local_fwd; eauto with tso.
+      { econs; eauto with tso. }
+      intro X. apply X.
+  }
 Qed.
 
 Lemma read_msg_latest_coh
@@ -514,9 +461,9 @@ Proof.
   { eapply Memory.latest_mon1. eapply Memory.latest_ts_latest; eauto. apply bot_spec. }
   eapply Memory.latest_mon1. eapply Memory.latest_ts_latest; eauto.
   rewrite VIEW. inv EID. inv REL. inv H. inv H0.
-  inv H2.
-  inv H1. des. inv H.
-  { exploit Valid.coherence_wr; try exact H0; eauto.
+  inv H2. inv H1. des. inv H.
+  - (* W;po;R *)
+    exploit Valid.coherence_wr; try exact H0; eauto.
     all: try by econs; eauto; eauto with tso.
     i. des.
     destruct ts.
@@ -530,95 +477,24 @@ Proof.
     exploit MSG; [lia|]. i. des.
     exploit EX.(Valid.RF_WF); [exact RF|exact x|]. i. subst.
     inv CO.
-    - rewrite VIEW_OF_EID in x1. inv x1. refl.
-    - eapply view_of_eid_ob; eauto. left. left. right. eauto.
-  }
-  { inv H1.
+    + rewrite VIEW_OF_EID in x1. inv x1. refl.
+    + eapply view_of_eid_ob; eauto. left. left. right. eauto.
+  - (* W;rfe;po;R *)
+    inv H1.
     exploit EX.(Valid.RF2); eauto. i. des.
     inv WRITE. inv READ. rewrite EID in EID0. inv EID0.
-    inv LABEL0.
-    destruct l0; ss; destruct (equiv_dec loc1 loc0); ss; inv e.
-    { (* W: write *)
-      destruct (equiv_dec val1 val0); ss. inv e.
-      inv LABEL.
-      destruct (equiv_dec loc0 loc); ss. inv e.
-      inv LABEL1.
-      destruct l1; ss; destruct (equiv_dec loc0 loc); ss; inv e.
-      { (* W: write -> R: read  *)
-        destruct (equiv_dec val1 val0); ss. inv e.
-        exploit Valid.coherence_rr; try exact H0; eauto with tso.
-        i. des.
-        destruct ts.
-        { (* read from uninit *)
-          specialize (FWD eq_refl). des.
-          contradict FWD. econs; eauto.
-        }
-        exploit MSG; [lia|]. i. des.
-        exploit EX.(Valid.RF_WF); [exact RF|exact x1|]. i. subst.
-        inv CO.
-        - rewrite VIEW_OF_EID in x2. inv x2. refl.
-        - eapply view_of_eid_ob; eauto. left. left. right. eauto.
-      }
-      { (* W: write -> R: update  *)
-        destruct (equiv_dec vold val0); ss. inv e.
-        exploit Valid.coherence_rr; try exact H0; cycle 3.
-        instantiate (1 := x).
-        instantiate (1 := loc).
-        all: eauto with tso.
-        i. des.
-        destruct ts.
-        { (* read from uninit *)
-          specialize (FWD eq_refl). des.
-          contradict FWD. econs; eauto.
-        }
-        exploit MSG; [lia|]. i. des.
-        exploit EX.(Valid.RF_WF); [exact RF|exact x1|]. i. subst.
-        inv CO.
-        - rewrite VIEW_OF_EID in x2. inv x2. refl.
-        - eapply view_of_eid_ob; eauto. left. left. right. eauto.
-      }
+    assert (LOC: loc = loc0); eauto with tso. subst.
+    exploit Valid.coherence_rr; try exact H0; eauto with tso. i. des.
+    destruct ts.
+    { (* read from uninit *)
+      specialize (FWD eq_refl). des.
+      contradict FWD. econs; eauto.
     }
-    { (* W: update *)
-      destruct (equiv_dec vnew val0); ss. inv e.
-      inv LABEL.
-      destruct (equiv_dec loc0 loc); ss. inv e.
-      inv LABEL1.
-      destruct l1; ss; destruct (equiv_dec loc0 loc); ss; inv e.
-      { (* W: write -> R: read  *)
-        destruct (equiv_dec val1 val0); ss. inv e.
-        exploit Valid.coherence_rr; try exact H0; eauto with tso.
-        i. des.
-        destruct ts.
-        { (* read from uninit *)
-          specialize (FWD eq_refl). des.
-          contradict FWD. econs; eauto.
-        }
-        exploit MSG; [lia|]. i. des.
-        exploit EX.(Valid.RF_WF); [exact RF|exact x1|]. i. subst.
-        inv CO.
-        - rewrite VIEW_OF_EID in x2. inv x2. refl.
-        - eapply view_of_eid_ob; eauto. left. left. right. eauto.
-      }
-      { (* W: write -> R: update  *)
-        destruct (equiv_dec vold0 val0); ss. inv e.
-        exploit Valid.coherence_rr; try exact H0; cycle 3.
-        instantiate (1 := x).
-        instantiate (1 := loc).
-        all: eauto with tso.
-        i. des.
-        destruct ts.
-        { (* read from uninit *)
-          specialize (FWD eq_refl). des.
-          contradict FWD. econs; eauto.
-        }
-        exploit MSG; [lia|]. i. des.
-        exploit EX.(Valid.RF_WF); [exact RF|exact x1|]. i. subst.
-        inv CO.
-        - rewrite VIEW_OF_EID in x2. inv x2. refl.
-        - eapply view_of_eid_ob; eauto. left. left. right. eauto.
-      }
-    }
-  }
+    exploit MSG; [lia|]. i. des.
+    exploit EX.(Valid.RF_WF); [exact RF|exact x1|]. i. subst.
+    inv CO.
+    + rewrite VIEW_OF_EID in x2. inv x2. refl.
+    + eapply view_of_eid_ob; eauto. left. left. right. eauto.
 Qed.
 
 Lemma in_mem_of_ex
@@ -626,17 +502,16 @@ Lemma in_mem_of_ex
       (NODUP: List.NoDup ob)
       (IN: List.nth_error (mem_of_ex ex ob) view = Some msg):
   (exists n,
-     <<LABEL: Execution.label (msg.(Msg.tid), n) ex = Some (Label.write msg.(Msg.loc) msg.(Msg.val))>> /\
-     <<VIEW: view_of_eid ex ob (msg.(Msg.tid), n) = Some (S view)>>) \/
-  (exists n vold,
-     <<LABEL: Execution.label (msg.(Msg.tid), n) ex = Some (Label.update msg.(Msg.loc) vold msg.(Msg.val))>> /\
+     <<WRITING: Execution.label_is ex
+                  (fun label : Label.t => Label.is_kinda_writing_val msg.(Msg.loc) msg.(Msg.val) label)
+                  (msg.(Msg.tid), n)>> /\
      <<VIEW: view_of_eid ex ob (msg.(Msg.tid), n) = Some (S view)>>).
 Proof.
   unfold mem_of_ex in IN. exploit nth_error_filter_map_inv; eauto. i. des.
-  destruct (Execution.label a ex) eqn:LABEL; ss. destruct t; inv FA; destruct a; ss; [ left | right ].
-  - esplits; eauto. unfold view_of_eid.
+  destruct (Execution.label a ex) eqn:LABEL; ss. destruct t; inv FA; destruct a; ss.
+  - esplits; eauto with tso. unfold view_of_eid.
     erewrite List_nth_error_find_pos; eauto. s. f_equal. ss.
-  - esplits; eauto. unfold view_of_eid.
+  - esplits; eauto with tso. unfold view_of_eid.
     erewrite List_nth_error_find_pos; eauto. s. f_equal. ss.
 Qed.
 
@@ -709,151 +584,77 @@ Proof.
       { (* read from uninit *)
         specialize (FWD eq_refl).
         assert (view < S ts).
-        { des.
-          - eapply view_of_eid_ob_write; eauto; cycle 1.
+        { des. inv WRITING.
+          eapply view_of_eid_ob_write; eauto; cycle 1.
+          { econs; eauto with tso. }
+          destruct (tid == tid0).
+          - inv e. left. right. left. econs. split.
             { econs; eauto with tso. }
-            destruct (tid == tid0).
-            + inv e. left. right. left. econs. split.
-              { econs; eauto with tso. }
-              econs. split; cycle 1.
-              { econs; eauto with tso. }
-              destruct (lt_eq_lt_dec (length (ALocal.labels alocal1)) n).
-              { inv s; try congr. econs; eauto. }
-              exfalso. exploit EX.(Valid.COWR); ss. instantiate (1 := (tid0, n)).
-              econs. split.
-              { instantiate (1 := (tid0, length (ALocal.labels alocal1))). econs; auto. }
-              right. econs; eauto with tso. econs; eauto with tso. econs; eauto with tso.
-            + left. left. left. right. split; ss. right. econs.
-              * econs; eauto. econs; eauto with tso.
-              * econs; eauto with tso. econs; eauto with tso.
-          - eapply view_of_eid_ob_write; eauto; cycle 1.
+            econs. split; cycle 1.
             { econs; eauto with tso. }
-            destruct (tid == tid0).
-            + inv e. left. right. left. econs. split.
-              { econs; eauto with tso. }
-              econs. split; cycle 1.
-              { econs; eauto with tso. }
-              destruct (lt_eq_lt_dec (length (ALocal.labels alocal1)) n).
-              { inv s; try congr. econs; eauto. }
-              exfalso. exploit EX.(Valid.COWR); ss. instantiate (1 := (tid0, n)).
-              econs. split.
-              { instantiate (1 := (tid0, length (ALocal.labels alocal1))). econs; auto. }
-              right. econs; eauto with tso. econs; eauto with tso. econs; eauto with tso.
-            + left. left. left. right. split; ss. right. econs.
-              * econs; eauto. econs; eauto with tso.
-              * econs; eauto with tso. econs; eauto with tso.
+            destruct (lt_eq_lt_dec (length (ALocal.labels alocal1)) n).
+            { inv s; destruct l; ss; try congr. }
+            exfalso. exploit EX.(Valid.COWR); ss. instantiate (1 := (tid0, n)).
+            econs. split.
+            { instantiate (1 := (tid0, length (ALocal.labels alocal1))). econs; auto. }
+            right. econs; eauto with tso. econs; eauto with tso. econs; eauto with tso.
+          - left. left. left. right. split; ss. right. econs.
+            * econs; eauto. econs; eauto with tso.
+            * econs; eauto with tso. econs; eauto with tso.
         }
         inv SIM_VRN.
         { rewrite VIEW0 in TS2. inv TS2. }
         unfold ALocal.next_eid in VIEW_OF_EID. rewrite VIEW_OF_EID in VIEW. inv VIEW.
         unfold le in VIEW0. lia.
       }
-      exploit MSG; [lia|]. i. des.
-      { (* write_mem_of_ex *)
-        exploit EX.(Valid.RF1).
-        instantiate (1 := (tid, length (ALocal.labels alocal1))).
-        instantiate (1 := res0). instantiate (1 := ValA.val (sem_expr rmap1 eloc)).
-        { econs; eauto with tso. }
-        i. des.
-        { contradict NORF. econs. eauto. }
-        exploit EX.(Valid.RF_WF); [exact RF|exact RF0|]. i. subst.
-        exploit EX.(Valid.CO1).
-        instantiate (1 := eid2).
-        instantiate (1 := (tid0, n0)).
-        { inv LABEL1. inv LABEL2.
-          destruct l; ss; destruct (equiv_dec loc (ValA.val (sem_expr rmap1 eloc))); ss; inv e.
-          - destruct (equiv_dec val0 res0); ss; inv e. esplits; eauto with tso.
-          - destruct (equiv_dec vnew res0); ss; inv e. esplits; eauto with tso.
-        }
-        i. des.
-        { subst. rewrite VIEW0 in VIEW1. inv VIEW1. lia. }
-        { cut (S ts < S n); [lia|].
-          eapply view_of_eid_ob_write; eauto.
-          { left. left. right. ss. }
-          inv LABEL1. inv LABEL2.
-          destruct l; ss; destruct (equiv_dec loc (ValA.val (sem_expr rmap1 eloc))); ss; inv e.
-          - destruct (equiv_dec val0 res0); ss; inv e. esplits; eauto with tso.
-          - destruct (equiv_dec vnew res0); ss; inv e. esplits; eauto with tso.
-        }
-        assert (view < S ts).
-        { eapply view_of_eid_ob_write; eauto; cycle 1.
-          { econs; eauto with tso. }
-          destruct (tid == tid0).
-          - inv e. left. right. left. econs. split.
-            { econs; eauto with tso. }
-            econs. split; cycle 1.
-            { econs; eauto with tso. }
-            destruct (lt_eq_lt_dec (length (ALocal.labels alocal1)) n0).
-            { inv s; try congr. econs; eauto. }
-            exfalso. exploit EX.(Valid.COWR); ss. instantiate (1 := (tid0, n0)).
-            econs. split.
-            { instantiate (1 := (tid0, length (ALocal.labels alocal1))). econs; auto. }
-            left. econs; eauto with tso.
-          - left. left. left. right. split; ss. left. econs. econs; eauto.
-        }
-        assert (JOIN_SN:join (View.ts (Local.vrn local1)) (S n) = View.ts (Local.vrn local1)).
-        { destruct (View.ts (Local.vrn local1)).
-          - lia.
-          - assert (S n < S t).
-            { unfold lt. unfold lt in TS1.
-              etrans; eauto.
-            }
-            unfold join. unfold Time.join. lia.
-        }
-        inv SIM_VRN.
-        { rewrite VIEW2 in TS2. inv TS2. }
-        unfold ALocal.next_eid in VIEW_OF_EID. rewrite VIEW_OF_EID in VIEW. inv VIEW.
-        unfold le in VIEW2. lia.
+      exploit MSG; [lia|]. i. des. inv WRITING.
+      exploit EX.(Valid.RF1).
+      instantiate (1 := (tid, length (ALocal.labels alocal1))).
+      instantiate (1 := res0). instantiate (1 := ValA.val (sem_expr rmap1 eloc)).
+      { econs; eauto with tso. }
+      i. des.
+      { contradict NORF. econs. eauto. }
+      exploit EX.(Valid.RF_WF); [exact RF|exact RF0|]. i. subst.
+      exploit EX.(Valid.CO1).
+      instantiate (1 := eid2). instantiate (1 := (tid0, n0)).
+      { inv LABEL1. esplits; eauto with tso. }
+      i. des.
+      { subst. rewrite VIEW0 in VIEW1. inv VIEW1. lia. }
+      { cut (S ts < S n); [lia|].
+        eapply view_of_eid_ob_write; eauto.
+        { left. left. right. ss. }
+        inv LABEL1. esplits; eauto with tso.
       }
-      { (* update_mem_of_ex *)
-        exploit EX.(Valid.RF1).
-        instantiate (1 := (tid, length (ALocal.labels alocal1))).
-        instantiate (1 := res0). instantiate (1 := ValA.val (sem_expr rmap1 eloc)).
+      assert (view < S ts).
+      { eapply view_of_eid_ob_write; eauto; cycle 1.
         { econs; eauto with tso. }
-        i. des.
-        { contradict NORF. econs. eauto. }
-        exploit EX.(Valid.RF_WF); [exact RF|exact RF0|]. i. subst.
-        exploit EX.(Valid.CO1).
-        instantiate (1 := eid2).
-        instantiate (1 := (tid0, n0)).
-        { inv LABEL1. inv LABEL2.
-          destruct l; ss; destruct (equiv_dec loc (ValA.val (sem_expr rmap1 eloc))); ss; inv e.
-          - destruct (equiv_dec val0 res0); ss; inv e. esplits; eauto with tso.
-          - destruct (equiv_dec vnew res0); ss; inv e. esplits; eauto with tso.
-        }
-        i. des.
-        { subst. rewrite VIEW0 in VIEW1. inv VIEW1. lia. }
-        { cut (S ts < S n); [lia|].
-          eapply view_of_eid_ob_write; eauto.
-          { left. left. right. ss. }
-          inv LABEL1. inv LABEL2.
-          destruct l; ss; destruct (equiv_dec loc (ValA.val (sem_expr rmap1 eloc))); ss; inv e.
-          - destruct (equiv_dec val0 res0); ss; inv e. esplits; eauto with tso.
-          - destruct (equiv_dec vnew res0); ss; inv e. esplits; eauto with tso.
-        }
-        assert (view < S ts).
-        { eapply view_of_eid_ob_write; eauto; cycle 1.
+        destruct (tid == tid0).
+        - inv e. left. right. left. econs. split.
           { econs; eauto with tso. }
-          destruct (tid == tid0).
-          - inv e. left. right. left. econs. split.
-            { econs; eauto with tso. }
-            econs. split; cycle 1.
-            { econs; eauto with tso. }
-            destruct (lt_eq_lt_dec (length (ALocal.labels alocal1)) n0).
-            { inv s; try congr. econs; eauto. }
-            exfalso. exploit EX.(Valid.COWR); ss. instantiate (1 := (tid0, n0)).
-            econs. split.
-            { instantiate (1 := (tid0, length (ALocal.labels alocal1))). econs; auto. }
-            left. econs; eauto with tso.
-          - left. left. left. right. split; ss. left. econs. econs; eauto.
-        }
-        inv SIM_VRN.
-        { rewrite VIEW2 in TS2. inv TS2. }
-        unfold ALocal.next_eid in VIEW_OF_EID. rewrite VIEW_OF_EID in VIEW. inv VIEW.
-        unfold le in VIEW2. lia.
+          econs. split; cycle 1.
+          { econs; eauto with tso. }
+          destruct (lt_eq_lt_dec (length (ALocal.labels alocal1)) n0).
+          { inv s; destruct l; ss; try congr. }
+          exfalso. exploit EX.(Valid.COWR); ss. instantiate (1 := (tid0, n0)).
+          econs. split.
+          { instantiate (1 := (tid0, length (ALocal.labels alocal1))). econs; auto. }
+          left. econs; eauto with tso.
+        - left. left. left. right. split; ss. left. econs. econs; eauto.
       }
+      assert (JOIN_SN:join (View.ts (Local.vrn local1)) (S n) = View.ts (Local.vrn local1)).
+      { destruct (View.ts (Local.vrn local1)).
+        - lia.
+        - assert (S n < S t).
+          { unfold lt. unfold lt in TS1.
+            etrans; eauto.
+          }
+          unfold join. unfold Time.join. lia.
+      }
+      inv SIM_VRN.
+      { rewrite VIEW2 in TS2. inv TS2. }
+      unfold ALocal.next_eid in VIEW_OF_EID. rewrite VIEW_OF_EID in VIEW. inv VIEW.
+      unfold le in VIEW2. lia.
     }
-
     des. eexists (ExecUnit.mk _ _ _). esplits.
     + econs. econs; ss.
       { econs; ss. }
@@ -956,43 +757,20 @@ Proof.
         intro X. inv X.
         { rewrite VIEW0. clear. unfold bot. unfold Time.bot. lia. }
         eapply Time.le_lt_trans; eauto. inv EID. inv REL. inv H. inv H0.
-        inv H2. destruct l; ss; destruct (equiv_dec loc (ValA.val (sem_expr rmap1 eloc))); ss; inv e.
-        { (* write *)
-          inv H1. des. inv H.
-          { exploit Valid.coherence_ww; try exact H0; eauto with tso.
-            i. eapply view_of_eid_ob_write; eauto.
-            - left. left. right. ss.
-            - econs; eauto. apply Label.write_is_kinda_writing.
-          }
-          { inv H1.
-            exploit EX.(Valid.RF2); eauto. i. des.
-            inv WRITE. inv READ0. rewrite EID in EID0. inv EID0.
-            inv LABEL1.
-            destruct (equiv_dec (ValA.val (sem_expr rmap1 eloc)) loc); ss. inv e.
-            destruct (equiv_dec val val0); ss. inv e.
-            exploit Valid.coherence_rw; try exact H0; eauto with tso.
-            i. eapply view_of_eid_ob_write; eauto with tso.
-            left. left. right. ss.
-          }
+        inv H2. inv H1. des. inv H.
+        { exploit Valid.coherence_ww; try exact H0; eauto with tso.
+          i. eapply view_of_eid_ob_write; eauto.
+          - left. left. right. ss.
+          - econs; eauto. apply Label.write_is_kinda_writing.
         }
-        { (* update *)
-          inv H1. des. inv H.
-          { exploit Valid.coherence_ww; try exact H0; eauto with tso.
-            all: try by econs; eauto; eauto with tso.
-            i. eapply view_of_eid_ob_write; eauto.
-            - left. left. right. ss.
-            - econs; eauto. apply Label.write_is_kinda_writing.
-          }
-          { inv H1.
-            exploit EX.(Valid.RF2); eauto. i. des.
-            inv WRITE. inv READ0. rewrite EID in EID0. inv EID0.
-            inv LABEL1.
-            destruct (equiv_dec (ValA.val (sem_expr rmap1 eloc)) loc); ss. inv e.
-            destruct (equiv_dec vnew val); ss. inv e.
-            exploit Valid.coherence_rw; try exact H0; eauto with tso.
-            i. eapply view_of_eid_ob_write; eauto with tso.
-            left. left. right. ss.
-          }
+        { inv H1.
+          exploit EX.(Valid.RF2); eauto. i. des.
+          inv WRITE. inv READ0. rewrite EID in EID0. inv EID0.
+          assert (LOC: loc = (ValA.val (sem_expr rmap1 eloc))); eauto with tso.
+          rewrite LOC in *.
+          exploit Valid.coherence_rw; try exact H0; eauto with tso.
+          i. eapply view_of_eid_ob_write; eauto with tso.
+          left. left. right. ss.
         }
       * (* external *)
         unfold lt. apply le_n_S. s. repeat apply join_spec.
@@ -1124,104 +902,48 @@ Proof.
         { (* read from uninit *)
           specialize (FWD eq_refl).
           assert (S n < S ts).
-          { des; subst.
-            - eapply view_of_eid_ob_write; eauto; cycle 1.
-              { econs; eauto with tso. }
-              left. left. left. right. split; cycle 1.
-              { econs; eauto. }
-              right. econs.
-              + econs; eauto. econs; eauto with tso.
-              + econs; eauto with tso. econs; eauto with tso.
-            - eapply view_of_eid_ob_write; eauto; cycle 1.
-              { econs; eauto with tso. }
-              left. left. left. right. split; cycle 1.
-              { econs; eauto. }
-              right. econs.
-              + econs; eauto. econs; eauto with tso.
-              + econs; eauto with tso. econs; eauto with tso.
+          { des. subst. inv WRITING.
+            eapply view_of_eid_ob_write; eauto; cycle 1.
+            { econs; eauto with tso. }
+            left. left. left. right. split; cycle 1.
+            { econs; eauto. }
+            right. econs.
+            - econs; eauto. econs; eauto with tso.
+            - econs; eauto with tso. econs; eauto with tso.
           }
-          inv SIM_EXT1.
-          { inv VIEW0. }
+          inv SIM_EXT1; [inv VIEW0|].
           unfold ALocal.next_eid in VIEW_OF_EID. rewrite VIEW_OF_EID in VIEW. inv VIEW.
           unfold le in VIEW0. lia.
         }
-        exploit MSG0; [lia|]. i. des.
-        { (* write_mem_of_ex *)
-          exploit EX.(Valid.RF1).
-          instantiate (1 := (tid, length (ALocal.labels alocal1))).
-          instantiate (1 := (ValA.val voldv)). instantiate (1 := ValA.val (sem_expr armap2 eloc)).
-          { econs; eauto with tso. }
-          i. des.
-          { contradict NORF. econs. eauto. }
-          exploit EX.(Valid.RF_WF); [exact RF|exact RF0|]. i. subst.
-          exploit EX.(Valid.CO1).
-          instantiate (1 := eid2).
-          instantiate (1 := (tid0, n0)).
-          { inv LABEL1. inv LABEL2.
-            destruct l; ss; destruct (equiv_dec loc (ValA.val (sem_expr armap2 eloc))); ss; inv e.
-            - destruct (equiv_dec val0 (ValA.val voldv)); ss; inv e. esplits; eauto with tso.
-            - destruct (equiv_dec vnew (ValA.val voldv)); ss; inv e. esplits; eauto with tso.
-          }
-          i. des.
-          { subst. rewrite VIEW0 in VIEW1. inv VIEW1. lia. }
-          { cut (S ts < S old_ts); [lia|].
-            eapply view_of_eid_ob_write; eauto.
-            { left. left. right. ss. }
-            inv LABEL1. inv LABEL2.
-            destruct l; ss; destruct (equiv_dec loc (ValA.val (sem_expr armap2 eloc))); ss; inv e.
-            - destruct (equiv_dec val0 (ValA.val voldv)); ss; inv e. esplits; eauto with tso.
-            - destruct (equiv_dec vnew (ValA.val voldv)); ss; inv e. esplits; eauto with tso.
-          }
-          assert (S n < S ts).
-          { eapply view_of_eid_ob_write; eauto; cycle 1.
-            { econs; eauto with tso. }
-            left. left. left. right. split; cycle 1.
-            { econs; eauto. }
-            left. econs. econs; eauto.
-          }
-          inv SIM_EXT1.
-          { inv VIEW2. }
-          unfold ALocal.next_eid in VIEW_OF_EID. rewrite VIEW_OF_EID in VIEW. inv VIEW.
-          unfold le in VIEW2. lia.
+        exploit MSG0; [lia|]. i. des. inv WRITING.
+        exploit EX.(Valid.RF1).
+        instantiate (1 := (tid, length (ALocal.labels alocal1))).
+        instantiate (1 := (ValA.val voldv)). instantiate (1 := ValA.val (sem_expr armap2 eloc)).
+        { econs; eauto with tso. }
+        i. des.
+        { contradict NORF. econs. eauto. }
+        exploit EX.(Valid.RF_WF); [exact RF|exact RF0|]. i. subst.
+        exploit EX.(Valid.CO1).
+        instantiate (1 := eid2). instantiate (1 := (tid0, n0)).
+        { inv LABEL1. esplits; eauto with tso. }
+        i. des.
+        { subst. rewrite VIEW0 in VIEW1. inv VIEW1. lia. }
+        { cut (S ts < S old_ts); [lia|].
+          eapply view_of_eid_ob_write; eauto.
+          { left. left. right. ss. }
+          inv LABEL1. esplits; eauto with tso.
         }
-        { (* update_mem_of_ex *)
-          exploit EX.(Valid.RF1).
-          instantiate (1 := (tid, length (ALocal.labels alocal1))).
-          instantiate (1 := (ValA.val voldv)). instantiate (1 := ValA.val (sem_expr armap2 eloc)).
+        assert (S n < S ts).
+        { eapply view_of_eid_ob_write; eauto; cycle 1.
           { econs; eauto with tso. }
-          i. des.
-          { contradict NORF. econs. eauto. }
-          exploit EX.(Valid.RF_WF); [exact RF|exact RF0|]. i. subst.
-          exploit EX.(Valid.CO1).
-          instantiate (1 := eid2).
-          instantiate (1 := (tid0, n0)).
-          { inv LABEL1. inv LABEL2.
-            destruct l; ss; destruct (equiv_dec loc (ValA.val (sem_expr armap2 eloc))); ss; inv e.
-            - destruct (equiv_dec val0 (ValA.val voldv)); ss; inv e. esplits; eauto with tso.
-            - destruct (equiv_dec vnew (ValA.val voldv)); ss; inv e. esplits; eauto with tso.
-          }
-          i. des.
-          { subst. rewrite VIEW0 in VIEW1. inv VIEW1. lia. }
-          { cut (S ts < S old_ts); [lia|].
-            eapply view_of_eid_ob_write; eauto.
-            { left. left. right. ss. }
-            inv LABEL1. inv LABEL2.
-            destruct l; ss; destruct (equiv_dec loc (ValA.val (sem_expr armap2 eloc))); ss; inv e.
-            - destruct (equiv_dec val0 (ValA.val voldv)); ss; inv e. esplits; eauto with tso.
-            - destruct (equiv_dec vnew (ValA.val voldv)); ss; inv e. esplits; eauto with tso.
-          }
-          assert (S n < S ts).
-          { eapply view_of_eid_ob_write; eauto; cycle 1.
-            { econs; eauto with tso. }
-            left. left. left. right. split; cycle 1.
-            { econs; eauto. }
-            left. econs. econs; eauto.
-          }
-          inv SIM_EXT1.
-          { inv VIEW2. }
-          unfold ALocal.next_eid in VIEW_OF_EID. rewrite VIEW_OF_EID in VIEW. inv VIEW.
-          unfold le in VIEW2. lia.
+          left. left. left. right. split; cycle 1.
+          { econs; eauto. }
+          left. econs. econs; eauto.
         }
+        inv SIM_EXT1.
+        { inv VIEW2. }
+        unfold ALocal.next_eid in VIEW_OF_EID. rewrite VIEW_OF_EID in VIEW. inv VIEW.
+        unfold le in VIEW2. lia.
       }
       { ss. }
       econs; try refl.
@@ -1231,69 +953,21 @@ Proof.
         intro X. inv X.
         { rewrite VIEW0. clear. unfold bot. unfold Time.bot. lia. }
         eapply Time.le_lt_trans; eauto. inv EID. inv REL. inv H. inv H0.
-        inv H2. destruct l; ss; destruct (equiv_dec loc (ValA.val (sem_expr armap2 eloc))); ss; inv e.
-        { (* write *)
-          inv H1. des. inv H.
-          { exploit Valid.coherence_ww; try exact H0; eauto with tso.
-            i. eapply view_of_eid_ob_write; eauto.
-            - left. left. right. ss.
-            - econs; eauto with tso.
-          }
-          { inv H1.
-            exploit EX.(Valid.RF2); eauto. i. des.
-            inv WRITE. inv READ0. rewrite EID in EID0. inv EID0.
-            inv LABEL1.
-            destruct (equiv_dec (ValA.val (sem_expr armap2 eloc)) loc); ss. inv e.
-            destruct (equiv_dec val val0); ss. inv e.
-            inv READ1.
-            destruct l; ss.
-            - (* read *)
-              inv LABEL1.
-              destruct (equiv_dec loc (ValA.val (sem_expr armap2 eloc))); ss. inv e.
-              destruct (equiv_dec val val0); ss. inv e.
-              exploit Valid.coherence_rw; try exact H0; eauto with tso.
-              i. eapply view_of_eid_ob_write; eauto with tso.
-              left. left. right. ss.
-            - (* update *)
-              inv LABEL1.
-              destruct (equiv_dec loc (ValA.val (sem_expr armap2 eloc))); ss. inv e.
-              destruct (equiv_dec vold val0); ss. inv e.
-              exploit Valid.coherence_rw; try exact H; try exact H0; eauto with tso.
-              i. eapply view_of_eid_ob_write; eauto with tso.
-              left. left. right. ss.
-          }
+        inv H2. inv H1. des. inv H.
+        { exploit Valid.coherence_ww; try exact H0; eauto with tso.
+          i. eapply view_of_eid_ob_write; eauto.
+          - left. left. right. ss.
+          - econs; eauto with tso.
         }
-        { (* update *)
-          inv H1. des. inv H.
-          { exploit Valid.coherence_ww; try exact H0; eauto with tso.
-            all: try by econs; eauto; eauto with tso.
-            i. eapply view_of_eid_ob_write; eauto.
-            - left. left. right. ss.
-            - econs; eauto with tso.
-          }
-          { inv H1.
-            exploit EX.(Valid.RF2); eauto. i. des.
-            inv WRITE. inv READ0. rewrite EID in EID0. inv EID0.
-            inv LABEL1.
-            destruct (equiv_dec (ValA.val (sem_expr armap2 eloc)) loc); ss. inv e.
-            destruct (equiv_dec vnew val); ss. inv e.
-            inv READ1.
-            destruct l; ss.
-            - (* read *)
-              inv LABEL1.
-              destruct (equiv_dec loc (ValA.val (sem_expr armap2 eloc))); ss. inv e.
-              destruct (equiv_dec val0 val); ss. inv e.
-              exploit Valid.coherence_rw; try exact H0; eauto with tso.
-              i. eapply view_of_eid_ob_write; eauto with tso.
-              left. left. right. ss.
-            - (* update *)
-              inv LABEL1.
-              destruct (equiv_dec loc (ValA.val (sem_expr armap2 eloc))); ss. inv e.
-              destruct (equiv_dec vold0 val); ss. inv e.
-              exploit Valid.coherence_rw; try exact H; try exact H0; eauto with tso.
-              i. eapply view_of_eid_ob_write; eauto with tso.
-              left. left. right. ss.
-          }
+        { inv H1.
+          exploit EX.(Valid.RF2); eauto. i. des.
+          inv WRITE. inv READ0. rewrite EID in EID0. inv EID0.
+          inv LABEL1. inv READ1. inv LABEL1.
+          assert (LOC: loc = (ValA.val (sem_expr armap2 eloc))); eauto with tso.
+          rewrite LOC in *.
+          exploit Valid.coherence_rw; try exact H0; eauto with tso.
+          i. eapply view_of_eid_ob_write; eauto with tso.
+          left. left. right. ss.
         }
       * (* external *)
         unfold lt. apply le_n_S. s. repeat apply join_spec.
@@ -1414,158 +1088,76 @@ Proof.
       { (* read from uninit *)
         specialize (FWD eq_refl).
         assert (view < S ts).
-        { des.
-          - eapply view_of_eid_ob_write; eauto; cycle 1.
+        { des. inv WRITING.
+          eapply view_of_eid_ob_write; eauto; cycle 1.
+          { econs; eauto with tso. }
+          destruct (tid == tid0).
+          - inv e. left. right. left. econs. split.
             { econs; eauto with tso. }
-            destruct (tid == tid0).
-            + inv e. left. right. left. econs. split.
-              { econs; eauto with tso. }
-              econs. split; cycle 1.
-              { econs; eauto with tso. }
-              destruct (lt_eq_lt_dec (length (ALocal.labels alocal1)) n).
-              { inv s; try congr. econs; eauto. }
-              exfalso. exploit EX.(Valid.COWR); ss. instantiate (1 := (tid0, n)).
-              econs. split.
-              { instantiate (1 := (tid0, length (ALocal.labels alocal1))). econs; auto. }
-              right. econs; eauto with tso. econs; eauto with tso. econs; eauto with tso.
-            + left. left. left. right. split; ss. right. econs.
-              * econs; eauto. econs; eauto with tso.
-              * econs; eauto with tso. econs; eauto with tso.
-          - eapply view_of_eid_ob_write; eauto; cycle 1.
+            econs. split; cycle 1.
             { econs; eauto with tso. }
-            destruct (tid == tid0).
-            + inv e. left. right. left. econs. split.
-              { econs; eauto with tso. }
-              econs. split; cycle 1.
-              { econs; eauto with tso. }
-              destruct (lt_eq_lt_dec (length (ALocal.labels alocal1)) n).
-              { inv s; try congr. econs; eauto. }
-              exfalso. exploit EX.(Valid.COWR); ss. instantiate (1 := (tid0, n)).
-              econs. split.
-              { instantiate (1 := (tid0, length (ALocal.labels alocal1))). econs; auto. }
-              right. econs; eauto with tso. econs; eauto with tso. econs; eauto with tso.
-            + left. left. left. right. split; ss. right. econs.
-              * econs; eauto. econs; eauto with tso.
-              * econs; eauto with tso. econs; eauto with tso.
+            destruct (lt_eq_lt_dec (length (ALocal.labels alocal1)) n).
+            { inv s; destruct l; ss; try congr. }
+            exfalso. exploit EX.(Valid.COWR); ss. instantiate (1 := (tid0, n)).
+            econs. split.
+            { instantiate (1 := (tid0, length (ALocal.labels alocal1))). econs; auto. }
+            right. econs; eauto with tso. econs; eauto with tso. econs; eauto with tso.
+          - left. left. left. right. split; ss. right. econs.
+            * econs; eauto. econs; eauto with tso.
+            * econs; eauto with tso. econs; eauto with tso.
         }
         inv SIM_VRN.
         { rewrite VIEW0 in TS2. inv TS2. }
         unfold ALocal.next_eid in VIEW_OF_EID. rewrite VIEW_OF_EID in VIEW. inv VIEW.
         unfold le in VIEW0. lia.
       }
-      exploit MSG; [lia|]. i. des.
-      { (* write_mem_of_ex *)
-        exploit EX.(Valid.RF1).
-        instantiate (1 := (tid, length (ALocal.labels alocal1))).
-        instantiate (1 := res0). instantiate (1 := ValA.val (sem_expr rmap1 eloc)).
-        { econs; eauto with tso. }
-        i. des.
-        { contradict NORF. econs. eauto. }
-        exploit EX.(Valid.RF_WF); [exact RF|exact RF0|]. i. subst.
-        exploit EX.(Valid.CO1).
-        instantiate (1 := eid2).
-        instantiate (1 := (tid0, n0)).
-        { inv LABEL1. inv LABEL2.
-          destruct l; ss; destruct (equiv_dec loc (ValA.val (sem_expr rmap1 eloc))); ss; inv e.
-          - destruct (equiv_dec val0 res0); ss; inv e. esplits; eauto with tso.
-          - destruct (equiv_dec vnew res0); ss; inv e. esplits; eauto with tso.
-        }
-        i. des.
-        { subst. rewrite VIEW0 in VIEW1. inv VIEW1. lia. }
-        { cut (S ts < S n); [lia|].
-          eapply view_of_eid_ob_write; eauto.
-          { left. left. right. ss. }
-          inv LABEL1. inv LABEL2.
-          destruct l; ss; destruct (equiv_dec loc (ValA.val (sem_expr rmap1 eloc))); ss; inv e.
-          - destruct (equiv_dec val0 res0); ss; inv e. esplits; eauto with tso.
-          - destruct (equiv_dec vnew res0); ss; inv e. esplits; eauto with tso.
-        }
-        assert (view < S ts).
-        { eapply view_of_eid_ob_write; eauto; cycle 1.
-          { econs; eauto with tso. }
-          destruct (tid == tid0).
-          - inv e. left. right. left. econs. split.
-            { econs; eauto with tso. }
-            econs. split; cycle 1.
-            { econs; eauto with tso. }
-            destruct (lt_eq_lt_dec (length (ALocal.labels alocal1)) n0).
-            { inv s; try congr. econs; eauto. }
-            exfalso. exploit EX.(Valid.COWR); ss. instantiate (1 := (tid0, n0)).
-            econs. split.
-            { instantiate (1 := (tid0, length (ALocal.labels alocal1))). econs; auto. }
-            left. econs; eauto with tso.
-          - left. left. left. right. split; ss. left. econs. econs; eauto.
-        }
-        assert (JOIN_SN:join (View.ts (Local.vrn local1)) (S n) = View.ts (Local.vrn local1)).
-        { destruct (View.ts (Local.vrn local1)).
-          - lia.
-          - assert (S n < S t).
-            { unfold lt. unfold lt in TS1.
-              etrans; eauto.
-            }
-            unfold join. unfold Time.join. lia.
-        }
-        inv SIM_VRN.
-        { rewrite VIEW2 in TS2. inv TS2. }
-        unfold ALocal.next_eid in VIEW_OF_EID. rewrite VIEW_OF_EID in VIEW. inv VIEW.
-        unfold le in VIEW2. lia.
+      exploit MSG; [lia|]. i. des. inv WRITING.
+      exploit EX.(Valid.RF1).
+      instantiate (1 := (tid, length (ALocal.labels alocal1))).
+      instantiate (1 := res0). instantiate (1 := ValA.val (sem_expr rmap1 eloc)).
+      { econs; eauto with tso. }
+      i. des.
+      { contradict NORF. econs. eauto. }
+      exploit EX.(Valid.RF_WF); [exact RF|exact RF0|]. i. subst.
+      exploit EX.(Valid.CO1).
+      instantiate (1 := eid2). instantiate (1 := (tid0, n0)).
+      { inv LABEL1. esplits; eauto with tso. }
+      i. des.
+      { subst. rewrite VIEW0 in VIEW1. inv VIEW1. lia. }
+      { cut (S ts < S n); [lia|].
+        eapply view_of_eid_ob_write; eauto.
+        { left. left. right. ss. }
+        inv LABEL1. esplits; eauto with tso.
       }
-      { (* update_mem_of_ex *)
-        exploit EX.(Valid.RF1).
-        instantiate (1 := (tid, length (ALocal.labels alocal1))).
-        instantiate (1 := res0). instantiate (1 := ValA.val (sem_expr rmap1 eloc)).
+      assert (view < S ts).
+      { eapply view_of_eid_ob_write; eauto; cycle 1.
         { econs; eauto with tso. }
-        i. des.
-        { contradict NORF. econs. eauto. }
-        exploit EX.(Valid.RF_WF); [exact RF|exact RF0|]. i. subst.
-        exploit EX.(Valid.CO1).
-        instantiate (1 := eid2).
-        instantiate (1 := (tid0, n0)).
-        { inv LABEL1. inv LABEL2.
-          destruct l; ss; destruct (equiv_dec loc (ValA.val (sem_expr rmap1 eloc))); ss; inv e.
-          - destruct (equiv_dec val0 res0); ss; inv e. esplits; eauto with tso.
-          - destruct (equiv_dec vnew res0); ss; inv e. esplits; eauto with tso.
-        }
-        i. des.
-        { subst. rewrite VIEW0 in VIEW1. inv VIEW1. lia. }
-        { cut (S ts < S n); [lia|].
-          eapply view_of_eid_ob_write; eauto.
-          { left. left. right. ss. }
-          inv LABEL1. inv LABEL2.
-          destruct l; ss; destruct (equiv_dec loc (ValA.val (sem_expr rmap1 eloc))); ss; inv e.
-          - destruct (equiv_dec val0 res0); ss; inv e. esplits; eauto with tso.
-          - destruct (equiv_dec vnew res0); ss; inv e. esplits; eauto with tso.
-        }
-        assert (view < S ts).
-        { eapply view_of_eid_ob_write; eauto; cycle 1.
+        destruct (tid == tid0).
+        - inv e. left. right. left. econs. split.
           { econs; eauto with tso. }
-          destruct (tid == tid0).
-          - inv e. left. right. left. econs. split.
-            { econs; eauto with tso. }
-            econs. split; cycle 1.
-            { econs; eauto with tso. }
-            destruct (lt_eq_lt_dec (length (ALocal.labels alocal1)) n0).
-            { inv s; try congr. econs; eauto. }
-            exfalso. exploit EX.(Valid.COWR); ss. instantiate (1 := (tid0, n0)).
-            econs. split.
-            { instantiate (1 := (tid0, length (ALocal.labels alocal1))). econs; auto. }
-            left. econs; eauto with tso.
-          - left. left. left. right. split; ss. left. econs. econs; eauto.
-        }
-        assert (JOIN_SN:join (View.ts (Local.vrn local1)) (S n) = View.ts (Local.vrn local1)).
-        { destruct (View.ts (Local.vrn local1)).
-          - lia.
-          - assert (S n < S t).
-            { unfold lt. unfold lt in TS1.
-              etrans; eauto.
-            }
-            unfold join. unfold Time.join. lia.
-        }
-        inv SIM_VRN.
-        { rewrite VIEW2 in TS2. inv TS2. }
-        unfold ALocal.next_eid in VIEW_OF_EID. rewrite VIEW_OF_EID in VIEW. inv VIEW.
-        unfold le in VIEW2. lia.
+          econs. split; cycle 1.
+          { econs; eauto with tso. }
+          destruct (lt_eq_lt_dec (length (ALocal.labels alocal1)) n0).
+          { inv s; destruct l; ss; try congr. }
+          exfalso. exploit EX.(Valid.COWR); ss. instantiate (1 := (tid0, n0)).
+          econs. split.
+          { instantiate (1 := (tid0, length (ALocal.labels alocal1))). econs; auto. }
+          left. econs; eauto with tso.
+        - left. left. left. right. split; ss. left. econs. econs; eauto.
       }
+      assert (JOIN_SN:join (View.ts (Local.vrn local1)) (S n) = View.ts (Local.vrn local1)).
+      { destruct (View.ts (Local.vrn local1)).
+        - lia.
+        - assert (S n < S t).
+          { unfold lt. unfold lt in TS1.
+            etrans; eauto.
+          }
+          unfold join. unfold Time.join. lia.
+      }
+      inv SIM_VRN.
+      { rewrite VIEW2 in TS2. inv TS2. }
+      unfold ALocal.next_eid in VIEW_OF_EID. rewrite VIEW_OF_EID in VIEW. inv VIEW.
+      unfold le in VIEW2. lia.
     }
 
     des. eexists (ExecUnit.mk _ _ _). esplits.
@@ -1920,9 +1512,8 @@ Proof.
         { eapply Permutation_NoDup; [by symmetry; eauto|].
         eapply Execution.eids_spec; eauto.
         }
-        s. i. des.
-        - esplits; cycle 1; eauto with tso. lia.
-        - esplits; cycle 1; eauto with tso. lia.
+        s. i. des. inv WRITING.
+        esplits; cycle 1; eauto with tso. lia.
       }
       { des. inv WRITE.
         destruct l; ss; exploit label_write_mem_of_ex; eauto with tso.
