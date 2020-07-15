@@ -68,8 +68,8 @@ Lemma sim_traces_co1
               atrs PRE.(Valid.aeus)):
   forall eid1 eid2,
     (exists loc,
-        <<LABEL: ex.(Execution.label_is) (Label.is_writing loc) eid1>> /\
-        <<LABEL: ex.(Execution.label_is) (Label.is_writing loc) eid2>>) ->
+        <<LABEL: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid1>> /\
+        <<LABEL: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid2>>) ->
     (eid1 = eid2 \/ (co_gen ws) eid1 eid2 \/ (co_gen ws) eid2 eid1).
 Proof.
   i. des. destruct PRE, ex.
@@ -122,8 +122,8 @@ Lemma sim_traces_co2
   forall eid1 eid2,
     (co_gen ws) eid1 eid2 ->
     exists loc,
-      <<LABEL: ex.(Execution.label_is) (Label.is_writing loc) eid1>> /\
-      <<LABEL: ex.(Execution.label_is) (Label.is_writing loc) eid2>>.
+      <<LABEL: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid1>> /\
+      <<LABEL: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid2>>.
 Proof.
   i. destruct PRE, ex.
   destruct eid1 as [tid1 eid1], eid2 as [tid2 eid2]. inv H. ss.
@@ -163,11 +163,11 @@ Lemma sim_traces_rf1_aux
               (fun tid atr aeu => exists l, atr = aeu :: l)
               atrs PRE.(Valid.aeus)):
   forall eid1 loc val
-     (LABEL: ex.(Execution.label_is) (Label.is_reading_val loc val) eid1),
+     (LABEL: ex.(Execution.label_is) (Label.is_kinda_reading_val loc val) eid1),
     (<<NORF: ~ codom_rel (rf_gen ws rs) eid1>> /\ <<VAL: val = Val.default >> /\
      <<R: exists r rl loc, IdMap.find (fst eid1) rs = Some (r::rl) /\ r (snd eid1) = Some (loc, Time.bot)>>) \/
     (exists eid2,
-        <<LABEL: ex.(Execution.label_is) (Label.is_writing_val loc val) eid2>> /\
+        <<LABEL: ex.(Execution.label_is) (Label.is_kinda_writing_val loc val) eid2>> /\
         <<RF: (rf_gen ws rs) eid2 eid1>>).
 Proof.
   i. destruct eid1 as [tid1 eid1].
@@ -225,10 +225,10 @@ Lemma sim_traces_rf1
               (fun tid atr aeu => exists l, atr = aeu :: l)
               atrs PRE.(Valid.aeus)):
   forall eid1 loc val
-     (LABEL: ex.(Execution.label_is) (Label.is_reading_val loc val) eid1),
+     (LABEL: ex.(Execution.label_is) (Label.is_kinda_reading_val loc val) eid1),
     (<<NORF: ~ codom_rel (rf_gen ws rs) eid1>> /\ <<VAL: val = Val.default >>) \/
     (exists eid2,
-        <<LABEL: ex.(Execution.label_is) (Label.is_writing_val loc val) eid2>> /\
+        <<LABEL: ex.(Execution.label_is) (Label.is_kinda_writing_val loc val) eid2>> /\
         <<RF: (rf_gen ws rs) eid2 eid1>>).
 Proof.
   ii. exploit sim_traces_rf1_aux; eauto. i. des.
@@ -249,8 +249,8 @@ Lemma sim_traces_rf2
               atrs PRE.(Valid.aeus)):
   forall eid1 eid2 (RF: (rf_gen ws rs) eid2 eid1),
   exists loc val,
-    <<READ: ex.(Execution.label_is) (Label.is_reading_val loc val) eid1>> /\
-    <<WRITE: ex.(Execution.label_is) (Label.is_writing_val loc val) eid2>>.
+    <<READ: ex.(Execution.label_is) (Label.is_kinda_reading_val loc val) eid1>> /\
+    <<WRITE: ex.(Execution.label_is) (Label.is_kinda_writing_val loc val) eid2>>.
 Proof.
   i. inv RF. destruct eid1 as [tid1 eid1], eid2 as [tid2 eid2]. ss.
   generalize (SIM tid1). intro SIM1. inv SIM1; try congr.
@@ -269,11 +269,11 @@ Proof.
     rewrite READ_TS_SPEC in x6. inv x6.
     generalize (ATR tid1). intro ATR1. inv ATR1; try congr.
     generalize (ATR tid2). intro ATR2. inv ATR2; try congr.
-    des. simplify. destruct PRE, ex. ss.
-    rewrite LABELS. esplits.
-    + econs; eauto. unfold Execution.label in *. ss.
+    des. simplify. destruct PRE, ex. ss. rewrite LABELS.
+    destruct l0; ss. eqvtac. esplits.
+    + econs; eauto with tso. unfold Execution.label in *. ss.
       repeat rewrite IdMap.map_spec.
-      rewrite <- H8. ss.
+      rewrite <- H8. eauto.
     + econs; eauto. unfold Execution.label in *. ss.
       repeat rewrite IdMap.map_spec.
       rewrite <- H13. ss.
@@ -370,9 +370,9 @@ Lemma sim_traces_cov_rf
     forall eid1 eid2
       (RF: ex.(Execution.rf) eid1 eid2),
       Time.eq ((v_gen covs) eid1) ((v_gen covs) eid2) /\
-      ex.(Execution.label_is_not) Label.is_write eid2 \/
+      ex.(Execution.label_is) Label.is_read eid2 \/
       Time.lt ((v_gen covs) eid1) ((v_gen covs) eid2) /\
-      ex.(Execution.label_is) Label.is_write eid2>>.
+      ex.(Execution.label_is) Label.is_kinda_write eid2>>.
 Proof.
   ii. rewrite RF in *. inv RF0.
   destruct eid1 as [tid1 iid1], eid2 as [tid2 iid2]. ss.
@@ -532,8 +532,8 @@ Proof.
     + exploit sim_traces_rf2; eauto. rewrite <- RF. eauto. i. des.
       exploit sim_traces_co2; eauto. rewrite <- CO. eauto. i. des.
       inv WRITE. inv LABEL. rewrite EID in EID0. inv EID0.
-      eapply Label.writing_val_is_writing in LABEL1.
-      exploit Label.writing_same_loc; [exact LABEL1 | exact LABEL2|]; eauto. i. subst.
+      eapply Label.kinda_writing_val_is_kinda_writing in LABEL1.
+      exploit Label.kinda_writing_same_loc; [exact LABEL1 | exact LABEL2|]; eauto. i. subst.
       inv x0. inv READ. rewrite EID0 in EID1. inv EID1. inv LABEL0.
       destruct l1; ss. destruct (equiv_dec loc loc0); ss. inv e.
       exploit sim_traces_co1; eauto.
@@ -691,8 +691,7 @@ Proof.
             destruct ((tid1, iid1) == (tid2, iid2)); ss. inv e.
             move EID at bottom.
             exploit sim_trace_last; try exact REL6; eauto. i. des. simplify.
-            rewrite x17 in EID. inv EID.
-            exfalso. apply x19. eauto with tso.
+            rewrite x17 in EID. inv EID. ss.
           * move CO1 at bottom. unguardH CO1. des; [right | left |].
             -- inv CO1. rewrite <- H6 in H11. inv H11. split; ss.
             -- rewrite <- CO in CO1. exploit sim_traces_cov_co; eauto. i. split; ss.
@@ -720,10 +719,10 @@ Lemma sim_traces_cov_po_loc
               atrs PRE.(Valid.aeus)):
   forall eid1 eid2 (PO_LOC: Execution.po_loc ex eid1 eid2),
      <<PO_LOC_WRITE:
-       ex.(Execution.label_is) Label.is_write eid2 ->
+       ex.(Execution.label_is) Label.is_kinda_write eid2 ->
        Time.lt ((v_gen covs) eid1) ((v_gen covs) eid2)>> /\
      <<PO_LOC_READ:
-       ex.(Execution.label_is) Label.is_read eid2 /\ ex.(Execution.label_is_not) Label.is_write eid2 ->
+       ex.(Execution.label_is) Label.is_read eid2 ->
        Time.le ((v_gen covs) eid1) ((v_gen covs) eid2)>>.
 Proof.
   i. destruct eid1 as [tid1 iid1], eid2 as [tid2 iid2]. inv PO_LOC. inv H. ss. subst.
@@ -734,15 +733,14 @@ Proof.
   exploit sim_trace_sim_th; eauto. intro TH_tmp.
   exploit TH_tmp; eauto. { instantiate (1 := []). ss. } clear TH_tmp. intro TH.
   exploit TH.(PO); eauto. i. des.
-  unfold v_gen. s. rewrite <- H7. splits; i.
+  unfold v_gen. s. rewrite <- H7.
+  splits; i.
   - inv H1. unfold Execution.label in *. ss.
-    rewrite PRE.(Valid.LABELS), IdMap.map_spec, <- H in *. inv EID.
-    rewrite EID2 in H2. inv H2. eauto.
-  - inv H1. inv H2. inv H4. unfold Execution.label in *. ss.
     rewrite PRE.(Valid.LABELS), IdMap.map_spec, <- H in *.
-    inv EID. rewrite EID2 in H2. inv H2.
-    inv EID0. rewrite EID2 in H2. inv H2.
-    eauto with tso.
+    inv EID. rewrite EID2 in H2. inv H2. eauto.
+  - inv H1. unfold Execution.label in *. ss.
+    rewrite PRE.(Valid.LABELS), IdMap.map_spec, <- H in *.
+    inv EID. rewrite EID2 in H2. inv H2. eauto.
 Qed.
 
 Lemma sim_traces_vext_co

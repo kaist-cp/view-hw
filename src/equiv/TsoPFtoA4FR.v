@@ -83,8 +83,8 @@ Proof.
   destruct (le_lt_dec (length (ALocal.labels (AExecUnit.local aeu1))) eid1); cycle 1.
   { eapply L; eauto. }
   assert (exists loc,
-             <<LABEL1: Execution.label_is ex (fun label : Label.t => Label.is_reading loc label) (tid, eid1)>> /\
-             <<LABEL2: Execution.label_is ex (fun label : Label.t => Label.is_writing loc label) eid2>>).
+             <<LABEL1: Execution.label_is ex (fun label : Label.t => Label.is_kinda_reading loc label) (tid, eid1)>> /\
+             <<LABEL2: Execution.label_is ex (fun label : Label.t => Label.is_kinda_writing loc label) eid2>>).
   { inv FR. inv H.
     - inv H1. des.
       exploit RF2; eauto. i. des.
@@ -93,9 +93,9 @@ Proof.
       inv WRITE. rename EID into WRITE. rename LABEL2 into W_VAL.
       inv LABEL0. rename EID into LABEL0. rename LABEL2 into WRITING0.
       inv LABEL1. rename EID into LABEL1. rename LABEL2 into WRITING1.
-      eapply Label.writing_val_is_writing in W_VAL.
+      eapply Label.kinda_writing_val_is_kinda_writing in W_VAL.
       rewrite WRITE in LABEL0. inv LABEL0.
-      exploit Label.writing_same_loc. instantiate (1 := l2). eauto. instantiate (1 := loc). ss.
+      exploit Label.kinda_writing_same_loc. instantiate (1 := l2). eauto. instantiate (1 := loc). ss.
       i. subst.
       esplits; econs; eauto with tso.
     - inv H1. inv H2. inv H1. inv H3. inv H2. inv H. rewrite EID1 in EID0. inv EID0. rewrite EID2 in EID. inv EID.

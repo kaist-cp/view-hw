@@ -135,14 +135,14 @@ Inductive sim_event: forall (e1: Event.t (A:=unit)) (e2: Event.t (A:=unit)), Pro
 Hint Constructors sim_event.
 
 Definition sim_local_coh ex loc :=
-  ⦗ex.(Execution.label_is) (Label.is_writing loc)⦘ ⨾
+  ⦗ex.(Execution.label_is) (Label.is_kinda_writing loc)⦘ ⨾
   (Execution.rfe ex)^? ⨾
   Execution.po.
 
 Lemma sim_local_coh_step ex loc:
   sim_local_coh ex loc =
   (sim_local_coh ex loc ∪
-   ⦗ex.(Execution.label_is) (Label.is_writing loc)⦘ ⨾ (Execution.rfe ex)^?) ⨾
+   ⦗ex.(Execution.label_is) (Label.is_kinda_writing loc)⦘ ⨾ (Execution.rfe ex)^?) ⨾
   Execution.po_adj.
 Proof.
   unfold sim_local_coh. rewrite Execution.po_po_adj at 1.
@@ -152,10 +152,10 @@ Proof.
 Qed.
 
 Definition sim_local_vrn ex :=
-  (⦗ex.(Execution.label_is) Label.is_read⦘ ⨾
+  (⦗ex.(Execution.label_is) Label.is_kinda_read⦘ ⨾
    Execution.po) ∪
 
-  (⦗ex.(Execution.label_is) Label.is_write⦘ ⨾
+  (⦗ex.(Execution.label_is) Label.is_kinda_write⦘ ⨾
    Execution.po ⨾
    ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_wr)⦘ ⨾
    Execution.po).
@@ -163,9 +163,9 @@ Definition sim_local_vrn ex :=
 Lemma sim_local_vrn_step ex:
   sim_local_vrn ex =
   (sim_local_vrn ex ∪
-   ((⦗ex.(Execution.label_is) Label.is_read⦘) ∪
+   ((⦗ex.(Execution.label_is) Label.is_kinda_read⦘) ∪
 
-   (⦗ex.(Execution.label_is) Label.is_write⦘ ⨾
+   (⦗ex.(Execution.label_is) Label.is_kinda_write⦘ ⨾
      Execution.po ⨾
      ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_wr)⦘))) ⨾
   Execution.po_adj.
@@ -188,7 +188,7 @@ Qed.
 Lemma sim_local_vrn_spec
       p ex eid1 eid2
       (EX: Valid.ex p ex)
-      (EID2: Execution.label_is ex Label.is_read eid2)
+      (EID2: Execution.label_is ex Label.is_kinda_read eid2)
       (VRN: sim_local_vrn ex eid1 eid2):
   <<OB: Execution.ob ex eid1 eid2>>.
 Proof.
@@ -219,18 +219,18 @@ Proof.
 Qed.
 
 Definition sim_local_vwn ex :=
-  (⦗ex.(Execution.label_is) Label.is_read⦘ ⨾
+  (⦗ex.(Execution.label_is) Label.is_kinda_read⦘ ⨾
    Execution.po) ∪
 
-  (⦗ex.(Execution.label_is) Label.is_write⦘ ⨾
+  (⦗ex.(Execution.label_is) Label.is_kinda_write⦘ ⨾
    Execution.po).
 
 Lemma sim_local_vwn_step ex:
   sim_local_vwn ex =
   (sim_local_vwn ex ∪
-   ((⦗ex.(Execution.label_is) Label.is_read⦘) ∪
+   ((⦗ex.(Execution.label_is) Label.is_kinda_read⦘) ∪
 
-   (⦗ex.(Execution.label_is) Label.is_write⦘))) ⨾
+   (⦗ex.(Execution.label_is) Label.is_kinda_write⦘))) ⨾
   Execution.po_adj.
 Proof.
   unfold sim_local_vwn. rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
@@ -251,7 +251,7 @@ Qed.
 Lemma sim_local_vwn_spec
       p ex eid1 eid2
       (EX: Valid.ex p ex)
-      (EID2: Execution.label_is ex Label.is_write eid2)
+      (EID2: Execution.label_is ex Label.is_kinda_write eid2)
       (VWN: sim_local_vwn ex eid1 eid2):
   <<OB: Execution.ob ex eid1 eid2>>.
 Proof.
@@ -280,11 +280,11 @@ Proof.
 Qed.
 
 Definition sim_local_vro ex :=
-  ⦗ex.(Execution.label_is) (Label.is_read)⦘ ⨾ Execution.po.
+  ⦗ex.(Execution.label_is) (Label.is_kinda_read)⦘ ⨾ Execution.po.
 
 Lemma sim_local_vro_step ex:
   sim_local_vro ex =
-  (sim_local_vro ex ∪ ⦗ex.(Execution.label_is) (Label.is_read)⦘) ⨾
+  (sim_local_vro ex ∪ ⦗ex.(Execution.label_is) (Label.is_kinda_read)⦘) ⨾
   Execution.po_adj.
 Proof.
   unfold sim_local_vro. rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
@@ -295,11 +295,11 @@ Proof.
 Qed.
 
 Definition sim_local_vwo ex :=
-  ⦗ex.(Execution.label_is) (Label.is_write)⦘ ⨾ Execution.po.
+  ⦗ex.(Execution.label_is) (Label.is_kinda_write)⦘ ⨾ Execution.po.
 
 Lemma sim_local_vwo_step ex:
   sim_local_vwo ex =
-  (sim_local_vwo ex ∪ ⦗ex.(Execution.label_is) (Label.is_write)⦘) ⨾
+  (sim_local_vwo ex ∪ ⦗ex.(Execution.label_is) (Label.is_kinda_write)⦘) ⨾
   Execution.po_adj.
 Proof.
   unfold sim_local_vwo. rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
@@ -312,17 +312,17 @@ Qed.
 Inductive sim_local_fwd ex (loc:Loc.t) (eid1 eid2:eidT): Prop :=
 | sim_local_fwd_intro
     (PO: Execution.po eid1 eid2)
-    (WRITE: ex.(Execution.label_is) (Label.is_writing loc) eid1)
+    (WRITE: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid1)
     (NWRITE: forall eid
                (PO: Execution.po eid1 eid)
                (PO: Execution.po eid eid2),
-        ex.(Execution.label_is) (fun l => ~ Label.is_writing loc l) eid)
+        ex.(Execution.label_is) (fun l => ~ Label.is_kinda_writing loc l) eid)
 .
 
 Lemma sim_local_fwd_step ex loc:
   sim_local_fwd ex loc =
-  (sim_local_fwd ex loc ⨾ ⦗ex.(Execution.label_is) (fun l => ~ (Label.is_writing loc l))⦘ ∪
-   ⦗ex.(Execution.label_is) (Label.is_writing loc)⦘) ⨾
+  (sim_local_fwd ex loc ⨾ ⦗ex.(Execution.label_is) (fun l => ~ (Label.is_kinda_writing loc l))⦘ ∪
+   ⦗ex.(Execution.label_is) (Label.is_kinda_writing loc)⦘) ⨾
   Execution.po_adj.
 Proof.
   funext. i. funext. i. propext. econs.
@@ -363,8 +363,8 @@ Qed.
 Lemma rfi_sim_local_fwd
       p ex (EX: Valid.ex p ex)
       loc eid1 eid2
-      (EID1: ex.(Execution.label_is) (Label.is_writing loc) eid1)
-      (EID2: ex.(Execution.label_is) (Label.is_reading loc) eid2)
+      (EID1: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid1)
+      (EID2: ex.(Execution.label_is) (Label.is_kinda_reading loc) eid2)
       (RFI: Execution.rfi ex eid1 eid2):
   sim_local_fwd ex loc eid1 eid2.
 Proof.
@@ -398,11 +398,11 @@ Proof.
 Qed.
 
 Definition sim_local_fwd_none ex loc :=
-  ⦗ex.(Execution.label_is) (Label.is_writing loc)⦘ ⨾ Execution.po.
+  ⦗ex.(Execution.label_is) (Label.is_kinda_writing loc)⦘ ⨾ Execution.po.
 
 Lemma sim_local_fwd_none_step ex loc:
   sim_local_fwd_none ex loc =
-  (sim_local_fwd_none ex loc ∪ ⦗ex.(Execution.label_is) (Label.is_writing loc)⦘) ⨾
+  (sim_local_fwd_none ex loc ∪ ⦗ex.(Execution.label_is) (Label.is_kinda_writing loc)⦘) ⨾
   Execution.po_adj.
 Proof.
   unfold sim_local_fwd_none. rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.

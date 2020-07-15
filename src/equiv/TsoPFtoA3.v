@@ -34,7 +34,6 @@ Definition ob' (ex: Execution.t): relation eidT :=
 Ltac des_union :=
   repeat
     (try match goal with
-         | [H: Execution.internal _ _ _ |- _] => inv H
          | [H: Execution.cowr _ _ _ |- _] => inv H
          | [H: Execution.corw _ _ _ |- _] => inv H
          | [H: Execution.ob _ _ _ |- _] => inv H
@@ -172,7 +171,7 @@ Inductive sim_local (tid:Id.t) (mem: Memory.t) (ex: Execution.t) (vext: eidT -> 
   PROMISES: forall view (VIEW: Promises.lookup view local.(Local.promises)),
       exists n,
         <<N: (length alocal.(ALocal.labels)) <= n>> /\
-        <<WRITE: ex.(Execution.label_is) Label.is_write (tid, n)>> /\
+        <<WRITE: ex.(Execution.label_is) Label.is_kinda_write (tid, n)>> /\
         <<VIEW: vext (tid, n) = view>>;
 }.
 Hint Constructors sim_local.
@@ -183,7 +182,7 @@ Definition sim_ob_write
   forall eid1 eid2
     (LABEL: eid2 < List.length aeu.(AExecUnit.local).(ALocal.labels))
     (OB: ob' ex eid1 (tid, eid2))
-    (EID2: ex.(Execution.label_is) Label.is_write (tid, eid2)),
+    (EID2: ex.(Execution.label_is) Label.is_kinda_write (tid, eid2)),
     Time.lt (vext eid1) (vext (tid, eid2)).
 
 Definition sim_ob_read
@@ -192,7 +191,7 @@ Definition sim_ob_read
   forall eid1 eid2
     (LABEL: eid2 < List.length aeu.(AExecUnit.local).(ALocal.labels))
     (AOB: ob' ex eid1 (tid, eid2))
-    (EID2: ex.(Execution.label_is) Label.is_read (tid, eid2)),
+    (EID2: ex.(Execution.label_is) Label.is_kinda_read (tid, eid2)),
     Time.le (vext eid1) (vext (tid, eid2)).
 
 Definition sim_fre
