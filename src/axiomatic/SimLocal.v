@@ -168,12 +168,12 @@ Qed.
 Definition sim_local_vrn ex :=
   (⦗ex.(Execution.label_is) Label.is_read⦘ ⨾
    Execution.po ⨾
-   ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_rr)⦘ ⨾
+   ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_rr)⦘ ⨾
    Execution.po) ∪
 
   (⦗ex.(Execution.label_is) Label.is_write⦘ ⨾
    Execution.po ⨾
-   ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_wr)⦘ ⨾
+   ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_wr)⦘ ⨾
    Execution.po) ∪
 
   (((Execution.ctrl ex ∪ (ex.(Execution.addr) ⨾ Execution.po))) ⨾
@@ -188,11 +188,11 @@ Lemma sim_local_vrn_step ex:
   (sim_local_vrn ex ∪
    ((⦗ex.(Execution.label_is) Label.is_read⦘ ⨾
      Execution.po ⨾
-     ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_rr)⦘) ∪
+     ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_rr)⦘) ∪
 
    (⦗ex.(Execution.label_is) Label.is_write⦘ ⨾
      Execution.po ⨾
-     ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_wr)⦘) ∪
+     ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_wr)⦘) ∪
 
     (((Execution.ctrl ex ∪ (ex.(Execution.addr) ⨾ Execution.po))) ⨾
      ⦗ex.(Execution.label_is) (eq (Label.barrier Barrier.isb))⦘) ∪
@@ -244,12 +244,12 @@ Qed.
 Definition sim_local_vwn ex :=
   (⦗ex.(Execution.label_is) Label.is_read⦘ ⨾
    Execution.po ⨾
-   ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_rw)⦘ ⨾
+   ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_rw)⦘ ⨾
    Execution.po) ∪
 
   (⦗ex.(Execution.label_is) Label.is_write⦘ ⨾
    Execution.po ⨾
-   ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_ww)⦘ ⨾
+   ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_ww)⦘ ⨾
    Execution.po) ∪
 
   (⦗ex.(Execution.label_is) (Label.is_acquire_pc)⦘ ⨾
@@ -260,11 +260,11 @@ Lemma sim_local_vwn_step ex:
   (sim_local_vwn ex ∪
    ((⦗ex.(Execution.label_is) Label.is_read⦘ ⨾
      Execution.po ⨾
-     ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_rw)⦘) ∪
+     ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_rw)⦘) ∪
 
    (⦗ex.(Execution.label_is) Label.is_write⦘ ⨾
      Execution.po ⨾
-     ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_ww)⦘) ∪
+     ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_ww)⦘) ∪
 
     (⦗ex.(Execution.label_is) (Label.is_acquire_pc)⦘))) ⨾
   Execution.po_adj.

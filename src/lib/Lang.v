@@ -96,30 +96,59 @@ Module Barrier.
   Inductive t :=
   | isb
   | dmb (rr rw wr ww:bool)
+  | dsb (rr rw wr ww:bool)
   .
   Hint Constructors t.
 
-  Definition is_dmb_rr (b:t): bool :=
+  Definition is_dmb_dsb_rr (b:t): bool :=
     match b with
     | dmb rr rw wr ww => rr
+    | dsb rr rw wr ww => rr
     | _ => false
     end.
 
-  Definition is_dmb_rw (b:t): bool :=
+  Definition is_dmb_dsb_rw (b:t): bool :=
     match b with
     | dmb rr rw wr ww => rw
+    | dsb rr rw wr ww => rw
     | _ => false
     end.
 
-  Definition is_dmb_wr (b:t): bool :=
+  Definition is_dmb_dsb_wr (b:t): bool :=
     match b with
     | dmb rr rw wr ww => wr
+    | dsb rr rw wr ww => wr
     | _ => false
     end.
 
-  Definition is_dmb_ww (b:t): bool :=
+  Definition is_dmb_dsb_ww (b:t): bool :=
     match b with
     | dmb rr rw wr ww => ww
+    | dsb rr rw wr ww => ww
+    | _ => false
+    end.
+
+  Definition is_dsb_rr (b:t): bool :=
+    match b with
+    | dsb rr rw wr ww => rr
+    | _ => false
+    end.
+
+  Definition is_dsb_rw (b:t): bool :=
+    match b with
+    | dsb rr rw wr ww => rw
+    | _ => false
+    end.
+
+  Definition is_dsb_wr (b:t): bool :=
+    match b with
+    | dsb rr rw wr ww => wr
+    | _ => false
+    end.
+
+  Definition is_dsb_ww (b:t): bool :=
+    match b with
+    | dsb rr rw wr ww => ww
     | _ => false
     end.
 End Barrier.
@@ -137,6 +166,8 @@ Inductive instrT :=
 | instr_store (ex:bool) (ord:OrdW.t) (res:Id.t) (eloc:exprT) (eval:exprT)
 | instr_rmw (ordr:OrdR.t) (ordw:OrdW.t) (res:Id.t) (eloc:exprT) (rmw:rmwT)
 | instr_barrier (b:Barrier.t)
+| instr_flushopt (eloc:exprT)
+| instr_flush (eloc:exprT)
 .
 Hint Constructors instrT.
 Coercion instr_barrier: Barrier.t >-> instrT.
@@ -248,6 +279,8 @@ Module Event.
   | write (ex:bool) (ord:OrdW.t) (vloc:ValA.t (A:=A)) (vval:ValA.t (A:=A)) (res:ValA.t (A:=A))
   | rmw (ordr:OrdR.t) (ordw:OrdW.t) (vloc:ValA.t (A:=A)) (old new:ValA.t (A:=A))
   | barrier (b:Barrier.t)
+  | flushopt (vloc:ValA.t (A:=A))
+  | flush (vloc:ValA.t (A:=A))
   .
 End Event.
 
@@ -327,6 +360,18 @@ Section State.
       step Event.internal
            (mk ((stmt_dowhile s cond)::stmts) rmap)
            (mk stmts' rmap)
+  | step_flushopt
+      eloc stmts rmap vloc
+      (LOC: vloc = sem_expr rmap eloc):
+      step (Event.flushopt vloc)
+           (mk ((stmt_instr (instr_flushopt eloc))::stmts) rmap)
+           (mk stmts rmap)
+  | step_flush
+      eloc stmts rmap vloc
+      (LOC: vloc = sem_expr rmap eloc):
+      step (Event.flush vloc)
+           (mk ((stmt_instr (instr_flush eloc))::stmts) rmap)
+           (mk stmts rmap)
   .
   Hint Constructors step.
 End State.

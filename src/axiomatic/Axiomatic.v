@@ -854,25 +854,25 @@ Module Execution.
   Definition bob (ex:t): relation eidT :=
     (⦗ex.(label_is) Label.is_read⦘ ⨾
      po ⨾
-     ⦗ex.(label_is) (Label.is_barrier_c Barrier.is_dmb_rr)⦘ ⨾
+     ⦗ex.(label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_rr)⦘ ⨾
      po ⨾
      ⦗ex.(label_is) Label.is_read⦘) ∪
 
     (⦗ex.(label_is) Label.is_read⦘ ⨾
      po ⨾
-     ⦗ex.(label_is) (Label.is_barrier_c Barrier.is_dmb_rw)⦘ ⨾
+     ⦗ex.(label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_rw)⦘ ⨾
      po ⨾
      ⦗ex.(label_is) Label.is_write⦘) ∪
 
     (⦗ex.(label_is) Label.is_write⦘ ⨾
      po ⨾
-     ⦗ex.(label_is) (Label.is_barrier_c Barrier.is_dmb_wr)⦘ ⨾
+     ⦗ex.(label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_wr)⦘ ⨾
      po ⨾
      ⦗ex.(label_is) Label.is_read⦘) ∪
 
     (⦗ex.(label_is) Label.is_write⦘ ⨾
      po ⨾
-     ⦗ex.(label_is) (Label.is_barrier_c Barrier.is_dmb_ww)⦘ ⨾
+     ⦗ex.(label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_ww)⦘ ⨾
      po ⨾
      ⦗ex.(label_is) Label.is_write⦘) ∪
 
