@@ -226,18 +226,18 @@ Proof.
   repeat match goal with
          | [H: (_ ∪ _) _ _ |- _] => inv H
          end.
-  - right. left. left. left. left. left. left. left.
+  - left. right. left. left. left. left. left. left. left.
     inv H. des. econs. splits; eauto.
     rewrite ? seq_assoc. econs. splits; [|by econs; eauto].
     rewrite <- ? seq_assoc. ss.
-  - right. left. left. left. left. left. right.
+  - left. right. left. left. left. left. left. right.
     inv H. des. econs. splits; eauto.
     rewrite ? seq_assoc. econs. splits; [|by econs; eauto].
     rewrite <- ? seq_assoc. ss.
-  - left. left. right. right.
+  - left. left. left. right. right.
     inv H0. des. rewrite seq_assoc. econs. splits; eauto.
     right. econs. splits; eauto. econs; ss. econs; eauto.
-  - right. left. left. right.
+  - left. right. left. left. right.
     inv H. des. econs. splits; eauto.
 Qed.
 
@@ -295,15 +295,15 @@ Proof.
   repeat match goal with
          | [H: (_ ∪ _) _ _ |- _] => inv H
          end.
-  - right. left. left. left. left. left. left. right.
+  - left. right. left. left. left. left. left. left. right.
     inv H0. des. econs. splits; eauto.
     rewrite ? seq_assoc. econs. splits; [|by econs; eauto].
     rewrite <- ? seq_assoc. ss.
-  - right. left. left. left. left. right.
+  - left. right. left. left. left. left. right.
     inv H0. des. econs. splits; eauto.
     rewrite ? seq_assoc. econs. splits; [|by econs; eauto].
     rewrite <- ? seq_assoc. ss.
-  - right. left. left. right.
+  - left. right. left. left. right.
     inv H. des. econs. splits; eauto.
 Qed.
 
@@ -377,7 +377,7 @@ Lemma sim_local_vrel_spec
   <<OB: Execution.ob ex eid1 eid2>>.
 Proof.
   inv EID2. destruct l; inv LABEL. unfold sim_local_vrel in VREL.
-  right. left. left. left. right.
+  left. right. left. left. left. right.
   rewrite seq_assoc. econs. splits; eauto. econs; eauto.
 Qed.
 

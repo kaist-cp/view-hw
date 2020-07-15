@@ -360,7 +360,7 @@ Section Local.
               lc1.(persist)
               lc1.(promises))
   .
-  Hint Constructors dmb.
+  Hint Constructors dsb.
 
   (* TODO: + same cacheline *)
   Inductive flushopt (vloc:ValA.t (A:=View.t (A:=A))) (lc1:t) (lc2:t): Prop :=
@@ -832,10 +832,10 @@ Section ExecUnit.
     - inv STEP. econs; ss. econs; viewtac.
     - inv STEP. econs; ss. econs; viewtac.
     - inv STEP. econs; ss. econs; viewtac.
-    - inv STEP. econs; ss. econs; viewtac.
-      i. rewrite fun_add_spec. condtac; viewtac.
     - inv LC. econs; ss. econs; viewtac.
       inv CTRL. rewrite <- TS. eauto using expr_wf.
+    - inv STEP. econs; ss. econs; viewtac.
+      i. rewrite fun_add_spec. condtac; viewtac.
   Qed.
 
   Lemma state_step_wf tid eu1 eu2
