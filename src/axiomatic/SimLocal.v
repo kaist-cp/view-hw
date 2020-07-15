@@ -124,6 +124,10 @@ Inductive sim_event: forall (e1: Event.t (A:=View.t (A:=unit))) (e2: Event.t (A:
 | sim_event_control
     ctrl1 ctrl2:
     sim_event (Event.control ctrl1) (Event.control ctrl2)
+| sim_event_flushopt
+    vloc1 vloc2
+    (VLOC: sim_val_weak vloc1 vloc2):
+    sim_event (Event.flushopt vloc1) (Event.flushopt vloc2)
 .
 Hint Constructors sim_event.
 
