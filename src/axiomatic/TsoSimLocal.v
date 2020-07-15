@@ -209,7 +209,6 @@ Proof.
     + rewrite seq_assoc. econs. splits; cycle 1.
       { econs; eauto. econs; eauto. }
       econs. econs; eauto. econs; eauto with tso.
-      destruct l; ss; econs; eauto with tso.
     + rewrite seq_assoc. econs. splits; cycle 1.
       { econs; eauto. econs; eauto. }
       econs. splits.
@@ -219,33 +218,20 @@ Proof.
 Qed.
 
 Definition sim_local_vwn ex :=
-  (⦗ex.(Execution.label_is) Label.is_kinda_read⦘ ⨾
-   Execution.po) ∪
-
-  (⦗ex.(Execution.label_is) Label.is_kinda_write⦘ ⨾
+  (⦗ex.(Execution.label_is) Label.is_access⦘ ⨾
    Execution.po).
 
 Lemma sim_local_vwn_step ex:
   sim_local_vwn ex =
   (sim_local_vwn ex ∪
-   ((⦗ex.(Execution.label_is) Label.is_kinda_read⦘) ∪
-
-   (⦗ex.(Execution.label_is) Label.is_kinda_write⦘))) ⨾
+   (⦗ex.(Execution.label_is) Label.is_access⦘)) ⨾
   Execution.po_adj.
 Proof.
   unfold sim_local_vwn. rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
-  rewrite Execution.po_po_adj at 1 2.
+  rewrite Execution.po_po_adj at 1.
   rewrite (clos_refl_union Execution.po), union_seq, eq_seq.
   rewrite ? (seq_union' (Execution.po ⨾ Execution.po_adj) Execution.po_adj), ? seq_assoc, ? union_assoc.
-  funext. i. funext. i. propext. econs; i.
-  - repeat match goal with
-           | [H: (_ ∪ _) _ _ |- _] => inv H
-           end;
-      eauto 10 using union_l, union_r.
-  - repeat match goal with
-           | [H: (_ ∪ _) _ _ |- _] => inv H
-           end;
-      eauto 10 using union_l, union_r.
+  refl.
 Qed.
 
 Lemma sim_local_vwn_spec
@@ -255,43 +241,9 @@ Lemma sim_local_vwn_spec
       (VWN: sim_local_vwn ex eid1 eid2):
   <<OB: Execution.ob ex eid1 eid2>>.
 Proof.
-  inv EID2. destruct l; inv LABEL. unfold sim_local_vwn in VWN.
-  repeat match goal with
-         | [H: (_ ∪ _) _ _ |- _] => inv H
-         end.
-  - left. right. right.
-    inv H. des. inv H0. inv H2. econs. splits; cycle 1.
-    { econs; eauto. econs; eauto. econs; eauto with tso. }
-    econs; eauto. destruct l; econs; eauto with tso.
-  - left. right. right.
-    inv H. des. inv H0. inv H2. econs. splits; cycle 1.
-    { econs; eauto. econs; eauto. econs; eauto with tso. }
-    econs; eauto. destruct l; econs; eauto with tso.
-  - left. right. right.
-    inv VWN; inv H; inv H0; inv H; inv H2.
-    + rewrite seq_assoc. econs. splits; cycle 1.
-      { econs; eauto. econs; eauto. }
-      econs. econs; eauto. econs; eauto with tso.
-      destruct l; ss; econs; eauto with tso.
-    + rewrite seq_assoc. econs. splits; cycle 1.
-      { econs; eauto. econs; eauto. }
-      econs. splits; eauto. econs; eauto.
-      destruct l; ss; econs; eauto with tso.
-Qed.
-
-Definition sim_local_vwo ex :=
-  ⦗ex.(Execution.label_is) (Label.is_kinda_write)⦘ ⨾ Execution.po.
-
-Lemma sim_local_vwo_step ex:
-  sim_local_vwo ex =
-  (sim_local_vwo ex ∪ ⦗ex.(Execution.label_is) (Label.is_kinda_write)⦘) ⨾
-  Execution.po_adj.
-Proof.
-  unfold sim_local_vwo. rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
-  rewrite Execution.po_po_adj at 1.
-  rewrite (clos_refl_union Execution.po), union_seq, eq_seq.
-  rewrite ? (seq_union' (Execution.po ⨾ Execution.po_adj) Execution.po_adj), ? seq_assoc, ? union_assoc.
-  refl.
+  inv EID2. inv VWN. des.
+  left. right. right.
+  econs. econs; eauto. econs. econs; eauto. econs; eauto with tso.
 Qed.
 
 Inductive sim_local_fwd ex (loc:Loc.t) (eid1 eid2:eidT): Prop :=

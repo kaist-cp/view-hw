@@ -197,6 +197,14 @@ Module Label.
     destruct l; ss.
   Qed.
 
+  Lemma kinda_read_is_access
+        l
+        (WR: is_kinda_read l):
+    is_access l.
+  Proof.
+    destruct l; ss.
+  Qed.
+
   Lemma kinda_write_is_access
         l
         (WR: is_kinda_write l):
@@ -302,7 +310,7 @@ Module Label.
 
   Hint Resolve
        read_is_reading_val reading_val_is_reading reading_is_read
-       kinda_reading_is_kinda_read kinda_reading_is_accessing read_is_kinda_reading read_is_kinda_reading_val kinda_reading_exists_val kinda_reading_val_is_kinda_reading
+       kinda_reading_is_kinda_read kinda_read_is_access kinda_reading_is_accessing read_is_kinda_reading read_is_kinda_reading_val kinda_reading_exists_val kinda_reading_val_is_kinda_reading
        kinda_writing_is_kinda_write kinda_write_is_access kinda_writing_is_accessing write_is_kinda_writing write_is_kinda_writing_val kinda_writing_exists_val kinda_writing_val_is_kinda_writing
        update_is_kinda_reading update_is_kinda_writing update_is_kinda_writing_val
        accessing_is_access read_is_accessing write_is_accessing update_is_accessing

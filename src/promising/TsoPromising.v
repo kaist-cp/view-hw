@@ -43,16 +43,15 @@ Section Local.
     coh: Loc.t -> View.t (A:=unit);
     vrn: View.t (A:=unit);
     vwn: View.t (A:=unit);
-    vwo: View.t (A:=unit);
     fwdbank: Loc.t -> (FwdItem.t);
     promises: Promises.t;
   }.
   Hint Constructors t.
 
-  Definition init: t := mk bot bot bot bot (fun _ => FwdItem.init) bot.
+  Definition init: t := mk bot bot bot (fun _ => FwdItem.init) bot.
 
   Definition init_with_promises (promises: Promises.t): Local.t :=
-    mk bot bot bot bot (fun _ => FwdItem.init) promises.
+    mk bot bot bot (fun _ => FwdItem.init) promises.
 
   Inductive promise (loc:Loc.t) (val:Val.t) (ts:Time.t) (tid:Id.t) (lc1:t) (mem1:Memory.t) (lc2:t) (mem2:Memory.t): Prop :=
   | promise_intro
@@ -61,7 +60,6 @@ Section Local.
               lc1.(coh)
               lc1.(vrn)
               lc1.(vwn)
-              lc1.(vwo)
               lc1.(fwdbank)
               (Promises.set ts lc1.(promises)))
       (MEM2: Memory.append (Msg.mk loc val tid) mem1 = (ts, mem2))
@@ -85,7 +83,6 @@ Section Local.
               (fun_add loc (join (lc1.(coh) loc) view_post) lc1.(coh))
               (join lc1.(vrn) view_post)
               (join lc1.(vwn) view_post)
-              lc1.(vwo)
               lc1.(fwdbank)
               lc1.(promises))
   .
@@ -116,7 +113,6 @@ Section Local.
               (fun_add loc (View.mk ts bot) lc1.(coh))
               lc1.(vrn)
               (join lc1.(vwn) (View.mk ts bot))
-              (join lc1.(vwo) (View.mk ts bot))
               (fun_add loc (FwdItem.mk ts) lc1.(fwdbank))
               (Promises.unset ts lc1.(promises)))
   .
@@ -140,7 +136,6 @@ Section Local.
               (fun_add loc (View.mk ts bot) lc1.(coh))
               (join lc1.(vrn) (View.mk ts bot))
               (join lc1.(vwn) (View.mk ts bot))
-              (join lc1.(vwo) (View.mk ts bot))
               (fun_add loc (FwdItem.mk ts) lc1.(fwdbank))
               (Promises.unset ts lc1.(promises)))
   .
@@ -163,7 +158,6 @@ Section Local.
               (fun_add loc (join (lc1.(coh) loc) view_post) lc1.(coh))
               (join lc1.(vrn) view_post)
               (join lc1.(vwn) view_post)
-              lc1.(vwo)
               lc1.(fwdbank)
               lc1.(promises))
   .
@@ -174,9 +168,8 @@ Section Local.
       (LC2: lc2 =
             mk
               lc1.(coh)
-              (joins [lc1.(vrn); ifc wr lc1.(vwo)])
-              (joins [lc1.(vwn); ifc ww lc1.(vwo)])
-              lc1.(vwo)
+              (joins [lc1.(vrn); ifc wr lc1.(vwn)])
+              lc1.(vwn)
               lc1.(fwdbank)
               lc1.(promises))
   .
@@ -220,7 +213,6 @@ Section Local.
       (COH: forall loc, (lc.(coh) loc).(View.ts) <= List.length mem)
       (VRN: lc.(vrn).(View.ts) <= List.length mem)
       (VWN: lc.(vwn).(View.ts) <= List.length mem)
-      (VWO: lc.(vwo).(View.ts) <= List.length mem)
       (FWDBANK: forall loc, wf_fwdbank loc mem (lc.(coh) loc).(View.ts) (lc.(fwdbank) loc))
       (PROMISES: forall ts (IN: Promises.lookup ts lc.(promises)), ts <= List.length mem)
       (PROMISES: forall ts msg
@@ -357,7 +349,6 @@ Section Local.
       (COH: forall loc, Order.le (lhs.(coh) loc).(View.ts) (rhs.(coh) loc).(View.ts))
       (VRN: Order.le lhs.(vrn).(View.ts) rhs.(vrn).(View.ts))
       (VWN: Order.le lhs.(vwn).(View.ts) rhs.(vwn).(View.ts))
-      (VWO: Order.le lhs.(vwo).(View.ts) rhs.(vwo).(View.ts))
   .
 
   Global Program Instance le_partial_order: PreOrder le.

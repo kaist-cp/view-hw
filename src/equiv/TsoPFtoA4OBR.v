@@ -283,22 +283,20 @@ Proof.
       - (* dob *)
         unguardH LC2. inv LC2. ss.
         unfold Execution.dob in H1. rewrite ? seq_assoc in *. des_union.
-        + inv H. des. inv H1. des. inv H2.
+        + inv H. des. inv H1. des. inv H2. inv H. inv H3.
           rewrite L.(LC).(VWN); ss.
           * rewrite fun_add_spec. condtac; ss; cycle 1.
             { exfalso. apply c. ss. }
             inv WRITABLE. unfold Time.le. lia.
-          * econs; eauto. unfold sim_local_vwn. left. econs; eauto.
+          * econs; eauto. unfold sim_local_vwn. econs. econs; eauto. econs; eauto with tso.
         + inv H. des. inv H1. des. inv H2.
           rewrite L.(LC).(VWN); ss.
           * rewrite fun_add_spec. condtac; ss; cycle 1.
             { exfalso. apply c. ss. }
             inv WRITABLE. unfold Time.le. lia.
           * econs; eauto. unfold sim_local_vwn.
-            inv H. inv H3. destruct l0; ss.
-            -- left. econs. split; eauto. econs; eauto with tso.
-            -- right. econs. split; eauto. econs; eauto with tso.
-            -- right. econs. split; eauto. econs; eauto with tso.
+            inv H. inv H3.
+            econs. econs; eauto. econs; eauto with tso.
       - (* bob *)
         unguardH LC2. inv LC2. ss.
         unfold Execution.bob in H. rewrite ? seq_assoc in *. des_union.
@@ -310,10 +308,8 @@ Proof.
           inv H. inv H1. inv H. inv H1. inv H. des. inv H1. des. inv H2. inv H4. inv H.
           exploit Execution.po_chain.
           { econs. split; try exact H1. econs 2. eauto. }
-          intro PO. inv H4. destruct l0; ss.
-          -- left. econs. econs; eauto. econs; eauto with tso.
-          -- right. econs. econs; eauto. econs; eauto with tso.
-          -- right. econs. econs; eauto. econs; eauto with tso.
+          intro PO. inv H4.
+          econs. econs; eauto. econs; eauto with tso.
     }
   }
   { (* rmw_failure *)

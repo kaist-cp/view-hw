@@ -131,18 +131,15 @@ Proof.
     - (* dob *)
       rename H1 into H.
       unfold Execution.dob in H. rewrite ? seq_assoc in *. des_union.
-      + inv H1. des.
-        inv H1. eapply Nat.le_lt_trans.
-        { apply L.(LC).(VWN); ss. econs; ss. left. ss. }
+      + inv H1. des. inv H1. inv H. des. inv H1. inv H5.
+        eapply Nat.le_lt_trans.
+        { apply L.(LC).(VWN); ss. econs; ss. econs. econs; eauto. econs; eauto with tso. }
         s. rewrite fun_add_spec. condtac; [|congr].
         inv WRITABLE. ss.
       + inv H1. des.
         inv H1. eapply Nat.le_lt_trans.
         { apply L.(LC).(VWN); ss. econs; ss. inv H. des. inv H1. inv H5.
-          destruct l0; ss.
-          - left. econs; ss. econs; eauto. econs; ss. econs; eauto.
-          - right. econs; ss. econs; eauto. econs; ss. econs; eauto.
-          - right. econs; ss. econs; eauto. econs; ss. econs; eauto.
+          econs. econs; eauto. econs; eauto with tso.
         }
         s. rewrite fun_add_spec. condtac; [|congr].
         inv WRITABLE. ss.
@@ -153,10 +150,8 @@ Proof.
       { apply L.(LC).(VWN); ss. econs; ss.
         exploit Execution.po_chain.
         { econs. split; try exact H4. econs 2. eauto. }
-        intro PO. inv H7. destruct l0; ss.
-        - left. econs. econs; eauto. econs; eauto with tso.
-        - right. econs. econs; eauto. econs; eauto with tso.
-        - right. econs. econs; eauto. econs; eauto with tso.
+        intro PO. inv H7.
+        econs. econs; eauto. econs; eauto with tso.
       }
       s. rewrite fun_add_spec. condtac; [|congr].
       inv WRITABLE. ss.
@@ -226,19 +221,14 @@ Proof.
     - (* dob *)
       unguardH LC2. inv LC2. ss.
       unfold Execution.dob in H1. rewrite ? seq_assoc in *. des_union.
-      + inv H. des.
+      + inv H. des. inv H1. inv H. des. inv H1. inv H5.
         inv H3. eapply Nat.le_lt_trans.
-        { apply L.(LC).(VWN); ss. econs; ss. left. ss. }
+        { apply L.(LC).(VWN); ss. econs; ss. econs. econs; eauto. econs; eauto with tso. }
         s. rewrite fun_add_spec. condtac; [|congr].
         inv WRITABLE. ss.
       + eapply Nat.le_lt_trans.
-        { apply L.(LC).(VWN); ss. econs; ss.
-          inv H. des. inv H1. des. inv H. inv H5.
-          inv H3. inv H4.
-          destruct l0; ss.
-          - left. econs; ss. econs; eauto. econs; ss. econs; eauto.
-          - right. econs; ss. econs; eauto. econs; ss. econs; eauto.
-          - right. econs; ss. econs; eauto. econs; ss. econs; eauto.
+        { apply L.(LC).(VWN); ss. inv H. des. inv H1. des. inv H. inv H5. inv H3.
+          econs; ss. econs; eauto. econs; eauto. econs; eauto with tso.
         }
         s. rewrite fun_add_spec. condtac; [|congr].
         inv WRITABLE. ss.
@@ -250,10 +240,8 @@ Proof.
       { apply L.(LC).(VWN); ss. econs; ss.
         exploit Execution.po_chain.
         { econs. split; try exact H4. econs 2. eauto. }
-        intro PO. inv H7. destruct l0; ss.
-        - left. econs. econs; eauto. econs; eauto with tso.
-        - right. econs. econs; eauto. econs; eauto with tso.
-        - right. econs. econs; eauto. econs; eauto with tso.
+        intro PO. inv H7.
+        econs. econs; eauto. econs; eauto with tso.
       }
       s. rewrite fun_add_spec. condtac; [|congr].
       inv WRITABLE. ss.
