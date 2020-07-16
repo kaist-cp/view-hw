@@ -48,7 +48,6 @@ Proof.
                        Local.mk
                          lc0.(Local.coh)
                          lc0.(Local.vrn)
-                         lc0.(Local.vwn)
                          lc0.(Local.fwdbank)
                          (Promises.set (S (length mem1)) lc0.(Local.promises))).
         inv LOCAL0.

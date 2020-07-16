@@ -494,6 +494,9 @@ Section Local.
             i. repeat rewrite fun_add_spec. repeat condtac; ss; cycle 2.
             { exfalso. apply c0. ss. }
             { exfalso. apply c. ss. }
+            exploit high_ts_spec; eauto.
+            { i. eapply le_lt_trans; try exact l; eauto. }
+            i. des.
             rewrite NOFWD. repeat rewrite <- join_r. ss.
             specialize (COHMAX loc). lia.
           - rewrite fun_add_spec. condtac; ss.
