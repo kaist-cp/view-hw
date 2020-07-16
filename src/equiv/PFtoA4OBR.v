@@ -118,6 +118,7 @@ Proof.
   i.
   move AOB at bottom. unfold ob' in AOB. des_union.
   - (* rfe *)
+    rename H1 into H.
     assert (v_gen vexts eid1 = ts).
     { inv H. destruct eid1 as [tid1 eid1]. inv H2. ss.
       generalize H1. intro Y. rewrite RF in Y. inv Y. ss.
@@ -173,6 +174,7 @@ Proof.
       inv WRITE. inv PO. ss. subst. inv H. inv H3. ss.
     + rewrite H1. refl.
   - (* dob *)
+    rename H1 into H.
     unfold Execution.dob in H. rewrite ? seq_assoc in *. des_union.
     + inv H1. des. inv H1; cycle 1.
       { generalize L.(LC).(FWDBANK). intro SIM_FWD. ss.
@@ -242,6 +244,7 @@ Proof.
       * econs; eauto. unfold sim_local_vrn. left. right.
         rewrite ? seq_assoc in H1. econs; eauto.
   - (* aob *)
+    rename H into H1.
     unfold Execution.aob in H1. rewrite ? seq_assoc in *.
     inv H1. des. inv H.  des. inv H2. inv H1. guardH H2.
     assert (v_gen vexts x2 = ts).
@@ -304,6 +307,7 @@ Proof.
         }
     + rewrite H. refl.
   - (* bob *)
+    rename H1 into H.
     unfold Execution.bob in H. rewrite ? seq_assoc in *. des_union.
     + rewrite L.(LC).(VRN); ss.
       * rewrite <- join_l, <- join_r, <- join_l. ss.
@@ -327,4 +331,11 @@ Proof.
     + destruct (equiv_dec arch riscv); ss. exploit Valid.rmw_spec; eauto. i. des.
       exploit EX2.(LABELS_REV); eauto. i.
       inv LABEL2. des. destruct l0; ss. rewrite x2 in EID0. inv EID0.
+  - (* pob *)
+    unfold Execution.pob in H. rewrite ? seq_assoc in *.
+    inv H.
+    + inv H1. des. inv H1. inv H3.
+      destruct l0; ss. congr.
+    + inv H1. des. inv H1. inv H3.
+      destruct l0; ss. congr.
 Qed.

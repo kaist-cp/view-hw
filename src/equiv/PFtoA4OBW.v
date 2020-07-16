@@ -112,8 +112,9 @@ Proof.
   inv STEP0. ss. subst. inv LOCAL0; inv EVENT; inv STEP0; ss.
   move OB at bottom. unfold ob' in OB. des_union.
   - (* rfe *)
-    inv H. exploit RF2; eauto. i. des. congr.
+    inv H1. exploit RF2; eauto. i. des. congr.
   - (* dob *)
+    rename H1 into H.
     unfold Execution.dob in H. rewrite ? seq_assoc in *. des_union.
     + inv H1. des. inv H1; cycle 1.
       { inv H2. exploit RF2; eauto. i. des.  congr. }
@@ -167,10 +168,12 @@ Proof.
       inv WRITABLE. ss. eapply Nat.le_lt_trans; [|exact EXT].
       s. rewrite <- join_r, <- join_r, <- join_l. ss.
   - (* aob *)
+    rename H into H1.
     unfold Execution.aob in H1. rewrite ? seq_assoc in *.
     inv H1. des. inv H. des. inv H2. inv H1. guardH H2.
     inv H4. exploit RF2; eauto. i. des. congr.
   - (* bob *)
+    rename H1 into H.
     unfold Execution.bob in H. rewrite ? seq_assoc in *. des_union.
     + inv H1. des. inv H1. inv H4. destruct l0; ss. congr.
     + eapply Nat.le_lt_trans; [apply L.(LC).(VWN)|]; ss; cycle 1.
@@ -239,6 +242,18 @@ Proof.
         exploit LABELS_REV; eauto; ss.
         { apply nth_error_app_mon. eauto. }
         rewrite LABEL2. intro Y. inv Y. ss.
+      * eapply Nat.le_lt_trans; cycle 1.
+        { eapply Nat.lt_le_trans; try eapply x0. apply Memory.latest_ts_spec. }
+        rewrite EX2.(XVEXT); ss; cycle 1.
+        { rewrite List.app_length. s. clear -N. lia. }
+        condtac.
+        { apply Nat.eqb_eq in X0. clear -N X0. lia. }
+        destruct (le_lt_dec (vext1 eid1) 0); ss.
+        exploit sim_trace_sim_th; try exact TRACE; eauto. intro L1.
+        exploit L1.(VEXTPROP); eauto. s. i. inv x3.
+        exploit LABELS_REV; eauto; ss.
+        { apply nth_error_app_mon. eauto. }
+        rewrite LABEL2. intro Y. inv Y. ss.
     + destruct (equiv_dec arch riscv) eqn:Z; ss.
       rewrite fun_add_spec. condtac; [|congr].
       exploit Valid.rmw_is_po; eauto. destruct eid1. intro Y. inv Y. ss. subst.
@@ -257,4 +272,11 @@ Proof.
       inv WRITABLE. eapply Nat.le_lt_trans; [|apply EXT]. s.
       rewrite <- join_r, <- join_r, <- join_r, <- join_r, <- join_r, <- join_r, <- join_l.
       rewrite Z, <- H. s. apply REL1. ss.
+  - (* pob *)
+    unfold Execution.pob in H. rewrite ? seq_assoc in *.
+    inv H.
+    + inv H1. des. inv H1. inv H4.
+      destruct l0; ss. congr.
+    + inv H1. des. inv H1. inv H4.
+      destruct l0; ss. congr.
 Qed.

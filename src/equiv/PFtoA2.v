@@ -606,6 +606,9 @@ Proof.
   - erewrite XR0; eauto; tac; try lia.
   - eapply LABELS_REV0; eauto. apply nth_error_app_mon. ss.
   - eapply CTRL_REV0; eauto. left. ss.
+  - rewrite XVEXT0; eauto; tac; try lia.
+  - erewrite XR0; eauto; tac; try lia.
+  - eapply LABELS_REV0; eauto. apply nth_error_app_mon. ss.
 Qed.
 
 Lemma sim_traces_sim_ex_aux

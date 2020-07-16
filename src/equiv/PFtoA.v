@@ -541,6 +541,7 @@ Proof.
         - right. right. splits; eauto.
         - inv LABEL1.
         - inv LABEL1.
+        - inv LABEL1.
       }
     + des.
       * left. etrans; eauto.

@@ -709,7 +709,7 @@ Module Execution.
   Definition bob (ex:t): relation eidT :=
     ⦗ex.(label_is) Label.is_kinda_write⦘ ⨾
      po ⨾
-     ⦗ex.(label_is) (Label.is_barrier_c Barrier.is_dmb_wr)⦘ ⨾
+     ⦗ex.(label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_wr)⦘ ⨾
      po ⨾
      ⦗ex.(label_is) Label.is_kinda_read⦘.
 

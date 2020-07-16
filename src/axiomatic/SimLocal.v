@@ -124,6 +124,10 @@ Inductive sim_event: forall (e1: Event.t (A:=View.t (A:=unit))) (e2: Event.t (A:
 | sim_event_control
     ctrl1 ctrl2:
     sim_event (Event.control ctrl1) (Event.control ctrl2)
+| sim_event_flushopt
+    vloc1 vloc2
+    (VLOC: sim_val_weak vloc1 vloc2):
+    sim_event (Event.flushopt vloc1) (Event.flushopt vloc2)
 .
 Hint Constructors sim_event.
 
@@ -168,12 +172,12 @@ Qed.
 Definition sim_local_vrn ex :=
   (⦗ex.(Execution.label_is) Label.is_read⦘ ⨾
    Execution.po ⨾
-   ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_rr)⦘ ⨾
+   ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_rr)⦘ ⨾
    Execution.po) ∪
 
   (⦗ex.(Execution.label_is) Label.is_write⦘ ⨾
    Execution.po ⨾
-   ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_wr)⦘ ⨾
+   ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_wr)⦘ ⨾
    Execution.po) ∪
 
   (((Execution.ctrl ex ∪ (ex.(Execution.addr) ⨾ Execution.po))) ⨾
@@ -188,11 +192,11 @@ Lemma sim_local_vrn_step ex:
   (sim_local_vrn ex ∪
    ((⦗ex.(Execution.label_is) Label.is_read⦘ ⨾
      Execution.po ⨾
-     ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_rr)⦘) ∪
+     ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_rr)⦘) ∪
 
    (⦗ex.(Execution.label_is) Label.is_write⦘ ⨾
      Execution.po ⨾
-     ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_wr)⦘) ∪
+     ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_wr)⦘) ∪
 
     (((Execution.ctrl ex ∪ (ex.(Execution.addr) ⨾ Execution.po))) ⨾
      ⦗ex.(Execution.label_is) (eq (Label.barrier Barrier.isb))⦘) ∪
@@ -226,30 +230,30 @@ Proof.
   repeat match goal with
          | [H: (_ ∪ _) _ _ |- _] => inv H
          end.
-  - right. left. left. left. left. left. left. left.
+  - left. right. left. left. left. left. left. left. left.
     inv H. des. econs. splits; eauto.
     rewrite ? seq_assoc. econs. splits; [|by econs; eauto].
     rewrite <- ? seq_assoc. ss.
-  - right. left. left. left. left. left. right.
+  - left. right. left. left. left. left. left. right.
     inv H. des. econs. splits; eauto.
     rewrite ? seq_assoc. econs. splits; [|by econs; eauto].
     rewrite <- ? seq_assoc. ss.
-  - left. left. right. right.
+  - left. left. left. right. right.
     inv H0. des. rewrite seq_assoc. econs. splits; eauto.
     right. econs. splits; eauto. econs; ss. econs; eauto.
-  - right. left. left. right.
+  - left. right. left. left. right.
     inv H. des. econs. splits; eauto.
 Qed.
 
 Definition sim_local_vwn ex :=
   (⦗ex.(Execution.label_is) Label.is_read⦘ ⨾
    Execution.po ⨾
-   ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_rw)⦘ ⨾
+   ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_rw)⦘ ⨾
    Execution.po) ∪
 
   (⦗ex.(Execution.label_is) Label.is_write⦘ ⨾
    Execution.po ⨾
-   ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_ww)⦘ ⨾
+   ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_ww)⦘ ⨾
    Execution.po) ∪
 
   (⦗ex.(Execution.label_is) (Label.is_acquire_pc)⦘ ⨾
@@ -260,11 +264,11 @@ Lemma sim_local_vwn_step ex:
   (sim_local_vwn ex ∪
    ((⦗ex.(Execution.label_is) Label.is_read⦘ ⨾
      Execution.po ⨾
-     ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_rw)⦘) ∪
+     ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_rw)⦘) ∪
 
    (⦗ex.(Execution.label_is) Label.is_write⦘ ⨾
      Execution.po ⨾
-     ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_ww)⦘) ∪
+     ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_ww)⦘) ∪
 
     (⦗ex.(Execution.label_is) (Label.is_acquire_pc)⦘))) ⨾
   Execution.po_adj.
@@ -295,15 +299,15 @@ Proof.
   repeat match goal with
          | [H: (_ ∪ _) _ _ |- _] => inv H
          end.
-  - right. left. left. left. left. left. left. right.
+  - left. right. left. left. left. left. left. left. right.
     inv H0. des. econs. splits; eauto.
     rewrite ? seq_assoc. econs. splits; [|by econs; eauto].
     rewrite <- ? seq_assoc. ss.
-  - right. left. left. left. left. right.
+  - left. right. left. left. left. left. right.
     inv H0. des. econs. splits; eauto.
     rewrite ? seq_assoc. econs. splits; [|by econs; eauto].
     rewrite <- ? seq_assoc. ss.
-  - right. left. left. right.
+  - left. right. left. left. right.
     inv H. des. econs. splits; eauto.
 Qed.
 
@@ -377,7 +381,7 @@ Lemma sim_local_vrel_spec
   <<OB: Execution.ob ex eid1 eid2>>.
 Proof.
   inv EID2. destruct l; inv LABEL. unfold sim_local_vrel in VREL.
-  right. left. left. left. right.
+  left. right. left. left. left. right.
   rewrite seq_assoc. econs. splits; eauto. econs; eauto.
 Qed.
 
