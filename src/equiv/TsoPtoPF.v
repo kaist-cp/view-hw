@@ -67,7 +67,7 @@ Proof.
             repeat apply join_spec; viewtac.
           - apply Memory.read_mon. ss.
         }
-        { econs 3; eauto. instantiate (1 := view_pre). instantiate (1 := ts).
+        { econs 3; eauto. instantiate (1 := ts).
           inv STEP. inv WRITABLE. ss.
           exploit Memory.get_msg_wf; try exact MSG. i.
           econs; eauto; ss.
@@ -78,7 +78,7 @@ Proof.
           - f_equal. apply Promises.set_unset.
             ii. subst. lia.
         }
-        { econs 4; eauto. instantiate (1 := view_pre). instantiate (1 := ts). instantiate (1 := old_ts).
+        { econs 4; eauto. instantiate (1 := ts). instantiate (1 := old_ts).
           inv STEP.
           exploit Memory.read_wf; try exact OLD_MSG. i.
           inv WRITABLE. ss.
@@ -144,7 +144,7 @@ Proof.
           - econs; ss.
           - apply Memory.get_msg_mon. ss.
         }
-        { econs 4; eauto. instantiate (1 := view_pre). instantiate (1 := ts).
+        { econs 4; eauto. instantiate (1 := ts).
           inv STEP. inv WRITABLE. econs; try exact OLD_RANGE; eauto.
           - ii. eapply COH; eauto.
             destruct (lt_dec ts0 (length mem1)).

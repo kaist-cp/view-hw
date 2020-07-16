@@ -88,23 +88,23 @@ Section Local.
   .
   Hint Constructors read.
 
-  Inductive writable (vloc vval:ValA.t (A:=unit)) (tid:Id.t) (lc1:t) (mem1: Memory.t) (ts:Time.t) (view_pre:View.t (A:=unit)): Prop :=
+  Inductive writable (vloc vval:ValA.t (A:=unit)) (tid:Id.t) (lc1:t) (mem1: Memory.t) (ts:Time.t): Prop :=
   | writable_intro
-      loc val
+      loc
+      view_pre
       (LOC: loc = vloc.(ValA.val))
-      (VAL: val = vval.(ValA.val))
       (VIEW_PRE: view_pre = lc1.(vwn))
       (COH: lt (lc1.(coh) loc).(View.ts) ts)
       (EXT: lt view_pre.(View.ts) ts)
   .
   Hint Constructors writable.
 
-  Inductive fulfill (vloc vval res:ValA.t (A:=unit)) (ts:Time.t) (tid:Id.t) (view_pre:View.t (A:=unit)) (lc1:t) (mem1: Memory.t) (lc2:t): Prop :=
+  Inductive fulfill (vloc vval res:ValA.t (A:=unit)) (ts:Time.t) (tid:Id.t) (lc1:t) (mem1: Memory.t) (lc2:t): Prop :=
   | fulfill_intro
       loc val
       (LOC: loc = vloc.(ValA.val))
       (VAL: val = vval.(ValA.val))
-      (WRITABLE: writable vloc vval tid lc1 mem1 ts view_pre)
+      (WRITABLE: writable vloc vval tid lc1 mem1 ts)
       (MSG: Memory.get_msg ts mem1 = Some (Msg.mk loc val tid))
       (PROMISE: Promises.lookup ts lc1.(promises))
       (RES: res = ValA.mk _ 0 bot)
@@ -118,7 +118,7 @@ Section Local.
   .
   Hint Constructors fulfill.
 
-  Inductive rmw (vloc vold vnew:ValA.t (A:=unit)) (old_ts:Time.t) (ts:Time.t) (tid:Id.t) (view_pre:View.t (A:=unit)) (lc1:t) (mem1:Memory.t) (lc2:t): Prop :=
+  Inductive rmw (vloc vold vnew:ValA.t (A:=unit)) (old_ts:Time.t) (ts:Time.t) (tid:Id.t) (lc1:t) (mem1:Memory.t) (lc2:t): Prop :=
   | rmw_intro
       loc old new
       (LOC: loc = vloc.(ValA.val))
@@ -128,7 +128,7 @@ Section Local.
       (OLD_MSG: Memory.read loc old_ts mem1 = Some old)
       (OLD: vold.(ValA.val) = old)
       (NEW: new = vnew.(ValA.val))
-      (WRITABLE: writable vloc vnew tid lc1 mem1 ts view_pre)
+      (WRITABLE: writable vloc vnew tid lc1 mem1 ts)
       (MSG: Memory.get_msg ts mem1 = Some (Msg.mk loc new tid))
       (PROMISE: Promises.lookup ts lc1.(promises))
       (LC2: lc2 =
@@ -184,13 +184,13 @@ Section Local.
       (EVENT: event = Event.read false false ord vloc res)
       (STEP: read vloc res ts lc1 mem lc2)
   | step_fulfill
-      vloc vval res ts ord view_pre
+      vloc vval res ts ord
       (EVENT: event = Event.write false ord vloc vval res)
-      (STEP: fulfill vloc vval res ts tid view_pre lc1 mem lc2)
+      (STEP: fulfill vloc vval res ts tid lc1 mem lc2)
   | step_rmw
-      vloc vold vnew old_ts ts ordr ordw view_pre
+      vloc vold vnew old_ts ts ordr ordw
       (EVENT: event = Event.rmw ordr ordw vloc vold vnew)
-      (STEP: rmw vloc vold vnew old_ts ts tid view_pre lc1 mem lc2)
+      (STEP: rmw vloc vold vnew old_ts ts tid lc1 mem lc2)
   | step_rmw_failure
       vloc vold old_ts ord res
       (EVENT: event = Event.read false true ord vloc res)
@@ -301,9 +301,9 @@ Section Local.
   Qed.
 
   Lemma rmw_spec
-        tid view_pre mem vloc vold vnew old_ts ts lc1 lc2
+        tid mem vloc vold vnew old_ts ts lc1 lc2
         (WF: Local.wf tid mem lc1)
-        (RMW: Local.rmw vloc vold vnew old_ts ts tid view_pre lc1 mem lc2):
+        (RMW: Local.rmw vloc vold vnew old_ts ts tid lc1 mem lc2):
     <<COH: ts = Memory.latest_ts vloc.(ValA.val) (lc2.(Local.coh) vloc.(ValA.val)).(View.ts) mem>>.
   Proof.
     inv RMW. ss. rewrite fun_add_spec. condtac; [|congr]. splits.
@@ -374,8 +374,8 @@ Section Local.
   Qed.
 
   Lemma fulfill_incr
-        vloc vval res ts tid view_pre lc1 mem1 lc2
-        (LC: fulfill vloc vval res ts tid view_pre lc1 mem1 lc2):
+        vloc vval res ts tid lc1 mem1 lc2
+        (LC: fulfill vloc vval res ts tid lc1 mem1 lc2):
     le lc1 lc2.
   Proof.
     inv LC. econs; ss; try refl; try apply join_l.
@@ -385,8 +385,8 @@ Section Local.
   Qed.
 
   Lemma rmw_incr
-        vloc vold vnew old_ts ts tid view_pre lc1 mem lc2
-        (LC: rmw vloc vold vnew old_ts ts tid view_pre lc1 mem lc2):
+        vloc vold vnew old_ts ts tid lc1 mem lc2
+        (LC: rmw vloc vold vnew old_ts ts tid lc1 mem lc2):
     le lc1 lc2.
   Proof.
     inv LC. econs; ss; try refl; try apply join_l.
@@ -700,10 +700,10 @@ Section ExecUnit.
 
   Lemma no_promise_rmw_spec
         eu1 eu2 eu_last
-        vloc vold vnew old_ts ts tid view_pre
+        vloc vold vnew old_ts ts tid
         (WF: Local.wf tid eu1.(ExecUnit.mem) eu1.(ExecUnit.local))
         (MEM: eu1.(ExecUnit.mem) = eu2.(ExecUnit.mem))
-        (RMW_STEP: Local.rmw vloc vold vnew old_ts ts tid view_pre eu1.(ExecUnit.local) eu1.(ExecUnit.mem) eu2.(ExecUnit.local))
+        (RMW_STEP: Local.rmw vloc vold vnew old_ts ts tid eu1.(ExecUnit.local) eu1.(ExecUnit.mem) eu2.(ExecUnit.local))
         (RTC_STEP: rtc (ExecUnit.state_step tid) eu2 eu_last)
         (NOPROMISE: eu_last.(ExecUnit.local).(Local.promises) = bot):
       old_ts = Memory.latest_ts (ValA.val vloc) (Init.Nat.pred ts) (eu1.(ExecUnit.mem)).
