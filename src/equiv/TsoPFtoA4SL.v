@@ -114,40 +114,39 @@ Proof.
     + i. rewrite sim_local_coh_step. rewrite inverse_step.
       rewrite inverse_union. rewrite fun_add_spec. condtac.
       { ii. des.
-        - inv EID. etrans; try eapply COH0; eauto. rewrite e.
-          apply Memory.latest_ts_mon. unfold join. ss. apply join_l.
-        - inv EID. inv REL. des. inv H. inv H2. inv H0.
-          + exploit EX2.(LABELS); eauto; ss.
-            { rewrite List.app_length. s. lia. }
-            rewrite List.nth_error_app2, Nat.sub_diag; ss.
-            destruct l; ss.
-          + (* rfe *)
-            inv H. exploit RF2; eauto. i. des.
-            destruct x as [tid1 eid1]. ss.
-            inv WRITE. inv READ. rename EID0 into WRITE.
-            unfold Execution.label in WRITE. ss.
-            rewrite PRE.(Valid.LABELS) in WRITE.
-            rewrite IdMap.map_spec in WRITE.
-            destruct (IdMap.find tid1 (Valid.aeus PRE)) eqn:FIND1; ss.
-            generalize (ATR tid1). intro ATR1. inv ATR1; try congr. des. simplify.
-            generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
-            exploit sim_trace_last; try exact REL0. i. des. simplify.
-            exploit sim_trace_sim_th; try exact REL0; eauto. intro TH_tmp.
-            exploit TH_tmp; eauto.
-            { instantiate (1 := []). ss. }
-            clear TH_tmp. intro L1.
-            rewrite RF in H0. inv H0. ss. simplify.
-            exploit WPROP3; eauto. i. des. simplify.
-            unfold v_gen. ss. rewrite <- H8. rewrite x2.
-            exploit EX2.(XR); eauto.
-            { instantiate (1 := ALocal.next_eid alc1).
-              ss. rewrite List.app_length. ss. unfold ALocal.next_eid. clear. lia. }
-            condtac; cycle 1.
-            { rewrite Nat.eqb_neq in X0. ss. }
-            rewrite fun_add_spec. condtac; cycle 1.
-            { exfalso. apply c. ss. }
-            i. unfold ALocal.next_eid in *.
-            rewrite R in x7. inv x7. rewrite e. ss.
+        { etrans; try eapply COH0; eauto. rewrite e. ss. apply join_l. }
+        inv EID. inv REL. des. inv H. inv H2. inv H0.
+        - exploit EX2.(LABELS); eauto; ss.
+          { rewrite List.app_length. s. lia. }
+          rewrite List.nth_error_app2, Nat.sub_diag; ss.
+          destruct l; ss.
+        - (* rfe *)
+          inv H. exploit RF2; eauto. i. des.
+          destruct x as [tid1 eid1]. ss.
+          inv WRITE. inv READ. rename EID0 into WRITE.
+          unfold Execution.label in WRITE. ss.
+          rewrite PRE.(Valid.LABELS) in WRITE.
+          rewrite IdMap.map_spec in WRITE.
+          destruct (IdMap.find tid1 (Valid.aeus PRE)) eqn:FIND1; ss.
+          generalize (ATR tid1). intro ATR1. inv ATR1; try congr. des. simplify.
+          generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
+          exploit sim_trace_last; try exact REL0. i. des. simplify.
+          exploit sim_trace_sim_th; try exact REL0; eauto. intro TH_tmp.
+          exploit TH_tmp; eauto.
+          { instantiate (1 := []). ss. }
+          clear TH_tmp. intro L1.
+          rewrite RF in H0. inv H0. ss. simplify.
+          exploit WPROP3; eauto. i. des. simplify.
+          unfold v_gen. ss. rewrite <- H8. rewrite x2.
+          exploit EX2.(XR); eauto.
+          { instantiate (1 := ALocal.next_eid alc1).
+            ss. rewrite List.app_length. ss. unfold ALocal.next_eid. clear. lia. }
+          condtac; cycle 1.
+          { rewrite Nat.eqb_neq in X0. ss. }
+          rewrite fun_add_spec. condtac; cycle 1.
+          { exfalso. apply c. ss. }
+          i. unfold ALocal.next_eid in *.
+          rewrite R in x7. inv x7. ss.
       }
       ii. des; [apply COH0|]; eauto.
       inv EID. inv REL. inv H. inv H0. inv H2. inv H1.
@@ -232,13 +231,10 @@ Proof.
     + i. rewrite sim_local_coh_step. rewrite inverse_step.
       rewrite inverse_union. rewrite fun_add_spec. condtac.
       { ii. des.
-        - inv EID. inv WRITABLE. ss. etrans; cycle 1.
-          { eapply Memory.latest_ts_read_le; try refl.
-            generalize SIM_TH.(MEM). s. i. subst.
-            rewrite e. eapply Memory.get_msg_read; eauto. }
+        - inv EID. inv WRITABLE. ss.
           apply Nat.lt_le_incl.
           eapply Nat.le_lt_trans; try eapply COH0. rewrite <- e.
-          etrans; try apply COH; eauto. apply Memory.latest_ts_spec.
+          etrans; try apply COH; eauto.
         - inv EID. inv REL. des. inv H. inv H2. inv H0.
           + exploit EX2.(LABELS); eauto; ss.
             { rewrite List.app_length. s. lia. }
@@ -247,11 +243,8 @@ Proof.
             { ss. rewrite List.app_length. ss. clear. lia. }
             condtac; cycle 1.
             { rewrite Nat.eqb_neq in X0. unfold ALocal.next_eid in X0. ss. }
-            rewrite fun_add_spec. condtac; cycle 1.
-            { exfalso. apply c. ss. }
-            s. eapply Memory.latest_ts_read_le; ss.
-            generalize SIM_TH.(MEM). s. i. rewrite H in MSG. rewrite e.
-            eapply Memory.get_msg_read; eauto.
+            rewrite fun_add_spec. condtac; ss.
+            exfalso. apply c. ss.
           + inv H. exploit RF2; eauto. i. des.
             inv WRITE. inv READ.
             rename EID0 into WRITE. rewrite EID in WRITE. inv WRITE.
@@ -364,13 +357,10 @@ Proof.
     + i. rewrite sim_local_coh_step. rewrite inverse_step.
       rewrite inverse_union. rewrite fun_add_spec. condtac.
       { ii. des.
-        - inv EID. inv WRITABLE. ss. etrans; cycle 1.
-          { eapply Memory.latest_ts_read_le; try refl.
-            generalize SIM_TH.(MEM). s. i. subst.
-            rewrite e. eapply Memory.get_msg_read; eauto. }
+        - inv EID. inv WRITABLE. ss.
           apply Nat.lt_le_incl.
           eapply Nat.le_lt_trans; try eapply COH1. rewrite <- e.
-          etrans; try apply COH0; eauto. apply Memory.latest_ts_spec.
+          etrans; try apply COH0; eauto.
         - inv EID. inv REL. des. inv H. inv H2. inv H0.
           + exploit EX2.(LABELS); eauto; ss.
             { rewrite List.app_length. s. lia. }
@@ -380,11 +370,8 @@ Proof.
             { ss. rewrite List.app_length. ss. clear. lia. }
             condtac; cycle 1.
             { rewrite Nat.eqb_neq in X0. unfold ALocal.next_eid in X0. ss. }
-            rewrite fun_add_spec. condtac; cycle 1.
-            { exfalso. apply c. ss. }
-            s. eapply Memory.latest_ts_read_le; ss.
-            generalize SIM_TH.(MEM). s. i. rewrite H in MSG. rewrite e.
-            eapply Memory.get_msg_read; eauto.
+            rewrite fun_add_spec. condtac; ss.
+            exfalso. apply c. ss.
           + (* rfe *)
             inv H. exploit RF2; eauto. i. des.
             destruct x as [tid1 eid1]. ss.
@@ -411,8 +398,10 @@ Proof.
             rewrite fun_add_spec. condtac; cycle 1.
             { exfalso. apply c. ss. }
             i. unfold ALocal.next_eid in *.
-            rewrite R in x7. inv x7. rewrite e.
-            eapply Memory.latest_ts_mon. lia.
+            rewrite R in x7. inv x7.
+            etrans.
+            { apply Memory.latest_ts_spec. }
+            unfold le. lia.
       }
       ii. des; [apply COH0|]; eauto.
       inv EID. inv REL. inv H. inv H0. inv H2. inv H1.
@@ -529,40 +518,39 @@ Proof.
     + i. rewrite sim_local_coh_step. rewrite inverse_step.
       rewrite inverse_union. rewrite fun_add_spec. condtac.
       { ii. des.
-        - inv EID. etrans; try eapply COH0; eauto. rewrite e.
-          apply Memory.latest_ts_mon. unfold join. ss. apply join_l.
-        - inv EID. inv REL. des. inv H. inv H2. inv H0.
-          + exploit EX2.(LABELS); eauto; ss.
-            { rewrite List.app_length. s. lia. }
-            rewrite List.nth_error_app2, Nat.sub_diag; ss.
-            destruct l; ss.
-          + (* rfe *)
-            inv H. exploit RF2; eauto. i. des.
-            destruct x as [tid1 eid1]. ss.
-            inv WRITE. inv READ. rename EID0 into WRITE.
-            unfold Execution.label in WRITE. ss.
-            rewrite PRE.(Valid.LABELS) in WRITE.
-            rewrite IdMap.map_spec in WRITE.
-            destruct (IdMap.find tid1 (Valid.aeus PRE)) eqn:FIND1; ss.
-            generalize (ATR tid1). intro ATR1. inv ATR1; try congr. des. simplify.
-            generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
-            exploit sim_trace_last; try exact REL0. i. des. simplify.
-            exploit sim_trace_sim_th; try exact REL0; eauto. intro TH_tmp.
-            exploit TH_tmp; eauto.
-            { instantiate (1 := []). ss. }
-            clear TH_tmp. intro L1.
-            rewrite RF in H0. inv H0. ss. simplify.
-            exploit WPROP3; eauto. i. des. simplify.
-            unfold v_gen. ss. rewrite <- H8. rewrite x2.
-            exploit EX2.(XR); eauto.
-            { instantiate (1 := ALocal.next_eid alc1).
-              ss. rewrite List.app_length. ss. unfold ALocal.next_eid. clear. lia. }
-            condtac; cycle 1.
-            { rewrite Nat.eqb_neq in X0. ss. }
-            rewrite fun_add_spec. condtac; cycle 1.
-            { exfalso. apply c. ss. }
-            i. unfold ALocal.next_eid in *.
-            rewrite R in x7. inv x7. rewrite e. ss.
+        { etrans; try eapply COH0; eauto. rewrite e. ss. apply join_l. }
+        inv EID. inv REL. des. inv H. inv H2. inv H0.
+        - exploit EX2.(LABELS); eauto; ss.
+          { rewrite List.app_length. s. lia. }
+          rewrite List.nth_error_app2, Nat.sub_diag; ss.
+          destruct l; ss.
+        - (* rfe *)
+          inv H. exploit RF2; eauto. i. des.
+          destruct x as [tid1 eid1]. ss.
+          inv WRITE. inv READ. rename EID0 into WRITE.
+          unfold Execution.label in WRITE. ss.
+          rewrite PRE.(Valid.LABELS) in WRITE.
+          rewrite IdMap.map_spec in WRITE.
+          destruct (IdMap.find tid1 (Valid.aeus PRE)) eqn:FIND1; ss.
+          generalize (ATR tid1). intro ATR1. inv ATR1; try congr. des. simplify.
+          generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
+          exploit sim_trace_last; try exact REL0. i. des. simplify.
+          exploit sim_trace_sim_th; try exact REL0; eauto. intro TH_tmp.
+          exploit TH_tmp; eauto.
+          { instantiate (1 := []). ss. }
+          clear TH_tmp. intro L1.
+          rewrite RF in H0. inv H0. ss. simplify.
+          exploit WPROP3; eauto. i. des. simplify.
+          unfold v_gen. ss. rewrite <- H8. rewrite x2.
+          exploit EX2.(XR); eauto.
+          { instantiate (1 := ALocal.next_eid alc1).
+            ss. rewrite List.app_length. ss. unfold ALocal.next_eid. clear. lia. }
+          condtac; cycle 1.
+          { rewrite Nat.eqb_neq in X0. ss. }
+          rewrite fun_add_spec. condtac; cycle 1.
+          { exfalso. apply c. ss. }
+          i. unfold ALocal.next_eid in *.
+          rewrite R in x7. inv x7. ss.
       }
       ii. des; [apply COH0|]; eauto.
       inv EID. inv REL. inv H. inv H0. inv H2. inv H1.

@@ -118,7 +118,7 @@ Proof.
     { rewrite X. eauto. }
     s. rewrite X. i. des.
     apply nth_error_snoc_inv_last in x5. inv x5. inv x6. eqvtac.
-    rewrite x1 in x7. inv x7. clear x3 x4 H1.
+    rewrite x1 in x7. inv x7. clear x0 x4 H1.
     rewrite EX2.(XVEXT); s; cycle 1.
     { rewrite List.app_length. s. clear. lia. }
     rewrite X.
@@ -173,7 +173,7 @@ Proof.
     { rewrite X. eauto. }
     s. rewrite X. i. des.
     apply nth_error_snoc_inv_last in x5. inv x5. inv x6. eqvtac.
-    rewrite x1 in x7. inv x7. clear x3 x4 H1.
+    rewrite x1 in x7. inv x7. clear x0 x4 H1.
     rewrite EX2.(XVEXT); s; cycle 1.
     { rewrite List.app_length. s. clear. lia. }
     rewrite X.
@@ -209,7 +209,7 @@ Proof.
         { instantiate (1 := []). ss. }
         clear TH_tmp. intro L1.
         exploit L1.(WPROP3); eauto. i. des.
-        unfold v_gen. ss. rewrite <- H9. rewrite x4.
+        unfold v_gen. ss. rewrite <- H9. rewrite x3.
         clear - LC2. unguardH LC2. inv LC2. ss.
         rewrite fun_add_spec. destruct (equiv_dec (ValA.val vloc) (ValA.val vloc)); auto.
         exfalso. apply c. ss.

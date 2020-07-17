@@ -265,7 +265,7 @@ Inductive sim_local (tid:Id.t) (ex:Execution.t) (ob: list eidT) (alocal:ALocal.t
         sim_view
           ex ob
           (inverse (sim_local_coh ex loc) (eq (tid, List.length (alocal.(ALocal.labels)))))
-          (Memory.latest_ts loc (local.(Local.coh) loc).(View.ts) (mem_of_ex ex ob));
+          (local.(Local.coh) loc).(View.ts);
   VRN: sim_view
          ex ob
          (inverse (sim_local_vrn ex) (eq (tid, List.length (alocal.(ALocal.labels)))))
@@ -447,11 +447,10 @@ Lemma read_msg_latest_coh
       (FWD: ts = 0 ->
             ~ codom_rel (Execution.rf ex) (tid, length (ALocal.labels alocal)) /\
             Local.fwdbank local loc = FwdItem.init):
-  Memory.latest loc ts (View.ts (Local.coh local loc)) (mem_of_ex ex ob).
+  (local.(Local.coh) loc).(View.ts) <= ts.
 Proof.
   generalize (SIM_LOCAL.(COH) loc). intro X. inv X.
-  { eapply Memory.latest_mon1. eapply Memory.latest_ts_latest; eauto. apply bot_spec. }
-  eapply Memory.latest_mon1. eapply Memory.latest_ts_latest; eauto.
+  { rewrite VIEW. apply bot_spec. }
   rewrite VIEW. inv EID. inv REL. inv H. inv H0.
   inv H2. inv H1. des. inv H.
   - (* W;po;R *)
@@ -727,10 +726,9 @@ Proof.
       { rewrite SIM_LOCAL.(PROMISES). esplits; eauto with tso. }
       econs; try refl.
       * (* internal *)
-        eapply Memory.latest_ts_read_lt; eauto.
-        generalize (SIM_LOCAL.(COH) (ValA.val (sem_expr rmap1 eloc))).
-        intro X. inv X.
-        { rewrite VIEW0. clear. unfold bot. unfold Time.bot. lia. }
+        (* eapply Memory.latest_ts_read_lt; eauto. *)
+        generalize (SIM_LOCAL.(COH) (ValA.val (sem_expr rmap1 eloc))). intro X. inv X.
+        { rewrite VIEW0. unfold lt. apply le_n_S. apply bot_spec. }
         eapply Time.le_lt_trans; eauto. inv EID. inv REL. inv H. inv H0.
         inv H2. inv H1. des. inv H.
         { exploit Valid.coherence_ww; try exact H0; eauto with tso.
@@ -760,8 +758,7 @@ Proof.
       * i. rewrite List.app_length, Nat.add_1_r.
         rewrite sim_local_coh_step. rewrite inverse_step.
         rewrite inverse_union, fun_add_spec. condtac; ss.
-        { unfold Memory.get_msg in MSG. ss. rewrite MSG.
-          inversion e. subst. condtac; ss.
+        { inversion e. subst.
           econs 2; eauto; [|refl]. right. econs; eauto.
           econs. splits; eauto. econs; eauto. econs; eauto with tso.
         }
@@ -824,9 +821,8 @@ Proof.
     eexists (ExecUnit.mk _ _ _). esplits.
     + econs. econs; ss.
       { econs; ss. instantiate (1 := vnewv). instantiate (1 := voldv). ss. }
-      econs 4; ss.
-      econs; try refl. instantiate (1 := old_ts).
-      all: cycle 5.
+      econs 4; ss. instantiate (3 := old_ts).
+      econs; try refl; cycle 5.
       { eauto. }
       { rewrite SIM_LOCAL.(PROMISES). esplits; eauto with tso. }
       { eapply read_msg_latest_coh; eauto with tso. }
@@ -912,10 +908,8 @@ Proof.
       { ss. }
       econs; try refl.
       * (* internal *)
-        eapply Memory.latest_ts_read_lt; eauto.
-        generalize (SIM_LOCAL.(COH) (ValA.val (sem_expr armap2 eloc))).
-        intro X. inv X.
-        { rewrite VIEW0. clear. unfold bot. unfold Time.bot. lia. }
+        generalize (SIM_LOCAL.(COH) (ValA.val (sem_expr armap2 eloc))). intro X. inv X.
+        { rewrite VIEW0. unfold lt. apply le_n_S. apply bot_spec. }
         eapply Time.le_lt_trans; eauto. inv EID. inv REL. inv H. inv H0.
         inv H2. inv H1. des. inv H.
         { exploit Valid.coherence_ww; try exact H0; eauto with tso.
@@ -946,8 +940,7 @@ Proof.
       * i. rewrite List.app_length, Nat.add_1_r.
         rewrite sim_local_coh_step. rewrite inverse_step.
         rewrite inverse_union, fun_add_spec. condtac; ss.
-        { unfold Memory.get_msg in MSG. ss. rewrite MSG.
-          inversion e. subst. condtac; ss.
+        { inversion e. subst.
           econs 2; eauto; [|refl]. right. econs; eauto.
           econs. splits; eauto. econs; eauto. econs; eauto with tso.
         }

@@ -143,7 +143,7 @@ Inductive sim_local (tid:Id.t) (mem: Memory.t) (ex: Execution.t) (vext: eidT -> 
   COH: forall loc,
         sim_view
           vext
-          (Memory.latest_ts loc (local.(Local.coh) loc).(View.ts) mem)
+          (local.(Local.coh) loc).(View.ts)
           (inverse (sim_local_coh ex loc) (eq (tid, List.length (alocal.(ALocal.labels)))));
   VRN: sim_view
          vext

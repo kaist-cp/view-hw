@@ -252,7 +252,6 @@ Proof.
     rewrite X.
     inv STEP0. ss. subst. inv LOCAL; inv EVENT.
     generalize L1.(EU_WF). intro WF. inv WF. ss.
-    generalize (Local.rmw_spec LOCAL STEP0). i. des. subst.
     exploit sim_traces_cov_fr; eauto.
     { inv STEP. ss. }
     rewrite EX2.(XCOV) in *; s; cycle 1.
@@ -279,13 +278,8 @@ Proof.
     rewrite EX2'.(XCOV) in *; eauto; cycle 1.
     { apply List.nth_error_Some. congr. }
     rewrite x5 in *. rewrite x2 in x9. inv x9.
-    unguardH FR_COV. des; cycle 1.
-    { inv FR_COV0. inv H0. ss. }
-    eapply Memory.latest_lt; try exact FR_COV; eauto. ss.
-    inv STEP0. rewrite LC2. ii. ss. rewrite fun_add_spec in *. des_ifs; cycle 1.
-    { exfalso. apply c. ss. }
-    unfold View.ts in TS1, TS2. ss.
-    rewrite Memory.latest_ts_rec in TS1. lia.
+    unguardH FR_COV. des; ss.
+    inv FR_COV0. inv H0. ss.
   }
   { (* update -> update *)
     exploit sim_trace_sim_th; try exact SIMTR; eauto. intro TH_tmp.
@@ -309,7 +303,6 @@ Proof.
     rewrite X.
     inv STEP0. ss. subst. inv LOCAL; inv EVENT.
     generalize L1.(EU_WF). intro WF. inv WF. ss.
-    generalize (Local.rmw_spec LOCAL STEP0). i. des. subst.
     exploit sim_traces_cov_fr; eauto.
     { inv STEP. ss. }
     rewrite EX2.(XCOV) in *; s; cycle 1.
@@ -336,13 +329,8 @@ Proof.
     rewrite EX2'.(XCOV) in *; eauto; cycle 1.
     { apply List.nth_error_Some. congr. }
     rewrite x5 in *. rewrite x2 in x9. inv x9.
-    unguardH FR_COV. des; cycle 1.
-    { inv FR_COV0. inv H0. ss. }
-    eapply Memory.latest_lt; try exact FR_COV; eauto. ss.
-    inv STEP0. rewrite LC2. ii. ss. rewrite fun_add_spec in *. des_ifs; cycle 1.
-    { exfalso. apply c. ss. }
-    unfold View.ts in TS1, TS2. ss.
-    rewrite Memory.latest_ts_rec in TS1. lia.
+    unguardH FR_COV. des; ss.
+    inv FR_COV0. inv H0. ss.
   }
   { (* read -> write *)
     exploit sim_trace_sim_th; try exact SIMTR; eauto. intro TH_tmp.

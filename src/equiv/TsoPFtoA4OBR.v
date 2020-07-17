@@ -154,49 +154,50 @@ Proof.
         unfold v_gen. ss. rewrite <- H7. auto.
       }
       subst.
-      repeat rewrite <- join_r. unfold FwdItem.read_view. condtac; ss. clear X0. inv e.
-      generalize (L.(LC).(FWDBANK) (ValA.val vloc)). s. i. des.
-      + rewrite <- TS in H2.
-        destruct eid as [tid2 eid2], eid1 as [tid1 eid1].
-        assert (tid1 = tid2).
-        { inv H. exploit RF2; eauto. i. des.
-          inv WRITE0. rename EID0 into WRITE0.
-          unfold Execution.label in WRITE0. ss.
-          rewrite PRE.(Valid.LABELS) in WRITE0.
-          rewrite IdMap.map_spec in WRITE0.
-          destruct (IdMap.find tid1 (Valid.aeus PRE)) eqn:FIND1; ss.
-          generalize (ATR tid1). intro ATR1. inv ATR1; try congr. des. simplify.
-          generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
-          exploit sim_trace_last; try exact REL0. i. des. simplify.
-          exploit sim_trace_sim_th; try exact REL0; eauto. intro TH_tmp.
-          exploit TH_tmp; eauto.
-          { instantiate (1 := []). ss. }
-          clear TH_tmp. intro L1.
-          inv WRITE. inv WRITE1.
-          unfold Execution.label in EID0. ss.
-          rewrite PRE.(Valid.LABELS) in EID0.
-          rewrite IdMap.map_spec in EID0.
-          destruct (IdMap.find tid2 (Valid.aeus PRE)) eqn:FIND2; ss.
-          generalize (ATR tid2). intro ATR2. inv ATR2; try congr. des. simplify.
-          generalize (SIM tid2). intro SIM2. inv SIM2; simplify.
-          exploit sim_trace_last; try exact REL1. i. des. simplify.
-          exploit sim_trace_sim_th; try exact REL1; eauto. intro TH_tmp.
-          exploit TH_tmp; eauto.
-          { instantiate (1 := []). ss. }
-          clear TH_tmp. intro L2.
-          move H2 at bottom.
-          unfold v_gen in H2. ss.
-          rewrite <- H10, <- H16 in H2.
-          exploit L1.(WPROP2); eauto. i. des.
-          exploit L2.(WPROP2'); eauto. i. des.
-          exploit L1.(WPROP3); eauto. i. des.
-          exploit L2.(WPROP3); eauto. i. des.
-          rewrite x10, x17 in H2. inv H2.
-          rewrite H in x21. rewrite x14 in x21. inv x21. ss.
-        }
-        subst.
-        inv WRITE. inv PO. ss. subst. inv H. inv H3. ss.
-      + rewrite H1. refl.
+      unfold FwdItem.read_view. condtac; ss; [|apply join_r].
+      clear X0. inv e.
+      generalize (L.(LC).(FWDBANK) (ValA.val vloc)). s. i. des; cycle 1.
+      { rewrite H1. ss. apply bot_spec. }
+      rewrite <- TS in H2.
+      destruct eid as [tid2 eid2], eid1 as [tid1 eid1].
+      assert (tid1 = tid2).
+      { inv H. exploit RF2; eauto. i. des.
+        inv WRITE0. rename EID0 into WRITE0.
+        unfold Execution.label in WRITE0. ss.
+        rewrite PRE.(Valid.LABELS) in WRITE0.
+        rewrite IdMap.map_spec in WRITE0.
+        destruct (IdMap.find tid1 (Valid.aeus PRE)) eqn:FIND1; ss.
+        generalize (ATR tid1). intro ATR1. inv ATR1; try congr. des. simplify.
+        generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
+        exploit sim_trace_last; try exact REL0. i. des. simplify.
+        exploit sim_trace_sim_th; try exact REL0; eauto. intro TH_tmp.
+        exploit TH_tmp; eauto.
+        { instantiate (1 := []). ss. }
+        clear TH_tmp. intro L1.
+        inv WRITE. inv WRITE1.
+        unfold Execution.label in EID0. ss.
+        rewrite PRE.(Valid.LABELS) in EID0.
+        rewrite IdMap.map_spec in EID0.
+        destruct (IdMap.find tid2 (Valid.aeus PRE)) eqn:FIND2; ss.
+        generalize (ATR tid2). intro ATR2. inv ATR2; try congr. des. simplify.
+        generalize (SIM tid2). intro SIM2. inv SIM2; simplify.
+        exploit sim_trace_last; try exact REL1. i. des. simplify.
+        exploit sim_trace_sim_th; try exact REL1; eauto. intro TH_tmp.
+        exploit TH_tmp; eauto.
+        { instantiate (1 := []). ss. }
+        clear TH_tmp. intro L2.
+        move H2 at bottom.
+        unfold v_gen in H2. ss.
+        rewrite <- H10, <- H16 in H2.
+        exploit L1.(WPROP2); eauto. i. des.
+        exploit L2.(WPROP2'); eauto. i. des.
+        exploit L1.(WPROP3); eauto. i. des.
+        exploit L2.(WPROP3); eauto. i. des.
+        rewrite x10, x17 in H2. inv H2.
+        rewrite H in x21. rewrite x14 in x21. inv x21. ss.
+      }
+      subst.
+      inv WRITE. inv PO. ss. subst. inv H. inv H3. ss.
     - (* dob *)
       rename H1 into H.
       unfold Execution.dob in H. rewrite ? seq_assoc in *. des_union.
@@ -366,49 +367,50 @@ Proof.
         unfold v_gen. ss. rewrite <- H7. auto.
       }
       subst.
-      repeat rewrite <- join_r. ss. unfold FwdItem.read_view. condtac; ss. clear X0. inv e.
-      generalize (L.(LC).(FWDBANK) (ValA.val vloc)). s. i. des.
-      + rewrite <- TS in H2.
-        destruct eid as [tid2 eid2], eid1 as [tid1 eid1].
-        assert (tid1 = tid2).
-        { inv H. exploit RF2; eauto. i. des.
-          inv WRITE0. rename EID0 into WRITE0.
-          unfold Execution.label in WRITE0. ss.
-          rewrite PRE.(Valid.LABELS) in WRITE0.
-          rewrite IdMap.map_spec in WRITE0.
-          destruct (IdMap.find tid1 (Valid.aeus PRE)) eqn:FIND1; ss.
-          generalize (ATR tid1). intro ATR1. inv ATR1; try congr. des. simplify.
-          generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
-          exploit sim_trace_last; try exact REL0. i. des. simplify.
-          exploit sim_trace_sim_th; try exact REL0; eauto. intro TH_tmp.
-          exploit TH_tmp; eauto.
-          { instantiate (1 := []). ss. }
-          clear TH_tmp. intro L1.
-          inv WRITE. inv WRITE1.
-          unfold Execution.label in EID0. ss.
-          rewrite PRE.(Valid.LABELS) in EID0.
-          rewrite IdMap.map_spec in EID0.
-          destruct (IdMap.find tid2 (Valid.aeus PRE)) eqn:FIND2; ss.
-          generalize (ATR tid2). intro ATR2. inv ATR2; try congr. des. simplify.
-          generalize (SIM tid2). intro SIM2. inv SIM2; simplify.
-          exploit sim_trace_last; try exact REL1. i. des. simplify.
-          exploit sim_trace_sim_th; try exact REL01; eauto. intro TH_tmp.
-          exploit TH_tmp; eauto.
-          { instantiate (1 := []). ss. }
-          clear TH_tmp. intro L2.
-          move H2 at bottom.
-          unfold v_gen in H2. ss.
-          rewrite <- H10, <- H16 in H2.
-          exploit L1.(WPROP2); eauto. i. des.
-          exploit L2.(WPROP2'); eauto. i. des.
-          exploit L1.(WPROP3); eauto. i. des.
-          exploit L2.(WPROP3); eauto. i. des.
-          rewrite x10, x17 in H2. inv H2.
-          rewrite H in x21. rewrite x14 in x21. inv x21. ss.
-        }
-        subst.
-        inv WRITE. inv PO. ss. subst. inv H. inv H3. ss.
-      + rewrite H1. refl.
+      unfold FwdItem.read_view. condtac; ss; [| apply join_r].
+      clear X0. inv e.
+      generalize (L.(LC).(FWDBANK) (ValA.val vloc)). s. i. des; cycle 1.
+      { rewrite H1. ss. apply bot_spec. }
+      rewrite <- TS in H2.
+      destruct eid as [tid2 eid2], eid1 as [tid1 eid1].
+      assert (tid1 = tid2).
+      { inv H. exploit RF2; eauto. i. des.
+        inv WRITE0. rename EID0 into WRITE0.
+        unfold Execution.label in WRITE0. ss.
+        rewrite PRE.(Valid.LABELS) in WRITE0.
+        rewrite IdMap.map_spec in WRITE0.
+        destruct (IdMap.find tid1 (Valid.aeus PRE)) eqn:FIND1; ss.
+        generalize (ATR tid1). intro ATR1. inv ATR1; try congr. des. simplify.
+        generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
+        exploit sim_trace_last; try exact REL0. i. des. simplify.
+        exploit sim_trace_sim_th; try exact REL0; eauto. intro TH_tmp.
+        exploit TH_tmp; eauto.
+        { instantiate (1 := []). ss. }
+        clear TH_tmp. intro L1.
+        inv WRITE. inv WRITE1.
+        unfold Execution.label in EID0. ss.
+        rewrite PRE.(Valid.LABELS) in EID0.
+        rewrite IdMap.map_spec in EID0.
+        destruct (IdMap.find tid2 (Valid.aeus PRE)) eqn:FIND2; ss.
+        generalize (ATR tid2). intro ATR2. inv ATR2; try congr. des. simplify.
+        generalize (SIM tid2). intro SIM2. inv SIM2; simplify.
+        exploit sim_trace_last; try exact REL1. i. des. simplify.
+        exploit sim_trace_sim_th; try exact REL01; eauto. intro TH_tmp.
+        exploit TH_tmp; eauto.
+        { instantiate (1 := []). ss. }
+        clear TH_tmp. intro L2.
+        move H2 at bottom.
+        unfold v_gen in H2. ss.
+        rewrite <- H10, <- H16 in H2.
+        exploit L1.(WPROP2); eauto. i. des.
+        exploit L2.(WPROP2'); eauto. i. des.
+        exploit L1.(WPROP3); eauto. i. des.
+        exploit L2.(WPROP3); eauto. i. des.
+        rewrite x10, x17 in H2. inv H2.
+        rewrite H in x21. rewrite x14 in x21. inv x21. ss.
+      }
+      subst.
+      inv WRITE. inv PO. ss. subst. inv H. inv H3. ss.
     - (* dob *)
       rename H1 into H.
       unfold Execution.dob in H. rewrite ? seq_assoc in *. des_union.
