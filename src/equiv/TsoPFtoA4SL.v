@@ -189,7 +189,10 @@ Proof.
         rewrite EX2.(XVEXT); cycle 1.
         { ss. rewrite List.app_length. ss. unfold ALocal.next_eid. clear. lia. }
         destruct (length (ALocal.labels alc1) =? ALocal.next_eid alc1) eqn:Heq; ss.
-        -- unfold le. unfold join. unfold Time.join. lia.
+        -- assert (WF: Local.wf tid (Machine.mem m) lc1).
+           { admit. }
+           inv WF.
+           unfold le. unfold join. unfold Time.join. lia.
         -- rewrite Nat.eqb_neq in Heq. ss.
     + i. specialize (FWDBANK loc). des.
       * left. esplits; eauto.
@@ -598,11 +601,13 @@ Proof.
         exploit EX2.(LABELS); eauto; ss.
         { rewrite List.app_length. s. lia. }
         rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x0.
-        rewrite <- join_r.
         rewrite EX2.(XVEXT); cycle 1.
         { ss. rewrite List.app_length. ss. unfold ALocal.next_eid. clear. lia. }
         destruct (length (ALocal.labels alc1) =? ALocal.next_eid alc1) eqn:Heq.
-        -- unfold le. unfold join. unfold Time.join. lia.
+        -- assert (WF: Local.wf tid (Machine.mem m) lc1).
+           { admit. }
+           inv WF.
+           unfold le. unfold join. unfold Time.join. lia.
         -- rewrite Nat.eqb_neq in Heq. ss.
     + i. specialize (FWDBANK loc). des.
       * left. esplits; eauto.

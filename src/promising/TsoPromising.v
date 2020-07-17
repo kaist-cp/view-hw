@@ -76,7 +76,7 @@ Section Local.
       (LATEST: Memory.latest loc ts view_pre.(View.ts) mem1)
       (MSG: Memory.read loc ts mem1 = Some val)
       (VIEW_MSG: view_msg = FwdItem.read_view (lc1.(fwdbank) loc) ts)
-      (VIEW_POST: view_post = join view_pre view_msg)
+      (VIEW_POST: view_post = view_msg)
       (RES: res = ValA.mk _ val bot)
       (LC2: lc2 =
             mk
@@ -151,7 +151,7 @@ Section Local.
       (LATEST: Memory.latest loc old_ts view_pre.(View.ts) mem1)
       (OLD_MSG: Memory.read loc old_ts mem1 = Some old)
       (VIEW_OLD: view_old = FwdItem.read_view (lc1.(fwdbank) loc) old_ts)
-      (VIEW_POST: view_post = join view_pre view_old)
+      (VIEW_POST: view_post = view_old)
       (RES: res = ValA.mk _ old bot)
       (LC2: lc2 =
             mk
@@ -220,6 +220,7 @@ Section Local.
                    (TID: msg.(Msg.tid) = tid)
                    (TS: (lc.(coh) msg.(Msg.loc)).(View.ts) < ts),
           Promises.lookup ts lc.(promises))
+      (COHMAX: lc.(vrn).(View.ts) <= lc.(vwn).(View.ts))
   .
   Hint Constructors wf.
 
@@ -265,7 +266,6 @@ Section Local.
       + hexploit fwd_read_view_le; eauto. i.
         apply Memory.latest_latest_ts.
         apply Memory.latest_join; ss.
-        apply Memory.latest_join; ss.
         apply Memory.ge_latest. etrans; eauto.
     - repeat apply Memory.latest_join; auto.
       apply Memory.ge_latest. eapply fwd_read_view_le; eauto.
@@ -293,7 +293,6 @@ Section Local.
           ss. repeat rewrite <- join_r. auto.
       + hexploit fwd_read_view_le; eauto. i.
         apply Memory.latest_latest_ts.
-        apply Memory.latest_join; ss.
         apply Memory.latest_join; ss.
         apply Memory.ge_latest. etrans; eauto.
     - repeat apply Memory.latest_join; auto.
@@ -447,6 +446,8 @@ Section Local.
         apply Memory.latest_ts_mon. apply join_l.
       + i. eapply PROMISES0; eauto. eapply Time.le_lt_trans; [|by eauto].
         rewrite fun_add_spec. condtac; ss. inversion e. rewrite H0. apply join_l.
+      + rewrite <- join_l. ss.
+      + apply join_r.
     - inv WRITABLE.
       econs; viewtac; rewrite <- ? TS0, <- ? TS1.
       + i. rewrite fun_add_spec. condtac; viewtac.
@@ -465,6 +466,7 @@ Section Local.
         { eapply PROMISES0; eauto. revert TS. condtac; ss. i.
           inversion e. rewrite H0. rewrite COH0. ss.
         }
+      + rewrite <- join_l. ss.
     - inv WRITABLE.
       econs; viewtac; rewrite <- ? TS0, <- ? TS1.
       + i. rewrite fun_add_spec. condtac; viewtac.
@@ -483,6 +485,8 @@ Section Local.
         { eapply PROMISES0; eauto. revert TS. condtac; ss. i.
         inversion e. rewrite H0. rewrite COH1. ss.
         }
+      + rewrite <- join_l. ss.
+      + apply join_r.
     - exploit FWDVIEW; eauto.
       { eapply Memory.read_wf. eauto. }
       i. econs; viewtac.
@@ -492,6 +496,8 @@ Section Local.
         apply Memory.latest_ts_mon. apply join_l.
       + i. eapply PROMISES0; eauto. eapply Time.le_lt_trans; [|by eauto].
         rewrite fun_add_spec. condtac; ss. inversion e. rewrite H0. apply join_l.
+      + rewrite <- join_l. ss.
+      + apply join_r.
     - econs; viewtac.
   Qed.
 End Local.

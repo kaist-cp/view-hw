@@ -558,12 +558,6 @@ Proof.
 
     exploit read_msg_exist_ts; eauto with tso. intro X. destruct X as [n]. des.
 
-    assert (SIM_EXT2: sim_view ex ob
-                      (eq (tid, ALocal.next_eid alocal1))
-                      (join local1.(Local.vrn)
-                        (FwdItem.read_view (Local.fwdbank local1 (ValA.val (sem_expr rmap1 eloc))) n)).(View.ts)).
-    { apply sim_view_join; ss. }
-
     assert (READ_STEP: exists res1 local2, Local.read (sem_expr rmap1 eloc) res1 n local1 (mem_of_ex ex ob) local2).
     { esplits. econs; eauto.
       { eapply read_msg_latest_coh; eauto with tso. }
@@ -690,14 +684,14 @@ Proof.
         rewrite sim_local_vrn_step. rewrite inverse_step.
         rewrite ? inverse_union. apply sim_view_join.
         { eapply sim_view_le; [|exact SIM_LOCAL.(VRN)]. eauto. }
-        eapply sim_view_le; [|exact SIM_EXT2].
+        eapply sim_view_le; [|exact SIM_FWD].
         i. subst. right. left. econs; eauto. econs; eauto with tso.
       * (* sim_local vwn *)
         rewrite List.app_length, Nat.add_1_r.
         rewrite sim_local_vwn_step. rewrite inverse_step.
         rewrite ? inverse_union. apply sim_view_join.
         { eapply sim_view_le; [|exact SIM_LOCAL.(VWN)]. eauto. }
-        eapply sim_view_le; [|exact SIM_EXT2].
+        eapply sim_view_le; [|exact SIM_FWD].
         i. subst. right. econs; eauto. econs; eauto with tso.
       * (* sim_local fwdbank *)
         rewrite List.app_length, Nat.add_1_r. i.
@@ -1022,12 +1016,6 @@ Proof.
 
     rename armap2 into rmap1.
 
-    assert (SIM_EXT2: sim_view ex ob
-                      (eq (tid, ALocal.next_eid alocal1))
-                      (join local1.(Local.vrn)
-                        (FwdItem.read_view (Local.fwdbank local1 (ValA.val (sem_expr rmap1 eloc))) n)).(View.ts)).
-    { apply sim_view_join; ss. }
-
     inversion RMW. ss.
 
     assert (RMW_FAIL_STEP: exists vold local2, Local.rmw_failure (sem_expr rmap1 eloc) vold vres n local1 (mem_of_ex ex ob) local2).
@@ -1159,14 +1147,14 @@ Proof.
         rewrite sim_local_vrn_step. rewrite inverse_step.
         rewrite ? inverse_union. apply sim_view_join.
         { eapply sim_view_le; [|exact SIM_LOCAL.(VRN)]. eauto. }
-        eapply sim_view_le; [|exact SIM_EXT2].
+        eapply sim_view_le; [|exact SIM_FWD].
         i. subst. right. left. econs; eauto. econs; eauto with tso.
       * (* sim_local vwn *)
         rewrite List.app_length, Nat.add_1_r.
         rewrite sim_local_vwn_step. rewrite inverse_step.
         rewrite ? inverse_union. apply sim_view_join.
         { eapply sim_view_le; [|exact SIM_LOCAL.(VWN)]. eauto. }
-        eapply sim_view_le; [|exact SIM_EXT2].
+        eapply sim_view_le; [|exact SIM_FWD].
         i. subst. right. econs; eauto. econs; eauto with tso.
       * (* sim_local fwdbank *)
         rewrite List.app_length, Nat.add_1_r. i.
