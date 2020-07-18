@@ -334,6 +334,17 @@ Proof.
   - exfalso. eapply EX.(Valid.CORW). econs. esplits; [|exact H]. econs 2. ss.
 Qed.
 
+Lemma sim_local_fwd_spec
+      p ex loc eid tid iid
+      (EX: Valid.ex p ex)
+      (LABEL: Execution.label_is ex (fun l : Label.t => ~ Label.is_kinda_writing loc l) (tid, iid))
+      (VWN: sim_local_fwd ex loc eid (tid, iid)):
+  <<FWD_S: sim_local_fwd ex loc eid (tid, S iid)>>.
+Proof.
+  rewrite sim_local_fwd_step. econs. instantiate (1 := (_, _)). splits; [|econs; ss].
+  left. econs. splits; eauto. econs; eauto with tso.
+Qed.
+
 Definition sim_local_fwd_none ex loc :=
   ⦗ex.(Execution.label_is) (Label.is_kinda_writing loc)⦘ ⨾ Execution.po.
 
@@ -347,4 +358,18 @@ Proof.
   rewrite (clos_refl_union Execution.po), union_seq, eq_seq.
   rewrite ? (seq_union' (Execution.po ⨾ Execution.po_adj) Execution.po_adj), ? seq_assoc, ? union_assoc.
   refl.
+Qed.
+
+Lemma sim_local_fwd_none_spec
+      p ex loc tid iid
+      (EX: Valid.ex p ex)
+      (LABEL: Execution.label_is ex (fun l : Label.t => ~ Label.is_kinda_writing loc l) (tid, iid))
+      (FWDN: forall eid : eidT, ~ inverse (sim_local_fwd_none ex loc) (eq (tid, iid)) eid):
+  <<FWDN_S: forall eid : eidT, ~ inverse (sim_local_fwd_none ex loc) (eq (tid, S iid)) eid>>.
+Proof.
+  ii.
+  inv H. inv REL. inv H. rewrite Execution.po_po_adj in H1. inv H1. des.
+  destruct x, x0. inv H1. ss. inv N. inv H.
+  - inv H1. inv H0. inv H1. inv LABEL. rewrite EID in EID0. inv EID0. ss.
+  - inv H1. ss. subst. eapply FWDN. econs; eauto. econs; eauto with tso.
 Qed.

@@ -695,15 +695,8 @@ Proof.
       * (* sim_local fwdbank *)
         rewrite List.app_length, Nat.add_1_r. i.
         generalize (SIM_LOCAL.(FWDBANK) loc). i. des.
-        { left. esplits; eauto.
-          rewrite sim_local_fwd_step. econs. instantiate (1 := (_, _)). splits; [|econs; ss].
-          left. econs. splits; eauto. econs; eauto with tso.
-        }
-        { right. splits; ss. ii. inv H1. inv REL. inv H1. rewrite Execution.po_po_adj in H3. inv H3. des.
-          inv H3. destruct x0. ss. inv N. inv H1.
-          - inv H2. inv H3. rewrite LABEL_LEN in EID. inv EID. ss.
-          - eapply H0. econs; eauto. econs; eauto.
-        }
+        { left. esplits; eauto. eapply sim_local_fwd_spec; eauto with tso. }
+        { right. splits; ss. eapply sim_local_fwd_none_spec; eauto with tso. }
       * (* sim_local promises *)
         i. rewrite SIM_LOCAL.(PROMISES), List.app_length. s. econs; i; des.
         { inv N.
@@ -777,19 +770,14 @@ Proof.
       * rewrite List.app_length, Nat.add_1_r. i.
         rewrite fun_add_spec. condtac; s; cycle 1.
         { generalize (SIM_LOCAL.(FWDBANK) loc). i. des.
-          - left. esplits; eauto.
-            rewrite sim_local_fwd_step. econs. instantiate (1 := (_, _)). splits; [|econs; ss].
-            left. econs. splits; eauto. econs; eauto. econs; eauto. s.
-            destruct (equiv_dec (ValA.val (sem_expr rmap1 eloc)) loc); ss. congr.
-          - right. splits; ss. i. rewrite sim_local_fwd_none_step, inverse_step. ii. inv H1. inv REL.
-            + eapply H0; eauto.
-            + inv H1. inv H3. destruct l; try congr. inv LABEL0.
-              destruct (equiv_dec loc0 loc); ss. inv e. congr.
+          - left. esplits; eauto. eapply sim_local_fwd_spec; eauto. econs; eauto.
+            ii. ss. eqvtac. apply c. ss.
+          - right. splits; ss. eapply sim_local_fwd_none_spec; eauto with tso. econs; eauto.
+            ii. ss. eqvtac. apply c. ss.
         }
-        { inversion e. subst. left. esplits; eauto.
-          - lia.
-          - econs; eauto with tso.
-            i. destruct eid. inv PO. inv PO0. ss. subst. lia.
+        { inversion e. subst. left. esplits; eauto; [lia |].
+          econs; eauto with tso.
+          i. destruct eid. inv PO. inv PO0. ss. subst. lia.
         }
       * i. rewrite Promises.unset_o. condtac.
         { econs; ss. i. des. inversion e. subst.
@@ -962,19 +950,14 @@ Proof.
       * rewrite List.app_length, Nat.add_1_r. i.
         rewrite fun_add_spec. condtac; s; cycle 1.
         { generalize (SIM_LOCAL.(FWDBANK) loc). i. des.
-          - left. esplits; eauto.
-            rewrite sim_local_fwd_step. econs. instantiate (1 := (_, _)). splits; [|econs; ss].
-            left. econs. splits; eauto. econs; eauto. econs; eauto. s.
-            destruct (equiv_dec (ValA.val (sem_expr armap2 eloc)) loc); ss. congr.
-          - right. splits; ss. i. rewrite sim_local_fwd_none_step, inverse_step. ii. inv H1. inv REL.
-            + eapply H0; eauto.
-            + inv H1. inv H3. destruct l; try congr. inv LABEL0.
-              destruct (equiv_dec loc0 loc); ss. inv e. congr.
+          - left. esplits; eauto. eapply sim_local_fwd_spec; eauto. econs; eauto.
+            ii. ss. eqvtac. apply c. ss.
+          - right. splits; ss. eapply sim_local_fwd_none_spec; eauto with tso. econs; eauto.
+            ii. ss. eqvtac. apply c. ss.
         }
-        { inversion e. subst. left. esplits; eauto.
-          - lia.
-          - econs; eauto with tso.
-            i. destruct eid. inv PO. inv PO0. ss. subst. lia.
+        { inversion e. subst. left. esplits; eauto; [lia |].
+          econs; eauto with tso.
+          i. destruct eid. inv PO. inv PO0. ss. subst. lia.
         }
       * i. rewrite Promises.unset_o. condtac.
         { econs; ss. i. des. inversion e. subst.
@@ -1152,15 +1135,8 @@ Proof.
       * (* sim_local fwdbank *)
         rewrite List.app_length, Nat.add_1_r. i.
         generalize (SIM_LOCAL.(FWDBANK) loc). i. des.
-        { left. esplits; eauto.
-          rewrite sim_local_fwd_step. econs. instantiate (1 := (_, _)). splits; [|econs; ss].
-          left. econs. splits; eauto. econs; eauto with tso.
-        }
-        { right. splits; ss. ii. inv H1. inv REL. inv H1. rewrite Execution.po_po_adj in H3. inv H3. des.
-          inv H3. destruct x0. ss. inv N. inv H1.
-          - inv H2. inv H3. rewrite LABEL_LEN in EID. inv EID. ss.
-          - eapply H0. econs; eauto. econs; eauto.
-        }
+        { left. esplits; eauto. eapply sim_local_fwd_spec; eauto with tso. }
+        { right. splits; ss. eapply sim_local_fwd_none_spec; eauto with tso. }
       * (* sim_local promises *)
         i. rewrite SIM_LOCAL.(PROMISES), List.app_length. s. econs; i; des.
         { inv N.
@@ -1197,15 +1173,8 @@ Proof.
       eapply sim_view_le; [|exact SIM_LOCAL.(VWN)]. eauto.
     + rewrite List.app_length, Nat.add_1_r. i.
       generalize (SIM_LOCAL.(FWDBANK) loc). i. des.
-      { left. esplits; eauto.
-        rewrite sim_local_fwd_step. econs. instantiate (1 := (_, _)). splits; [|econs; ss].
-        left. econs. splits; eauto. econs; eauto with tso.
-      }
-      { right. splits; ss. ii. inv H1. inv REL. inv H1. rewrite Execution.po_po_adj in H3. inv H3. des.
-        destruct x, x0. inv H3. ss. inv N. inv H1.
-        - inv H3. inv H2. inv H3. rewrite LABEL_LEN in EID. inv EID. ss.
-        - inv H3. ss. subst. eapply H0. econs; eauto. econs; eauto with tso.
-      }
+      { left. esplits; eauto. eapply sim_local_fwd_spec; eauto with tso. }
+      { right. splits; ss. eapply sim_local_fwd_none_spec; eauto with tso. }
     + i. rewrite SIM_LOCAL.(PROMISES), List.app_length. s. econs; i; des.
       { inv N.
         - inv WRITE. destruct l; ss; congr.
