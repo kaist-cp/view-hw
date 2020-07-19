@@ -203,13 +203,6 @@ Section Local.
   .
   Hint Constructors step.
 
-  Lemma get_cohmax_loc (lc:t):
-    exists mloc,
-      forall loc, (lc.(coh) loc).(View.ts) <= (lc.(coh) mloc).(View.ts).
-  Proof.
-    admit.
-  Qed.
-
   Inductive wf_fwdbank (loc:Loc.t) (mem:Memory.t) (coh: Time.t) (fwd:FwdItem.t): Prop :=
   | wf_fwdbank_intro
       (TS: fwd.(FwdItem.ts) <= coh)
@@ -244,8 +237,7 @@ Section Local.
     - econs; ss. eexists. ss.
     - destruct ts; ss.
     - destruct ts; ss. destruct ts; ss.
-    - hexploit get_cohmax_loc. i. des.
-      econs; eauto.
+    - exists Loc.default; ss.
   Qed.
 
   Lemma fwd_read_view_le
@@ -657,6 +649,15 @@ Section ExecUnit.
     inv STEP. eapply state_step0_wf; eauto.
   Qed.
 
+  Lemma rtc_state_step_wf tid eu1 eu2
+        (STEP: rtc (state_step tid) eu1 eu2)
+        (WF: wf tid eu1):
+    wf tid eu2.
+  Proof.
+    revert WF. induction STEP; ss. i. apply IHSTEP.
+    eapply state_step_wf; eauto.
+  Qed.
+
   Lemma promise_step_wf tid eu1 eu2
         (STEP: promise_step tid eu1 eu2)
         (WF: wf tid eu1):
@@ -1051,6 +1052,22 @@ Module Machine.
       (TPOOL: IdMap.Equal m1.(tpool) m2.(tpool))
       (MEM: m1.(mem) = m2.(mem))
   .
+
+  Lemma state_exec_wf
+        m1 m2
+        (STEP: state_exec m1 m2)
+        (WF: wf m1):
+    wf m2.
+  Proof.
+    econs. i.
+    inv STEP. inv WF.
+    specialize (TPOOL tid). inv TPOOL.
+    { rewrite FIND in H. ss. }
+    rewrite <- H in FIND. inv FIND.
+    destruct a as [st_a lc_a]. symmetry in H0. eapply WF0 in H0.
+    eapply ExecUnit.rtc_state_step_wf in H0; eauto.
+    rewrite <- MEM. ss.
+  Qed.
 
   Lemma equiv_no_promise
         m1 m2

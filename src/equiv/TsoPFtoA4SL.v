@@ -78,7 +78,6 @@ Proof.
            rewrite H1 in H2; inv H2
          end.
   exploit sim_trace_sim_state_weak; eauto. intro STATE1.
-
   destruct eu1 as [[stmts1 rmap1] lc1 mem1] eqn: EU1. guardH EU1.
   destruct eu2 as [[stmts2 rmap2] lc2 mem2] eqn: EU2. guardH EU2.
   destruct aeu1 as [[astmts1 armap1] alc1].
@@ -104,7 +103,7 @@ Proof.
     destruct SIM_TH.(EU_WF). ss.
     generalize (Local.read_spec LOCAL STEP0). intro READ_SPEC.
     generalize SIM_TH.(MEM). s. i. rewrite H in READ_SPEC.
-    guardH READ_SPEC. clear LOCAL H.
+    guardH READ_SPEC. clear H.
     inv STEP0. inv ASTATE_STEP; inv ALOCAL_STEP; ss; inv EVENT; ss. splits.
     { econs; ss. apply sim_rmap_add; try apply L.
       inv VAL. ss.
@@ -179,9 +178,7 @@ Proof.
         { rewrite List.app_length. s. lia. }
         { rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x1. inv LABEL. }
     + move VWN at bottom. des.
-      assert (WF: Local.wf tid (Machine.mem m) lc1).
-      { admit. }
-      inversion WF. inv COHMAX. inv COHMAX0.
+      inversion LOCAL. inv COHMAX. inv COHMAX0.
       destruct (lt_eq_lt_dec ts (View.ts (Local.coh lc1 mloc))).
       { (* <= *)
         exists mloc. split.
@@ -574,7 +571,7 @@ Proof.
     destruct SIM_TH.(EU_WF). ss.
     generalize (Local.rmw_failure_spec LOCAL STEP0). intro RMW_FAILURE_SPEC.
     generalize SIM_TH.(MEM). s. i. rewrite H in RMW_FAILURE_SPEC.
-    guardH RMW_FAILURE_SPEC. clear LOCAL H.
+    guardH RMW_FAILURE_SPEC. clear H.
     generalize STEP0. intro STEP0'. inv STEP0'.
     inv ASTATE_STEP; inv ALOCAL_STEP; ss; inv EVENT; ss. splits.
     { econs; ss. inv RMAP. apply L. }
@@ -648,9 +645,7 @@ Proof.
         { rewrite List.app_length. s. lia. }
         { rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x1. inv LABEL. }
     + move VWN at bottom. des.
-      assert (WF: Local.wf tid (Machine.mem m) lc1).
-      { admit. }
-      inversion WF. inv COHMAX. inv COHMAX0.
+      inversion LOCAL. inv COHMAX. inv COHMAX0.
       destruct (lt_eq_lt_dec old_ts (View.ts (Local.coh lc1 mloc))).
       { (* <= *)
         exists mloc. split.

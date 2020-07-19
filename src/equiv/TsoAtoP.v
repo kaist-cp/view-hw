@@ -1418,7 +1418,7 @@ Proof.
                         (Local.init_with_promises (Promises.promises_from_mem tid (mem_of_ex ex ob)))
                         (mem_of_ex ex ob)).
     econs; ss. econs; eauto.
-    - exploit Local.get_cohmax_loc. i. des. eauto.
+    - exists Loc.default. eauto.
     - right. splits; ss. ii. inv H. inv REL1. inv H. inv H1. ss. lia.
     - econs; i.
       { destruct view; ss. apply Promises.promises_from_mem_spec in H. des.
@@ -1448,8 +1448,7 @@ Proof.
     - destruct ts; ss.
       unfold Memory.get_msg in MSG. ss. destruct msg. ss. subst.
       apply Promises.promises_from_mem_lookup in MSG. auto.
-    - exploit Local.get_cohmax_loc. i. des.
-      econs; eauto. econs; eauto.
+    - exists Loc.default; [econs |]; eauto.
   }
   { apply AExecUnit.wf_init. }
   i. des. destruct eu2 as [state2 local2 mem2]. inv SIM. ss. subst.

@@ -611,8 +611,7 @@ Proof.
       + destruct ts; ss.
         unfold Memory.get_msg in *. ss. destruct msg.
         exploit Promises.promises_from_mem_lookup; eauto. ss. subst. ss.
-      + exploit Local.get_cohmax_loc. i. des.
-        econs; ss.
+      + exists Loc.default; ss.
   }
   i. simplify.
   destruct eu1 as [st1 lc1 mem1] eqn: EU1. guardH EU1.

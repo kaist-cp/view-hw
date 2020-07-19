@@ -157,9 +157,8 @@ Proof.
       + ii. inv EID. inv REL. des_union.
         * inv H1. des. inv H1. des. ss. lia.
         * inv H1. des. inv H1. des. inv H1. des. inv H1. ss. lia.
-      + exploit Local.get_cohmax_loc. instantiate (1 := Local.init). i. des.
-        exists mloc. split; ss. ii.
-        inv EID. inv REL. des. inv H6. ss. lia.
+      + exists Loc.default. split; ss.
+        ii. inv EID. inv REL. des. inv H6. ss. lia.
       + right. esplits; eauto. ii. inv H1. inv REL. inv H1. inv H7. ss. lia.
       + i. destruct view; ss. exploit Promises.promises_from_mem_inv; eauto. i. des.
         hexploit sim_traces_ex; try exact SIM.
