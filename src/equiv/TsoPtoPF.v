@@ -66,7 +66,7 @@ Proof.
           inv STEP. inv WRITABLE. ss.
           exploit Memory.get_msg_wf; try exact MSG. i.
           econs; eauto; ss.
-          - econs; eauto.
+          - inv COHMAX. econs; eauto. econs; eauto.
           - rewrite <- MSG. unfold Memory.get_msg. destruct ts; ss.
             rewrite nth_error_app1; [|lia]. ss.
           - rewrite Promises.set_o. condtac; ss. inversion e0. subst. ss.
@@ -83,7 +83,7 @@ Proof.
             rewrite nth_error_app1 in MSG0; ss.
             eapply lt_le_trans; eauto.
           - apply Memory.read_mon. ss.
-          - econs; eauto.
+          - inv COHMAX. econs; eauto. econs; eauto.
           - rewrite <- MSG. unfold Memory.get_msg. destruct ts; ss.
             rewrite nth_error_app1; [|lia]. ss.
           - rewrite Promises.set_o. condtac; ss. inversion e0. subst. ss.
@@ -100,7 +100,7 @@ Proof.
             repeat apply join_spec; viewtac.
           - apply Memory.read_mon. ss.
         }
-        { econs 6; eauto. inv STEP. econs; eauto. }
+        { econs 6; eauto. inv STEP. inv COHMAX. econs; ss. econs; eauto. }
       * rewrite ? IdMap.add_add. eauto.
   - (* diff thread *)
     inv STEP. inv STEP1. inv STEP0. inv LOCAL0. inv MEM2. ss. subst.
@@ -122,7 +122,7 @@ Proof.
           - apply Memory.read_mon. ss.
         }
         { econs 3; eauto. inv STEP. inv WRITABLE. econs; eauto.
-          - econs; ss.
+          - econs; eauto.
           - apply Memory.get_msg_mon. ss.
         }
         { econs 4; eauto. instantiate (1 := ts).
@@ -137,7 +137,7 @@ Proof.
             + lia.
             + viewtac.
           - apply Memory.read_mon. ss.
-          - econs; ss.
+          - econs; eauto.
           - apply Memory.get_msg_mon. ss.
         }
         { econs 5; eauto. instantiate (1 := old_ts). instantiate (1 := vold).

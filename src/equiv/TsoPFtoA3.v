@@ -149,10 +149,12 @@ Inductive sim_local (tid:Id.t) (mem: Memory.t) (ex: Execution.t) (vext: eidT -> 
          vext
          local.(Local.vrn).(View.ts)
          (inverse (sim_local_vrn ex) (eq (tid, List.length (alocal.(ALocal.labels)))));
-  VWN: sim_view
-         vext
-         local.(Local.vwn).(View.ts)
-         (inverse (sim_local_vwn ex) (eq (tid, List.length (alocal.(ALocal.labels)))));
+  VWN: exists mloc,
+        (forall loc, (local.(Local.coh) loc).(View.ts) <= (local.(Local.coh) mloc).(View.ts)) /\
+        sim_view
+          vext
+          (local.(Local.coh) mloc).(View.ts)
+          (inverse (sim_local_vwn ex) (eq (tid, List.length (alocal.(ALocal.labels)))));
   FWDBANK: forall loc,
       (exists eid,
           <<TS_NONZERO: (local.(Local.fwdbank) loc).(FwdItem.ts) > 0>> /\

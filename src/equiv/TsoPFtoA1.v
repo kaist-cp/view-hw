@@ -611,6 +611,8 @@ Proof.
       + destruct ts; ss.
         unfold Memory.get_msg in *. ss. destruct msg.
         exploit Promises.promises_from_mem_lookup; eauto. ss. subst. ss.
+      + exploit Local.get_cohmax_loc. i. des.
+        econs; ss.
   }
   i. simplify.
   destruct eu1 as [st1 lc1 mem1] eqn: EU1. guardH EU1.
@@ -877,7 +879,7 @@ Proof.
         inv VLOC. inv VVAL. rewrite <- VAL0, <-VAL1. eauto.
       + exploit IH.(WPROP3); eauto. s. i. des. esplits; eauto.
         * rewrite fun_add_spec. des_ifs; eauto. inv e. etrans; eauto.
-          inv WRITABLE. apply Nat.lt_le_incl. ss.
+          inv WRITABLE. inv COHMAX. rewrite COHMAX0. ss. lia.
         * eapply nth_error_app_mon. eauto.
     - i. unfold ALocal.next_eid in *.
       des_ifs.
@@ -885,11 +887,13 @@ Proof.
       + clear Heq0. rewrite fun_add_spec in *. des_ifs; [|congr].
         exploit IH.(WPROP3); eauto. s. i. des.
         exploit IH.(WPROP1); eauto. s. rewrite PROMISE. i. des; ss.
-        rewrite MSG in x6. inv x6. inv WRITABLE. lia.
+        rewrite MSG in x6. inv x6. inv WRITABLE.
+        inv COHMAX. specialize (COHMAX0 (ValA.val vloc0)). lia.
       + rewrite fun_add_spec in *. des_ifs; [|congr].
         exploit IH.(WPROP3); eauto. s. i. des.
         exploit IH.(WPROP1); eauto. s. rewrite PROMISE. i. des; ss.
-        rewrite MSG in x6. inv x6. inv WRITABLE. lia.
+        rewrite MSG in x6. inv x6. inv WRITABLE.
+        inv COHMAX. specialize (COHMAX0 (ValA.val vloc0)). lia.
       + eapply IH.(WPROP4); eauto.
     - i. des. exploit IH.(RPROP1); eauto.
       apply nth_error_snoc_inv in GET. des; esplits; eauto.
@@ -902,7 +906,7 @@ Proof.
           assert (H: List.nth_error (ALocal.labels alc1) (length (ALocal.labels alc1)) <> None) by (ii; congr).
           apply List.nth_error_Some in H. lia.
         * rewrite fun_add_spec. des_ifs; eauto. inv e. etrans; eauto.
-          inv WRITABLE. apply Nat.lt_le_incl. ss.
+          inv WRITABLE. inv COHMAX. rewrite COHMAX0. ss. lia.
         * eapply nth_error_app_mon in x2. eauto.
       + esplits; eauto.
         * des_ifs.
@@ -911,7 +915,7 @@ Proof.
           assert (H: List.nth_error (ALocal.labels alc1) (length (ALocal.labels alc1)) <> None) by (ii; congr).
           apply List.nth_error_Some in H. lia.
         * rewrite fun_add_spec. des_ifs; eauto. inv e. etrans; eauto.
-          inv WRITABLE. apply Nat.lt_le_incl. ss.
+          inv WRITABLE. inv COHMAX. rewrite COHMAX0. ss. lia.
         * eapply nth_error_app_mon in x2. eauto.
     - i. eapply IH.(UPROP); eauto. des_ifs.
       exfalso. apply Nat.eqb_eq in Heq. subst.
@@ -950,13 +954,16 @@ Proof.
         * exploit IH.(RPROP1); eauto with tso. i. des.
           exploit IH.(RPROP2); eauto. s. i. des; cycle 1.
           { rewrite LABEL3 in x3. destruct l; ss. }
-          eapply Nat.le_lt_trans; eauto. inv WRITABLE. rewrite VAL0 in *. ss. lia.
+          eapply Nat.le_lt_trans; eauto. inv WRITABLE. inv COHMAX.
+          specialize (COHMAX0 (ValA.val (sem_expr rmap eloc))). lia.
         * exploit IH.(WPROP2); eauto with tso. i. des.
           exploit IH.(WPROP3); eauto. s. i. des. subst.
-          eapply Nat.le_lt_trans; eauto. inv WRITABLE. rewrite VAL0 in *. ss.
+          eapply Nat.le_lt_trans; eauto. inv WRITABLE. inv COHMAX.
+          specialize (COHMAX0 (ValA.val (sem_expr rmap eloc))). lia.
         * exploit IH.(WPROP2); eauto with tso. i. des.
           exploit IH.(WPROP3); eauto. s. i. des. subst.
-          eapply Nat.le_lt_trans; eauto. inv WRITABLE. rewrite VAL0 in *. ss.
+          eapply Nat.le_lt_trans; eauto. inv WRITABLE. inv COHMAX.
+          specialize (COHMAX0 (ValA.val (sem_expr rmap eloc))). lia.
       + subst. repeat condtac; ss.
         all: try apply Nat.eqb_eq in X; ss; try lia.
   }
@@ -1031,7 +1038,7 @@ Proof.
           inv NEW. rewrite <- VAL. ss.
       + exploit IH.(WPROP3); eauto. s. i. des. esplits; eauto.
         * rewrite fun_add_spec. des_ifs; eauto. inv e. etrans; eauto.
-          inv WRITABLE. apply Nat.lt_le_incl. rewrite <- VAL0. ss.
+          inv WRITABLE. inv COHMAX. rewrite COHMAX0. ss. lia.
         * eapply nth_error_app_mon. eauto.
     - i. unfold ALocal.next_eid in *.
       des_ifs.
@@ -1111,13 +1118,16 @@ Proof.
         * exploit IH.(RPROP1); eauto with tso. i. des.
           exploit IH.(RPROP2); eauto. s. i. des; cycle 1.
           { rewrite LABEL3 in x3. destruct l; ss. }
-          subst. eapply Nat.le_lt_trans; eauto. inv WRITABLE. rewrite VAL0 in *. ss.
+          subst. eapply Nat.le_lt_trans; eauto. inv WRITABLE. inv COHMAX.
+          specialize (COHMAX0 (ValA.val (sem_expr rmap0 eloc0))). lia.
         * exploit IH.(WPROP2); eauto with tso. i. des.
           exploit IH.(WPROP3); eauto. s. i. des.
-          subst. eapply Nat.le_lt_trans; eauto. inv WRITABLE. rewrite VAL0 in *. ss.
+          subst. eapply Nat.le_lt_trans; eauto. inv WRITABLE. inv COHMAX.
+          specialize (COHMAX0 (ValA.val (sem_expr rmap0 eloc0))). lia.
         * exploit IH.(WPROP2); eauto with tso. i. des.
           exploit IH.(WPROP3); eauto. s. i. des.
-          subst. eapply Nat.le_lt_trans; eauto. inv WRITABLE. rewrite VAL0 in *. ss.
+          subst. eapply Nat.le_lt_trans; eauto. inv WRITABLE. inv COHMAX.
+          specialize (COHMAX0 (ValA.val (sem_expr rmap0 eloc0))). lia.
       + subst. repeat condtac; ss.
         all: try apply Nat.eqb_eq in X; ss; try lia.
   }

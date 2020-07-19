@@ -283,28 +283,30 @@ Proof.
         unfold Time.le. lia.
       - (* dob *)
         unguardH LC2. inv LC2. ss.
+        generalize L.(LC).(VWN). intro VWN. des.
         unfold Execution.dob in H1. rewrite ? seq_assoc in *. des_union.
         + inv H. des. inv H1. des. inv H2. inv H. inv H3.
-          rewrite L.(LC).(VWN); ss.
+          rewrite VWN0; ss.
           * rewrite fun_add_spec. condtac; ss; cycle 1.
             { exfalso. apply c. ss. }
-            inv WRITABLE. unfold Time.le. lia.
+            inv WRITABLE. unfold Time.le. inv COHMAX. specialize (COHMAX0 mloc). lia.
           * econs; eauto. unfold sim_local_vwn. econs. econs; eauto. econs; eauto with tso.
         + inv H. des. inv H1. des. inv H2.
-          rewrite L.(LC).(VWN); ss.
+          rewrite VWN0; ss.
           * rewrite fun_add_spec. condtac; ss; cycle 1.
             { exfalso. apply c. ss. }
-            inv WRITABLE. unfold Time.le. lia.
+            inv WRITABLE. unfold Time.le. inv COHMAX. specialize (COHMAX0 mloc). lia.
           * econs; eauto. unfold sim_local_vwn.
             inv H. inv H3.
             econs. econs; eauto. econs; eauto with tso.
       - (* bob *)
         unguardH LC2. inv LC2. ss.
+        generalize L.(LC).(VWN). intro VWN. des.
         unfold Execution.bob in H. rewrite ? seq_assoc in *. des_union.
-        rewrite L.(LC).(VWN); ss.
+        rewrite VWN0; ss.
         * rewrite fun_add_spec. condtac; ss; cycle 1.
           { exfalso. apply c. ss. }
-          inv WRITABLE. unfold Time.le. lia.
+          inv WRITABLE. unfold Time.le. inv COHMAX. specialize (COHMAX0 mloc). lia.
         * econs; eauto. unfold sim_local_vwn.
           inv H. inv H1. inv H. inv H1. inv H. des. inv H1. des. inv H2. inv H4. inv H.
           exploit Execution.po_chain.

@@ -130,31 +130,33 @@ Proof.
       inv READ. destruct l0; ss; try congr.
     - (* dob *)
       rename H1 into H.
+      generalize L.(LC).(VWN). intro VWN. des.
       unfold Execution.dob in H. rewrite ? seq_assoc in *. des_union.
       + inv H1. des. inv H1. inv H. des. inv H1. inv H5.
         eapply Nat.le_lt_trans.
-        { apply L.(LC).(VWN); ss. econs; ss. econs. econs; eauto. econs; eauto with tso. }
-        s. rewrite fun_add_spec. condtac; [|congr].
-        inv WRITABLE. ss.
+        { apply VWN0; ss. econs; ss. econs. econs; eauto. econs; eauto with tso. }
+        s. rewrite fun_add_spec. condtac; [|congr]; ss.
+        inv WRITABLE. inv COHMAX. specialize (COHMAX0 mloc). lia.
       + inv H1. des.
         inv H1. eapply Nat.le_lt_trans.
-        { apply L.(LC).(VWN); ss. econs; ss. inv H. des. inv H1. inv H5.
+        { apply VWN0; ss. econs; ss. inv H. des. inv H1. inv H5.
           econs. econs; eauto. econs; eauto with tso.
         }
-        s. rewrite fun_add_spec. condtac; [|congr].
-        inv WRITABLE. ss.
+        s. rewrite fun_add_spec. condtac; [|congr]; ss.
+        inv WRITABLE. inv COHMAX. specialize (COHMAX0 mloc). lia.
     - (* bob *)
+      generalize L.(LC).(VWN). intro VWN. des.
       unfold Execution.bob in H. rewrite ? seq_assoc in *.
       inv H. des. inv H1. des. inv H. des. inv H4. des.
       inv H. inv H5. inv H3. eapply Nat.le_lt_trans.
-      { apply L.(LC).(VWN); ss. econs; ss.
+      { apply VWN0; ss. econs; ss.
         exploit Execution.po_chain.
         { econs. split; try exact H4. econs 2. eauto. }
         intro PO. inv H7.
         econs. econs; eauto. econs; eauto with tso.
       }
-      s. rewrite fun_add_spec. condtac; [|congr].
-      inv WRITABLE. ss.
+      s. rewrite fun_add_spec. condtac; [|congr]; ss.
+      inv WRITABLE. inv COHMAX. specialize (COHMAX0 mloc). lia.
   }
   { (* update *)
     exploit sim_trace_sim_th; try exact SIMTR; eauto. intro TH_tmp.
@@ -220,30 +222,32 @@ Proof.
       exfalso. apply c. ss.
     - (* dob *)
       unguardH LC2. inv LC2. ss.
+      generalize L.(LC).(VWN). intro VWN. des.
       unfold Execution.dob in H1. rewrite ? seq_assoc in *. des_union.
       + inv H. des. inv H1. inv H. des. inv H1. inv H5.
         inv H3. eapply Nat.le_lt_trans.
-        { apply L.(LC).(VWN); ss. econs; ss. econs. econs; eauto. econs; eauto with tso. }
-        s. rewrite fun_add_spec. condtac; [|congr].
-        inv WRITABLE. ss.
+        { apply VWN0; ss. econs; ss. econs. econs; eauto. econs; eauto with tso. }
+        s. rewrite fun_add_spec. condtac; [|congr]; ss.
+        inv WRITABLE. inv COHMAX. specialize (COHMAX0 mloc). lia.
       + eapply Nat.le_lt_trans.
-        { apply L.(LC).(VWN); ss. inv H. des. inv H1. des. inv H. inv H5. inv H3.
+        { apply VWN0; ss. inv H. des. inv H1. des. inv H. inv H5. inv H3.
           econs; ss. econs; eauto. econs; eauto. econs; eauto with tso.
         }
-        s. rewrite fun_add_spec. condtac; [|congr].
-        inv WRITABLE. ss.
+        s. rewrite fun_add_spec. condtac; [|congr]; ss.
+        inv WRITABLE. inv COHMAX. specialize (COHMAX0 mloc). lia.
     - (* bob *)
       unguardH LC2. inv LC2. ss.
+      generalize L.(LC).(VWN). intro VWN. des.
       unfold Execution.bob in H. rewrite ? seq_assoc in *.
       inv H. des. inv H1. des. inv H. des. inv H4. des.
       inv H. inv H5. inv H3. eapply Nat.le_lt_trans.
-      { apply L.(LC).(VWN); ss. econs; ss.
+      { apply VWN0; ss. econs; ss.
         exploit Execution.po_chain.
         { econs. split; try exact H4. econs 2. eauto. }
         intro PO. inv H7.
         econs. econs; eauto. econs; eauto with tso.
       }
-      s. rewrite fun_add_spec. condtac; [|congr].
-      inv WRITABLE. ss.
+      s. rewrite fun_add_spec. condtac; [|congr]; ss.
+      inv WRITABLE. inv COHMAX. specialize (COHMAX0 mloc). lia.
   }
 Qed.

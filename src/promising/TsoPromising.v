@@ -431,8 +431,7 @@ Section Local.
         (GT: forall loc, (lc.(coh) loc).(View.ts) < ts):
       <<NOFWD: forall loc, FwdItem.read_view (lc.(fwdbank) loc) ts = View.mk ts bot >> /\
       <<JOINS: forall loc, ts = join (lc.(coh) loc).(View.ts)
-                                  (join (lc.(vrn)).(View.ts)
-                                    (FwdItem.read_view (lc.(fwdbank) loc) ts).(View.ts))>>.
+                                     (FwdItem.read_view (lc.(fwdbank) loc) ts).(View.ts)>>.
   Proof.
     assert (NOFWD: forall loc, FwdItem.read_view (lc.(fwdbank) loc) ts = View.mk ts bot).
     { i. unfold FwdItem.read_view. condtac; ss.
@@ -447,7 +446,6 @@ Section Local.
     { repeat rewrite <- join_r. rewrite NOFWD. ss. }
     inv WF. inv COHMAX. viewtac.
     - specialize (GT loc). lia.
-    - specialize (GT mloc). lia.
     - rewrite NOFWD. ss.
   Qed.
 
