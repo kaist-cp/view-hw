@@ -19,38 +19,25 @@ Require Import PromisingArch.promising.CommonPromising.
 
 Set Implicit Arguments.
 
-Module FwdItem.
-Section FwdItem.
-  Context `{A: Type, _: orderC A eq}.
-
-  Inductive t := mk {
-    ts: Time.t;
-  }.
-  Hint Constructors t.
-
-  Definition init: t := mk bot.
-
-  Definition read_view (fwd:t) (tsx:Time.t): View.t (A:=unit) :=
-    if fwd.(ts) == tsx
-    then View.mk bot bot
-    else View.mk tsx bot.
-End FwdItem.
-End FwdItem.
 
 Module Local.
 Section Local.
   Inductive t := mk {
     coh: Loc.t -> View.t (A:=unit);
     vrn: View.t (A:=unit);
-    fwdbank: Loc.t -> (FwdItem.t);
     promises: Promises.t;
   }.
   Hint Constructors t.
 
-  Definition init: t := mk bot bot (fun _ => FwdItem.init) bot.
+  Definition read_view (coh:View.t (A:=unit)) (tsx:Time.t): View.t (A:=unit) :=
+    if coh.(View.ts) == tsx
+    then View.mk bot bot
+    else View.mk tsx bot.
+
+  Definition init: t := mk bot bot bot.
 
   Definition init_with_promises (promises: Promises.t): Local.t :=
-    mk bot bot (fun _ => FwdItem.init) promises.
+    mk bot bot promises.
 
   Inductive promise (loc:Loc.t) (val:Val.t) (ts:Time.t) (tid:Id.t) (lc1:t) (mem1:Memory.t) (lc2:t) (mem2:Memory.t): Prop :=
   | promise_intro
@@ -58,7 +45,6 @@ Section Local.
             mk
               lc1.(coh)
               lc1.(vrn)
-              lc1.(fwdbank)
               (Promises.set ts lc1.(promises)))
       (MEM2: Memory.append (Msg.mk loc val tid) mem1 = (ts, mem2))
   .
@@ -73,14 +59,13 @@ Section Local.
       (COH: (lc1.(coh) loc).(View.ts) <= ts)
       (LATEST: Memory.latest loc ts view_pre.(View.ts) mem1)
       (MSG: Memory.read loc ts mem1 = Some val)
-      (VIEW_MSG: view_msg = FwdItem.read_view (lc1.(fwdbank) loc) ts)
+      (VIEW_MSG: view_msg = read_view (lc1.(coh) loc) ts)
       (VIEW_POST: view_post = view_msg)
       (RES: res = ValA.mk _ val bot)
       (LC2: lc2 =
             mk
               (fun_add loc (join (lc1.(coh) loc) view_post) lc1.(coh))
               (join lc1.(vrn) view_post)
-              lc1.(fwdbank)
               lc1.(promises))
   .
   Hint Constructors read.
@@ -115,7 +100,6 @@ Section Local.
             mk
               (fun_add loc (View.mk ts bot) lc1.(coh))
               lc1.(vrn)
-              (fun_add loc (FwdItem.mk ts) lc1.(fwdbank))
               (Promises.unset ts lc1.(promises)))
   .
   Hint Constructors fulfill.
@@ -137,7 +121,6 @@ Section Local.
             mk
               (fun_add loc (View.mk ts bot) lc1.(coh))
               (join lc1.(vrn) (View.mk ts bot))
-              (fun_add loc (FwdItem.mk ts) lc1.(fwdbank))
               (Promises.unset ts lc1.(promises)))
   .
   Hint Constructors rmw.
@@ -151,14 +134,13 @@ Section Local.
       (COH: (lc1.(coh) loc).(View.ts) <= old_ts)
       (LATEST: Memory.latest loc old_ts view_pre.(View.ts) mem1)
       (OLD_MSG: Memory.read loc old_ts mem1 = Some old)
-      (VIEW_OLD: view_old = FwdItem.read_view (lc1.(fwdbank) loc) old_ts)
+      (VIEW_OLD: view_old = read_view (lc1.(coh) loc) old_ts)
       (VIEW_POST: view_post = view_old)
       (RES: res = ValA.mk _ old bot)
       (LC2: lc2 =
             mk
               (fun_add loc (join (lc1.(coh) loc) view_post) lc1.(coh))
               (join lc1.(vrn) view_post)
-              lc1.(fwdbank)
               lc1.(promises))
   .
   Hint Constructors rmw_failure.
@@ -171,7 +153,6 @@ Section Local.
             mk
               lc1.(coh)
               (joins [lc1.(vrn); ifc wr (lc1.(coh) mloc)])
-              lc1.(fwdbank)
               lc1.(promises))
   .
   Hint Constructors dmb.
@@ -203,10 +184,9 @@ Section Local.
   .
   Hint Constructors step.
 
-  Inductive wf_fwdbank (loc:Loc.t) (mem:Memory.t) (coh: Time.t) (fwd:FwdItem.t): Prop :=
+  Inductive wf_fwdbank (loc:Loc.t) (mem:Memory.t) (coh: Time.t): Prop :=
   | wf_fwdbank_intro
-      (TS: fwd.(FwdItem.ts) <= coh)
-      (VAL: exists val, Memory.read loc fwd.(FwdItem.ts) mem = Some val)
+      (VAL: exists val, Memory.read loc coh mem = Some val)
   .
 
   Inductive wf_cohmax (lc:t): Prop :=
@@ -220,7 +200,7 @@ Section Local.
   | wf_intro
       (COH: forall loc, (lc.(coh) loc).(View.ts) <= List.length mem)
       (VRN: lc.(vrn).(View.ts) <= List.length mem)
-      (FWDBANK: forall loc, wf_fwdbank loc mem (lc.(coh) loc).(View.ts) (lc.(fwdbank) loc))
+      (FWDBANK: forall loc, wf_fwdbank loc mem (lc.(coh) loc).(View.ts))
       (PROMISES: forall ts (IN: Promises.lookup ts lc.(promises)), ts <= List.length mem)
       (PROMISES: forall ts msg
                    (MSG: Memory.get_msg ts mem = Some msg)
@@ -243,10 +223,10 @@ Section Local.
   Lemma fwd_read_view_le
         tid mem lc loc ts
         (WF: wf tid mem lc):
-    (FwdItem.read_view (lc.(fwdbank) loc) ts).(View.ts) <= ts.
+    (read_view (lc.(coh) loc) ts).(View.ts) <= ts.
   Proof.
     inv WF. destruct (FWDBANK loc). des.
-    unfold FwdItem.read_view. condtac; ss.
+    unfold read_view. condtac; ss.
     apply bot_spec.
   Qed.
 
@@ -261,9 +241,8 @@ Section Local.
     - repeat apply Memory.latest_join; auto.
       apply Memory.ge_latest. eapply fwd_read_view_le; eauto.
     - unfold join. ss. apply le_antisym.
-      + unfold FwdItem.read_view. des_ifs; ss; [| apply join_r].
-        inv e0. inv WF. exploit FWDBANK. intro Y. inv Y.
-        rewrite <- join_l. eauto.
+      + unfold read_view. des_ifs; ss; [| apply join_r].
+        inv e0. apply join_l.
       + viewtac. eapply fwd_read_view_le; eauto.
   Qed.
 
@@ -278,9 +257,8 @@ Section Local.
     - repeat apply Memory.latest_join; auto.
       apply Memory.ge_latest. eapply fwd_read_view_le; eauto.
     - unfold join. ss. apply le_antisym.
-      + unfold FwdItem.read_view. des_ifs; ss; [| apply join_r].
-        inv e0. inv WF. exploit FWDBANK. intro Y. inv Y.
-        rewrite <- join_l. eauto.
+      + unfold read_view. des_ifs; ss; [| apply join_r].
+        inv e0. apply join_l.
       + viewtac. eapply fwd_read_view_le; eauto.
   Qed.
 
@@ -421,12 +399,12 @@ Section Local.
         tid mem lc ts
         (WF: wf tid mem lc)
         (GT: forall loc, (lc.(coh) loc).(View.ts) < ts):
-      <<NOFWD: forall loc, FwdItem.read_view (lc.(fwdbank) loc) ts = View.mk ts bot >> /\
+      <<NOFWD: forall loc, read_view (lc.(coh) loc) ts = View.mk ts bot >> /\
       <<JOINS: forall loc, ts = join (lc.(coh) loc).(View.ts)
-                                     (FwdItem.read_view (lc.(fwdbank) loc) ts).(View.ts)>>.
+                                     (read_view (lc.(coh) loc) ts).(View.ts)>>.
   Proof.
-    assert (NOFWD: forall loc, FwdItem.read_view (lc.(fwdbank) loc) ts = View.mk ts bot).
-    { i. unfold FwdItem.read_view. condtac; ss.
+    assert (NOFWD: forall loc, read_view (lc.(coh) loc) ts = View.mk ts bot).
+    { i. unfold read_view. condtac; ss.
       inversion e. inv H. inv WF.
       specialize (FWDBANK loc). inv FWDBANK.
       assert (COHLE: Memory.latest_ts loc (View.ts (coh lc loc)) mem <= View.ts (coh lc loc)).
@@ -441,6 +419,27 @@ Section Local.
     - rewrite NOFWD. ss.
   Qed.
 
+  (* TODO: remove and find good method *)
+  Lemma my_bot_join
+        (ts: Time.t):
+    join ts bot = ts.
+  Proof.
+    apply le_antisym.
+    - viewtac.
+    - apply join_l.
+  Qed.
+
+  (* TODO: remove and find good method *)
+  Lemma my_le_join
+        (ts1 ts2: Time.t)
+        (LE: ts1 <= ts2):
+    join ts1 ts2 = ts2.
+  Proof.
+    apply le_antisym.
+    - viewtac.
+    - apply join_r.
+  Qed.
+
   Lemma step_wf
         tid e mem lc1 lc2
         (STEP: step e tid mem lc1 lc2)
@@ -450,7 +449,7 @@ Section Local.
     assert (FWDVIEW: forall loc ts,
                (View.ts (coh lc1 loc)) <= ts ->
                ts <= length mem ->
-               View.ts (FwdItem.read_view (fwdbank lc1 loc) ts) <= length mem).
+               View.ts (read_view (coh lc1 loc) ts) <= length mem).
     { i. rewrite fwd_read_view_le; eauto. }
     inversion WF. inv STEP; ss; inv STEP0.
     - exploit FWDVIEW; eauto.
@@ -458,22 +457,25 @@ Section Local.
       i. econs; viewtac.
       + i. rewrite fun_add_spec. condtac; viewtac.
       + i. exploit FWDBANK; eauto. intro Y. inv Y. des.
-        econs; eauto. rewrite TS, fun_add_spec. condtac; ss. inversion e. subst.
-        apply join_l.
+        econs; eauto. rewrite fun_add_spec. condtac; ss; eauto.
+        inversion e. subst.
+        unfold read_view. condtac; ss.
+        * eexists val0. rewrite my_bot_join. ss.
+        * eexists val. rewrite my_le_join; eauto.
       + i. eapply PROMISES0; eauto. eapply Time.le_lt_trans; [|by eauto].
         rewrite fun_add_spec. condtac; ss. inversion e. rewrite H0. apply join_l.
       + inv COHMAX. inv COHMAX0. destruct (lt_eq_lt_dec ts (View.ts (coh lc1 mloc))).
         { econs; ss. instantiate (1 := mloc).
           - econs; ss.
             i. repeat rewrite fun_add_spec. repeat condtac; ss.
-            + viewtac. unfold FwdItem.read_view.
+            + viewtac. unfold read_view.
               condtac; [apply bot_spec | inv s; ss; lia].
             + inversion e. subst.
             specialize (COHMAX loc). rewrite <- join_l. ss.
           - rewrite fun_add_spec. condtac; ss.
             + inversion e. subst.
               unfold join. unfold Time.join. lia.
-            + viewtac. unfold FwdItem.read_view.
+            + viewtac. unfold read_view.
               condtac; [apply bot_spec | inv s; ss; lia].
         }
         { exploit high_ts_spec; eauto.
@@ -550,22 +552,25 @@ Section Local.
       i. econs; viewtac.
       + i. rewrite fun_add_spec. condtac; viewtac.
       + i. exploit FWDBANK; eauto. intro Y. inv Y. des.
-        econs; eauto. rewrite TS, fun_add_spec. condtac; ss. inversion e. subst.
-        apply join_l.
+        econs; eauto. rewrite fun_add_spec. condtac; ss; eauto.
+        inversion e. subst.
+        unfold read_view. condtac; ss.
+        * eexists val. rewrite my_bot_join. ss.
+        * eexists old. rewrite my_le_join; eauto.
       + i. eapply PROMISES0; eauto. eapply Time.le_lt_trans; [|by eauto].
         rewrite fun_add_spec. condtac; ss. inversion e. rewrite H0. apply join_l.
       + inv COHMAX. inv COHMAX0. destruct (lt_eq_lt_dec old_ts (View.ts (coh lc1 mloc))).
         { econs; ss. instantiate (1 := mloc).
           - econs; ss.
             i. repeat rewrite fun_add_spec. repeat condtac; ss.
-            + viewtac. unfold FwdItem.read_view.
+            + viewtac. unfold read_view.
               condtac; [apply bot_spec | inv s; ss; lia].
             + inversion e. subst.
             specialize (COHMAX loc). rewrite <- join_l. ss.
           - rewrite fun_add_spec. condtac; ss.
             + inversion e. subst.
               unfold join. unfold Time.join. lia.
-            + viewtac. unfold FwdItem.read_view.
+            + viewtac. unfold read_view.
               condtac; [apply bot_spec | inv s; ss; lia].
         }
         { exploit high_ts_spec; eauto.
