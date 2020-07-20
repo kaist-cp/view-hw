@@ -154,9 +154,15 @@ Proof.
         unfold v_gen. ss. rewrite <- H7. auto.
       }
       subst.
-      unfold FwdItem.read_view. condtac; ss; [|apply join_r].
+      unfold Local.read_view. condtac; ss; [|apply join_r].
       clear X0. inv e.
-      generalize (L.(LC).(FWDBANK) (ValA.val vloc)). s. i. des; cycle 1.
+      (* 상황: 다른 스레드가 씀 /\ coh가 ts랑 같음
+        -> 추론: 위에서 이미 읽었는데 같은 걸 또 읽는 상황
+        -> 당연: coh <= vrn 이어야 함
+      *)
+      admit.
+
+      (* generalize (L.(LC).(FWDBANK) (ValA.val vloc)). s. i. des; cycle 1.
       { rewrite H1. ss. apply bot_spec. }
       rewrite <- TS in H2.
       destruct eid as [tid2 eid2], eid1 as [tid1 eid1].
@@ -197,7 +203,7 @@ Proof.
         rewrite H in x21. rewrite x14 in x21. inv x21. ss.
       }
       subst.
-      inv WRITE. inv PO. ss. subst. inv H. inv H3. ss.
+      inv WRITE. inv PO. ss. subst. inv H. inv H3. ss. *)
     - (* dob *)
       rename H1 into H.
       unfold Execution.dob in H. rewrite ? seq_assoc in *. des_union.
@@ -369,9 +375,15 @@ Proof.
         unfold v_gen. ss. rewrite <- H7. auto.
       }
       subst.
-      unfold FwdItem.read_view. condtac; ss; [| apply join_r].
+      unfold Local.read_view. condtac; ss; [| apply join_r].
       clear X0. inv e.
-      generalize (L.(LC).(FWDBANK) (ValA.val vloc)). s. i. des; cycle 1.
+      (* 상황: 다른 스레드가 씀 /\ coh가 ts랑 같음
+        -> 추론: 위에서 이미 읽었는데 같은 걸 또 읽는 상황
+        -> 당연: coh <= vrn 이어야 함
+      *)
+      admit.
+
+      (* generalize (L.(LC).(FWDBANK) (ValA.val vloc)). s. i. des; cycle 1.
       { rewrite H1. ss. apply bot_spec. }
       rewrite <- TS in H2.
       destruct eid as [tid2 eid2], eid1 as [tid1 eid1].
@@ -412,7 +424,7 @@ Proof.
         rewrite H in x21. rewrite x14 in x21. inv x21. ss.
       }
       subst.
-      inv WRITE. inv PO. ss. subst. inv H. inv H3. ss.
+      inv WRITE. inv PO. ss. subst. inv H. inv H3. ss. *)
     - (* dob *)
       rename H1 into H.
       unfold Execution.dob in H. rewrite ? seq_assoc in *. des_union.

@@ -244,7 +244,6 @@ Inductive sim_local (tid:Id.t) (ex:Execution.t) (ob: list eidT) (alocal:ALocal.t
           <<WRITE: sim_local_fwd ex loc eid (tid, List.length (alocal.(ALocal.labels)))>> /\
           <<LE_COH: ts <= (local.(Local.coh) loc).(View.ts)>>) \/
       (forall eid, ~ (inverse (sim_local_fwd_none ex loc) (eq (tid, List.length (alocal.(ALocal.labels)))) eid));
-      (* TODO: if there is read, 0<=coh, otherwise coh = 0 *)
   PROMISES: forall view,
       Promises.lookup view local.(Local.promises) <->
       (exists n,
