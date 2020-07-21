@@ -208,6 +208,11 @@ Section Local.
                    (TS: (lc.(coh) msg.(Msg.loc)).(View.ts) < ts),
           Promises.lookup ts lc.(promises))
       (COHMAX: wf_cohmax lc)
+      (NFWD: forall ts msg
+                (MSG: Memory.get_msg ts mem = Some msg)
+                (TID: msg.(Msg.tid) <> tid)
+                (TS: (lc.(coh) msg.(Msg.loc)).(View.ts) = ts),
+          ts <= lc.(vrn).(View.ts))
   .
   Hint Constructors wf.
 
@@ -218,6 +223,7 @@ Section Local.
     - destruct ts; ss.
     - destruct ts; ss. destruct ts; ss.
     - exists Loc.default; ss.
+    - rewrite TS. ss.
   Qed.
 
   Lemma fwd_read_view_le
@@ -293,6 +299,9 @@ Section Local.
       + eapply PROMISES0; eauto.
       + apply nth_error_In in MSG0. eapply Forall_forall in INTERFERENCE; eauto.
         subst. destruct (nequiv_dec (Msg.tid msg) (Msg.tid msg)); ss. congr.
+    - apply Memory.get_msg_app_inv in MSG. des.
+      + eapply NFWD; eauto.
+      + subst. specialize (COH (Msg.loc msg)). lia.
   Qed.
 
   Lemma wf_promises_above
@@ -495,6 +504,12 @@ Section Local.
             + rewrite NOFWD. ss. viewtac; rewrite <- join_r; lia.
             + exfalso. apply c. ss.
         }
+      + i. revert TS. rewrite fun_add_spec. condtac; ss; cycle 1.
+        { i. rewrite <- join_l. eapply NFWD; eauto. }
+        unfold read_view. condtac; ss.
+        * repeat rewrite my_bot_join. i. rewrite <- TS in *.
+          eapply NFWD; eauto. inversion e. ss.
+        * i. rewrite <- TS. viewtac; rewrite <- join_r; ss.
     - inversion WRITABLE.
       econs; viewtac; rewrite <- ? TS0, <- ? TS1.
       + i. rewrite fun_add_spec. condtac; viewtac.
@@ -521,6 +536,9 @@ Section Local.
         * rewrite fun_add_spec. condtac; ss; cycle 1.
           { exfalso. apply c. ss. }
           specialize (COHMAX mloc0). lia.
+      + i. eapply NFWD; eauto.
+        rewrite fun_add_spec in TS. eqvtac.
+        rewrite MSG in MSG0. inv MSG0. ss.
     - inversion WRITABLE.
       econs; viewtac; rewrite <- ? TS0, <- ? TS1.
       + i. rewrite fun_add_spec. condtac; viewtac.
@@ -547,6 +565,9 @@ Section Local.
         * rewrite fun_add_spec. condtac; ss; cycle 1.
           { exfalso. apply c. ss. }
           viewtac. specialize (COHMAX mloc0). lia.
+      + i. rewrite <- join_l. eapply NFWD; eauto.
+        rewrite fun_add_spec in TS. eqvtac.
+        rewrite MSG in MSG0. inv MSG0. ss.
     - exploit FWDVIEW; eauto.
       { eapply Memory.read_wf. eauto. }
       i. econs; viewtac.
@@ -587,8 +608,16 @@ Section Local.
             + rewrite NOFWD. ss. viewtac; rewrite <- join_r; lia.
             + exfalso. apply c. ss.
         }
-    - econs; viewtac. inv COHMAX0. econs; [econs|]; ss.
-      viewtac. inv COHMAX. specialize (COHMAX1 mloc0). lia.
+      + i. revert TS. rewrite fun_add_spec. condtac; ss; cycle 1.
+        { i. rewrite <- join_l. eapply NFWD; eauto. }
+        unfold read_view. condtac; ss.
+        * repeat rewrite my_bot_join. i. rewrite <- TS in *.
+          eapply NFWD; eauto. inversion e. ss.
+        * i. rewrite <- TS. viewtac; rewrite <- join_r; ss.
+    - econs; viewtac.
+      + inv COHMAX0. econs; [econs|]; ss.
+        viewtac. inv COHMAX. specialize (COHMAX1 mloc0). lia.
+      + i. rewrite <- join_l. eapply NFWD; eauto.
   Qed.
 End Local.
 End Local.
@@ -685,6 +714,9 @@ Section ExecUnit.
         eapply PROMISES0; eauto.
       + subst. condtac; ss. congr.
     - inv COHMAX. inv COHMAX0. econs; [econs|]; ss.
+    - i. apply Memory.get_msg_snoc_inv in MSG. des.
+      + eapply NFWD; eauto.
+      + rewrite <- MSG0 in TID. ss.
   Qed.
 
   Lemma step_wf tid eu1 eu2
@@ -976,6 +1008,9 @@ Module Machine.
       + i. apply Memory.get_msg_snoc_inv in MSG. des.
         { eapply PROMISES0; eauto. }
         { subst. ss. congr. }
+      + i. apply Memory.get_msg_snoc_inv in MSG. des.
+        * eapply NFWD; eauto.
+        * rewrite MSG in TS. specialize (COH (Msg.loc msg)). lia.
   Qed.
 
   Lemma rtc_step_promise_step_wf

@@ -1477,6 +1477,7 @@ Proof.
       unfold Memory.get_msg in MSG. ss. destruct msg. ss. subst.
       apply Promises.promises_from_mem_lookup in MSG. auto.
     - exists Loc.default; [econs |]; eauto.
+    - rewrite TS. ss.
   }
   { apply AExecUnit.wf_init. }
   i. des. destruct eu2 as [state2 local2 mem2]. inv SIM. ss. subst.

@@ -155,13 +155,6 @@ Inductive sim_local (tid:Id.t) (mem: Memory.t) (ex: Execution.t) (vext: eidT -> 
           vext
           (local.(Local.coh) mloc).(View.ts)
           (inverse (sim_local_vwn ex) (eq (tid, List.length (alocal.(ALocal.labels)))));
-  FWDBANK: forall loc,
-      (exists eid ts,
-          <<TS: vext eid = ts>> /\
-          <<TS_NONZERO: 0 < ts>> /\
-          <<WRITE: sim_local_fwd ex loc eid (tid, List.length (alocal.(ALocal.labels)))>> /\
-          <<LE_COH: ts <= (local.(Local.coh) loc).(View.ts)>>) \/
-      (forall eid, ~ (inverse (sim_local_fwd_none ex loc) (eq (tid, List.length (alocal.(ALocal.labels)))) eid));
   PROMISES: forall view (VIEW: Promises.lookup view local.(Local.promises)),
       exists n,
         <<N: (length alocal.(ALocal.labels)) <= n>> /\

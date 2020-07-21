@@ -240,28 +240,6 @@ Proof.
             viewtac; [| apply join_r].
             rewrite <- JOINS. lia.
       }
-    + i. specialize (FWDBANK loc). des.
-      { left. esplits; eauto.
-        - rewrite sim_local_fwd_step. econs.
-          econs; cycle 1.
-          { instantiate (1 := (_, _)). econs; ss. }
-          left. econs. split; eauto. econs; ss.
-          exploit EX2.(LABELS_REV); ss.
-          { apply nth_error_last. apply Nat.eqb_eq. ss. }
-          i. econs; eauto.
-        - rewrite fun_add_spec. condtac; ss.
-          inversion e. subst. rewrite <- join_l. ss.
-      }
-      { right.
-        i. specialize (FWDBANK eid).
-        rewrite sim_local_fwd_none_step. rewrite inverse_step.
-        ii. inv H. inv REL.
-        { apply FWDBANK. econs; eauto. }
-        inv H. inv H1. exploit EX2.(LABELS); eauto; ss.
-        { rewrite List.app_length. s. lia. }
-        rewrite List.nth_error_app2, Nat.sub_diag; ss.
-        destruct l; ss.
-      }
     + i. exploit PROMISES; eauto. i. des. esplits; cycle 1; eauto.
       inv N.
       * inv WRITE. exploit EX2.(LABELS); eauto; ss.
@@ -352,41 +330,6 @@ Proof.
         destruct (length (ALocal.labels alc1) =? ALocal.next_eid alc1) eqn:Heq; cycle 1.
         { rewrite Nat.eqb_neq in Heq. unfold ALocal.next_eid in Heq. ss. }
         rewrite fun_add_spec. condtac; ss.
-    + i. rewrite fun_add_spec. condtac; ss.
-      { inversion e. subst.
-        left. eexists (tid, length (ALocal.labels alc1)). esplits; eauto.
-        - admit.
-        - econs; [econs| |]; ss; cycle 1.
-          { i. inv PO. inv PO0. ss. subst. clear -N N0. lia. }
-          exploit EX2.(LABELS_REV); ss.
-          { apply nth_error_last. apply Nat.eqb_eq. ss. }
-          i. econs; eauto. inv VLOC. rewrite VAL0. eauto with tso.
-        - rewrite EX2.(XVEXT); cycle 1.
-          { ss. rewrite List.app_length. ss. clear. lia. }
-          destruct (length (ALocal.labels alc1) =? ALocal.next_eid alc1) eqn:Heq; cycle 1.
-          { rewrite Nat.eqb_neq in Heq. unfold ALocal.next_eid in Heq. ss. }
-          rewrite fun_add_spec. condtac; ss.
-      }
-      specialize (FWDBANK loc). des.
-      * left. esplits; eauto.
-        rewrite sim_local_fwd_step. econs.
-        econs; cycle 1.
-        { instantiate (1 := (_, _)). econs; ss. }
-        left. econs. split; eauto. econs; ss.
-        exploit EX2.(LABELS_REV); ss.
-        { apply nth_error_last. apply Nat.eqb_eq. ss. }
-        i. econs; eauto. ii. inv H.
-        destruct (equiv_dec (ValA.val (sem_expr armap1 eloc)) loc); ss. inv e.
-        inv VLOC. congr.
-      * right. esplits; eauto.
-        i. specialize (FWDBANK eid).
-        rewrite sim_local_fwd_none_step. rewrite inverse_step.
-        ii. inv H. inv REL.
-        { apply FWDBANK. econs; eauto. }
-        inv H. inv H1. exploit EX2.(LABELS); eauto; ss.
-        { rewrite List.app_length. s. lia. }
-        rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x0. inv LABEL. eqvtac.
-        inv VLOC. congr.
     + intro. rewrite Promises.unset_o. condtac; ss. i.
       exploit PROMISES; eauto. i. des. esplits; cycle 1; eauto.
       inv N.
@@ -516,41 +459,6 @@ Proof.
         destruct (length (ALocal.labels alc1) =? ALocal.next_eid alc1) eqn:Heq; cycle 1.
         { rewrite Nat.eqb_neq in Heq. unfold ALocal.next_eid in Heq. ss. }
         rewrite fun_add_spec. condtac; ss.
-    + i. rewrite fun_add_spec. condtac; ss.
-      { inversion e. subst.
-        left. eexists (tid, length (ALocal.labels alc1)). esplits; eauto.
-        - admit.
-        - econs; [econs| |]; ss; cycle 1.
-          { i. inv PO. inv PO0. ss. subst. clear -N N0. lia. }
-          exploit EX2.(LABELS_REV); ss.
-          { apply nth_error_last. apply Nat.eqb_eq. ss. }
-          i. econs; eauto. inv VLOC. rewrite VAL. eauto with tso.
-        - rewrite EX2.(XVEXT); cycle 1.
-          { ss. rewrite List.app_length. ss. clear. lia. }
-          destruct (length (ALocal.labels alc1) =? ALocal.next_eid alc1) eqn:Heq; cycle 1.
-          { rewrite Nat.eqb_neq in Heq. unfold ALocal.next_eid in Heq. ss. }
-          rewrite fun_add_spec. condtac; ss.
-      }
-      specialize (FWDBANK loc). des.
-      * left. esplits; eauto.
-        rewrite sim_local_fwd_step. econs.
-        econs; cycle 1.
-        { instantiate (1 := (_, _)). econs; ss. }
-        left. econs. split; eauto. econs; ss.
-        exploit EX2.(LABELS_REV); ss.
-        { apply nth_error_last. apply Nat.eqb_eq. ss. }
-        i. econs; eauto. ii. inv H.
-        destruct (equiv_dec (ValA.val (sem_expr armap2 eloc)) loc); ss. inv e.
-        inv VLOC. congr.
-      * right. esplits; eauto.
-        i. specialize (FWDBANK eid).
-        rewrite sim_local_fwd_none_step. rewrite inverse_step.
-        ii. inv H. inv REL.
-        { apply FWDBANK. econs; eauto. }
-        inv H. inv H1. exploit EX2.(LABELS); eauto; ss.
-        { rewrite List.app_length. s. lia. }
-        rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x0. inv LABEL. eqvtac.
-        inv VLOC. congr.
     + intro. rewrite Promises.unset_o. condtac; ss. i.
       exploit PROMISES; eauto. i. des. esplits; cycle 1; eauto.
       inv N.
@@ -707,28 +615,6 @@ Proof.
             viewtac; [| apply join_r].
             rewrite <- JOINS. lia.
       }
-    + i. specialize (FWDBANK loc). des.
-      { left. esplits; eauto.
-        - rewrite sim_local_fwd_step. econs.
-          econs; cycle 1.
-          { instantiate (1 := (_, _)). econs; ss. }
-          left. econs. split; eauto. econs; ss.
-          exploit EX2.(LABELS_REV); ss.
-          { apply nth_error_last. apply Nat.eqb_eq. ss. }
-          i. econs; eauto.
-        - rewrite fun_add_spec. condtac; ss.
-          inversion e. subst. rewrite <- join_l. ss.
-      }
-      { right.
-        i. specialize (FWDBANK eid).
-        rewrite sim_local_fwd_none_step. rewrite inverse_step.
-        ii. inv H. inv REL.
-        { apply FWDBANK. econs; eauto. }
-        inv H. inv H1. exploit EX2.(LABELS); eauto; ss.
-        { rewrite List.app_length. s. lia. }
-        rewrite List.nth_error_app2, Nat.sub_diag; ss.
-        destruct l; ss.
-      }
     + i. exploit PROMISES; eauto. i. des. esplits; cycle 1; eauto.
       inv N.
       * inv WRITE. exploit EX2.(LABELS); eauto; ss.
@@ -789,26 +675,6 @@ Proof.
         exploit EX2.(LABELS); eauto; ss.
         { rewrite List.app_length. s. lia. }
         rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x0. inv LABEL.
-    + i. specialize (FWDBANK loc). des.
-      * left. esplits; eauto.
-        rewrite List.app_length, Nat.add_1_r.
-        rewrite sim_local_fwd_step. econs.
-        econs; cycle 1.
-        { instantiate (1 := (_, _)). econs; ss. }
-        left. econs. split; eauto. econs; ss.
-        exploit EX2.(LABELS_REV); ss.
-        { apply nth_error_last. apply Nat.eqb_eq. ss. }
-        intro X. econs; eauto.
-      * right. esplits; eauto.
-        i. specialize (FWDBANK eid).
-        rewrite List.app_length, Nat.add_1_r.
-        rewrite sim_local_fwd_none_step. rewrite inverse_step.
-        ii. inv H. inv REL.
-        { apply FWDBANK. econs; eauto. }
-        inv H. inv H1. exploit EX2.(LABELS); eauto; ss.
-        { rewrite List.app_length. s. lia. }
-        rewrite List.nth_error_app2, Nat.sub_diag; ss.
-        destruct l; ss.
     + i. exploit PROMISES; eauto. i. des. esplits; cycle 1; eauto.
       rewrite List.app_length, Nat.add_1_r. inv N.
       * inv WRITE. exploit EX2.(LABELS); eauto; ss.

@@ -126,84 +126,36 @@ Proof.
     clear TH_tmp. intro SIM_TH.
     destruct SIM_TH.(EU_WF).
     specialize (Local.read_spec LOCAL STEP0). intro READ_SPEC. guardH READ_SPEC.
-    clear LOCAL. inv STEP0. ss.
+    inv STEP0. ss.
     exploit EX2.(LABELS); eauto; ss.
     { rewrite List.app_length. s. clear. lia. }
     i.
     move AOB at bottom. unfold ob' in AOB. des_union.
     - (* rfe *)
       rename H1 into H.
-      assert (v_gen vexts eid1 = ts).
-      { inv H. destruct eid1 as [tid1 eid1]. inv H2. ss.
-        generalize H1. intro Y. rewrite RF in Y. inv Y. ss.
-        erewrite EX2.(XR) in R; eauto; cycle 1.
-        { s. rewrite List.app_length. s. clear. lia. }
-        destruct (length (ALocal.labels alc1) =? length (ALocal.labels alc1)); ss.
-        move READ_SPEC at bottom. rewrite fun_add_spec in *.
-        destruct (equiv_dec (ValA.val vloc) (ValA.val vloc)); cycle 1.
-        { exfalso. apply c. ss. }
-        generalize SIM_TH.(MEM). s. i. subst.
-        unguardH READ_SPEC. des. rewrite <- COH0 in R. inv R.
-        generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
-        exploit sim_trace_last; try exact REL0. i. des. simplify.
-        exploit sim_trace_sim_th; try exact REL0; eauto. intro TH_tmp.
-        exploit TH_tmp; eauto.
-        { instantiate (1 := []). ss. }
-        clear TH_tmp. intro L1.
-        exploit L1.(WPROP3); eauto. i. des.
-        unfold v_gen. ss. rewrite <- H7. auto.
-      }
-      subst.
+      inv H. destruct eid1 as [tid1 eid1]. inv H2. ss.
+      generalize H1. intro Y. rewrite RF in Y. inv Y. ss.
+      erewrite EX2.(XR) in R; eauto; cycle 1.
+      { s. rewrite List.app_length. s. clear. lia. }
+      destruct (length (ALocal.labels alc1) =? length (ALocal.labels alc1)); ss.
+      move READ_SPEC at bottom. rewrite fun_add_spec in *.
+      destruct (equiv_dec (ValA.val vloc) (ValA.val vloc)); cycle 1.
+      { exfalso. apply c. ss. }
+      generalize SIM_TH.(MEM). s. i. subst.
+      unguardH READ_SPEC. des. rewrite <- COH0 in R. inv R.
+      generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
+      exploit sim_trace_last; try exact REL0. i. des. simplify.
+      exploit sim_trace_sim_th; try exact REL0; eauto. intro TH_tmp.
+      exploit TH_tmp; eauto.
+      { instantiate (1 := []). ss. }
+      clear TH_tmp. intro L1.
+      exploit L1.(WPROP3); eauto. i. des.
+      assert (VGEN_TS: v_gen vexts (tid1, eid1) = ts2).
+      { unfold v_gen. ss. rewrite <- H7. auto. }
+      rewrite VGEN_TS in *.
       unfold Local.read_view. condtac; ss; [|apply join_r].
-      clear X0. inv e.
-      (* 상황: 다른 스레드가 씀 /\ coh가 ts랑 같음
-        -> 추론: 위에서 이미 읽었는데 같은 걸 또 읽는 상황
-        -> 당연: coh <= vrn 이어야 함
-      *)
-      admit.
-
-      (* generalize (L.(LC).(FWDBANK) (ValA.val vloc)). s. i. des; cycle 1.
-      { rewrite H1. ss. apply bot_spec. }
-      rewrite <- TS in H2.
-      destruct eid as [tid2 eid2], eid1 as [tid1 eid1].
-      assert (tid1 = tid2).
-      { inv H. exploit RF2; eauto. i. des.
-        inv WRITE0. rename EID0 into WRITE0.
-        unfold Execution.label in WRITE0. ss.
-        rewrite PRE.(Valid.LABELS) in WRITE0.
-        rewrite IdMap.map_spec in WRITE0.
-        destruct (IdMap.find tid1 (Valid.aeus PRE)) eqn:FIND1; ss.
-        generalize (ATR tid1). intro ATR1. inv ATR1; try congr. des. simplify.
-        generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
-        exploit sim_trace_last; try exact REL0. i. des. simplify.
-        exploit sim_trace_sim_th; try exact REL0; eauto. intro TH_tmp.
-        exploit TH_tmp; eauto.
-        { instantiate (1 := []). ss. }
-        clear TH_tmp. intro L1.
-        inv WRITE. inv WRITE1.
-        unfold Execution.label in EID0. ss.
-        rewrite PRE.(Valid.LABELS) in EID0.
-        rewrite IdMap.map_spec in EID0.
-        destruct (IdMap.find tid2 (Valid.aeus PRE)) eqn:FIND2; ss.
-        generalize (ATR tid2). intro ATR2. inv ATR2; try congr. des. simplify.
-        generalize (SIM tid2). intro SIM2. inv SIM2; simplify.
-        exploit sim_trace_last; try exact REL1. i. des. simplify.
-        exploit sim_trace_sim_th; try exact REL1; eauto. intro TH_tmp.
-        exploit TH_tmp; eauto.
-        { instantiate (1 := []). ss. }
-        clear TH_tmp. intro L2.
-        move H2 at bottom.
-        unfold v_gen in H2. ss.
-        rewrite <- H10, <- H16 in H2.
-        exploit L1.(WPROP2); eauto. i. des.
-        exploit L2.(WPROP2'); eauto. i. des.
-        exploit L1.(WPROP3); eauto. i. des.
-        exploit L2.(WPROP3); eauto. i. des.
-        rewrite x10, x17 in H2. inv H2.
-        rewrite H in x21. rewrite x14 in x21. inv x21. ss.
-      }
-      subst.
-      inv WRITE. inv PO. ss. subst. inv H. inv H3. ss. *)
+      unfold Time.le. rewrite Local.my_bot_join.
+      inversion LOCAL. eapply NFWD; eauto.
     - (* dob *)
       rename H1 into H.
       unfold Execution.dob in H. rewrite ? seq_assoc in *. des_union.
@@ -347,84 +299,36 @@ Proof.
     clear TH_tmp. intro SIM_TH.
     destruct SIM_TH.(EU_WF).
     specialize (Local.rmw_failure_spec LOCAL STEP0). intro RMW_FAILURE_SPEC. guardH RMW_FAILURE_SPEC.
-    clear LOCAL. inv STEP0. ss.
+    inv STEP0. ss.
     exploit EX2.(LABELS); eauto; ss.
     { rewrite List.app_length. s. clear. lia. }
     i.
     move AOB at bottom. unfold ob' in AOB. des_union.
     - (* rfe *)
       rename H1 into H.
-      assert (v_gen vexts eid1 = old_ts).
-      { inv H. destruct eid1 as [tid1 eid1]. inv H2. ss.
-        generalize H1. intro Y. rewrite RF in Y. inv Y. ss.
-        erewrite EX2.(XR) in R; eauto; cycle 1.
-        { s. rewrite List.app_length. s. clear. lia. }
-        destruct (length (ALocal.labels alc1) =? length (ALocal.labels alc1)); ss.
-        move RMW_FAILURE_SPEC at bottom. rewrite fun_add_spec in *.
-        destruct (equiv_dec (ValA.val vloc) (ValA.val vloc)); cycle 1.
-        { exfalso. apply c. ss. }
-        generalize SIM_TH.(MEM). s. i. subst.
-        unguardH RMW_FAILURE_SPEC. des. rewrite <- COH0 in R. inv R.
-        generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
-        exploit sim_trace_last; try exact REL0. i. des. simplify.
-        exploit sim_trace_sim_th; try exact REL0; eauto. intro TH_tmp.
-        exploit TH_tmp; eauto.
-        { instantiate (1 := []). ss. }
-        clear TH_tmp. intro L1.
-        exploit L1.(WPROP3); eauto. i. des.
-        unfold v_gen. ss. rewrite <- H7. auto.
-      }
-      subst.
-      unfold Local.read_view. condtac; ss; [| apply join_r].
-      clear X0. inv e.
-      (* 상황: 다른 스레드가 씀 /\ coh가 ts랑 같음
-        -> 추론: 위에서 이미 읽었는데 같은 걸 또 읽는 상황
-        -> 당연: coh <= vrn 이어야 함
-      *)
-      admit.
-
-      (* generalize (L.(LC).(FWDBANK) (ValA.val vloc)). s. i. des; cycle 1.
-      { rewrite H1. ss. apply bot_spec. }
-      rewrite <- TS in H2.
-      destruct eid as [tid2 eid2], eid1 as [tid1 eid1].
-      assert (tid1 = tid2).
-      { inv H. exploit RF2; eauto. i. des.
-        inv WRITE0. rename EID0 into WRITE0.
-        unfold Execution.label in WRITE0. ss.
-        rewrite PRE.(Valid.LABELS) in WRITE0.
-        rewrite IdMap.map_spec in WRITE0.
-        destruct (IdMap.find tid1 (Valid.aeus PRE)) eqn:FIND1; ss.
-        generalize (ATR tid1). intro ATR1. inv ATR1; try congr. des. simplify.
-        generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
-        exploit sim_trace_last; try exact REL0. i. des. simplify.
-        exploit sim_trace_sim_th; try exact REL0; eauto. intro TH_tmp.
-        exploit TH_tmp; eauto.
-        { instantiate (1 := []). ss. }
-        clear TH_tmp. intro L1.
-        inv WRITE. inv WRITE1.
-        unfold Execution.label in EID0. ss.
-        rewrite PRE.(Valid.LABELS) in EID0.
-        rewrite IdMap.map_spec in EID0.
-        destruct (IdMap.find tid2 (Valid.aeus PRE)) eqn:FIND2; ss.
-        generalize (ATR tid2). intro ATR2. inv ATR2; try congr. des. simplify.
-        generalize (SIM tid2). intro SIM2. inv SIM2; simplify.
-        exploit sim_trace_last; try exact REL1. i. des. simplify.
-        exploit sim_trace_sim_th; try exact REL01; eauto. intro TH_tmp.
-        exploit TH_tmp; eauto.
-        { instantiate (1 := []). ss. }
-        clear TH_tmp. intro L2.
-        move H2 at bottom.
-        unfold v_gen in H2. ss.
-        rewrite <- H10, <- H16 in H2.
-        exploit L1.(WPROP2); eauto. i. des.
-        exploit L2.(WPROP2'); eauto. i. des.
-        exploit L1.(WPROP3); eauto. i. des.
-        exploit L2.(WPROP3); eauto. i. des.
-        rewrite x10, x17 in H2. inv H2.
-        rewrite H in x21. rewrite x14 in x21. inv x21. ss.
-      }
-      subst.
-      inv WRITE. inv PO. ss. subst. inv H. inv H3. ss. *)
+      inv H. destruct eid1 as [tid1 eid1]. inv H2. ss.
+      generalize H1. intro Y. rewrite RF in Y. inv Y. ss.
+      erewrite EX2.(XR) in R; eauto; cycle 1.
+      { s. rewrite List.app_length. s. clear. lia. }
+      destruct (length (ALocal.labels alc1) =? length (ALocal.labels alc1)); ss.
+      move RMW_FAILURE_SPEC at bottom. rewrite fun_add_spec in *.
+      destruct (equiv_dec (ValA.val vloc) (ValA.val vloc)); cycle 1.
+      { exfalso. apply c. ss. }
+      generalize SIM_TH.(MEM). s. i. subst.
+      unguardH RMW_FAILURE_SPEC. des. rewrite <- COH0 in R. inv R.
+      generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
+      exploit sim_trace_last; try exact REL0. i. des. simplify.
+      exploit sim_trace_sim_th; try exact REL0; eauto. intro TH_tmp.
+      exploit TH_tmp; eauto.
+      { instantiate (1 := []). ss. }
+      clear TH_tmp. intro L1.
+      exploit L1.(WPROP3); eauto. i. des.
+      assert (VGEN_TS: v_gen vexts (tid1, eid1) = ts2).
+      { unfold v_gen. ss. rewrite <- H7. auto. }
+      rewrite VGEN_TS in *.
+      unfold Local.read_view. condtac; ss; [|apply join_r].
+      unfold Time.le. rewrite Local.my_bot_join.
+      inversion LOCAL. eapply NFWD; eauto.
     - (* dob *)
       rename H1 into H.
       unfold Execution.dob in H. rewrite ? seq_assoc in *. des_union.
