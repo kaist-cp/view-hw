@@ -143,31 +143,18 @@ Inductive sim_local (tid:Id.t) (mem: Memory.t) (ex: Execution.t) (vext: eidT -> 
   COH: forall loc,
         sim_view
           vext
-          (Memory.latest_ts loc (local.(Local.coh) loc).(View.ts) mem)
+          (local.(Local.coh) loc).(View.ts)
           (inverse (sim_local_coh ex loc) (eq (tid, List.length (alocal.(ALocal.labels)))));
   VRN: sim_view
          vext
          local.(Local.vrn).(View.ts)
          (inverse (sim_local_vrn ex) (eq (tid, List.length (alocal.(ALocal.labels)))));
-  VWN: sim_view
-         vext
-         local.(Local.vwn).(View.ts)
-         (inverse (sim_local_vwn ex) (eq (tid, List.length (alocal.(ALocal.labels)))));
-  VRO: sim_view
-         vext
-         local.(Local.vro).(View.ts)
-         (inverse (sim_local_vro ex) (eq (tid, List.length (alocal.(ALocal.labels)))));
-  VWO: sim_view
-         vext
-         local.(Local.vwo).(View.ts)
-         (inverse (sim_local_vwo ex) (eq (tid, List.length (alocal.(ALocal.labels)))));
-  FWDBANK: forall loc,
-      (exists eid,
-          <<TS_NONZERO: (local.(Local.fwdbank) loc).(FwdItem.ts) > 0>> /\
-          <<WRITE: sim_local_fwd ex loc eid (tid, List.length (alocal.(ALocal.labels)))>> /\
-          <<TS: vext eid = (local.(Local.fwdbank) loc).(FwdItem.ts)>>) \/
-      ((local.(Local.fwdbank) loc) = FwdItem.init /\
-       forall eid, ~ (inverse (sim_local_fwd_none ex loc) (eq (tid, List.length (alocal.(ALocal.labels)))) eid));
+  VWN: exists mloc,
+        (forall loc, (local.(Local.coh) loc).(View.ts) <= (local.(Local.coh) mloc).(View.ts)) /\
+        sim_view
+          vext
+          (local.(Local.coh) mloc).(View.ts)
+          (inverse (sim_local_vwn ex) (eq (tid, List.length (alocal.(ALocal.labels)))));
   PROMISES: forall view (VIEW: Promises.lookup view local.(Local.promises)),
       exists n,
         <<N: (length alocal.(ALocal.labels)) <= n>> /\

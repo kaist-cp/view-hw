@@ -155,7 +155,7 @@ Definition sim_local_vrn ex :=
   (⦗ex.(Execution.label_is) Label.is_kinda_read⦘ ⨾
    Execution.po) ∪
 
-  (⦗ex.(Execution.label_is) Label.is_kinda_write⦘ ⨾
+  (⦗ex.(Execution.label_is) Label.is_access⦘ ⨾
    Execution.po ⨾
    ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_wr)⦘ ⨾
    Execution.po).
@@ -165,7 +165,7 @@ Lemma sim_local_vrn_step ex:
   (sim_local_vrn ex ∪
    ((⦗ex.(Execution.label_is) Label.is_kinda_read⦘) ∪
 
-   (⦗ex.(Execution.label_is) Label.is_kinda_write⦘ ⨾
+   (⦗ex.(Execution.label_is) Label.is_access⦘ ⨾
      Execution.po ⨾
      ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_wr)⦘))) ⨾
   Execution.po_adj.
@@ -209,7 +209,6 @@ Proof.
     + rewrite seq_assoc. econs. splits; cycle 1.
       { econs; eauto. econs; eauto. }
       econs. econs; eauto. econs; eauto with tso.
-      destruct l; ss; econs; eauto with tso.
     + rewrite seq_assoc. econs. splits; cycle 1.
       { econs; eauto. econs; eauto. }
       econs. splits.
@@ -219,33 +218,20 @@ Proof.
 Qed.
 
 Definition sim_local_vwn ex :=
-  (⦗ex.(Execution.label_is) Label.is_kinda_read⦘ ⨾
-   Execution.po) ∪
-
-  (⦗ex.(Execution.label_is) Label.is_kinda_write⦘ ⨾
+  (⦗ex.(Execution.label_is) Label.is_access⦘ ⨾
    Execution.po).
 
 Lemma sim_local_vwn_step ex:
   sim_local_vwn ex =
   (sim_local_vwn ex ∪
-   ((⦗ex.(Execution.label_is) Label.is_kinda_read⦘) ∪
-
-   (⦗ex.(Execution.label_is) Label.is_kinda_write⦘))) ⨾
+   (⦗ex.(Execution.label_is) Label.is_access⦘)) ⨾
   Execution.po_adj.
 Proof.
   unfold sim_local_vwn. rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
-  rewrite Execution.po_po_adj at 1 2.
+  rewrite Execution.po_po_adj at 1.
   rewrite (clos_refl_union Execution.po), union_seq, eq_seq.
   rewrite ? (seq_union' (Execution.po ⨾ Execution.po_adj) Execution.po_adj), ? seq_assoc, ? union_assoc.
-  funext. i. funext. i. propext. econs; i.
-  - repeat match goal with
-           | [H: (_ ∪ _) _ _ |- _] => inv H
-           end;
-      eauto 10 using union_l, union_r.
-  - repeat match goal with
-           | [H: (_ ∪ _) _ _ |- _] => inv H
-           end;
-      eauto 10 using union_l, union_r.
+  refl.
 Qed.
 
 Lemma sim_local_vwn_spec
@@ -255,58 +241,9 @@ Lemma sim_local_vwn_spec
       (VWN: sim_local_vwn ex eid1 eid2):
   <<OB: Execution.ob ex eid1 eid2>>.
 Proof.
-  inv EID2. destruct l; inv LABEL. unfold sim_local_vwn in VWN.
-  repeat match goal with
-         | [H: (_ ∪ _) _ _ |- _] => inv H
-         end.
-  - left. right. right.
-    inv H. des. inv H0. inv H2. econs. splits; cycle 1.
-    { econs; eauto. econs; eauto. econs; eauto with tso. }
-    econs; eauto. destruct l; econs; eauto with tso.
-  - left. right. right.
-    inv H. des. inv H0. inv H2. econs. splits; cycle 1.
-    { econs; eauto. econs; eauto. econs; eauto with tso. }
-    econs; eauto. destruct l; econs; eauto with tso.
-  - left. right. right.
-    inv VWN; inv H; inv H0; inv H; inv H2.
-    + rewrite seq_assoc. econs. splits; cycle 1.
-      { econs; eauto. econs; eauto. }
-      econs. econs; eauto. econs; eauto with tso.
-      destruct l; ss; econs; eauto with tso.
-    + rewrite seq_assoc. econs. splits; cycle 1.
-      { econs; eauto. econs; eauto. }
-      econs. splits; eauto. econs; eauto.
-      destruct l; ss; econs; eauto with tso.
-Qed.
-
-Definition sim_local_vro ex :=
-  ⦗ex.(Execution.label_is) (Label.is_kinda_read)⦘ ⨾ Execution.po.
-
-Lemma sim_local_vro_step ex:
-  sim_local_vro ex =
-  (sim_local_vro ex ∪ ⦗ex.(Execution.label_is) (Label.is_kinda_read)⦘) ⨾
-  Execution.po_adj.
-Proof.
-  unfold sim_local_vro. rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
-  rewrite Execution.po_po_adj at 1.
-  rewrite (clos_refl_union Execution.po), union_seq, eq_seq.
-  rewrite ? (seq_union' (Execution.po ⨾ Execution.po_adj) Execution.po_adj), ? seq_assoc, ? union_assoc.
-  refl.
-Qed.
-
-Definition sim_local_vwo ex :=
-  ⦗ex.(Execution.label_is) (Label.is_kinda_write)⦘ ⨾ Execution.po.
-
-Lemma sim_local_vwo_step ex:
-  sim_local_vwo ex =
-  (sim_local_vwo ex ∪ ⦗ex.(Execution.label_is) (Label.is_kinda_write)⦘) ⨾
-  Execution.po_adj.
-Proof.
-  unfold sim_local_vwo. rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
-  rewrite Execution.po_po_adj at 1.
-  rewrite (clos_refl_union Execution.po), union_seq, eq_seq.
-  rewrite ? (seq_union' (Execution.po ⨾ Execution.po_adj) Execution.po_adj), ? seq_assoc, ? union_assoc.
-  refl.
+  inv EID2. inv VWN. des.
+  left. right. right.
+  econs. econs; eauto. econs. econs; eauto. econs; eauto with tso.
 Qed.
 
 Inductive sim_local_fwd ex (loc:Loc.t) (eid1 eid2:eidT): Prop :=
@@ -397,6 +334,17 @@ Proof.
   - exfalso. eapply EX.(Valid.CORW). econs. esplits; [|exact H]. econs 2. ss.
 Qed.
 
+Lemma sim_local_fwd_spec
+      p ex loc eid tid iid
+      (EX: Valid.ex p ex)
+      (LABEL: Execution.label_is ex (fun l : Label.t => ~ Label.is_kinda_writing loc l) (tid, iid))
+      (VWN: sim_local_fwd ex loc eid (tid, iid)):
+  <<FWD_S: sim_local_fwd ex loc eid (tid, S iid)>>.
+Proof.
+  rewrite sim_local_fwd_step. econs. instantiate (1 := (_, _)). splits; [|econs; ss].
+  left. econs. splits; eauto. econs; eauto with tso.
+Qed.
+
 Definition sim_local_fwd_none ex loc :=
   ⦗ex.(Execution.label_is) (Label.is_kinda_writing loc)⦘ ⨾ Execution.po.
 
@@ -410,4 +358,18 @@ Proof.
   rewrite (clos_refl_union Execution.po), union_seq, eq_seq.
   rewrite ? (seq_union' (Execution.po ⨾ Execution.po_adj) Execution.po_adj), ? seq_assoc, ? union_assoc.
   refl.
+Qed.
+
+Lemma sim_local_fwd_none_spec
+      p ex loc tid iid
+      (EX: Valid.ex p ex)
+      (LABEL: Execution.label_is ex (fun l : Label.t => ~ Label.is_kinda_writing loc l) (tid, iid))
+      (FWDN: forall eid : eidT, ~ inverse (sim_local_fwd_none ex loc) (eq (tid, iid)) eid):
+  <<FWDN_S: forall eid : eidT, ~ inverse (sim_local_fwd_none ex loc) (eq (tid, S iid)) eid>>.
+Proof.
+  ii.
+  inv H. inv REL. inv H. rewrite Execution.po_po_adj in H1. inv H1. des.
+  destruct x, x0. inv H1. ss. inv N. inv H.
+  - inv H1. inv H0. inv H1. inv LABEL. rewrite EID in EID0. inv EID0. ss.
+  - inv H1. ss. subst. eapply FWDN. econs; eauto. econs; eauto with tso.
 Qed.

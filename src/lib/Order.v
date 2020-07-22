@@ -57,6 +57,16 @@ Proof.
   - eapply join_l.
 Qed.
 
+Lemma le_join (A:Type) (eq le: relation A) `{_: orderC A eq le}
+      a b
+      (AC: le a b):
+  eq (join a b) b.
+Proof.
+  antisym.
+  - eapply join_spec; eauto. refl.
+  - eapply join_r.
+Qed.
+
 Lemma joins_le A (eq le: relation A) `{_: orderC A eq le}
       (a:A) (l:list A)
       (IN: In a l):
@@ -93,6 +103,18 @@ Hint Unfold fun_add.
 Lemma fun_add_spec A B `{_: EqDec A} a (b:B) f x:
   (fun_add a b f) x = if x == a then b else f x.
 Proof. refl. Qed.
+
+Lemma fun_add_spec_eq A B `{_: EqDec A} a (b:B) f:
+  (fun_add a b f) a = b.
+Proof. unfold fun_add. condtac; ss. exfalso. apply c. refl. Qed.
+
+Ltac funtac :=
+  repeat
+    (try match goal with
+         | [|- context[(fun_add ?a ?b ?f) ?a]] => rewrite fun_add_spec_eq
+         | [|- context[(fun_add ?a ?b ?f) ?x]] => rewrite fun_add_spec; condtac
+         end;
+     ss; eauto).
 
 Definition fun_eq A B `{_: Equivalence B} (f g: A -> B): Prop :=
   forall a, R (f a) (g a).

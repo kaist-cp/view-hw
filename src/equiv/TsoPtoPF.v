@@ -48,20 +48,12 @@ Proof.
                        Local.mk
                          lc0.(Local.coh)
                          lc0.(Local.vrn)
-                         lc0.(Local.vwn)
-                         lc0.(Local.vro)
-                         lc0.(Local.vwo)
-                         lc0.(Local.fwdbank)
                          (Promises.set (S (length mem1)) lc0.(Local.promises))).
         inv LOCAL0.
         { econs 1; eauto. }
         { econs 2; eauto. instantiate (1 := ts). inv STEP. ss.
           exploit Memory.read_wf; try exact MSG. i.
           econs; eauto; ss.
-          - ii. eapply COH; eauto.
-            rewrite nth_error_app1 in MSG0; ss.
-            eapply lt_le_trans; eauto.
-            inv WF. exploit WF0; eauto. i. inv x. ss. inv LOCAL. ss.
           - ii. eapply LATEST; eauto.
             rewrite nth_error_app1 in MSG0; ss.
             eapply lt_le_trans; eauto.
@@ -69,32 +61,28 @@ Proof.
             repeat apply join_spec; viewtac.
           - apply Memory.read_mon. ss.
         }
-        { econs 3; eauto. instantiate (1 := view_pre). instantiate (1 := ts).
+        { econs 3; eauto. instantiate (1 := ts).
           inv STEP. inv WRITABLE. ss.
           exploit Memory.get_msg_wf; try exact MSG. i.
           econs; eauto; ss.
-          - econs; eauto.
+          - inv COHMAX. econs; eauto. econs; eauto.
           - rewrite <- MSG. unfold Memory.get_msg. destruct ts; ss.
             rewrite nth_error_app1; [|lia]. ss.
           - rewrite Promises.set_o. condtac; ss. inversion e0. subst. ss.
           - f_equal. apply Promises.set_unset.
             ii. subst. lia.
         }
-        { econs 4; eauto. instantiate (1 := view_pre). instantiate (1 := ts). instantiate (1 := old_ts).
+        { econs 4; eauto. instantiate (1 := ts). instantiate (1 := old_ts).
           inv STEP.
           exploit Memory.read_wf; try exact OLD_MSG. i.
           inv WRITABLE. ss.
           exploit Memory.get_msg_wf; try exact MSG. i.
           econs; try exact OLD_RANGE; ss.
-          - ii. eapply COH; eauto.
-            rewrite nth_error_app1 in MSG0; ss.
-            eapply lt_le_trans; eauto.
-            inv WF. exploit WF0; eauto. i. inv x. ss. inv LOCAL. ss.
           - ii. eapply EX; eauto.
             rewrite nth_error_app1 in MSG0; ss.
             eapply lt_le_trans; eauto.
           - apply Memory.read_mon. ss.
-          - econs; eauto.
+          - inv COHMAX. econs; eauto. econs; eauto.
           - rewrite <- MSG. unfold Memory.get_msg. destruct ts; ss.
             rewrite nth_error_app1; [|lia]. ss.
           - rewrite Promises.set_o. condtac; ss. inversion e0. subst. ss.
@@ -104,10 +92,6 @@ Proof.
         { econs 5; eauto. instantiate (1 := old_ts). instantiate (1 := vold). inv STEP. ss.
           exploit Memory.read_wf; try exact OLD_MSG. i.
           econs; eauto; ss.
-          - ii. eapply COH; eauto.
-            rewrite nth_error_app1 in MSG; ss.
-            eapply lt_le_trans; eauto.
-            inv WF. exploit WF0; eauto. i. inv x. ss. inv LOCAL. ss.
           - ii. eapply LATEST; eauto.
             rewrite nth_error_app1 in MSG; ss.
             eapply lt_le_trans; eauto.
@@ -115,7 +99,7 @@ Proof.
             repeat apply join_spec; viewtac.
           - apply Memory.read_mon. ss.
         }
-        { econs 6; eauto. inv STEP. econs; eauto. }
+        { econs 6; eauto. inv STEP. inv COHMAX. econs; ss. econs; eauto. }
       * rewrite ? IdMap.add_add. eauto.
   - (* diff thread *)
     inv STEP. inv STEP1. inv STEP0. inv LOCAL0. inv MEM2. ss. subst.
@@ -128,12 +112,6 @@ Proof.
         instantiate (1 := lc2). inv LOCAL.
         { econs 1; eauto. }
         { econs 2; eauto. inv STEP. econs; eauto.
-          - ii. eapply COH; eauto.
-            destruct (lt_dec ts0 (length mem1)).
-            { rewrite nth_error_app1 in MSG0; ss. }
-            contradict n.
-            eapply lt_le_trans; [apply TS2|].
-            inv WF. exploit WF0; try exact FIND; eauto. i. inv x. inv LOCAL. ss.
           - ii. eapply LATEST; eauto.
             destruct (lt_dec ts0 (length mem1)).
             { rewrite nth_error_app1 in MSG0; ss. }
@@ -143,17 +121,11 @@ Proof.
           - apply Memory.read_mon. ss.
         }
         { econs 3; eauto. inv STEP. inv WRITABLE. econs; eauto.
-          - econs; ss.
+          - econs; eauto.
           - apply Memory.get_msg_mon. ss.
         }
-        { econs 4; eauto. instantiate (1 := view_pre). instantiate (1 := ts).
+        { econs 4; eauto. instantiate (1 := ts).
           inv STEP. inv WRITABLE. econs; try exact OLD_RANGE; eauto.
-          - ii. eapply COH; eauto.
-            destruct (lt_dec ts0 (length mem1)).
-            { rewrite nth_error_app1 in MSG0; ss. }
-            contradict n.
-            eapply lt_le_trans; [apply TS2|].
-            inv WF. exploit WF0; try exact FIND; eauto. i. inv x. inv LOCAL. ss.
           - ii. eapply EX; eauto.
             destruct (lt_dec ts0 (length mem1)).
             { rewrite nth_error_app1 in MSG0; ss. }
@@ -164,17 +136,11 @@ Proof.
             + lia.
             + viewtac.
           - apply Memory.read_mon. ss.
-          - econs; ss.
+          - econs; eauto.
           - apply Memory.get_msg_mon. ss.
         }
         { econs 5; eauto. instantiate (1 := old_ts). instantiate (1 := vold).
           inv STEP. econs; eauto.
-          - ii. eapply COH; eauto.
-            destruct (lt_dec ts (length mem1)).
-            { rewrite nth_error_app1 in MSG; ss. }
-            contradict n.
-            eapply lt_le_trans; [apply TS2|].
-            inv WF. exploit WF0; try exact FIND; eauto. i. inv x. inv LOCAL. ss.
           - ii. eapply LATEST; eauto.
             destruct (lt_dec ts (length mem1)).
             { rewrite nth_error_app1 in MSG; ss. }
