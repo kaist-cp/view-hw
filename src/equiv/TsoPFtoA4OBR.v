@@ -154,7 +154,7 @@ Proof.
       { unfold v_gen. ss. rewrite <- H7. auto. }
       rewrite VGEN_TS in *.
       unfold Local.read_view. condtac; ss; [|apply join_r].
-      unfold Time.le. rewrite Time.bot_join.
+      rewrite (bot_join (View.ts (Local.vrn lc1))).
       inversion LOCAL. eapply NFWD; eauto.
     - (* dob *)
       rename H1 into H.
@@ -327,7 +327,7 @@ Proof.
       { unfold v_gen. ss. rewrite <- H7. auto. }
       rewrite VGEN_TS in *.
       unfold Local.read_view. condtac; ss; [|apply join_r].
-      unfold Time.le. rewrite Time.bot_join.
+      rewrite (bot_join (View.ts (Local.vrn lc1))).
       inversion LOCAL. eapply NFWD; eauto.
     - (* dob *)
       rename H1 into H.

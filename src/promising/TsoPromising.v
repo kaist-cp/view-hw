@@ -448,8 +448,8 @@ Section Local.
         econs; eauto. rewrite fun_add_spec. condtac; ss; eauto.
         inversion e. subst.
         unfold read_view. condtac; ss.
-        * eexists val0. rewrite Time.bot_join. ss.
-        * eexists val. rewrite Time.le_join; eauto.
+        * eexists val0. rewrite bot_join; [|apply Time.order]. ss.
+        * eexists val. rewrite le_join; [|apply Time.order|]; eauto.
       + i. eapply PROMISES0; eauto. eapply Time.le_lt_trans; [|by eauto].
         rewrite fun_add_spec. condtac; ss. inversion e. rewrite H0. apply join_l.
       + inv COHMAX. inv COHMAX0. destruct (lt_eq_lt_dec ts (View.ts (coh lc1 mloc))).
@@ -486,7 +486,8 @@ Section Local.
       + i. revert TS. rewrite fun_add_spec. condtac; ss; cycle 1.
         { i. rewrite <- join_l. eapply NFWD; eauto. }
         unfold read_view. condtac; ss.
-        * repeat rewrite Time.bot_join. i. rewrite <- TS in *.
+        * rewrite bot_join; [|apply Time.order]. rewrite (bot_join (View.ts (vrn lc1))).
+          intro TS. rewrite <- TS in *.
           eapply NFWD; eauto. inversion e. ss.
         * i. rewrite <- TS. viewtac; rewrite <- join_r; ss.
     - inversion WRITABLE.
@@ -555,8 +556,8 @@ Section Local.
         econs; eauto. rewrite fun_add_spec. condtac; ss; eauto.
         inversion e. subst.
         unfold read_view. condtac; ss.
-        * eexists val. rewrite Time.bot_join. ss.
-        * eexists old. rewrite Time.le_join; eauto.
+        * eexists val. rewrite bot_join; [|apply Time.order]. ss.
+        * eexists old. rewrite le_join; [|apply Time.order|]; eauto.
       + i. eapply PROMISES0; eauto. eapply Time.le_lt_trans; [|by eauto].
         rewrite fun_add_spec. condtac; ss. inversion e. rewrite H0. apply join_l.
       + inv COHMAX. inv COHMAX0. destruct (lt_eq_lt_dec old_ts (View.ts (coh lc1 mloc))).
@@ -590,7 +591,8 @@ Section Local.
       + i. revert TS. rewrite fun_add_spec. condtac; ss; cycle 1.
         { i. rewrite <- join_l. eapply NFWD; eauto. }
         unfold read_view. condtac; ss.
-        * repeat rewrite Time.bot_join. i. rewrite <- TS in *.
+        * rewrite bot_join; [|apply Time.order]. rewrite (bot_join (View.ts (vrn lc1))).
+          intro TS. rewrite <- TS in *.
           eapply NFWD; eauto. inversion e. ss.
         * i. rewrite <- TS. viewtac; rewrite <- join_r; ss.
     - econs; viewtac.

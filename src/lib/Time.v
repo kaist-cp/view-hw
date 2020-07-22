@@ -33,19 +33,4 @@ Module Time.
   Next Obligation. unfold bot. lia. Qed.
 
   Global Instance eqdec: EqDec t eq := nat_eq_eqdec.
-
-  Lemma bot_join
-        (ts: t):
-    join ts bot = ts.
-  Proof.
-    destruct ts; ss.
-  Qed.
-
-  Lemma le_join
-        (ts1 ts2: t)
-        (LE: ts1 <= ts2):
-    join ts1 ts2 = ts2.
-  Proof.
-    unfold join. lia.
-  Qed.
 End Time.
