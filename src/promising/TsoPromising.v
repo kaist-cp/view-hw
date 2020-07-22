@@ -428,27 +428,6 @@ Section Local.
     - rewrite NOFWD. ss.
   Qed.
 
-  (* TODO: remove and find good method *)
-  Lemma my_bot_join
-        (ts: Time.t):
-    join ts bot = ts.
-  Proof.
-    apply le_antisym.
-    - viewtac.
-    - apply join_l.
-  Qed.
-
-  (* TODO: remove and find good method *)
-  Lemma my_le_join
-        (ts1 ts2: Time.t)
-        (LE: ts1 <= ts2):
-    join ts1 ts2 = ts2.
-  Proof.
-    apply le_antisym.
-    - viewtac.
-    - apply join_r.
-  Qed.
-
   Lemma step_wf
         tid e mem lc1 lc2
         (STEP: step e tid mem lc1 lc2)
@@ -469,8 +448,8 @@ Section Local.
         econs; eauto. rewrite fun_add_spec. condtac; ss; eauto.
         inversion e. subst.
         unfold read_view. condtac; ss.
-        * eexists val0. rewrite my_bot_join. ss.
-        * eexists val. rewrite my_le_join; eauto.
+        * eexists val0. rewrite Time.bot_join. ss.
+        * eexists val. rewrite Time.le_join; eauto.
       + i. eapply PROMISES0; eauto. eapply Time.le_lt_trans; [|by eauto].
         rewrite fun_add_spec. condtac; ss. inversion e. rewrite H0. apply join_l.
       + inv COHMAX. inv COHMAX0. destruct (lt_eq_lt_dec ts (View.ts (coh lc1 mloc))).
@@ -507,7 +486,7 @@ Section Local.
       + i. revert TS. rewrite fun_add_spec. condtac; ss; cycle 1.
         { i. rewrite <- join_l. eapply NFWD; eauto. }
         unfold read_view. condtac; ss.
-        * repeat rewrite my_bot_join. i. rewrite <- TS in *.
+        * repeat rewrite Time.bot_join. i. rewrite <- TS in *.
           eapply NFWD; eauto. inversion e. ss.
         * i. rewrite <- TS. viewtac; rewrite <- join_r; ss.
     - inversion WRITABLE.
@@ -576,8 +555,8 @@ Section Local.
         econs; eauto. rewrite fun_add_spec. condtac; ss; eauto.
         inversion e. subst.
         unfold read_view. condtac; ss.
-        * eexists val. rewrite my_bot_join. ss.
-        * eexists old. rewrite my_le_join; eauto.
+        * eexists val. rewrite Time.bot_join. ss.
+        * eexists old. rewrite Time.le_join; eauto.
       + i. eapply PROMISES0; eauto. eapply Time.le_lt_trans; [|by eauto].
         rewrite fun_add_spec. condtac; ss. inversion e. rewrite H0. apply join_l.
       + inv COHMAX. inv COHMAX0. destruct (lt_eq_lt_dec old_ts (View.ts (coh lc1 mloc))).
@@ -611,7 +590,7 @@ Section Local.
       + i. revert TS. rewrite fun_add_spec. condtac; ss; cycle 1.
         { i. rewrite <- join_l. eapply NFWD; eauto. }
         unfold read_view. condtac; ss.
-        * repeat rewrite my_bot_join. i. rewrite <- TS in *.
+        * repeat rewrite Time.bot_join. i. rewrite <- TS in *.
           eapply NFWD; eauto. inversion e. ss.
         * i. rewrite <- TS. viewtac; rewrite <- join_r; ss.
     - econs; viewtac.

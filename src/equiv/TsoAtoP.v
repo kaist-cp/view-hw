@@ -738,7 +738,7 @@ Proof.
           - rewrite fun_add_spec. condtac; eauto.
             inversion e. subst.
             unfold Local.read_view. condtac; ss.
-            + rewrite Local.my_bot_join. ss.
+            + rewrite Time.bot_join. ss.
             + rewrite <- join_l. ss.
           - rewrite sim_local_fwd_step. econs. instantiate (1 := (_, _)). splits; [|econs; ss].
             left. econs. splits; eauto. econs; eauto with tso.
@@ -1198,7 +1198,7 @@ Proof.
           - rewrite fun_add_spec. condtac; eauto.
             inversion e. subst.
             unfold Local.read_view. condtac; ss.
-            + rewrite Local.my_bot_join. ss.
+            + rewrite Time.bot_join. ss.
             + rewrite <- join_l. ss.
           - rewrite sim_local_fwd_step. econs. instantiate (1 := (_, _)). splits; [|econs; ss].
             left. econs. splits; eauto. econs; eauto with tso.

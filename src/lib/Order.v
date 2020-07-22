@@ -57,6 +57,16 @@ Proof.
   - eapply join_l.
 Qed.
 
+Lemma le_join (A:Type) (eq le: relation A) `{_: orderC A eq le}
+      a b
+      (AC: le a b):
+  eq (join a b) b.
+Proof.
+  antisym.
+  - eapply join_spec; eauto. refl.
+  - eapply join_r.
+Qed.
+
 Lemma joins_le A (eq le: relation A) `{_: orderC A eq le}
       (a:A) (l:list A)
       (IN: In a l):
