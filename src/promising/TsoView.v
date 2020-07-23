@@ -76,7 +76,7 @@ Section Local.
       view_post
       (LOC: loc = vloc.(ValA.val))
       (COH: (lc1.(coh) loc).(View.ts) <= old_ts)
-      (EX: Memory.exclusive tid loc old_ts ts mem1)
+      (EX: Memory.exclusive tid loc old_ts ts mem2)
       (OLD_MSG: Memory.read loc old_ts mem1 = Some old)
       (OLD: old = vold.(ValA.val))
       (NEW: new = vnew.(ValA.val))

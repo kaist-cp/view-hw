@@ -96,6 +96,14 @@ Module Memory.
   Definition exclusive (tid:Id.t) (loc:Loc.t) (from to:Time.t) (mem:t): Prop :=
     Memory.no_msgs from to (fun msg => msg.(Msg.loc) = loc /\ msg.(Msg.tid) <> tid) mem.
 
+  Lemma read_spec loc ts val mem
+        (READ: Memory.read loc ts mem = Some val):
+    ts <= length mem.
+  Proof.
+    unfold read in *. destruct ts; [lia|]; ss. destruct (nth_error mem ts) eqn:H; ss.
+    eapply nth_error_Some. rewrite H. ss.
+  Qed.
+
   Lemma read_mon ts loc val mem1 mem2
         (READ: Memory.read loc ts mem1 = Some val):
     Memory.read loc ts (mem1 ++ mem2) = Some val.
