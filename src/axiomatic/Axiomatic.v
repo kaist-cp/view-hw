@@ -954,9 +954,9 @@ Module Execution.
      ⦗ex.(label_is) Label.is_flushopt⦘) ∪
 
     (⦗ex.(label_is) Label.is_access⦘ ⨾
-     (po_cl ex) ⨾
+     po ⨾
      ⦗ex.(label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_full)⦘ ⨾
-     (po_cl ex) ⨾
+     po ⨾
      ⦗ex.(label_is) Label.is_flushopt⦘).
 
   Definition ob (ex:t): relation eidT :=
@@ -1511,9 +1511,6 @@ Module Valid.
     - exploit RF2; eauto. i. des. congr.
     - revert H. unfold ifc. condtac; ss. eapply rmw_spec. eauto.
     - inv H1. ss.
-    - exploit Execution.po_cl_chain.
-      { econs. split; try exact H1. econs 2. eapply H3. }
-      i. inv x2. ss.
   Qed.
 
   Lemma ob_barrier_ob
@@ -1575,9 +1572,6 @@ Module Valid.
     - exploit RF2; eauto. i. des. congr.
     - revert H. unfold ifc. condtac; ss. eapply rmw_spec. eauto.
     - inv H1. ss.
-    - exploit Execution.po_cl_chain.
-      { econs. split; try exact H1. econs 2. eapply H3. }
-      i. inv x2. ss.
   Qed.
 
   Lemma ob_ctrl_ob
@@ -1639,9 +1633,6 @@ Module Valid.
     - exploit RF2; eauto. i. des. congr.
     - revert H. unfold ifc. condtac; ss. eapply rmw_spec. eauto.
     - inv H1. ss.
-    - exploit Execution.po_cl_chain.
-      { econs. split; try exact H1. econs 2. eapply H3. }
-      i. inv x2. ss.
   Qed.
 
   Lemma flushopt_ob
@@ -1893,9 +1884,6 @@ Module Valid.
     - rewrite <- H, <- H1. eapply addr_is_po; eauto.
     - revert H. unfold ifc. condtac; ss. eapply rmw_spec. eauto.
     - inv H1. ss.
-    - exploit Execution.po_cl_chain.
-      { econs. split; try exact H1. econs 2. eapply H3. }
-      i. inv x2. ss.
   Qed.
 
   Lemma rfi_is_po
