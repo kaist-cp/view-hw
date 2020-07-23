@@ -1,3 +1,4 @@
+
 Require Import Relations.
 Require Import NArith.
 Require Import PArith.
@@ -961,11 +962,6 @@ Module Execution.
 
   Definition ob (ex:t): relation eidT :=
     (obs ex) ∪ (dob ex) ∪ (aob ex) ∪ (bob ex) ∪ (pob ex).
-
-  (* let fl = [W & D]; (ob+ & CL); [FO]; po; [dsb.full] *)
-
-  (* dom(fl) <= P <= W & D *)
-  (* dom(co?; [P]) <= P *)
 
   Definition fl (ex:t): relation eidT :=
     (⦗ex.(label_is) Label.is_write⦘ ⨾
