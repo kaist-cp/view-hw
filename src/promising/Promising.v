@@ -1191,12 +1191,17 @@ Module Machine.
 
   Inductive state_exec (m1 m2:t): Prop :=
   | state_exec_intro
-      (TPOOL: IdMap.Forall2
-                (fun tid sl1 sl2 =>
-                   rtc (ExecUnit.state_step tid)
-                       (ExecUnit.mk (fst sl1) (snd sl1) m1.(per) m1.(mem))
-                       (ExecUnit.mk (fst sl2) (snd sl2) m2.(per) m1.(mem)))
-                m1.(tpool) m2.(tpool))
+      mp2
+      (EXEC: IdMap.Forall2
+               (fun tid sl1 slp2 =>
+                  rtc (ExecUnit.state_step tid)
+                      (ExecUnit.mk (fst sl1) (snd sl1) bot m1.(mem))
+                      (ExecUnit.mk (fst (fst slp2)) (snd (fst slp2)) (snd slp2) m1.(mem)))
+               m1.(tpool) mp2)
+      (TPOOL: m2.(tpool) = IdMap.map (fun slp => fst slp) mp2)
+      (PER: m2.(per) = IdMap.fold
+                         (fun tid slp per => join (snd slp) per)
+                         mp2 m1.(per))
       (MEM: m1.(mem) = m2.(mem))
   .
 
