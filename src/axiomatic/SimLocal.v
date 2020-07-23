@@ -242,7 +242,7 @@ Proof.
     inv H0. des. rewrite seq_assoc. econs. splits; eauto.
     right. econs. splits; eauto. econs; ss. econs; eauto.
   - left. right. left. left. right.
-    inv H. des. econs. splits; eauto.
+    inv H. des. repeat (econs; splits; eauto).
 Qed.
 
 Definition sim_local_vwn ex :=
@@ -308,7 +308,7 @@ Proof.
     rewrite ? seq_assoc. econs. splits; [|by econs; eauto].
     rewrite <- ? seq_assoc. ss.
   - left. right. left. left. right.
-    inv H. des. econs. splits; eauto.
+    inv H. des. repeat (econs; splits; eauto).
 Qed.
 
 Definition sim_local_vro ex :=
