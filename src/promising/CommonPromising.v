@@ -162,6 +162,16 @@ Module Memory.
     - destruct n; ss.
   Qed.
 
+  Lemma append_spec
+        msg ts mem1 mem2
+        (APP: append msg mem1 = (ts, mem2)):
+    get_msg ts mem2 = Some msg.
+  Proof.
+    inv APP.
+    unfold get_msg. destruct mem1; ss. rewrite nth_error_app2; ss.
+    replace (length mem1 - length mem1) with 0; ss. lia.
+  Qed.
+
   Lemma get_latest
         loc mem:
     exists ts val,
