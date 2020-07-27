@@ -713,6 +713,15 @@ Module Promises.
       rewrite H in *. ss.
   Qed.
 
+  Lemma unset_set_bot ts:
+    unset ts (set ts bot) = bot.
+  Proof.
+    apply ext. i.
+    unfold lookup, unset, set.
+    destruct (id_of_time i); ss. destruct (Promises.id_of_time ts); ss.
+    funtac.
+  Qed.
+
   Definition promises_from_mem
              (tid:Id.t) (mem: Memory.t): t.
   Proof.
