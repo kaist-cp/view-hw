@@ -157,16 +157,17 @@ Section Local.
     vrel: View.t (A:=A);
     vpn: View.t (A:=A);
     lper: Loc.t -> View.t (A:=A);
+    per: Loc.t -> View.t (A:=A);
     fwdbank: Loc.t -> (FwdItem.t (A:=A));
     exbank: option (Exbank.t (A:=A));
     promises: Promises.t;
   }.
   Hint Constructors t.
 
-  Definition init: t := mk bot bot bot bot bot bot bot bot bot (fun _ => FwdItem.init) None bot.
+  Definition init: t := mk bot bot bot bot bot bot bot bot bot bot (fun _ => FwdItem.init) None bot.
 
   Definition init_with_promises (promises: Promises.t): Local.t :=
-    mk bot bot bot bot bot bot bot bot bot (fun _ => FwdItem.init) None promises.
+    mk bot bot bot bot bot bot bot bot bot bot (fun _ => FwdItem.init) None promises.
 
   Inductive promise (loc:Loc.t) (val:Val.t) (ts:Time.t) (tid:Id.t) (lc1:t) (mem1:Memory.t) (lc2:t) (mem2:Memory.t): Prop :=
   | promise_intro
@@ -181,6 +182,7 @@ Section Local.
               lc1.(vrel)
               lc1.(vpn)
               lc1.(lper)
+              lc1.(per)
               lc1.(fwdbank)
               lc1.(exbank)
               (Promises.set ts lc1.(promises)))
@@ -201,6 +203,7 @@ Section Local.
               lc1.(vrel)
               lc1.(vpn)
               lc1.(lper)
+              lc1.(per)
               lc1.(fwdbank)
               lc1.(exbank)
               lc1.(promises))
@@ -231,6 +234,7 @@ Section Local.
               lc1.(vrel)
               lc1.(vpn)
               lc1.(lper)
+              lc1.(per)
               lc1.(fwdbank)
               (if ex then Some (Exbank.mk loc ts view_post) else lc1.(exbank))
               lc1.(promises))
@@ -286,6 +290,7 @@ Section Local.
               (join lc1.(vrel) (View.mk (ifc (OrdW.ge ord OrdW.release) ts) bot))
               lc1.(vpn)
               lc1.(lper)
+              lc1.(per)
               (fun_add loc (FwdItem.mk ts (join view_loc view_val) ex) lc1.(fwdbank))
               (if ex then None else lc1.(exbank))
               (Promises.unset ts lc1.(promises)))
@@ -307,6 +312,7 @@ Section Local.
               lc1.(vrel)
               lc1.(vpn)
               lc1.(lper)
+              lc1.(per)
               lc1.(fwdbank)
               None
               lc1.(promises))
@@ -326,6 +332,7 @@ Section Local.
               lc1.(vrel)
               lc1.(vpn)
               lc1.(lper)
+              lc1.(per)
               lc1.(fwdbank)
               lc1.(exbank)
               lc1.(promises))
@@ -345,13 +352,14 @@ Section Local.
               lc1.(vrel)
               (join lc1.(vpn) (ifc (andb rr (andb rw (andb wr ww))) (join lc1.(vro) lc1.(vwo))))
               lc1.(lper)
+              lc1.(per)
               lc1.(fwdbank)
               lc1.(exbank)
               lc1.(promises))
   .
   Hint Constructors dmb.
 
-  Inductive dsb (rr rw wr ww:bool) (lc1: t) (per1: Loc.t -> View.t (A:=A)) (lc2:t) (per2: Loc.t -> View.t (A:=A)): Prop :=
+  Inductive dsb (rr rw wr ww:bool) (lc1: t) (lc2:t): Prop :=
   | dsb_intro
       (LC2: lc2 =
             mk
@@ -364,12 +372,12 @@ Section Local.
               lc1.(vrel)
               (join lc1.(vpn) (ifc (andb rr (andb rw (andb wr ww))) (join lc1.(vro) lc1.(vwo))))
               lc1.(lper)
+              (if andb rr (andb rw (andb wr ww))
+               then fun_join lc1.(per) lc1.(lper)
+               else lc1.(per))
               lc1.(fwdbank)
               lc1.(exbank)
               lc1.(promises))
-      (PER2: per2 = if andb rr (andb rw (andb wr ww))
-                    then fun_join per1 lc1.(lper)
-                    else per1)
   .
   Hint Constructors dsb.
 
@@ -391,55 +399,47 @@ Section Local.
               lc1.(vrel)
               lc1.(vpn)
               (fun_add loc (join (lc1.(lper) loc) view_post) lc1.(lper))
+              lc1.(per)
               lc1.(fwdbank)
               lc1.(exbank)
               lc1.(promises))
   .
   Hint Constructors flushopt.
 
-  Inductive step (event:Event.t (A:=View.t (A:=A))) (tid:Id.t) (mem:Memory.t)
-            (lc1: t) (per1: Loc.t -> View.t (A:=A)) (lc2:t) (per2: Loc.t -> View.t (A:=A)): Prop :=
+  Inductive step (event:Event.t (A:=View.t (A:=A))) (tid:Id.t) (mem:Memory.t) (lc1: t) (lc2:t): Prop :=
   | step_internal
       (EVENT: event = Event.internal)
-      (PER: per2 = per1)
       (LC: lc2 = lc1)
   | step_read
       ex ord vloc res ts
       (EVENT: event = Event.read ex false ord vloc res)
-      (PER: per2 = per1)
       (STEP: read ex ord vloc res ts lc1 mem lc2)
   | step_fulfill
       ex ord vloc vval res ts view_pre
       (EVENT: event = Event.write ex ord vloc vval res)
-      (PER: per2 = per1)
       (STEP: fulfill ex ord vloc vval res ts tid view_pre lc1 mem lc2)
   | step_write_failure
       ex ord vloc vval res
       (EVENT: event = Event.write ex ord vloc vval res)
-      (PER: per2 = per1)
       (STEP: write_failure ex res lc1 lc2)
   | step_isb
       (EVENT: event = Event.barrier Barrier.isb)
-      (PER: per2 = per1)
       (STEP: isb lc1 lc2)
   | step_dmb
       rr rw wr ww
       (EVENT: event = Event.barrier (Barrier.dmb rr rw wr ww))
-      (PER: per2 = per1)
       (STEP: dmb rr rw wr ww lc1 lc2)
   | step_dsb
       rr rw wr ww
       (EVENT: event = Event.barrier (Barrier.dsb rr rw wr ww))
-      (STEP: dsb rr rw wr ww lc1 per1 lc2 per2)
+      (STEP: dsb rr rw wr ww lc1 lc2)
   | step_control
       ctrl
       (EVENT: event = Event.control ctrl)
-      (PER: per2 = per1)
       (LC: control ctrl lc1 lc2)
   | step_flushopt
       vloc
       (EVENT: event = Event.flushopt vloc)
-      (PER: per2 = per1)
       (STEP: flushopt vloc lc1 lc2)
   .
   Hint Constructors step.
@@ -469,6 +469,7 @@ Section Local.
       (VREL: lc.(vrel).(View.ts) <= List.length mem)
       (VPN: lc.(vpn).(View.ts) <= List.length mem)
       (LPER: forall loc, (lc.(lper) loc).(View.ts) <= List.length mem)
+      (PER: forall loc, (lc.(per) loc).(View.ts) <= List.length mem)
       (FWDBANK: forall loc, wf_fwdbank loc mem (lc.(coh) loc).(View.ts) (lc.(fwdbank) loc))
       (EXBANK: forall eb, lc.(exbank) = Some eb -> wf_exbank mem (lc.(coh) eb.(Exbank.loc)).(View.ts) eb)
       (PROMISES: forall ts (IN: Promises.lookup ts lc.(promises)), ts <= List.length mem)
@@ -568,6 +569,7 @@ Section Local.
     inv WF. econs; i; try rewrite app_length; try lia.
     - rewrite COH. lia.
     - rewrite LPER. lia.
+    - rewrite PER. lia.
     - destruct (FWDBANK loc). des. econs; esplits; eauto.
       + rewrite TS, Memory.latest_ts_append. ss.
       + apply Memory.read_mon. eauto.
@@ -602,6 +604,7 @@ Section Local.
       (VREL: Order.le lhs.(vrel).(View.ts) rhs.(vrel).(View.ts))
       (VPN: Order.le lhs.(vpn).(View.ts) rhs.(vpn).(View.ts))
       (LPER: forall loc, Order.le (lhs.(lper) loc).(View.ts) (rhs.(lper) loc).(View.ts))
+      (PER: forall loc, Order.le (lhs.(per) loc).(View.ts) (rhs.(per) loc).(View.ts))
   .
 
   Global Program Instance le_partial_order: PreOrder le.
@@ -671,11 +674,12 @@ Section Local.
   Qed.
 
   Lemma dsb_incr
-        rr rw wr ww lc1 per1 lc2 per2
-        (LC: dsb rr rw wr ww lc1 per1 lc2 per2):
+        rr rw wr ww lc1 lc2
+        (LC: dsb rr rw wr ww lc1 lc2):
     le lc1 lc2.
   Proof.
     inv LC. econs; ss; try refl; try apply join_l.
+    i. condtac; ss. apply join_l.
   Qed.
 
   Lemma flushopt_incr
@@ -689,8 +693,8 @@ Section Local.
   Qed.
 
   Lemma step_incr
-        e tid mem lc1 per1 lc2 per2
-        (LC: step e tid mem lc1 per1 lc2 per2):
+        e tid mem lc1 lc2
+        (LC: step e tid mem lc1 lc2):
     le lc1 lc2.
   Proof.
     inv LC; try refl.
@@ -714,7 +718,6 @@ Section ExecUnit.
   Inductive t := mk {
     state: State.t (A:=View.t (A:=A));
     local: Local.t (A:=A);
-    per: Loc.t -> View.t (A:=A);
     mem: Memory.t;
   }.
   Hint Constructors t.
@@ -722,7 +725,7 @@ Section ExecUnit.
   Inductive state_step0 (tid:Id.t) (e1 e2:Event.t (A:=View.t (A:=A))) (eu1 eu2:t): Prop :=
   | state_step0_intro
       (STATE: State.step e1 eu1.(state) eu2.(state))
-      (LOCAL: Local.step e2 tid eu1.(mem) eu1.(local) eu1.(per) eu2.(local) eu2.(per))
+      (LOCAL: Local.step e2 tid eu1.(mem) eu1.(local) eu2.(local))
       (MEM: eu2.(mem) = eu1.(mem))
   .
   Hint Constructors state_step0.
@@ -739,7 +742,6 @@ Section ExecUnit.
       loc val ts
       (STATE: eu1.(state) = eu2.(state))
       (LOCAL: Local.promise loc val ts tid eu1.(local) eu1.(mem) eu2.(local) eu2.(mem))
-      (PER: eu1.(per) = eu2.(per))
   .
   Hint Constructors promise_step.
 
@@ -759,7 +761,6 @@ Section ExecUnit.
   | wf_intro
       (STATE: rmap_wf eu.(mem) eu.(state).(State.rmap))
       (LOCAL: Local.wf tid eu.(mem) eu.(local))
-      (PER: forall loc, (eu.(per) loc).(View.ts) <= List.length eu.(mem))
   .
   Hint Constructors wf.
 
@@ -787,8 +788,8 @@ Section ExecUnit.
         (WF: wf tid eu1):
     wf tid eu2.
   Proof.
-    destruct eu1 as [state1 local1 per1 mem1].
-    destruct eu2 as [state2 local2 per2 mem2].
+    destruct eu1 as [state1 local1 mem1].
+    destruct eu2 as [state2 local2 mem2].
     inv WF. inv STEP. ss. subst.
 
     assert (FWDVIEW: forall loc ts ord,
@@ -860,9 +861,8 @@ Section ExecUnit.
       inv RES. inv VIEW. rewrite TS. s. apply bot_spec.
     - inv STEP. econs; ss. econs; viewtac.
     - inv STEP. econs; ss. econs; viewtac.
-    - inv STEP. econs; ss.
-      + econs; viewtac.
-      + i. condtac; ss. viewtac.
+    - inv STEP. econs; ss. econs; viewtac.
+      i. condtac; ss. viewtac.
     - inv LC. econs; ss. econs; viewtac.
       inv CTRL. rewrite <- TS. eauto using expr_wf.
     - inv STEP. econs; ss. econs; viewtac.
@@ -893,13 +893,14 @@ Section ExecUnit.
     inv WF. econs. i. rewrite RMAP, app_length. lia.
   Qed.
 
-  Lemma promise_step_wf tid eu1 eu2
+  Lemma promise_step_wf
+        tid eu1 eu2
         (STEP: promise_step tid eu1 eu2)
         (WF: wf tid eu1):
     wf tid eu2.
   Proof.
-    destruct eu1 as [state1 local1 per1 mem1].
-    destruct eu2 as [state2 local2 per2 mem2].
+    destruct eu1 as [state1 local1 mem1].
+    destruct eu2 as [state2 local2 mem2].
     inv WF. inv STEP. ss. subst.
     inv LOCAL. inv LOCAL0. inv MEM2. econs; ss.
     - apply rmap_append_wf. ss.
@@ -907,6 +908,7 @@ Section ExecUnit.
       all: try rewrite List.app_length; s; try lia.
       + i. rewrite COH. lia.
       + i. rewrite LPER. lia.
+      + i. rewrite PER. lia.
       + i. destruct (FWDBANK loc0). des. econs; esplits; ss.
         * rewrite TS. apply Memory.latest_ts_append.
         * apply Memory.read_mon; eauto.
@@ -921,7 +923,6 @@ Section ExecUnit.
         * destruct ts; ss. condtac; ss.
           eapply PROMISES0; eauto.
         * subst. condtac; ss. congr.
-    - i. rewrite List.app_length, PER; s. lia.
   Qed.
 
   Lemma step_wf tid eu1 eu2
@@ -984,7 +985,6 @@ End ExecUnit.
 Module Machine.
   Inductive t := mk {
     tpool: IdMap.t (State.t (A:=View.t (A:=unit)) * Local.t (A:=unit));
-    per: Loc.t -> View.t (A:=unit);
     mem: Memory.t;
   }.
   Hint Constructors t.
@@ -992,7 +992,6 @@ Module Machine.
   Definition init (p:program): t :=
     mk
       (IdMap.map (fun stmts => (State.init stmts, Local.init)) p)
-      bot
       Memory.empty.
 
   Inductive is_terminal (m:t): Prop :=
@@ -1025,34 +1024,30 @@ Module Machine.
   | step_intro
       tid st1 lc1 st2 lc2
       (FIND: IdMap.find tid m1.(tpool) = Some (st1, lc1))
-      (STEP: eustep tid (ExecUnit.mk st1 lc1 m1.(per) m1.(mem)) (ExecUnit.mk st2 lc2 m2.(per) m2.(mem)))
+      (STEP: eustep tid (ExecUnit.mk st1 lc1 m1.(mem)) (ExecUnit.mk st2 lc2 m2.(mem)))
       (TPOOL: m2.(tpool) = IdMap.add tid (st2, lc2) m1.(tpool))
   .
   Hint Constructors step.
 
   Lemma rtc_eu_step_step
-        eustep tid m st1 lc1 per1 mem1 st2 lc2 per2 mem2
+        eustep tid m st1 lc1 mem1 st2 lc2 mem2
         (FIND: IdMap.find tid m.(tpool) = Some (st1, lc1))
-        (PER: m.(per) = per1)
         (MEM: m.(mem) = mem1)
         (EX: rtc (eustep tid)
-                 (ExecUnit.mk st1 lc1 per1 mem1)
-                 (ExecUnit.mk st2 lc2 per2 mem2)):
+                 (ExecUnit.mk st1 lc1 mem1)
+                 (ExecUnit.mk st2 lc2 mem2)):
     rtc (step eustep)
         m
-        (mk
-           (IdMap.add tid (st2, lc2) m.(tpool))
-           per2 mem2).
+        (mk (IdMap.add tid (st2, lc2) m.(tpool)) mem2).
   Proof.
-    revert m FIND PER MEM.
+    revert m FIND MEM.
     depind EX.
     { i. subst. destruct m. s. rewrite PositiveMapAdditionalFacts.gsident; ss. refl. }
     destruct y. i. subst. econs.
-    - instantiate (1 := mk _ _ _). econs; ss; eauto.
+    - instantiate (1 := mk _ _). econs; ss; eauto.
     - exploit IHEX; eauto.
-      + instantiate (1 := mk _ _ _). s.
+      + instantiate (1 := mk _ _). s.
         rewrite IdMap.add_spec. condtac; eauto. exfalso. apply c. ss.
-      + ss.
       + ss.
       + s. rewrite (IdMap.add_add tid (st2, lc2)). eauto.
   Qed.
@@ -1061,7 +1056,7 @@ Module Machine.
   | wf_intro
       (WF: forall tid st lc
              (FIND: IdMap.find tid m.(tpool) = Some (st, lc)),
-          ExecUnit.wf tid (ExecUnit.mk st lc m.(per) m.(mem)))
+          ExecUnit.wf tid (ExecUnit.mk st lc m.(mem)))
   .
   Hint Constructors wf.
 
@@ -1089,8 +1084,8 @@ Module Machine.
         (WF: wf m1):
     wf m2.
   Proof.
-    destruct m1 as [tpool1 per1 mem1].
-    destruct m2 as [tpool2 per2 mem2].
+    destruct m1 as [tpool1 mem1].
+    destruct m2 as [tpool2 mem2].
     inv STEP. inv STEP0. inv WF. econs. ss. subst.
     i. revert FIND0. rewrite IdMap.add_spec. condtac.
     - inversion e0. i. inv FIND0.
@@ -1098,7 +1093,6 @@ Module Machine.
     - exploit (@ExecUnit.state_step_wf unit); eauto.
       { econs; eauto. }
       inv STEP. ss. i. subst. exploit WF0; eauto.
-      i. inv x. inv x0. econs; ss.
   Qed.
 
   Lemma step_promise_step_wf
@@ -1107,8 +1101,8 @@ Module Machine.
         (WF: wf m1):
     wf m2.
   Proof.
-    destruct m1 as [tpool1 per1 mem1].
-    destruct m2 as [tpool2 per2 mem2].
+    destruct m1 as [tpool1 mem1].
+    destruct m2 as [tpool2 mem2].
     inv STEP. inv STEP0. inv LOCAL. inv MEM2. inv WF. econs. ss. subst.
     i. revert FIND0. rewrite IdMap.add_spec. condtac.
     - inversion e. i. inv FIND0.
@@ -1121,6 +1115,7 @@ Module Machine.
         all: try rewrite List.app_length; s; try lia.
         * i. rewrite COH. lia.
         * i. rewrite LPER. lia.
+        * i. rewrite PER. lia.
         * i. destruct (FWDBANK loc0). des. econs; esplits; ss.
           { rewrite TS. apply Memory.latest_ts_append. }
           { apply Memory.read_mon; eauto. }
@@ -1132,7 +1127,6 @@ Module Machine.
         * i. apply Memory.get_msg_snoc_inv in MSG. des.
           { eapply PROMISES0; eauto. }
           { subst. ss. congr. }
-      + i. rewrite List.app_length; s. rewrite PER. lia.
   Qed.
 
   Lemma rtc_step_promise_step_wf
@@ -1191,17 +1185,12 @@ Module Machine.
 
   Inductive state_exec (m1 m2:t): Prop :=
   | state_exec_intro
-      mp2
-      (EXEC: IdMap.Forall2
-               (fun tid sl1 slp2 =>
+      (TPOOL: IdMap.Forall2
+               (fun tid sl1 sl2 =>
                   rtc (ExecUnit.state_step tid)
-                      (ExecUnit.mk (fst sl1) (snd sl1) bot m1.(mem))
-                      (ExecUnit.mk (fst (fst slp2)) (snd (fst slp2)) (snd slp2) m1.(mem)))
-               m1.(tpool) mp2)
-      (TPOOL: m2.(tpool) = IdMap.map (fun slp => fst slp) mp2)
-      (PER: m2.(per) = IdMap.fold
-                         (fun tid slp per => join (snd slp) per)
-                         mp2 m1.(per))
+                      (ExecUnit.mk (fst sl1) (snd sl1) m1.(mem))
+                      (ExecUnit.mk (fst sl2) (snd sl2) m1.(mem)))
+               m1.(tpool) m2.(tpool))
       (MEM: m1.(mem) = m2.(mem))
   .
 
@@ -1217,7 +1206,6 @@ Module Machine.
   Inductive equiv (m1 m2:t): Prop :=
   | equiv_intro
       (TPOOL: IdMap.Equal m1.(tpool) m2.(tpool))
-      (PER: m1.(per) = m2.(per))
       (MEM: m1.(mem) = m2.(mem))
   .
 
@@ -1287,7 +1275,7 @@ Module Machine.
                      (State.init stmts,
                       Local.init_with_promises (Promises.promises_from_mem tid mem)))
                   p)
-      bot mem.
+      mem.
 
   Lemma pf_init_with_promises
         p promises
@@ -1295,7 +1283,6 @@ Module Machine.
     exists m,
       <<STEP: rtc (Machine.step ExecUnit.promise_step) (Machine.init p) m>> /\
       <<TPOOL: IdMap.Equal m.(Machine.tpool) (init_with_promises p promises).(Machine.tpool)>> /\
-      <<PER: m.(Machine.per) = bot>> /\
       <<MEM: m.(Machine.mem) = promises>>.
   Proof.
     revert MEM. induction promises using List.rev_ind; i.
@@ -1313,7 +1300,7 @@ Module Machine.
     | [|- context[(?f <> None) -> _]] => destruct f eqn:FIND
     end; ss.
     intro X. clear X.
-    eexists (Machine.mk _ _ _). esplits.
+    eexists (Machine.mk _ _). esplits.
     - etrans; [eauto|]. econs 2; [|refl].
       econs.
       + rewrite TPOOL, IdMap.mapi_spec, FIND. ss.
@@ -1326,7 +1313,6 @@ Module Machine.
       + rewrite TPOOL, ? IdMap.mapi_spec. destruct (IdMap.find y p); ss.
         unfold Local.init_with_promises. rewrite Promises.promises_from_mem_snoc. s.
         condtac; ss. congr.
-    - ss.
     - ss.
   Qed.
 
