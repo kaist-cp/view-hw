@@ -326,7 +326,8 @@ Proof.
     + rewrite L.(LC).(VRN); ss.
       * rewrite <- join_l, <- join_r, <- join_l. ss.
       * econs; eauto. unfold sim_local_vrn. right.
-        rewrite ? seq_assoc. ss.
+        rewrite ? seq_assoc.
+        inv H1. des. inv H1. ss.
     + inv H. des. inv H2. inv H3. destruct l0; ss. congr.
     + destruct (equiv_dec arch riscv); ss. exploit Valid.rmw_spec; eauto. i. des.
       exploit EX2.(LABELS_REV); eauto. i.

@@ -520,9 +520,9 @@ Lemma sim_eu_step
     <<SIM: sim_eu tid ts eu1' eu2'>>.
 Proof.
   exploit certify_step_wf; eauto. i.
-  destruct eu1 as [[stmts1 rmap1] lc1 per1 mem1].
-  destruct eu2 as [[stmts2 rmap2] lc2 per2 mem2].
-  destruct eu2' as [[stmts2' rmap2'] lc2' per2' mem2'].
+  destruct eu1 as [[stmts1 rmap1] lc1 mem1].
+  destruct eu2 as [[stmts2 rmap2] lc2 mem2].
+  destruct eu2' as [[stmts2' rmap2'] lc2' mem2'].
   inv SIM. inv STATE. ss. subst.
   exploit sim_mem_length; eauto. intro LEN. des.
   inv STEP; cycle 1.
@@ -534,7 +534,7 @@ Proof.
     des. rewrite <- TS0 in *.
     destruct ex.
     { (* write exclusive *)
-      eexists (ExecUnit.mk _ _ _ _). esplits.
+      eexists (ExecUnit.mk _ _ _). esplits.
       - econs 1. econs. econs; cycle 1.
         + econs 4; ss.
         + ss.
@@ -565,7 +565,7 @@ Proof.
             inversion e. subst. clear -LEN0 TSP. lia.
         + inv MEM. econs; ss. rewrite <- List.app_assoc. ss.
     }
-    eexists (ExecUnit.mk _ _ _ _). esplits.
+    eexists (ExecUnit.mk _ _ _). esplits.
     - econs 2. econs; ss.
       + econs; ss.
       + econs; ss.
@@ -640,13 +640,13 @@ Proof.
   { (* state step *)
     inv STEP0. inv STEP. ss. subst. inv STATE; inv LOCAL0; inv EVENT.
     - (* skip *)
-      eexists (ExecUnit.mk _ _ _ _). esplits.
+      eexists (ExecUnit.mk _ _ _). esplits.
       + econs 1. econs. econs; ss; cycle 1.
         * econs 1; eauto.
         * s. econs 1.
       + econs; ss.
     - (* assign *)
-      eexists (ExecUnit.mk _ _ _ _). esplits.
+      eexists (ExecUnit.mk _ _ _). esplits.
       + econs 1. econs. econs; ss; cycle 1.
         * econs 1; eauto.
         * s. econs 2. ss.
@@ -673,7 +673,7 @@ Proof.
       { (* Case 1: Tgt's post-view > ts. Src reads the latest msg. *)
         rename l into POST_ABOVE. inv LOCAL.
         exploit Memory.latest_ts_spec; eauto. i. des.
-        eexists (ExecUnit.mk _ _ _ _). esplits.
+        eexists (ExecUnit.mk _ _ _). esplits.
         - econs 1. econs. econs; ss.
           + econs; ss.
           + econs 2; eauto. econs; ss; cycle 2.
@@ -825,7 +825,7 @@ Proof.
         { apply WF1. }
         intro COH_LATEST1. guardH COH_LATEST1.
 
-        eexists (ExecUnit.mk _ _ _ _). esplits.
+        eexists (ExecUnit.mk _ _ _). esplits.
         - econs 1. econs. econs; ss.
           + econs; ss.
           + rewrite ELOC0 in *. econs 2; eauto.
@@ -928,7 +928,7 @@ Proof.
         { apply WF1. }
         intro COH_LATEST1. guardH COH_LATEST1.
 
-        eexists (ExecUnit.mk _ _ _ _). esplits.
+        eexists (ExecUnit.mk _ _ _). esplits.
         - econs 1. econs. econs; ss.
           + econs; ss.
           + econs 2; eauto.
@@ -964,7 +964,7 @@ Proof.
           s. rewrite <- join_r, <- join_l. eauto.
         }
         des.
-        eexists (ExecUnit.mk _ _ _ _). esplits.
+        eexists (ExecUnit.mk _ _ _). esplits.
         + econs 1. econs. econs; ss.
           * econs 4; ss.
           * econs 3; eauto. econs; eauto; cycle 1.
@@ -1015,7 +1015,7 @@ Proof.
         rename l into TS0.
         destruct ex0.
         { (* write exclusive *)
-          eexists (ExecUnit.mk _ _ _ _). esplits.
+          eexists (ExecUnit.mk _ _ _). esplits.
           - econs 1. econs. econs; cycle 1.
             + econs 4; ss.
             + ss.
@@ -1038,7 +1038,7 @@ Proof.
               * i. rewrite Promises.unset_o. condtac; eauto.
                 inversion e. subst. clear -TS0 TSP. lia.
         }
-        eexists (ExecUnit.mk _ _ _ _). esplits.
+        eexists (ExecUnit.mk _ _ _). esplits.
         - econs 2. econs; ss.
           + econs; ss.
           + econs; ss.
@@ -1110,35 +1110,35 @@ Proof.
             rewrite <- app_assoc. ss.
       }
     - (* write_failure *)
-      inv STEP. eexists (ExecUnit.mk _ _ _ _). esplits.
+      inv STEP. eexists (ExecUnit.mk _ _ _). esplits.
       + econs 1. econs. econs; ss; cycle 1.
         * econs 4; eauto. econs; eauto.
         * econs 4; ss.
       + econs; ss. econs; ss; eauto using sim_rmap_add, sim_val_const.
         inv LOCAL. econs; ss.
     - (* isb *)
-      inv STEP. eexists (ExecUnit.mk _ _ _ _). esplits.
+      inv STEP. eexists (ExecUnit.mk _ _ _). esplits.
       + econs 1. econs. econs; ss; cycle 1.
         * econs 5; eauto. econs; eauto.
         * econs 7.
       + econs; ss. inv LOCAL. econs; eauto using sim_view_join.
         s. i. apply COH. rewrite <- VRN0. apply join_l.
     - (* dmb *)
-      inv STEP. eexists (ExecUnit.mk _ _ _ _). esplits.
+      inv STEP. eexists (ExecUnit.mk _ _ _). esplits.
       + econs 1. econs. econs; ss; cycle 1.
         * econs 6; eauto. econs; eauto.
         * econs 7.
       + econs; ss. inv LOCAL. econs; eauto 10 using sim_view_join, sim_view_ifc, sim_view_bot.
         s. i. apply COH. rewrite <- VRN0. apply join_l.
     - (* dsb *)
-      inv STEP. eexists (ExecUnit.mk _ _ _ _). esplits.
+      inv STEP. eexists (ExecUnit.mk _ _ _). esplits.
       + econs 1. econs. econs; ss; cycle 1.
         * econs 7; eauto. econs; eauto.
         * econs 7.
       + econs; ss. inv LOCAL. econs; eauto 10 using sim_view_join, sim_view_ifc, sim_view_bot.
         s. i. apply COH. rewrite <- VRN0. apply join_l.
     - (* if *)
-      inv LC. eexists (ExecUnit.mk _ _ _ _). esplits.
+      inv LC. eexists (ExecUnit.mk _ _ _). esplits.
       + econs 1. econs. econs; ss; cycle 1.
         * econs 8; eauto. econs; eauto.
         * econs; ss.
@@ -1150,13 +1150,13 @@ Proof.
         apply sim_view_join; try by apply LOCAL.
         econs. i. splits; ss.
     - (* dowhile *)
-      eexists (ExecUnit.mk _ _ _ _). esplits.
+      eexists (ExecUnit.mk _ _ _). esplits.
       + econs 1. econs. econs; ss; cycle 1.
         * econs 1; eauto.
         * econs 9. ss.
       + econs; ss.
     - (* flushopt *)
-      inv STEP. eexists (ExecUnit.mk _ _ _ _). esplits.
+      inv STEP. eexists (ExecUnit.mk _ _ _). esplits.
       + econs 1. econs. econs; ss; cycle 1.
         * econs 9; eauto. econs; eauto.
         * econs 10; ss.
@@ -1208,8 +1208,8 @@ Proof.
       - lia.
       - rewrite PROMISES. ss.
     }
-    destruct x as [st1 lc1 per1 mem1].
-    destruct y as [st2 lc2 per2 mem2].
+    destruct x as [st1 lc1 mem1].
+    destruct y as [st2 lc2 mem2].
     ss. inv H.
     + inv STEP0. inv STEP1. ss. subst.
       inv STATE; inv LOCAL; inv EVENT; ss.
@@ -1224,30 +1224,29 @@ Proof.
 Qed.
 
 Lemma eu_wf_interference
-      tid st (lc:Local.t (A:=unit)) per mem mem_interference
+      tid st (lc:Local.t (A:=unit)) mem mem_interference
       (INTERFERENCE: Forall (fun msg => msg.(Msg.tid) <> tid) mem_interference)
-      (WF: ExecUnit.wf tid (ExecUnit.mk st lc per mem)):
-  ExecUnit.wf tid (ExecUnit.mk st lc per (mem ++ mem_interference)).
+      (WF: ExecUnit.wf tid (ExecUnit.mk st lc mem)):
+  ExecUnit.wf tid (ExecUnit.mk st lc (mem ++ mem_interference)).
 Proof.
   inv WF. ss. econs; ss.
   - apply ExecUnit.rmap_interference_wf. ss.
   - apply Local.interference_wf; ss.
-  - i. rewrite List.app_length. rewrite PER. lia.
 Qed.
 
 Lemma interference_certify
-      tid st lc per mem mem_interference
+      tid st lc mem mem_interference
       (INTERFERENCE: Forall (fun msg => msg.(Msg.tid) <> tid) mem_interference)
-      (CERTIFY: certify tid (ExecUnit.mk st lc per mem))
-      (WF: ExecUnit.wf tid (ExecUnit.mk st lc per mem))
+      (CERTIFY: certify tid (ExecUnit.mk st lc mem))
+      (WF: ExecUnit.wf tid (ExecUnit.mk st lc mem))
       (RISCV: arch == riscv):
-  certify tid (ExecUnit.mk st lc per (mem ++ mem_interference)).
+  certify tid (ExecUnit.mk st lc (mem ++ mem_interference)).
 Proof.
   destruct (classic (lc.(Local.promises) = bot)).
   { econs; eauto. }
   rename H into PROMISES.
 
-  assert (SIM: sim_eu tid (length mem) (ExecUnit.mk st lc per (mem ++ mem_interference)) (ExecUnit.mk st lc per mem)).
+  assert (SIM: sim_eu tid (length mem) (ExecUnit.mk st lc (mem ++ mem_interference)) (ExecUnit.mk st lc mem)).
   { econs; ss.
     - econs; ss. econs. ii.
       destruct (IdMap.find id (State.rmap st)) eqn:FIND; ss. econs.
@@ -1296,7 +1295,7 @@ Proof.
     destruct x as [st1 lc1].
     destruct y as [st2 lc2].
     ss. econs 2; [|econs 2; [|econs 1]].
-    + instantiate (1 := ExecUnit.mk _ _ _ _).
+    + instantiate (1 := ExecUnit.mk _ _ _).
       econs 2. econs; ss.
     + inv PROMISE. inv MEM2.
       econs 1. econs. econs; eauto; ss.
@@ -1307,25 +1306,23 @@ Lemma lift_rtc_eu_step
       m1 tid (eu1 eu2:ExecUnit.t (A:=unit))
       (STEP: rtc (ExecUnit.step tid) eu1 eu2)
       (FIND: IdMap.find tid m1.(Machine.tpool) = Some (eu1.(ExecUnit.state), eu1.(ExecUnit.local)))
-      (PER: m1.(Machine.per) = eu1.(ExecUnit.per))
       (MEM: m1.(Machine.mem) = eu1.(ExecUnit.mem)):
   exists m2,
     <<STEP: rtc (Machine.step ExecUnit.step) m1 m2>> /\
-    <<EQUIV: Machine.equiv (Machine.mk (IdMap.add tid (eu2.(ExecUnit.state), eu2.(ExecUnit.local)) m1.(Machine.tpool)) eu2.(ExecUnit.per) eu2.(ExecUnit.mem)) m2>>.
+    <<EQUIV: Machine.equiv (Machine.mk (IdMap.add tid (eu2.(ExecUnit.state), eu2.(ExecUnit.local)) m1.(Machine.tpool)) eu2.(ExecUnit.mem)) m2>>.
 Proof.
-  revert m1 FIND PER MEM. induction STEP; ss.
+  revert m1 FIND MEM. induction STEP; ss.
   - i. esplits; eauto. econs; ss. ii.
     rewrite IdMap.add_spec. condtac; ss. inversion e. subst. ss.
   - i. exploit IHSTEP.
-    { instantiate (1 := (Machine.mk (IdMap.add tid _ _) _ _)). s.
+    { instantiate (1 := (Machine.mk (IdMap.add tid _ _) _)). s.
       rewrite IdMap.add_spec. condtac; eauto. congr.
     }
-    { ss. }
     { ss. }
     s. i. des.
     exists m2. splits.
     + econs 2; [|eauto]. econs; ss; eauto.
-      rewrite PER, MEM. destruct x, y. ss.
+      rewrite MEM. destruct x, y. ss.
     + inv EQUIV. ss. econs; ss. ii. rewrite <- TPOOL.
       rewrite ? IdMap.add_spec. condtac; ss.
 Qed.
@@ -1337,8 +1334,8 @@ Lemma eu_step_mem
     <<TID: Forall (fun msg => msg.(Msg.tid) == tid) mem_append>> /\
     <<APPEND: eu2.(ExecUnit.mem) = eu1.(ExecUnit.mem) ++ mem_append>>.
 Proof.
-  destruct eu1 as [st1 lc1 per1 mem1].
-  destruct eu2 as [st2 lc2 per2 mem2].
+  destruct eu1 as [st1 lc1 mem1].
+  destruct eu2 as [st2 lc2 mem2].
   ss. inv STEP.
   - inv STEP0. inv STEP. ss. subst. esplits; [|by rewrite List.app_nil_r]. ss.
   - inv STEP0. inv LOCAL. inv MEM2. ss. subst. esplits; [|by eauto]. econs; ss.
@@ -1365,7 +1362,7 @@ Theorem certified_deadlock_free
         m1
         (WF: Machine.wf m1)
         (CERTIFY: forall tid st lc (FIND: IdMap.find tid m1.(Machine.tpool) = Some (st, lc)),
-            certify tid (ExecUnit.mk st lc m1.(Machine.per) m1.(Machine.mem)))
+            certify tid (ExecUnit.mk st lc m1.(Machine.mem)))
         (RISCV: arch == riscv):
   exists m2,
     <<STEP: rtc (Machine.step ExecUnit.step) m1 m2>> /\
@@ -1374,8 +1371,8 @@ Proof.
   assert (IN: forall tid st lc
                 (FIND1: IdMap.find tid m1.(Machine.tpool) = Some (st, lc)),
              IdMap.find tid m1.(Machine.tpool) = Some (st, lc) /\
-             ExecUnit.wf tid (ExecUnit.mk st lc m1.(Machine.per) m1.(Machine.mem)) /\
-             certify tid (ExecUnit.mk st lc m1.(Machine.per) m1.(Machine.mem))).
+             ExecUnit.wf tid (ExecUnit.mk st lc m1.(Machine.mem)) /\
+             certify tid (ExecUnit.mk st lc m1.(Machine.mem))).
   { splits; ss.
     - apply WF. ss.
     - apply CERTIFY. ss.
@@ -1420,8 +1417,8 @@ Proof.
         destruct (nequiv_dec (Msg.tid a) tid0); ss.
       }
       splits; ss.
-      + admit. (* well-formedness *)
-      + admit. (* certify *)
+      + eapply eu_wf_interference; ss.
+      + eapply interference_certify; ss.
   }
   { i. revert FIND2. rewrite <- TPOOL, IdMap.add_spec. condtac; ss.
     - i. inv FIND2. ss.

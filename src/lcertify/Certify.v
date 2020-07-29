@@ -31,7 +31,6 @@ Inductive write_step (tid:Id.t) (loc:Loc.t) (val:Val.t) (view_pre:View.t (A:=uni
     (STATE: State.step e eu1.(ExecUnit.state) eu2.(ExecUnit.state))
     (PROMISE: Local.promise vloc.(ValA.val) vval.(ValA.val) ts tid eu1.(ExecUnit.local) eu1.(ExecUnit.mem) lc eu2.(ExecUnit.mem))
     (FULFILL: Local.fulfill ex ord vloc vval res ts tid view_pre lc eu2.(ExecUnit.mem) eu2.(ExecUnit.local))
-    (PER: eu1.(ExecUnit.per) = eu2.(ExecUnit.per))
 .
 Hint Constructors write_step.
 
@@ -61,7 +60,7 @@ Lemma write_step_wf
 Proof.
   inv STEP.
   exploit (ExecUnit.promise_step_wf (A:=unit)); [|by eauto|].
-  { instantiate (1 := ExecUnit.mk (A:=unit) eu1.(ExecUnit.state) lc eu1.(ExecUnit.per) eu2.(ExecUnit.mem)).
+  { instantiate (1 := ExecUnit.mk (A:=unit) eu1.(ExecUnit.state) lc eu2.(ExecUnit.mem)).
     econs; ss. eauto.
   }
   i. exploit (ExecUnit.state_step_wf (A:=unit)); eauto. econs. econs; eauto. s.

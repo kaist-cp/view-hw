@@ -413,14 +413,14 @@ Proof.
   inv SIM. inv STATE. ss. subst. rename LOCAL into SIM_LOCAL.
   inv STEP. ss. inv STATE; inv LOCAL; inv EVENT; ss.
   - (* skip *)
-    eexists (ExecUnit.mk _ _ _ _). esplits.
+    eexists (ExecUnit.mk _ _ _). esplits.
     + econs 1. econs; ss.
       { econs; ss. }
       econs 1; ss.
     + econs; ss.
       inv SIM_LOCAL; econs; eauto.
   - (* assign *)
-    eexists (ExecUnit.mk _ _ _ _). esplits.
+    eexists (ExecUnit.mk _ _ _). esplits.
     + econs 1. econs; ss.
       { econs; ss. }
       econs 1; ss.
@@ -671,7 +671,7 @@ Proof.
         unfold le in VIEW3. lia.
     }
 
-    des. eexists (ExecUnit.mk _ _ _ _). esplits.
+    des. eexists (ExecUnit.mk _ _ _). esplits.
     + econs. econs; ss.
       { econs; ss. }
       econs 2; eauto.
@@ -798,7 +798,7 @@ Proof.
     exploit label_write_mem_of_ex; eauto. i. des.
     exploit sim_rmap_expr; eauto. instantiate (1 := eloc). intro X. inv X.
     exploit sim_rmap_expr; eauto. instantiate (1 := eval). intro X. inv X.
-    eexists (ExecUnit.mk _ _ _ _). esplits.
+    eexists (ExecUnit.mk _ _ _). esplits.
     + econs. econs; ss.
       { econs; ss. }
       econs 3; ss.
@@ -1061,7 +1061,7 @@ Proof.
         }
         { esplits; cycle 1; eauto. lia. }
   - (* write_failure *)
-    eexists (ExecUnit.mk _ _ _ _). esplits.
+    eexists (ExecUnit.mk _ _ _). esplits.
     + econs. econs; ss.
       { econs; ss. }
       econs 4; ss.
@@ -1071,7 +1071,7 @@ Proof.
   - (* barrier *)
     exploit LABEL.
     { rewrite List.nth_error_app2; ss. rewrite Nat.sub_diag. ss. }
-    intro LABEL_LEN. destruct b0; eexists (ExecUnit.mk _ _ _ _).
+    intro LABEL_LEN. destruct b0; eexists (ExecUnit.mk _ _ _).
     + (* isb *)
       esplits.
       { econs. econs; ss.
@@ -1277,7 +1277,7 @@ Proof.
   - (* if *)
     exploit LABEL.
     { rewrite List.nth_error_app2; ss. rewrite Nat.sub_diag. ss. }
-    intro LABEL_LEN. eexists (ExecUnit.mk _ _ _ _).
+    intro LABEL_LEN. eexists (ExecUnit.mk _ _ _).
     esplits.
     { econs. econs; ss.
       - econs 8; ss.
@@ -1332,7 +1332,7 @@ Proof.
       }
       { esplits; cycle 1; eauto. lia. }
   - (* dowhile *)
-    eexists (ExecUnit.mk _ _ _ _). esplits.
+    eexists (ExecUnit.mk _ _ _). esplits.
     + econs. econs; ss.
       { econs; ss. }
       * econs; ss.
@@ -1341,7 +1341,7 @@ Proof.
   - (* flushopt *)
     exploit LABEL.
     { rewrite List.nth_error_app2; ss. rewrite Nat.sub_diag. ss. }
-    intro LABEL_LEN. eexists (ExecUnit.mk _ _ _ _).
+    intro LABEL_LEN. eexists (ExecUnit.mk _ _ _).
     esplits.
     { econs. econs; [econs | econs 9|]; ss. econs; ss. }
     econs; ss. econs; ss.
@@ -1506,8 +1506,6 @@ Proof.
   assert (P: forall tid stmts
                (FIND1: IdMap.find tid p = Some stmts),
              IdMap.find tid p = Some stmts) by ss.
-  assert (PERWF: forall loc : Loc.t, View.ts (m.(Machine.per) loc) <= length (mem_of_ex ex ob)).
-  { rewrite PER. i. ss. apply bot_spec. }
 
   clear TPOOL.
   setoid_rewrite IdMap.elements_spec in IN at 1.
@@ -1515,8 +1513,8 @@ Proof.
   setoid_rewrite IdMap.elements_spec in INVALID at 1.
   setoid_rewrite IdMap.elements_spec in P at 1.
   generalize (IdMap.elements_3w p). intro NODUP. revert NODUP.
-  revert IN OUT INVALID P PERWF. generalize (IdMap.elements p). intro ps.
-  clear PER. revert m MEM0. induction ps; ss.
+  revert IN OUT INVALID P. generalize (IdMap.elements p). intro ps.
+  revert m MEM0. induction ps; ss.
   { i. esplits; eauto.
     - econs. i. exploit OUT; eauto. i. des. eauto.
     - econs. i. exploit OUT; eauto. i. des. splits; ss.
@@ -1532,14 +1530,13 @@ Proof.
   exploit (IN tid); eauto.
   { destruct (equiv_dec tid tid); [|congr]. ss. }
   intro FIND.
-  cut (exists st2 lc2 per2 aeu,
+  cut (exists st2 lc2 aeu,
           <<STEP: rtc (ExecUnit.state_step (A:=unit) tid)
                       (ExecUnit.mk
                          (State.init stmts)
                          (Local.init_with_promises (Promises.promises_from_mem tid (Machine.mem m)))
-                         (Machine.per m)
                          (Machine.mem m))
-                      (ExecUnit.mk st2 lc2 per2 (Machine.mem m))>> /\
+                      (ExecUnit.mk st2 lc2 (Machine.mem m))>> /\
           <<TERMINAL: Valid.is_terminal EX -> State.is_terminal st2>> /\
           <<AEU: IdMap.find tid EX.(Valid.aeus) = Some aeu>> /\
           <<STATE: sim_state_weak st2 aeu.(AExecUnit.state)>> /\
@@ -1553,7 +1550,6 @@ Proof.
     }
     exploit (IHps (Machine.mk
                      (IdMap.add tid (st2, lc2) (Machine.tpool m))
-                     per2
                      (Machine.mem m))); ss.
     { i. rewrite IdMap.add_spec. condtac; ss.
       - inversion e. subst. congr.
@@ -1570,15 +1566,13 @@ Proof.
     { i. generalize (P tid0 stmts0). destruct (equiv_dec tid0 tid); eauto.
       inv e. congr.
     }
-    { admit. (* well-formedness of persistency view *) }
     { inv NODUP. ss. }
     i. des. esplits; cycle 1; eauto. etrans; eauto.
   }
   generalize (P tid stmts). destruct (equiv_dec tid tid); [|congr].
   intro FINDP. specialize (FINDP eq_refl).
   rewrite MEM0 in *.
-  remember m.(Machine.per) as per.
-  clear NODUP IN OUT INVALID P IHps MEM0 FIND Heqper ps e m.
+  clear NODUP IN OUT INVALID P IHps MEM0 FIND ps e m.
 
   (* Execute a thread `tid`. *)
   generalize (EX.(Valid.AEUS) tid). rewrite FINDP.
@@ -1587,7 +1581,6 @@ Proof.
   { instantiate (1 := ExecUnit.mk
                         (State.init stmts)
                         (Local.init_with_promises (Promises.promises_from_mem tid (mem_of_ex ex ob)))
-                        per
                         (mem_of_ex ex ob)).
     econs; ss.
     - econs; ss. econs. ii. rewrite ? IdMap.gempty. ss.
@@ -1606,7 +1599,7 @@ Proof.
           unfold Memory.get_msg in MSG. ss. apply Promises.promises_from_mem_spec. eauto.
         }
   }
-  { clear - PERWF. econs; ss.
+  { clear. econs; ss.
     - econs. i. unfold RMap.find, RMap.init.
       rewrite IdMap.gempty. ss. apply bot_spec.
     - econs; ss; i; try by apply bot_spec.
