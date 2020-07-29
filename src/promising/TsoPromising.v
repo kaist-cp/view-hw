@@ -157,6 +157,43 @@ Section Local.
   .
   Hint Constructors dmb.
 
+  Inductive write (vloc vval res:ValA.t (A:=unit)) (ts:Time.t) (tid:Id.t) (lc1:t) (mem1: Memory.t) (lc2:t) (mem2: Memory.t): Prop :=
+  | write_intro
+      loc val
+      view_post
+      (LOC: loc = vloc.(ValA.val))
+      (VAL: val = vval.(ValA.val))
+      (VIEW_POST: view_post = View.mk ts bot)
+      (RES: res = ValA.mk _ 0 bot)
+      (MEM: Memory.append (Msg.mk loc val tid) mem1 = (ts, mem2))
+      (LC2: lc2 =
+            mk
+              (fun_add loc view_post lc1.(coh))
+              lc1.(vrn)
+              lc1.(promises))
+  .
+  Hint Constructors write.
+
+  Inductive vrmw (vloc vold vnew:ValA.t (A:=unit)) (old_ts:Time.t) (ts:Time.t) (tid:Id.t) (lc1:t) (mem1:Memory.t) (lc2:t) (mem2: Memory.t): Prop :=
+  | vrmw_intro
+      loc old new
+      view_post
+      (LOC: loc = vloc.(ValA.val))
+      (COH: (lc1.(coh) loc).(View.ts) <= old_ts)
+      (EX: Memory.exclusive tid loc old_ts ts mem2)
+      (OLD_MSG: Memory.read loc old_ts mem1 = Some old)
+      (OLD: old = vold.(ValA.val))
+      (NEW: new = vnew.(ValA.val))
+      (VIEW_POST: view_post = View.mk ts bot)
+      (MEM: Memory.append (Msg.mk loc new tid) mem1 = (ts, mem2))
+      (LC2: lc2 =
+            mk
+              (fun_add loc view_post lc1.(coh))
+              (join lc1.(vrn) view_post)
+              lc1.(promises))
+  .
+  Hint Constructors rmw.
+
   Inductive step (event:Event.t (A:=unit)) (tid:Id.t) (mem:Memory.t) (lc1 lc2:t): Prop :=
   | step_internal
       (EVENT: event = Event.internal)
@@ -183,6 +220,37 @@ Section Local.
       (STEP: dmb rr rw wr ww lc1 lc2)
   .
   Hint Constructors step.
+
+  Inductive view_step (event:Event.t (A:=unit)) (tid:Id.t) (mem1 mem2:Memory.t) (lc1 lc2:t): Prop :=
+  | view_step_internal
+      (EVENT: event = Event.internal)
+      (LC: lc2 = lc1)
+      (MEM: mem2 = mem1)
+  | view_step_read
+      vloc res ts ord
+      (EVENT: event = Event.read false false ord vloc res)
+      (STEP: read vloc res ts lc1 mem1 lc2)
+      (MEM: mem2 = mem1)
+  | view_step_write
+      vloc vval res ts ord
+      (EVENT: event = Event.write false ord vloc vval res)
+      (STEP: write vloc vval res ts tid lc1 mem1 lc2 mem2)
+  | view_step_rmw
+      vloc vold vnew old_ts ts ordr ordw
+      (EVENT: event = Event.rmw ordr ordw vloc vold vnew)
+      (STEP: vrmw vloc vold vnew old_ts ts tid lc1 mem1 lc2 mem2)
+  | view_step_rmw_failure
+      vloc vold old_ts ord res
+      (EVENT: event = Event.read false true ord vloc res)
+      (STEP: rmw_failure vloc vold res old_ts lc1 mem1 lc2)
+      (MEM: mem2 = mem1)
+  | view_step_dmb
+      rr rw wr ww
+      (EVENT: event = Event.barrier (Barrier.dmb rr rw wr ww))
+      (STEP: dmb rr rw wr ww lc1 lc2)
+      (MEM: mem2 = mem1)
+  .
+  Hint Constructors view_step.
 
   Inductive wf_fwdbank (loc:Loc.t) (mem:Memory.t) (coh: Time.t): Prop :=
   | wf_fwdbank_intro
@@ -234,6 +302,15 @@ Section Local.
     inv WF. destruct (FWDBANK loc). des.
     unfold read_view. condtac; ss.
     apply bot_spec.
+  Qed.
+
+  Lemma wf_fwdbank_mon
+        loc mem1 mem2 ts
+        (FWDBANK: wf_fwdbank loc mem1 ts):
+    wf_fwdbank loc (mem1 ++ mem2) ts.
+  Proof.
+    inv FWDBANK. des.
+    econs. eexists. apply Memory.read_mon. eauto.
   Qed.
 
   Lemma read_spec
@@ -600,6 +677,173 @@ Section Local.
         viewtac. inv COHMAX. specialize (COHMAX1 mloc0). lia.
       + i. rewrite <- join_l. eapply NFWD; eauto.
   Qed.
+
+  Lemma view_step_wf
+        tid e mem1 mem2 lc1 lc2
+        (STEP: view_step e tid mem1 mem2 lc1 lc2)
+        (WF: wf tid mem1 lc1):
+    wf tid mem2 lc2.
+  Proof.
+    assert (FWDVIEW: forall loc ts,
+               (View.ts (coh lc1 loc)) <= ts ->
+               ts <= length mem1 ->
+               View.ts (read_view (coh lc1 loc) ts) <= length mem1).
+    { i. rewrite fwd_read_view_le; eauto. }
+    inversion WF. inv STEP; ss; inv STEP0.
+    - exploit FWDVIEW; eauto.
+      { eapply Memory.read_wf. eauto. }
+      i. econs; viewtac.
+      + i. rewrite fun_add_spec. condtac; viewtac.
+      + i. exploit FWDBANK; eauto. intro Y. inv Y. des.
+        econs; eauto. rewrite fun_add_spec. condtac; ss; eauto.
+        inversion e. subst.
+        unfold read_view. condtac; ss.
+        * eexists val0. rewrite bot_join; [|apply Time.order]. ss.
+        * eexists val. rewrite le_join; [|apply Time.order|]; eauto.
+      + i. eapply PROMISES0; eauto. eapply Time.le_lt_trans; [|by eauto].
+        rewrite fun_add_spec. condtac; ss. inversion e. rewrite H0. apply join_l.
+      + inv COHMAX. inv COHMAX0. destruct (lt_eq_lt_dec ts (View.ts (coh lc1 mloc))).
+        { econs; ss. instantiate (1 := mloc).
+          - econs; ss.
+            i. repeat rewrite fun_add_spec. repeat condtac; ss.
+            + viewtac. unfold read_view.
+              condtac; [apply bot_spec | inv s; ss; lia].
+            + inversion e. subst.
+            specialize (COHMAX loc). rewrite <- join_l. ss.
+          - rewrite fun_add_spec. condtac; ss.
+            + inversion e. subst.
+              unfold join. unfold Time.join. lia.
+            + viewtac. unfold read_view.
+              condtac; [apply bot_spec | inv s; ss; lia].
+        }
+        { exploit high_ts_spec; eauto.
+          { i. eapply le_lt_trans; try exact l; eauto. }
+          i. des.
+          econs; ss. instantiate (1 := (ValA.val vloc)).
+          - econs; ss.
+            i. repeat rewrite fun_add_spec. repeat condtac; ss; cycle 2.
+            { exfalso. apply c0. ss. }
+            { exfalso. apply c. ss. }
+            exploit high_ts_spec; eauto.
+            { i. eapply le_lt_trans; try exact l; eauto. }
+            i. des.
+            rewrite NOFWD. repeat rewrite <- join_r. ss.
+            specialize (COHMAX loc). lia.
+          - rewrite fun_add_spec. condtac; ss.
+            + rewrite NOFWD. ss. viewtac; rewrite <- join_r; lia.
+            + exfalso. apply c. ss.
+        }
+      + i. revert TS. rewrite fun_add_spec. condtac; ss; cycle 1.
+        { i. rewrite <- join_l. eapply NFWD; eauto. }
+        unfold read_view. condtac; ss.
+        * rewrite bot_join; [|apply Time.order]. rewrite (bot_join (View.ts (vrn lc1))).
+          intro TS. rewrite <- TS in *.
+          eapply NFWD; eauto. inversion e. ss.
+        * i. rewrite <- TS. viewtac; rewrite <- join_r; ss.
+    - inversion MEM. subst. econs; try rewrite app_length; viewtac; ss.
+      all: try by lia.
+      + i. funtac; try rewrite COH; lia.
+      + i. funtac; cycle 1.
+        { apply wf_fwdbank_mon. specialize (FWDBANK loc). ss. }
+        inversion e. subst. econs.
+        exploit Memory.append_spec; eauto.
+        unfold Memory.read, Memory.get_msg. destruct (S (length mem1)); ss. intro MSG. des.
+        rewrite MSG. ss. eexists. des_ifs.
+      + i. apply PROMISES in IN. lia.
+      + i. inv MEM. eapply PROMISES0; eauto.
+        * generalize MSG. intro X.
+          eapply Memory.get_msg_snoc_inv in X. des; ss.
+          revert TS. funtac.
+          { i. lia. }
+          exfalso. apply c. inv X0. ss.
+        * revert TS. funtac. i.
+          etrans; try exact TS; eauto. eapply le_lt_trans; [rewrite COH; eauto | lia].
+      + unfold Memory.append in MEM. inv MEM.
+        econs; ss. instantiate (1 := ValA.val vloc).
+        * econs. i. funtac.
+        * funtac.
+      + i. inv MEM.
+        eapply Memory.get_msg_snoc_inv in MSG. revert MSG. funtac.
+        * i. des; [lia |]. inv MSG0. ss.
+        * i. des; [eapply NFWD; eauto |]. inv MSG0. ss.
+    - inversion MEM. subst. econs; try rewrite app_length; viewtac; ss.
+      all: try by lia.
+      + i. funtac; try rewrite COH; lia.
+      + i. funtac; cycle 1.
+        { apply wf_fwdbank_mon. specialize (FWDBANK loc). ss. }
+        inversion e. subst. econs.
+        exploit Memory.append_spec; eauto.
+        unfold Memory.read, Memory.get_msg. destruct (S (length mem1)); ss. intro MSG. des.
+        rewrite MSG. ss. eexists. des_ifs.
+      + i. apply PROMISES in IN. lia.
+      + i. inv MEM. eapply PROMISES0; eauto.
+        * generalize MSG. intro X.
+          eapply Memory.get_msg_snoc_inv in X. des; ss.
+          revert TS. funtac.
+          { i. lia. }
+          exfalso. apply c. inv X0. ss.
+        * revert TS. funtac. i.
+          etrans; try exact TS; eauto. eapply le_lt_trans; [rewrite COH; eauto | lia].
+      + unfold Memory.append in MEM. inv MEM.
+        econs; ss. instantiate (1 := ValA.val vloc).
+        * econs. i. funtac.
+        * funtac. viewtac.
+      + i. inv MEM.
+        eapply Memory.get_msg_snoc_inv in MSG. revert MSG. funtac.
+        * i. des; [lia |]. inv MSG0. ss.
+        * i. rewrite <- join_l. des; [eapply NFWD; eauto |]. inv MSG0. ss.
+    - exploit FWDVIEW; eauto.
+      { eapply Memory.read_wf. eauto. }
+      i. econs; viewtac.
+      + i. rewrite fun_add_spec. condtac; viewtac.
+      + i. exploit FWDBANK; eauto. intro Y. inv Y. des.
+        econs; eauto. rewrite fun_add_spec. condtac; ss; eauto.
+        inversion e. subst.
+        unfold read_view. condtac; ss.
+        * eexists val. rewrite bot_join; [|apply Time.order]. ss.
+        * eexists old. rewrite le_join; [|apply Time.order|]; eauto.
+      + i. eapply PROMISES0; eauto. eapply Time.le_lt_trans; [|by eauto].
+        rewrite fun_add_spec. condtac; ss. inversion e. rewrite H0. apply join_l.
+      + inv COHMAX. inv COHMAX0. destruct (lt_eq_lt_dec old_ts (View.ts (coh lc1 mloc))).
+        { econs; ss. instantiate (1 := mloc).
+          - econs; ss.
+            i. repeat rewrite fun_add_spec. repeat condtac; ss.
+            + viewtac. unfold read_view.
+              condtac; [apply bot_spec | inv s; ss; lia].
+            + inversion e. subst.
+            specialize (COHMAX loc). rewrite <- join_l. ss.
+          - rewrite fun_add_spec. condtac; ss.
+            + inversion e. subst.
+              unfold join. unfold Time.join. lia.
+            + viewtac. unfold read_view.
+              condtac; [apply bot_spec | inv s; ss; lia].
+        }
+        { exploit high_ts_spec; eauto.
+          { i. eapply le_lt_trans; try exact l; eauto. }
+          i. des.
+          econs; ss. instantiate (1 := (ValA.val vloc)).
+          - econs; ss.
+            i. repeat rewrite fun_add_spec. repeat condtac; ss; cycle 2.
+            { exfalso. apply c0. ss. }
+            { exfalso. apply c. ss. }
+            rewrite NOFWD. repeat rewrite <- join_r. ss.
+            specialize (COHMAX loc). lia.
+          - rewrite fun_add_spec. condtac; ss.
+            + rewrite NOFWD. ss. viewtac; rewrite <- join_r; lia.
+            + exfalso. apply c. ss.
+        }
+      + i. revert TS. rewrite fun_add_spec. condtac; ss; cycle 1.
+        { i. rewrite <- join_l. eapply NFWD; eauto. }
+        unfold read_view. condtac; ss.
+        * rewrite bot_join; [|apply Time.order]. rewrite (bot_join (View.ts (vrn lc1))).
+          intro TS. rewrite <- TS in *.
+          eapply NFWD; eauto. inversion e. ss.
+        * i. rewrite <- TS. viewtac; rewrite <- join_r; ss.
+    - econs; viewtac.
+      + inv COHMAX0. econs; [econs|]; ss.
+        viewtac. inv COHMAX. specialize (COHMAX1 mloc0). lia.
+      + i. rewrite <- join_l. eapply NFWD; eauto.
+  Qed.
 End Local.
 End Local.
 
@@ -640,6 +884,20 @@ Section ExecUnit.
   | step_promise (STEP: promise_step tid eu1 eu2)
   .
   Hint Constructors step.
+
+  Inductive view_step0 (tid:Id.t) (e1 e2:Event.t (A:=unit)) (eu1 eu2:t): Prop :=
+  | view_step0_intro
+      (STATE: State.step e1 eu1.(state) eu2.(state))
+      (LOCAL: Local.view_step e2 tid eu1.(mem) eu2.(mem) eu1.(local) eu2.(local))
+  .
+  Hint Constructors view_step0.
+
+  Inductive view_step (tid:Id.t) (eu1 eu2:t): Prop :=
+  | view_step_intro
+      e
+      (STEP: view_step0 tid e e eu1 eu2)
+  .
+  Hint Constructors view_step.
 
   Inductive wf (tid:Id.t) (eu:t): Prop :=
   | wf_intro
@@ -708,6 +966,32 @@ Section ExecUnit.
     inv STEP.
     - eapply state_step_wf; eauto.
     - eapply promise_step_wf; eauto.
+  Qed.
+
+  Lemma view_step0_wf tid e eu1 eu2
+        (STEP: view_step0 tid e e eu1 eu2)
+        (WF: wf tid eu1):
+    wf tid eu2.
+  Proof.
+    inv WF. inv STEP. econs; ss.
+    eapply Local.view_step_wf; eauto.
+  Qed.
+
+  Lemma view_step_wf tid eu1 eu2
+        (STEP: view_step tid eu1 eu2)
+        (WF: wf tid eu1):
+    wf tid eu2.
+  Proof.
+    inv STEP. eapply view_step0_wf; eauto.
+  Qed.
+
+  Lemma rtc_view_step_wf tid eu1 eu2
+        (STEP: rtc (view_step tid) eu1 eu2)
+        (WF: wf tid eu1):
+    wf tid eu2.
+  Proof.
+    revert WF. induction STEP; ss. i. apply IHSTEP.
+    eapply view_step_wf; eauto.
   Qed.
 
   Inductive le (eu1 eu2:t): Prop :=
@@ -1025,6 +1309,67 @@ Module Machine.
     eapply step_step_wf; eauto.
   Qed.
 
+  Lemma step_view_step_wf
+        m1 m2
+        (STEP: step ExecUnit.view_step m1 m2)
+        (WF: wf m1):
+    wf m2.
+  Proof.
+    destruct m1 as [tpool1 mem1].
+    destruct m2 as [tpool2 mem2].
+    inv STEP. inv STEP0. inv WF. econs. ss. subst.
+    i. revert FIND0. rewrite IdMap.add_spec. condtac.
+    - inversion e0. i. inv FIND0.
+      eapply ExecUnit.view_step_wf; eauto. econs; eauto.
+    - i. inv STEP. exploit WF0; eauto. i. inv x. ss. econs; ss.
+      inv LOCAL0. inv LOCAL; ss.
+      + inv STEP. inv MEM. econs; ss.
+        * i. rewrite COH. rewrite app_length. lia.
+        * rewrite app_length. lia.
+        * i. apply Local.wf_fwdbank_mon. ss.
+        * i. exploit PROMISES; eauto. rewrite List.app_length. lia.
+        * i. apply Memory.get_msg_snoc_inv in MSG. des.
+          { eapply PROMISES0; eauto. }
+          { subst. ss. congr. }
+        * i. apply Memory.get_msg_snoc_inv in MSG. des.
+          { eapply NFWD; eauto. }
+          { rewrite MSG in TS. specialize (COH (Msg.loc msg)). lia. }
+      + inv STEP. inv MEM. econs; ss.
+        * i. rewrite COH. rewrite app_length. lia.
+        * rewrite app_length. lia.
+        * i. apply Local.wf_fwdbank_mon. ss.
+        * i. exploit PROMISES; eauto. rewrite List.app_length. lia.
+        * i. apply Memory.get_msg_snoc_inv in MSG. des.
+          { eapply PROMISES0; eauto. }
+          { subst. ss. congr. }
+        * i. apply Memory.get_msg_snoc_inv in MSG. des.
+          { eapply NFWD; eauto. }
+          { rewrite MSG in TS. specialize (COH (Msg.loc msg)). lia. }
+  Qed.
+
+  Lemma rtc_step_view_step_wf
+        m1 m2
+        (STEP: rtc (step ExecUnit.view_step) m1 m2)
+        (WF: wf m1):
+    wf m2.
+  Proof.
+    revert WF. induction STEP; ss. i. apply IHSTEP.
+    eapply step_view_step_wf; eauto.
+  Qed.
+
+  Lemma step_view_step_no_promise
+        m1 m2
+        (STEP: step ExecUnit.view_step m1 m2)
+        (NOPROMISE: no_promise m1):
+    no_promise m2.
+  Proof.
+    inv NOPROMISE. inv STEP.
+    generalize FIND. intro NPROM. apply PROMISES in NPROM.
+    econs. i.
+    revert FIND0. rewrite TPOOL. rewrite IdMap.add_spec. condtac; [| apply PROMISES]. i. inv FIND0.
+    inv STEP0. inv STEP. inv LOCAL; try inv STEP; ss; subst; ss.
+  Qed.
+
   Lemma step_mon
         (eustep1 eustep2: _ -> _ -> _ -> Prop)
         (EUSTEP: forall tid m1 m2, eustep1 tid m1 m2 -> eustep2 tid m1 m2):
@@ -1067,6 +1412,12 @@ Module Machine.
       (NOPROMISE: no_promise m)
   .
   Hint Constructors pf_exec.
+
+  Inductive view_exec (p:program) (m:t): Prop :=
+  | view_exec_intro
+      (STEP: rtc (step ExecUnit.view_step) (init p) m)
+  .
+  Hint Constructors view_exec.
 
   Inductive equiv (m1 m2:t): Prop :=
   | equiv_intro

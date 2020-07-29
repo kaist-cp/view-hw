@@ -96,6 +96,14 @@ Module Memory.
   Definition exclusive (tid:Id.t) (loc:Loc.t) (from to:Time.t) (mem:t): Prop :=
     Memory.no_msgs from to (fun msg => msg.(Msg.loc) = loc /\ msg.(Msg.tid) <> tid) mem.
 
+  Lemma read_spec loc ts val mem
+        (READ: Memory.read loc ts mem = Some val):
+    ts <= length mem.
+  Proof.
+    unfold read in *. destruct ts; [lia|]; ss. destruct (nth_error mem ts) eqn:H; ss.
+    eapply nth_error_Some. rewrite H. ss.
+  Qed.
+
   Lemma read_mon ts loc val mem1 mem2
         (READ: Memory.read loc ts mem1 = Some val):
     Memory.read loc ts (mem1 ++ mem2) = Some val.
@@ -160,6 +168,16 @@ Module Memory.
     destruct (ts - length mem) eqn:SUB; ss.
     - assert (ts = length mem) by lia. inv x1. ss.
     - destruct n; ss.
+  Qed.
+
+  Lemma append_spec
+        msg ts mem1 mem2
+        (APP: append msg mem1 = (ts, mem2)):
+    get_msg ts mem2 = Some msg.
+  Proof.
+    inv APP.
+    unfold get_msg. destruct mem1; ss. rewrite nth_error_app2; ss.
+    replace (length mem1 - length mem1) with 0; ss. lia.
   Qed.
 
   Lemma get_latest
@@ -693,6 +711,15 @@ Module Promises.
     - i. subst. rewrite Pos2SuccNat.id_succ in *.
       generalize (Pos.succ_pred_or x). i. des; [congr|].
       rewrite H in *. ss.
+  Qed.
+
+  Lemma unset_set_bot ts:
+    unset ts (set ts bot) = bot.
+  Proof.
+    apply ext. i.
+    unfold lookup, unset, set.
+    destruct (id_of_time i); ss. destruct (Promises.id_of_time ts); ss.
+    funtac.
   Qed.
 
   Definition promises_from_mem
