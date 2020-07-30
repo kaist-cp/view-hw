@@ -53,9 +53,11 @@ Proof.
                          lc0.(Local.vwo)
                          lc0.(Local.vcap)
                          lc0.(Local.vrel)
+                         lc0.(Local.vpn)
+                         lc0.(Local.lper)
+                         lc0.(Local.per)
                          lc0.(Local.fwdbank)
                          lc0.(Local.exbank)
-                         lc0.(Local.persist)
                          (Promises.set (S (length mem1)) lc0.(Local.promises))).
         inv LOCAL0.
         { econs 1; eauto. }

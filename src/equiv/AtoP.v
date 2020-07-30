@@ -873,7 +873,9 @@ Proof.
           rewrite VIEW2. inv EID.
           apply lt_n_Sm_le. eapply view_of_eid_ob_write; eauto.
           - inv REL. des. inv H.
-            left. right. left. right. econs. splits; eauto. econs; eauto.
+            left. right. left. right. econs. split.
+            { econs; try refl. inv H2. destruct l; ss. econs; eauto. }
+            econs. splits; eauto. econs; eauto.
           - econs; eauto. apply Label.write_is_writing.
         }
         { destruct (OrdW.ge ord OrdW.release_pc) eqn:ORD; s; cycle 1.
@@ -883,7 +885,9 @@ Proof.
           rewrite VIEW2. inv EID.
           apply lt_n_Sm_le. eapply view_of_eid_ob_write; eauto.
           - inv REL. des. inv H.
-            left. right. left. right. econs. splits; eauto. econs; eauto.
+            left. right. left. right. econs. splits.
+            { econs; try refl. inv H2. destruct l; ss. econs; eauto. }
+            econs. splits; eauto. econs; eauto.
           - econs; eauto. apply Label.write_is_writing.
         }
         { unfold ifc. condtac; cycle 1.

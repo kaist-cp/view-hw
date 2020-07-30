@@ -128,6 +128,13 @@ Module Barrier.
     | _ => false
     end.
 
+  Definition is_dmb_dsb_full (b:t): bool :=
+    match b with
+    | dmb rr rw wr ww
+    | dsb rr rw wr ww => andb rr (andb rw (andb wr ww))
+    | _ => false
+    end.
+
   Definition is_dsb_rr (b:t): bool :=
     match b with
     | dsb rr rw wr ww => rr
@@ -149,6 +156,12 @@ Module Barrier.
   Definition is_dsb_ww (b:t): bool :=
     match b with
     | dsb rr rw wr ww => ww
+    | _ => false
+    end.
+
+  Definition is_dsb_full (b:t): bool :=
+    match b with
+    | dsb rr rw wr ww => andb rr (andb rw (andb wr ww))
     | _ => false
     end.
 End Barrier.

@@ -1332,7 +1332,7 @@ Lemma eu_step_mem
       (STEP: ExecUnit.step tid eu1 eu2):
   exists mem_append,
     <<TID: Forall (fun msg => msg.(Msg.tid) == tid) mem_append>> /\
-           <<APPEND: eu2.(ExecUnit.mem) = eu1.(ExecUnit.mem) ++ mem_append>>.
+    <<APPEND: eu2.(ExecUnit.mem) = eu1.(ExecUnit.mem) ++ mem_append>>.
 Proof.
   destruct eu1 as [st1 lc1 mem1].
   destruct eu2 as [st2 lc2 mem2].
@@ -1347,7 +1347,7 @@ Lemma rtc_eu_step_mem
       (STEP: rtc (ExecUnit.step tid) eu1 eu2):
   exists mem_append,
     <<TID: Forall (fun msg => msg.(Msg.tid) == tid) mem_append>> /\
-           <<APPEND: eu2.(ExecUnit.mem) = eu1.(ExecUnit.mem) ++ mem_append>>.
+    <<APPEND: eu2.(ExecUnit.mem) = eu1.(ExecUnit.mem) ++ mem_append>>.
 Proof.
   induction STEP.
   - esplits; [|by rewrite List.app_nil_r]. ss.
