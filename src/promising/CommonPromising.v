@@ -96,6 +96,9 @@ Module Memory.
   Definition exclusive (tid:Id.t) (loc:Loc.t) (from to:Time.t) (mem:t): Prop :=
     Memory.no_msgs from to (fun msg => msg.(Msg.loc) = loc /\ msg.(Msg.tid) <> tid) mem.
 
+  Definition prefix (mem1 mem2:t): Prop :=
+    exists n, mem1 = firstn n mem2.
+
   Lemma read_spec loc ts val mem
         (READ: Memory.read loc ts mem = Some val):
     ts <= length mem.
