@@ -398,6 +398,7 @@ Section Local.
               lc1.(vcap)
               lc1.(vrel)
               lc1.(vpn)
+              (* CHECK: need join? *)
               (fun_add loc (join (lc1.(lper) loc) view_post) lc1.(lper))
               lc1.(per)
               lc1.(fwdbank)
