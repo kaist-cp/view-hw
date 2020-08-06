@@ -212,6 +212,24 @@ Proof.
       ii. rewrite TPOOL0. repeat rewrite IdMap.add_spec. repeat condtac; ss.
     + inv NOPROMISE. econs; ss. i.
       rewrite IdMap.add_spec in *. destruct (tid0 == tid); [inv FIND0|]; eapply PROMISES; eauto.
+  - (* flushopt *)
+    inv STEP.
+    eexists (Machine.mk _ _). esplits.
+    + econs; eauto. econs; ss; eauto.
+      econs 1; ss. econs. econs; ss; [econs | econs 8]; ss. econs; ss.
+    + econs; ss.
+      ii. rewrite TPOOL0. repeat rewrite IdMap.add_spec. repeat condtac; ss.
+    + inv NOPROMISE. econs; ss. i.
+      rewrite IdMap.add_spec in *. destruct (tid0 == tid); [inv FIND0|]; ss; eapply PROMISES; eauto.
+  - (* flush *)
+    inv STEP.
+    eexists (Machine.mk _ _). esplits.
+    + econs; eauto. econs; ss; eauto.
+      econs 1; ss. econs. econs; ss; [econs | econs 7]; ss. econs; ss.
+    + econs; ss.
+      ii. rewrite TPOOL0. repeat rewrite IdMap.add_spec. repeat condtac; ss.
+    + inv NOPROMISE. econs; ss. i.
+      rewrite IdMap.add_spec in *. destruct (tid0 == tid); [inv FIND0|]; ss; eapply PROMISES; eauto.
 
   Grab Existential Variables.
   auto. (* vold when rmw_failure *)
