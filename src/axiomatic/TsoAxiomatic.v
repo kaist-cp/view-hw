@@ -368,7 +368,7 @@ Module Label.
     - destruct (equiv_dec loc loc1); ss. inv e. destruct (equiv_dec loc1 loc2); ss.
   Qed.
 
-  Lemma is_flushopt_is_persist
+  Lemma flushopt_is_persist
         l
         (LABEL: is_flushopt l):
     is_persist l.
@@ -376,7 +376,15 @@ Module Label.
     destruct l; ss.
   Qed.
 
-  Lemma is_persist_is_kinda_write_persist
+  Lemma access_is_access_persist
+        l
+        (LABEL: is_access l):
+    is_access_persist l.
+  Proof.
+    destruct l; ss.
+  Qed.
+
+  Lemma persist_is_kinda_write_persist
         l
         (LABEL: is_persist l):
     is_kinda_write_persist l.
@@ -384,7 +392,7 @@ Module Label.
     destruct l; ss.
   Qed.
 
-  Lemma is_kinda_write_flush_is_kinda_write_persist
+  Lemma kinda_write_flush_is_kinda_write_persist
         l
         (LABEL: is_kinda_write_flush l):
     is_kinda_write_persist l.
@@ -392,7 +400,7 @@ Module Label.
     destruct l; ss.
   Qed.
 
-  Lemma is_kinda_write_persist_is_access_persist
+  Lemma kinda_write_persist_is_access_persist
         l
         (LABEL: is_kinda_write_persist l):
     is_access_persist l.
@@ -407,8 +415,9 @@ Module Label.
        update_is_kinda_reading update_is_kinda_writing update_is_kinda_writing_val
        accessing_is_access read_is_accessing write_is_accessing update_is_accessing
        kinda_writing_same_loc
-       is_flushopt_is_persist is_persist_is_kinda_write_persist
-       is_kinda_write_flush_is_kinda_write_persist is_kinda_write_persist_is_access_persist
+       access_is_access_persist
+       flushopt_is_persist persist_is_kinda_write_persist
+       kinda_write_flush_is_kinda_write_persist kinda_write_persist_is_access_persist
     : tso.
 End Label.
 
