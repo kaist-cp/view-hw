@@ -905,6 +905,16 @@ Proof.
   - rewrite XVEXT0; eauto; tac; try lia.
   - erewrite XR0; eauto; tac; try lia.
   - eapply LABELS_REV0; eauto. apply nth_error_app_mon. ss.
+
+  (* flush *)
+  - rewrite XVEXT0; eauto; tac; try lia.
+  - erewrite XR0; eauto; tac; try lia.
+  - eapply LABELS_REV0; eauto. apply nth_error_app_mon. ss.
+
+  (* flushopt *)
+  - rewrite XVEXT0; eauto; tac; try lia.
+  - erewrite XR0; eauto; tac; try lia.
+  - eapply LABELS_REV0; eauto. apply nth_error_app_mon. ss.
 Qed.
 
 Lemma sim_traces_sim_ex_aux

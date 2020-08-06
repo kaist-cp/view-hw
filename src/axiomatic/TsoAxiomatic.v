@@ -1377,4 +1377,6 @@ Module Valid.
   Qed.
 End Valid.
 
+Ltac obtac := Valid.obtac.
+
 Coercion Valid.PRE: Valid.ex >-> Valid.pre_ex.

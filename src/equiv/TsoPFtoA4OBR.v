@@ -132,7 +132,6 @@ Proof.
     i.
     move AOB at bottom. unfold ob' in AOB. des_union.
     - (* rfe *)
-      rename H1 into H.
       inv H. destruct eid1 as [tid1 eid1]. inv H2. ss.
       generalize H1. intro Y. rewrite RF in Y. inv Y. ss.
       erewrite EX2.(XR) in R; eauto; cycle 1.
@@ -157,7 +156,6 @@ Proof.
       rewrite (bot_join (View.ts (Local.vrn lc1))).
       inversion LOCAL. eapply NFWD; eauto.
     - (* dob *)
-      rename H1 into H.
       unfold Execution.dob in H. rewrite ? seq_assoc in *. des_union.
       + inv H1. des. inv H. des. inv H1.
         rewrite L.(LC).(VRN); ss.
@@ -166,11 +164,18 @@ Proof.
       + inv H1. des. inv H. des. inv H1.
         inv H4. destruct l0; ss; congr.
     - (* bob *)
-      unfold Execution.bob in H. rewrite ? seq_assoc in *. des_union.
-      rewrite L.(LC).(VRN); ss.
-      + repeat rewrite <- join_l. ss.
-      + econs; eauto. unfold sim_local_vrn. right.
-        rewrite ? seq_assoc. inv H. des. inv H2. ss.
+      obtac; cycle 1.
+      { rewrite EID in EID2. inv EID2. ss. }
+      destruct (Label.is_access l0) eqn:ACC.
+      + rewrite L.(LC).(VRN); ss; [apply join_l|].
+        econs; ss. right. rewrite ? seq_assoc.
+        econs. split; eauto. econs. split; econs; eauto with tso.
+        split; eauto. econs; eauto with tso.
+      + assert (BOT: v_gen vexts x = bot).
+        { admit. }
+        rewrite BOT. apply bot_spec.
+    - (* pob *)
+      obtac; rewrite EID in EID1; inv EID1; ss.
   }
   { (* update *)
     exploit sim_trace_sim_th; try exact SIMTR; eauto. intro TH_tmp.
@@ -206,7 +211,6 @@ Proof.
       i.
       move AOB at bottom. unfold ob' in AOB. des_union.
       - (* rfe *)
-        rename H1 into H.
         assert (v_gen vexts eid1 = old_ts).
         { inv H. destruct eid1 as [tid1 eid1]. inv H2. ss.
           generalize H1. intro Y. rewrite RF in Y. inv Y. ss.
@@ -242,35 +246,59 @@ Proof.
       - (* dob *)
         unguardH LC2. inv LC2. ss.
         generalize L.(LC).(VWN). intro VWN. des.
-        unfold Execution.dob in H1. rewrite ? seq_assoc in *. des_union.
-        + inv H. des. inv H1. des. inv H2. inv H. inv H3.
-          rewrite VWN0; ss.
+        obtac.
+        + rewrite VWN0; ss.
           * rewrite fun_add_spec. condtac; ss; cycle 1.
             { exfalso. apply c. ss. }
             inv WRITABLE. unfold Time.le. inv COHMAX. specialize (COHMAX0 mloc). lia.
           * econs; eauto. unfold sim_local_vwn. econs. econs; eauto. econs; eauto with tso.
-        + inv H. des. inv H1. des. inv H2.
-          rewrite VWN0; ss.
+        + rewrite VWN0; ss.
           * rewrite fun_add_spec. condtac; ss; cycle 1.
             { exfalso. apply c. ss. }
             inv WRITABLE. unfold Time.le. inv COHMAX. specialize (COHMAX0 mloc). lia.
           * econs; eauto. unfold sim_local_vwn.
-            inv H. inv H3.
             econs. econs; eauto. econs; eauto with tso.
       - (* bob *)
         unguardH LC2. inv LC2. ss.
         generalize L.(LC).(VWN). intro VWN. des.
-        unfold Execution.bob in H. rewrite ? seq_assoc in *. des_union.
-        rewrite VWN0; ss.
-        * rewrite fun_add_spec. condtac; ss; cycle 1.
-          { exfalso. apply c. ss. }
-          inv WRITABLE. unfold Time.le. inv COHMAX. specialize (COHMAX0 mloc). lia.
-        * econs; eauto. unfold sim_local_vwn.
-          inv H. inv H1. inv H. inv H1. inv H. des. inv H1. des. inv H2. inv H4. inv H.
-          exploit Execution.po_chain.
-          { econs. split; try exact H1. econs 2. eauto. }
-          intro PO. inv H4.
-          econs. econs; eauto. econs; eauto with tso.
+        funtac. obtac.
+        + destruct (Label.is_access l0) eqn:ACC.
+          * rewrite VWN0; ss.
+            { inv WRITABLE. unfold Time.le. inv COHMAX. specialize (COHMAX0 mloc). lia. }
+            econs; eauto. unfold sim_local_vwn.
+            exploit Execution.po_chain.
+            { econs. split; try exact H. econs 2. eauto. }
+            i. econs. econs; eauto. econs; eauto with tso.
+          * assert (BOT: v_gen vexts x = bot).
+            { admit. }
+            rewrite BOT. apply bot_spec.
+        + destruct (Label.is_access l0) eqn:ACC.
+          * rewrite VWN0; ss.
+            { inv WRITABLE. unfold Time.le. inv COHMAX. specialize (COHMAX0 mloc). lia. }
+            econs; eauto. unfold sim_local_vwn.
+            exploit Execution.po_chain.
+            { econs. split; try exact H. econs 2. eauto. }
+            i. econs. econs; eauto. econs; eauto with tso.
+          * assert (BOT: v_gen vexts x = bot).
+            { admit. }
+            rewrite BOT. apply bot_spec.
+      - (* pob *)
+        unguardH LC2. inv LC2. ss.
+        generalize L.(LC).(VWN). intro VWN. des.
+        funtac. obtac.
+        all: try by rewrite EID1 in EID; inv EID; ss.
+        + destruct (Label.is_kinda_write l0) eqn:WR.
+          * rewrite VWN0; ss.
+            { inv WRITABLE. unfold Time.le. inv COHMAX. specialize (COHMAX0 mloc). lia. }
+            econs; eauto. unfold sim_local_vwn.
+            econs. econs; eauto. econs; eauto with tso.
+          * (* persist *)
+            assert (BOT: v_gen vexts x = bot).
+            { admit. }
+            rewrite BOT. apply bot_spec.
+        + assert (BOT: v_gen vexts x = bot).
+          { admit. }
+          rewrite BOT. apply bot_spec.
     }
   }
   { (* rmw_failure *)
@@ -305,7 +333,6 @@ Proof.
     i.
     move AOB at bottom. unfold ob' in AOB. des_union.
     - (* rfe *)
-      rename H1 into H.
       inv H. destruct eid1 as [tid1 eid1]. inv H2. ss.
       generalize H1. intro Y. rewrite RF in Y. inv Y. ss.
       erewrite EX2.(XR) in R; eauto; cycle 1.
@@ -330,7 +357,6 @@ Proof.
       rewrite (bot_join (View.ts (Local.vrn lc1))).
       inversion LOCAL. eapply NFWD; eauto.
     - (* dob *)
-      rename H1 into H.
       unfold Execution.dob in H. rewrite ? seq_assoc in *. des_union.
       + inv H1. des. inv H. des. inv H1.
         rewrite L.(LC).(VRN); ss.
@@ -339,10 +365,17 @@ Proof.
       + inv H1. des. inv H. des. inv H1.
         inv H4. destruct l0; ss; congr.
     - (* bob *)
-      unfold Execution.bob in H. rewrite ? seq_assoc in *. des_union.
-      rewrite L.(LC).(VRN); ss.
-      + repeat rewrite <- join_l. ss.
-      + econs; eauto. unfold sim_local_vrn. right.
-        rewrite ? seq_assoc. inv H. des. inv H2. ss.
+      obtac; cycle 1.
+      { rewrite EID in EID2. inv EID2. ss. }
+      destruct (Label.is_access l0) eqn:ACC.
+      + rewrite L.(LC).(VRN); ss; [apply join_l|].
+        econs; ss. right. rewrite ? seq_assoc.
+        econs. split; eauto. econs. split; econs; eauto with tso.
+        split; eauto. econs; eauto with tso.
+      + assert (BOT: v_gen vexts x = bot).
+        { admit. }
+        rewrite BOT. apply bot_spec.
+    - (* pob *)
+      obtac; rewrite EID in EID1; inv EID1; ss.
   }
 Qed.
