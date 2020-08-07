@@ -164,18 +164,14 @@ Proof.
       + inv H1. des. inv H. des. inv H1.
         inv H4. destruct l0; ss; congr.
     - (* bob *)
-      obtac; cycle 1.
-      { rewrite EID in EID2. inv EID2. ss. }
-      destruct (Label.is_access l0) eqn:ACC.
-      + rewrite L.(LC).(VRN); ss; [apply join_l|].
-        econs; ss. right. rewrite ? seq_assoc.
-        econs. split; eauto. econs. split; econs; eauto with tso.
-        split; eauto. econs; eauto with tso.
-      + assert (BOT: v_gen vexts x = bot).
-        { admit. }
-        rewrite BOT. apply bot_spec.
+      obtac.
+      rewrite L.(LC).(VRN); ss; [apply join_l|].
+      econs; ss. right. rewrite ? seq_assoc.
+      econs. split; eauto. econs. split; econs; eauto with tso.
+      split; eauto. econs; eauto with tso.
     - (* pob *)
-      obtac; rewrite EID in EID1; inv EID1; ss.
+      obtac; try by rewrite EID1 in EID; inv EID; ss.
+      rewrite EID2 in EID; inv EID; ss.
   }
   { (* update *)
     exploit sim_trace_sim_th; try exact SIMTR; eauto. intro TH_tmp.
@@ -262,43 +258,18 @@ Proof.
         unguardH LC2. inv LC2. ss.
         generalize L.(LC).(VWN). intro VWN. des.
         funtac. obtac.
-        + destruct (Label.is_access l0) eqn:ACC.
-          * rewrite VWN0; ss.
-            { inv WRITABLE. unfold Time.le. inv COHMAX. specialize (COHMAX0 mloc). lia. }
-            econs; eauto. unfold sim_local_vwn.
-            exploit Execution.po_chain.
-            { econs. split; try exact H. econs 2. eauto. }
-            i. econs. econs; eauto. econs; eauto with tso.
-          * assert (BOT: v_gen vexts x = bot).
-            { admit. }
-            rewrite BOT. apply bot_spec.
-        + destruct (Label.is_access l0) eqn:ACC.
-          * rewrite VWN0; ss.
-            { inv WRITABLE. unfold Time.le. inv COHMAX. specialize (COHMAX0 mloc). lia. }
-            econs; eauto. unfold sim_local_vwn.
-            exploit Execution.po_chain.
-            { econs. split; try exact H. econs 2. eauto. }
-            i. econs. econs; eauto. econs; eauto with tso.
-          * assert (BOT: v_gen vexts x = bot).
-            { admit. }
-            rewrite BOT. apply bot_spec.
+        rewrite VWN0; ss.
+        { inv WRITABLE. unfold Time.le. inv COHMAX. specialize (COHMAX0 mloc). lia. }
+        econs; eauto. unfold sim_local_vwn.
+        exploit Execution.po_chain.
+        { econs. split; try exact H2. econs 2. eauto. }
+        i. econs. econs; eauto. econs; eauto with tso.
       - (* pob *)
         unguardH LC2. inv LC2. ss.
         generalize L.(LC).(VWN). intro VWN. des.
         funtac. obtac.
         all: try by rewrite EID1 in EID; inv EID; ss.
-        + destruct (Label.is_kinda_write l0) eqn:WR.
-          * rewrite VWN0; ss.
-            { inv WRITABLE. unfold Time.le. inv COHMAX. specialize (COHMAX0 mloc). lia. }
-            econs; eauto. unfold sim_local_vwn.
-            econs. econs; eauto. econs; eauto with tso.
-          * (* persist *)
-            assert (BOT: v_gen vexts x = bot).
-            { admit. }
-            rewrite BOT. apply bot_spec.
-        + assert (BOT: v_gen vexts x = bot).
-          { admit. }
-          rewrite BOT. apply bot_spec.
+        rewrite EID2 in EID; inv EID; ss.
     }
   }
   { (* rmw_failure *)
@@ -365,17 +336,13 @@ Proof.
       + inv H1. des. inv H. des. inv H1.
         inv H4. destruct l0; ss; congr.
     - (* bob *)
-      obtac; cycle 1.
-      { rewrite EID in EID2. inv EID2. ss. }
-      destruct (Label.is_access l0) eqn:ACC.
-      + rewrite L.(LC).(VRN); ss; [apply join_l|].
-        econs; ss. right. rewrite ? seq_assoc.
-        econs. split; eauto. econs. split; econs; eauto with tso.
-        split; eauto. econs; eauto with tso.
-      + assert (BOT: v_gen vexts x = bot).
-        { admit. }
-        rewrite BOT. apply bot_spec.
+      obtac.
+      rewrite L.(LC).(VRN); ss; [apply join_l|].
+      econs; ss. right. rewrite ? seq_assoc.
+      econs. split; eauto. econs. split; econs; eauto with tso.
+      split; eauto. econs; eauto with tso.
     - (* pob *)
-      obtac; rewrite EID in EID1; inv EID1; ss.
+      obtac; try by rewrite EID1 in EID; inv EID; ss.
+      rewrite EID2 in EID; inv EID; ss.
   }
 Qed.

@@ -208,10 +208,9 @@ Proof.
     inv H. des. econs. splits; eauto.
     econs. instantiate (1 := eid2). splits; ss.
     econs; eauto. econs; eauto.
-  - left. right. inv H. des. inv H0. inv H2.
-    econs. splits; eauto. rewrite ? seq_assoc. econs. splits; cycle 1.
-    { econs; eauto. econs; eauto. }
-    rewrite <- ? seq_assoc. econs. split; [econs|]; eauto with tso.
+  - left. right. obtac.
+    rewrite ? seq_assoc. econs. splits; econs; eauto with tso. split; eauto.
+    econs. split; econs; eauto with tso. split; eauto. econs; eauto with tso.
   - left. left. right. right.
     inv VRN; inv H; des; inv H0; inv H2.
     + rewrite seq_assoc. econs. splits; cycle 1.

@@ -143,49 +143,16 @@ Proof.
     - (* bob *)
       generalize L.(LC).(VWN). intro VWN. des; ss.
       funtac. obtac.
-      + destruct (Label.is_access l0) eqn:ACC.
-        * (* access *)
-          eapply Nat.le_lt_trans.
-          { apply VWN0; ss. econs; ss.
-            exploit Execution.po_chain.
-            { econs. split; try exact H. econs 2. eauto. }
-            i. econs. split; eauto. econs; eauto with tso.
-          }
-          inv WRITABLE. inv COHMAX. specialize (COHMAX0 mloc). lia.
-        * (* persist *)
-          assert (BOT: v_gen vexts x = bot).
-          { admit. }
-          rewrite BOT. destruct ts; ss.
-          unfold Time.lt. unfold bot. unfold Time.bot. lia.
-      + destruct (Label.is_access l0) eqn:ACC.
-        * (* access *)
-          eapply Nat.le_lt_trans.
-          { apply VWN0; ss. econs; ss.
-            exploit Execution.po_chain.
-            { econs. split; try exact H. econs 2. eauto. }
-            i. econs. split; eauto. econs; eauto with tso.
-          }
-          inv WRITABLE. inv COHMAX. specialize (COHMAX0 mloc). lia.
-        * (* persist *)
-          assert (BOT: v_gen vexts x = bot).
-          { admit. }
-          rewrite BOT. destruct ts; ss.
-          unfold Time.lt. unfold bot. unfold Time.bot. lia.
+      eapply Nat.le_lt_trans.
+      { apply VWN0; ss. econs; ss.
+        exploit Execution.po_chain.
+        { econs. split; try exact H3. econs 2. eauto. }
+        i. econs. split; eauto. econs; eauto with tso.
+      }
+      inv WRITABLE. inv COHMAX. specialize (COHMAX0 mloc). lia.
     - (* pob *)
-      generalize L.(LC).(VWN). intro VWN. des; ss.
-      funtac. obtac.
-      all: try by rewrite EID1 in EID; inv EID; ss.
-      destruct (Label.is_kinda_write l0) eqn:WR.
-      + eapply Nat.le_lt_trans.
-        { apply VWN0; ss. econs; ss.
-          econs. split; eauto. econs; eauto with tso.
-        }
-        inv WRITABLE. inv COHMAX. specialize (COHMAX0 mloc). lia.
-      + (* persist *)
-        assert (BOT: v_gen vexts x = bot).
-        { admit. }
-        rewrite BOT. destruct ts; ss.
-        unfold Time.lt. unfold bot. unfold Time.bot. lia.
+      funtac. obtac; try by rewrite EID1 in EID; inv EID; ss.
+      rewrite EID2 in EID; inv EID; ss.
   }
   { (* update *)
     exploit sim_trace_sim_th; try exact SIMTR; eauto. intro TH_tmp.
@@ -267,55 +234,15 @@ Proof.
       unguardH LC2. inv LC2; ss.
       generalize L.(LC).(VWN). intro VWN. des; ss.
       funtac. obtac.
-      + destruct (Label.is_access l0) eqn:ACC.
-        * (* access *)
-          eapply Nat.le_lt_trans.
-          { apply VWN0; ss. econs; ss.
-            exploit Execution.po_chain.
-            { econs. split; try exact H. econs 2. eauto. }
-            i.
-            econs. split; eauto. econs; eauto with tso.
-          }
-          inv WRITABLE. inv COHMAX. specialize (COHMAX0 mloc). lia.
-        * (* persist *)
-          assert (BOT: v_gen vexts x = bot).
-          { admit. }
-          rewrite BOT. destruct ts; ss.
-          unfold Time.lt. unfold bot. unfold Time.bot. lia.
-      + destruct (Label.is_access l0) eqn:ACC.
-        * (* access *)
-          eapply Nat.le_lt_trans.
-          { apply VWN0; ss. econs; ss.
-            exploit Execution.po_chain.
-            { econs. split; try exact H. econs 2. eauto. }
-            i.
-            econs. split; eauto. econs; eauto with tso.
-          }
-          inv WRITABLE. inv COHMAX. specialize (COHMAX0 mloc). lia.
-        * (* persist *)
-          assert (BOT: v_gen vexts x = bot).
-          { admit. }
-          rewrite BOT. destruct ts; ss.
-          unfold Time.lt. unfold bot. unfold Time.bot. lia.
+      eapply Nat.le_lt_trans.
+      { apply VWN0; ss. econs; ss.
+        exploit Execution.po_chain.
+        { econs. split; try exact H3. econs 2. eauto. }
+        i. econs. split; eauto. econs; eauto with tso.
+      }
+      inv WRITABLE. inv COHMAX. specialize (COHMAX0 mloc). lia.
     - (* pob *)
-      unguardH LC2. inv LC2; ss.
-      generalize L.(LC).(VWN). intro VWN. des; ss.
-      funtac. obtac.
-      all: try by rewrite EID1 in EID; inv EID; ss.
-      + destruct (Label.is_kinda_write l0) eqn:WR.
-        * eapply Nat.le_lt_trans.
-          { apply VWN0; ss. econs; ss.
-            econs. split; eauto. econs; eauto with tso.
-          }
-          inv WRITABLE. inv COHMAX. specialize (COHMAX0 mloc). lia.
-        * (* persist *)
-          assert (BOT: v_gen vexts x = bot).
-          { admit. }
-          rewrite BOT. destruct ts; ss.
-          unfold Time.lt. unfold bot. unfold Time.bot. lia.
-      + assert (BOT: v_gen vexts x = bot).
-        { admit. }
-        rewrite BOT. destruct ts; ss.
-        unfold Time.lt. unfold bot. unfold Time.bot. lia.
+      funtac. obtac; try by rewrite EID1 in EID; inv EID; ss.
+      rewrite EID2 in EID; inv EID; ss.
   }
 Qed.
