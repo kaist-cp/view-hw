@@ -178,6 +178,13 @@ Module Label.
     | _ => false
     end.
 
+  Definition is_persist_barrier (label:t): bool :=
+    match label with
+    | update _ _ _ => true
+    | barrier b => orb (Barrier.is_dmb_dsb_wr b) (Barrier.is_dmb_dsb_ww b)
+    | _ => false
+    end.
+
   Lemma kinda_reading_is_kinda_read
         loc l
         (RD: is_kinda_reading loc l):
@@ -847,57 +854,41 @@ Module Execution.
      ⦗ex.(label_is) Label.is_kinda_write⦘).
 
   Definition bob (ex:t): relation eidT :=
-    ⦗ex.(label_is) Label.is_access_persist⦘ ⨾
+    ⦗ex.(label_is) Label.is_access⦘ ⨾
      po ⨾
      ⦗ex.(label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_wr)⦘ ⨾
      po ⨾
-     ⦗ex.(label_is) Label.is_access_persist⦘ ∪
-    ⦗ex.(label_is) Label.is_kinda_write_persist⦘⨾
-     po ⨾
-     ⦗ex.(label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_ww)⦘ ⨾
-     po ⨾
-     ⦗ex.(label_is) Label.is_kinda_write_persist⦘.
+     ⦗ex.(label_is) Label.is_access⦘.
 
   Definition pob (ex:t): relation eidT :=
-    (⦗ex.(label_is) Label.is_kinda_write_flush⦘ ⨾
+    (⦗ex.(label_is) Label.is_access⦘ ⨾
      po ⨾
-     ⦗ex.(label_is) Label.is_kinda_write_flush⦘) ∪
-
-    (⦗ex.(label_is) Label.is_flush⦘ ⨾
-     (po_cl ex) ⨾
-     ⦗ex.(label_is) Label.is_flushopt⦘) ∪
-    (⦗ex.(label_is) Label.is_flushopt⦘ ⨾
-     (po_cl ex) ⨾
      ⦗ex.(label_is) Label.is_flush⦘) ∪
-
-    (⦗ex.(label_is) Label.is_update⦘ ⨾
+    (⦗ex.(label_is) Label.is_kinda_read⦘ ⨾
      po ⨾
      ⦗ex.(label_is) Label.is_flushopt⦘) ∪
-     (⦗ex.(label_is) Label.is_flushopt⦘ ⨾
-     po ⨾
-     ⦗ex.(label_is) Label.is_update⦘) ∪
-
     (⦗ex.(label_is) Label.is_write⦘ ⨾
      (po_cl ex) ⨾
      ⦗ex.(label_is) Label.is_flushopt⦘) ∪
-
     (⦗ex.(label_is) Label.is_read⦘ ⨾
      po ⨾
-     ⦗ex.(label_is) Label.is_persist⦘).
+     ⦗ex.(label_is) Label.is_persist_barrier⦘ ⨾
+     po ⨾
+     ⦗ex.(label_is) Label.is_flushopt⦘).
 
   Definition ob (ex:t): relation eidT :=
     (obs ex) ∪ (dob ex) ∪ (bob ex) ∪ (pob ex).
 
   (* TODO: add real cacheline *)
   Definition fl (ex:t): relation eidT :=
-    (⦗ex.(label_is) Label.is_write⦘ ⨾
+    (⦗ex.(label_is) Label.is_kinda_write⦘ ⨾
      (ob ex ∩ ex.(label_rel) label_loc) ⨾
      ⦗ex.(label_is) Label.is_flush⦘) ∪
-    (⦗ex.(label_is) Label.is_write⦘ ⨾
+    (⦗ex.(label_is) Label.is_kinda_write⦘ ⨾
      (ob ex ∩ ex.(label_rel) label_loc) ⨾
      ⦗ex.(label_is) Label.is_flushopt⦘ ⨾
      po ⨾
-     ⦗ex.(label_is) (Label.is_barrier_c Barrier.is_dsb_full)⦘).
+     ⦗ex.(label_is) Label.is_persist_barrier⦘).
 
 End Execution.
 
@@ -1295,6 +1286,48 @@ Module Valid.
       destruct l0; ss. congr. congr.
   Qed.
 
+  Lemma flush_ob
+        p exec
+        eid1 eid2
+        (PRE: pre_ex p exec)
+        (CO2: co2 exec)
+        (RF2: rf2 exec)
+        (EID1: Execution.label_is exec Label.is_flush eid1)
+        (OB1: Execution.ob exec eid1 eid2):
+    False.
+  Proof.
+    inv EID1. destruct l; ss. obtac.
+    all: try by (rewrite EID0 in *; inv EID; ss).
+    all: try by (rewrite EID1 in *; inv EID; ss).
+    - exploit RF2; eauto. i. des.
+      inv WRITE. destruct l; ss; congr.
+    - exploit RF2; eauto. i. des.
+      inv READ. destruct l; ss; congr.
+    - exploit CO2; eauto. i. des.
+      inv LABEL0. destruct l; ss; congr.
+  Qed.
+
+  Lemma flushopt_ob
+        p exec
+        eid1 eid2
+        (PRE: pre_ex p exec)
+        (CO2: co2 exec)
+        (RF2: rf2 exec)
+        (EID1: Execution.label_is exec Label.is_flushopt eid1)
+        (OB1: Execution.ob exec eid1 eid2):
+    False.
+  Proof.
+    inv EID1. destruct l; ss. obtac.
+    all: try by (rewrite EID0 in *; inv EID; ss).
+    all: try by (rewrite EID1 in *; inv EID; ss).
+    - exploit RF2; eauto. i. des.
+      inv WRITE. destruct l; ss; congr.
+    - exploit RF2; eauto. i. des.
+      inv READ. destruct l; ss; congr.
+    - exploit CO2; eauto. i. des.
+      inv LABEL0. destruct l; ss; congr.
+  Qed.
+
   Lemma ob_label
         p exec
         eid1 eid2
@@ -1333,8 +1366,8 @@ Module Valid.
       i. destruct (Execution.label b exec) eqn:LABEL.
       - destruct t; try by contradict H1; econs; eauto.
         + eapply ob_barrier_ob; eauto with tso.
-        + admit.
-        + admit.
+        + exfalso. eapply flush_ob; eauto with tso.
+        + exfalso. eapply flushopt_ob; eauto with tso.
       - exfalso. eapply ob_label; eauto.
     }
     i. des.
@@ -1343,8 +1376,8 @@ Module Valid.
     - destruct (Execution.label a exec) eqn:LABEL.
       + destruct t; try by contradict x0; econs; eauto.
         * exploit barrier_ob_po; eauto with tso. i. inv x2. lia.
-        * admit.
-        * admit.
+        * exfalso. eapply flush_ob; eauto with tso.
+        * exfalso. eapply flushopt_ob; eauto with tso.
       + exfalso. eapply ob_label; eauto.
   Qed.
 
