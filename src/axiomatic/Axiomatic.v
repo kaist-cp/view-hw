@@ -124,6 +124,14 @@ Module Label.
     | _ => false
     end.
 
+  Definition is_access_persisting (loc:Loc.t) (label:t): bool :=
+    match label with
+    | read _ _ loc' _ => loc' == loc
+    | write _ _ loc' _ => loc' == loc
+    | flushopt loc' => loc' == loc
+    | _ => false
+    end.
+
   Lemma read_is_reading ex ord loc val:
     is_reading loc (read ex ord loc val).
   Proof.
@@ -794,6 +802,15 @@ Module Execution.
   .
   Hint Constructors label_loc.
 
+  (* TODO: add real cacheline *)
+  Inductive label_cl (x y:Label.t): Prop :=
+  | label_cl_intro
+      loc
+      (X: Label.is_access_persisting loc x)
+      (Y: Label.is_access_persisting loc y)
+  .
+  Hint Constructors label_cl.
+
   (* let obs = rfe | fr | co *)
 
   (* let dob = *)
@@ -885,8 +902,7 @@ Module Execution.
   Definition ctrl (ex: t): relation eidT := ex.(ctrl0) ⨾ po.
   Definition po_loc (ex:t): relation eidT := po ∩ ex.(label_rel) label_loc.
 
-  (* TODO: add real cacheline *)
-  Definition po_cl (ex:t): relation eidT := po ∩ ex.(label_rel) label_loc.
+  Definition po_cl (ex:t): relation eidT := po ∩ ex.(label_rel) label_cl.
 
   Definition fr (ex:t): relation eidT :=
     (ex.(rf)⁻¹ ⨾ ex.(co)) ∪
@@ -965,7 +981,7 @@ Module Execution.
 
   Definition fl (ex:t): relation eidT :=
     (⦗ex.(label_is) Label.is_write⦘ ⨾
-     (ob ex ∩ ex.(label_rel) label_loc) ⨾
+     (ob ex ∩ ex.(label_rel) label_cl) ⨾
      ⦗ex.(label_is) Label.is_flushopt⦘ ⨾
      po ⨾
      ⦗ex.(label_is) (Label.is_barrier_c Barrier.is_dsb_full)⦘).

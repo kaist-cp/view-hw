@@ -132,7 +132,6 @@ Proof.
     i.
     move AOB at bottom. unfold ob' in AOB. des_union.
     - (* rfe *)
-      rename H1 into H.
       inv H. destruct eid1 as [tid1 eid1]. inv H2. ss.
       generalize H1. intro Y. rewrite RF in Y. inv Y. ss.
       erewrite EX2.(XR) in R; eauto; cycle 1.
@@ -157,7 +156,6 @@ Proof.
       rewrite (bot_join (View.ts (Local.vrn lc1))).
       inversion LOCAL. eapply NFWD; eauto.
     - (* dob *)
-      rename H1 into H.
       unfold Execution.dob in H. rewrite ? seq_assoc in *. des_union.
       + inv H1. des. inv H. des. inv H1.
         rewrite L.(LC).(VRN); ss.
@@ -166,11 +164,14 @@ Proof.
       + inv H1. des. inv H. des. inv H1.
         inv H4. destruct l0; ss; congr.
     - (* bob *)
-      unfold Execution.bob in H. rewrite ? seq_assoc in *. des_union.
-      rewrite L.(LC).(VRN); ss.
-      + repeat rewrite <- join_l. ss.
-      + econs; eauto. unfold sim_local_vrn. right.
-        rewrite ? seq_assoc. inv H. des. inv H2. ss.
+      obtac.
+      rewrite L.(LC).(VRN); ss; [apply join_l|].
+      econs; ss. right. rewrite ? seq_assoc.
+      econs. split; eauto. econs. split; econs; eauto with tso.
+      split; eauto. econs; eauto with tso.
+    - (* pob *)
+      obtac; try by rewrite EID1 in EID; inv EID; ss.
+      rewrite EID2 in EID; inv EID; ss.
   }
   { (* update *)
     exploit sim_trace_sim_th; try exact SIMTR; eauto. intro TH_tmp.
@@ -206,7 +207,6 @@ Proof.
       i.
       move AOB at bottom. unfold ob' in AOB. des_union.
       - (* rfe *)
-        rename H1 into H.
         assert (v_gen vexts eid1 = old_ts).
         { inv H. destruct eid1 as [tid1 eid1]. inv H2. ss.
           generalize H1. intro Y. rewrite RF in Y. inv Y. ss.
@@ -242,35 +242,34 @@ Proof.
       - (* dob *)
         unguardH LC2. inv LC2. ss.
         generalize L.(LC).(VWN). intro VWN. des.
-        unfold Execution.dob in H1. rewrite ? seq_assoc in *. des_union.
-        + inv H. des. inv H1. des. inv H2. inv H. inv H3.
-          rewrite VWN0; ss.
+        obtac.
+        + rewrite VWN0; ss.
           * rewrite fun_add_spec. condtac; ss; cycle 1.
             { exfalso. apply c. ss. }
             inv WRITABLE. unfold Time.le. inv COHMAX. specialize (COHMAX0 mloc). lia.
           * econs; eauto. unfold sim_local_vwn. econs. econs; eauto. econs; eauto with tso.
-        + inv H. des. inv H1. des. inv H2.
-          rewrite VWN0; ss.
+        + rewrite VWN0; ss.
           * rewrite fun_add_spec. condtac; ss; cycle 1.
             { exfalso. apply c. ss. }
             inv WRITABLE. unfold Time.le. inv COHMAX. specialize (COHMAX0 mloc). lia.
           * econs; eauto. unfold sim_local_vwn.
-            inv H. inv H3.
             econs. econs; eauto. econs; eauto with tso.
       - (* bob *)
         unguardH LC2. inv LC2. ss.
         generalize L.(LC).(VWN). intro VWN. des.
-        unfold Execution.bob in H. rewrite ? seq_assoc in *. des_union.
+        funtac. obtac.
         rewrite VWN0; ss.
-        * rewrite fun_add_spec. condtac; ss; cycle 1.
-          { exfalso. apply c. ss. }
-          inv WRITABLE. unfold Time.le. inv COHMAX. specialize (COHMAX0 mloc). lia.
-        * econs; eauto. unfold sim_local_vwn.
-          inv H. inv H1. inv H. inv H1. inv H. des. inv H1. des. inv H2. inv H4. inv H.
-          exploit Execution.po_chain.
-          { econs. split; try exact H1. econs 2. eauto. }
-          intro PO. inv H4.
-          econs. econs; eauto. econs; eauto with tso.
+        { inv WRITABLE. unfold Time.le. inv COHMAX. specialize (COHMAX0 mloc). lia. }
+        econs; eauto. unfold sim_local_vwn.
+        exploit Execution.po_chain.
+        { econs. split; try exact H2. econs 2. eauto. }
+        i. econs. econs; eauto. econs; eauto with tso.
+      - (* pob *)
+        unguardH LC2. inv LC2. ss.
+        generalize L.(LC).(VWN). intro VWN. des.
+        funtac. obtac.
+        all: try by rewrite EID1 in EID; inv EID; ss.
+        rewrite EID2 in EID; inv EID; ss.
     }
   }
   { (* rmw_failure *)
@@ -305,7 +304,6 @@ Proof.
     i.
     move AOB at bottom. unfold ob' in AOB. des_union.
     - (* rfe *)
-      rename H1 into H.
       inv H. destruct eid1 as [tid1 eid1]. inv H2. ss.
       generalize H1. intro Y. rewrite RF in Y. inv Y. ss.
       erewrite EX2.(XR) in R; eauto; cycle 1.
@@ -330,7 +328,6 @@ Proof.
       rewrite (bot_join (View.ts (Local.vrn lc1))).
       inversion LOCAL. eapply NFWD; eauto.
     - (* dob *)
-      rename H1 into H.
       unfold Execution.dob in H. rewrite ? seq_assoc in *. des_union.
       + inv H1. des. inv H. des. inv H1.
         rewrite L.(LC).(VRN); ss.
@@ -339,10 +336,13 @@ Proof.
       + inv H1. des. inv H. des. inv H1.
         inv H4. destruct l0; ss; congr.
     - (* bob *)
-      unfold Execution.bob in H. rewrite ? seq_assoc in *. des_union.
-      rewrite L.(LC).(VRN); ss.
-      + repeat rewrite <- join_l. ss.
-      + econs; eauto. unfold sim_local_vrn. right.
-        rewrite ? seq_assoc. inv H. des. inv H2. ss.
+      obtac.
+      rewrite L.(LC).(VRN); ss; [apply join_l|].
+      econs; ss. right. rewrite ? seq_assoc.
+      econs. split; eauto. econs. split; econs; eauto with tso.
+      split; eauto. econs; eauto with tso.
+    - (* pob *)
+      obtac; try by rewrite EID1 in EID; inv EID; ss.
+      rewrite EID2 in EID; inv EID; ss.
   }
 Qed.

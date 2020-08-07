@@ -131,6 +131,14 @@ Inductive sim_event: forall (e1: Event.t (A:=unit)) (e2: Event.t (A:=unit)), Pro
     b1 b2
     (BARRIER: b1 = b2):
     sim_event (Event.barrier b1) (Event.barrier b2)
+| sim_event_flush
+    vloc1 vloc2
+    (VLOC: sim_val_weak vloc1 vloc2):
+    sim_event (Event.flush vloc1) (Event.flush vloc2)
+| sim_event_flushopt
+    vloc1 vloc2
+    (VLOC: sim_val_weak vloc1 vloc2):
+    sim_event (Event.flushopt vloc1) (Event.flushopt vloc2)
 .
 Hint Constructors sim_event.
 
@@ -196,15 +204,14 @@ Proof.
   repeat match goal with
          | [H: (_ ∪ _) _ _ |- _] => inv H
          end.
-  - left. right. left.
+  - left. left. right. left.
     inv H. des. econs. splits; eauto.
     econs. instantiate (1 := eid2). splits; ss.
     econs; eauto. econs; eauto.
-  - right. inv H. des. econs. splits; eauto.
-    rewrite ? seq_assoc. econs. instantiate (1 := eid2). splits; cycle 1.
-    { econs; eauto. econs; eauto. }
-    rewrite <- ? seq_assoc. ss.
-  - left. right. right.
+  - left. right. obtac.
+    rewrite ? seq_assoc. econs. splits; econs; eauto with tso. split; eauto.
+    econs. split; econs; eauto with tso. split; eauto. econs; eauto with tso.
+  - left. left. right. right.
     inv VRN; inv H; des; inv H0; inv H2.
     + rewrite seq_assoc. econs. splits; cycle 1.
       { econs; eauto. econs; eauto. }
@@ -242,7 +249,7 @@ Lemma sim_local_vwn_spec
   <<OB: Execution.ob ex eid1 eid2>>.
 Proof.
   inv EID2. inv VWN. des.
-  left. right. right.
+  left. left. right. right.
   econs. econs; eauto. econs. econs; eauto. econs; eauto with tso.
 Qed.
 
@@ -330,7 +337,7 @@ Proof.
     exploit EX.(Valid.RF_WF); [exact H|exact RF|]. i. subst.
     inv CO.
     + inv H1. lia.
-    + exfalso. eapply EX.(Valid.EXTERNAL). econs 2; econs; left; left; right; eauto.
+    + exfalso. eapply EX.(Valid.EXTERNAL). econs 2; econs; left; left; left; right; eauto.
   - exfalso. eapply EX.(Valid.CORW). econs. esplits; [|exact H]. econs 2. ss.
 Qed.
 

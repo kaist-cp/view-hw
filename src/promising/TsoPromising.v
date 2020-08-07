@@ -25,6 +25,8 @@ Section Local.
   Inductive t := mk {
     coh: Loc.t -> View.t (A:=unit);
     vrn: View.t (A:=unit);
+    lper: Loc.t -> View.t (A:=unit);
+    per: Loc.t -> View.t (A:=unit);
     promises: Promises.t;
   }.
   Hint Constructors t.
@@ -34,10 +36,10 @@ Section Local.
     then View.mk bot bot
     else View.mk tsx bot.
 
-  Definition init: t := mk bot bot bot.
+  Definition init: t := mk bot bot bot bot bot.
 
   Definition init_with_promises (promises: Promises.t): Local.t :=
-    mk bot bot promises.
+    mk bot bot bot bot promises.
 
   Inductive promise (loc:Loc.t) (val:Val.t) (ts:Time.t) (tid:Id.t) (lc1:t) (mem1:Memory.t) (lc2:t) (mem2:Memory.t): Prop :=
   | promise_intro
@@ -45,6 +47,8 @@ Section Local.
             mk
               lc1.(coh)
               lc1.(vrn)
+              lc1.(lper)
+              lc1.(per)
               (Promises.set ts lc1.(promises)))
       (MEM2: Memory.append (Msg.mk loc val tid) mem1 = (ts, mem2))
   .
@@ -66,6 +70,8 @@ Section Local.
             mk
               (fun_add loc (join (lc1.(coh) loc) view_post) lc1.(coh))
               (join lc1.(vrn) view_post)
+              lc1.(lper)
+              lc1.(per)
               lc1.(promises))
   .
   Hint Constructors read.
@@ -100,6 +106,8 @@ Section Local.
             mk
               (fun_add loc (View.mk ts bot) lc1.(coh))
               lc1.(vrn)
+              lc1.(lper)
+              lc1.(per)
               (Promises.unset ts lc1.(promises)))
   .
   Hint Constructors fulfill.
@@ -121,6 +129,8 @@ Section Local.
             mk
               (fun_add loc (View.mk ts bot) lc1.(coh))
               (join lc1.(vrn) (View.mk ts bot))
+              lc1.(lper)
+              (fun_join lc1.(per) lc1.(lper))
               (Promises.unset ts lc1.(promises)))
   .
   Hint Constructors rmw.
@@ -141,6 +151,8 @@ Section Local.
             mk
               (fun_add loc (join (lc1.(coh) loc) view_post) lc1.(coh))
               (join lc1.(vrn) view_post)
+              lc1.(lper)
+              lc1.(per)
               lc1.(promises))
   .
   Hint Constructors rmw_failure.
@@ -153,6 +165,10 @@ Section Local.
             mk
               lc1.(coh)
               (joins [lc1.(vrn); ifc wr (lc1.(coh) mloc)])
+              lc1.(lper)
+              (if (orb wr ww)
+               then fun_join lc1.(per) lc1.(lper)
+               else lc1.(per))
               lc1.(promises))
   .
   Hint Constructors dmb.
@@ -170,6 +186,8 @@ Section Local.
             mk
               (fun_add loc view_post lc1.(coh))
               lc1.(vrn)
+              lc1.(lper)
+              lc1.(per)
               lc1.(promises))
   .
   Hint Constructors write.
@@ -190,9 +208,43 @@ Section Local.
             mk
               (fun_add loc view_post lc1.(coh))
               (join lc1.(vrn) view_post)
+              lc1.(lper)
+              (fun_join lc1.(per) lc1.(lper))
               lc1.(promises))
   .
   Hint Constructors rmw.
+
+  (* TODO: + same cacheline *)
+  Inductive flush (vloc:ValA.t (A:=unit)) (lc1:t) (lc2:t): Prop :=
+  | flush_intro
+      loc view_post
+      (LOC: loc = vloc.(ValA.val))
+      (VIEW_POST: view_post = join (lc1.(coh) loc) lc1.(vrn))
+      (LC2: lc2 =
+            mk
+              lc1.(coh)
+              lc1.(vrn)
+              (lc1.(lper))
+              (fun_add loc (join (lc1.(per) loc) view_post) lc1.(per))
+              lc1.(promises))
+  .
+  Hint Constructors flush.
+
+  (* TODO: + same cacheline *)
+  Inductive flushopt (vloc:ValA.t (A:=unit)) (lc1:t) (lc2:t): Prop :=
+  | flushopt_intro
+      loc view_post
+      (LOC: loc = vloc.(ValA.val))
+      (VIEW_POST: view_post = join (lc1.(coh) loc) lc1.(vrn))
+      (LC2: lc2 =
+            mk
+              lc1.(coh)
+              lc1.(vrn)
+              (fun_add loc (join (lc1.(lper) loc) view_post) lc1.(lper))
+              lc1.(per)
+              lc1.(promises))
+  .
+  Hint Constructors flush.
 
   Inductive step (event:Event.t (A:=unit)) (tid:Id.t) (mem:Memory.t) (lc1 lc2:t): Prop :=
   | step_internal
@@ -218,6 +270,14 @@ Section Local.
       rr rw wr ww
       (EVENT: event = Event.barrier (Barrier.dmb rr rw wr ww))
       (STEP: dmb rr rw wr ww lc1 lc2)
+  | step_flush
+      vloc
+      (EVENT: event = Event.flush vloc)
+      (STEP: flush vloc lc1 lc2)
+  | step_flushopt
+      vloc
+      (EVENT: event = Event.flushopt vloc)
+      (STEP: flushopt vloc lc1 lc2)
   .
   Hint Constructors step.
 
@@ -249,6 +309,16 @@ Section Local.
       (EVENT: event = Event.barrier (Barrier.dmb rr rw wr ww))
       (STEP: dmb rr rw wr ww lc1 lc2)
       (MEM: mem2 = mem1)
+  | view_step_flush
+      vloc
+      (EVENT: event = Event.flush vloc)
+      (STEP: flush vloc lc1 lc2)
+      (MEM: mem2 = mem1)
+  | view_step_flushopt
+      vloc
+      (EVENT: event = Event.flushopt vloc)
+      (STEP: flushopt vloc lc1 lc2)
+      (MEM: mem2 = mem1)
   .
   Hint Constructors view_step.
 
@@ -268,6 +338,8 @@ Section Local.
   | wf_intro
       (COH: forall loc, (lc.(coh) loc).(View.ts) <= List.length mem)
       (VRN: lc.(vrn).(View.ts) <= List.length mem)
+      (LPER: forall loc, (lc.(lper) loc).(View.ts) <= List.length mem)
+      (PER: forall loc, (lc.(per) loc).(View.ts) <= List.length mem)
       (FWDBANK: forall loc, wf_fwdbank loc mem (lc.(coh) loc).(View.ts))
       (PROMISES: forall ts (IN: Promises.lookup ts lc.(promises)), ts <= List.length mem)
       (PROMISES: forall ts msg
@@ -369,6 +441,8 @@ Section Local.
     all: try rewrite app_length.
     all: try lia.
     - rewrite COH. lia.
+    - rewrite LPER. lia.
+    - rewrite PER. lia.
     - destruct (FWDBANK loc). des. econs; esplits; eauto.
       apply Memory.read_mon. eauto.
     - exploit PROMISES; eauto. lia.
@@ -395,6 +469,8 @@ Section Local.
   | le_intro
       (COH: forall loc, Order.le (lhs.(coh) loc).(View.ts) (rhs.(coh) loc).(View.ts))
       (VRN: Order.le lhs.(vrn).(View.ts) rhs.(vrn).(View.ts))
+      (LPER: forall loc, Order.le (lhs.(lper) loc).(View.ts) (rhs.(lper) loc).(View.ts))
+      (PER: forall loc, Order.le (lhs.(per) loc).(View.ts) (rhs.(per) loc).(View.ts))
   .
 
   Global Program Instance le_partial_order: PreOrder le.
@@ -445,9 +521,9 @@ Section Local.
     le lc1 lc2.
   Proof.
     inv LC. econs; ss; try refl; try apply join_l.
-    i. rewrite fun_add_spec. condtac; try refl.
-    clear X. inv e. s.
-    unfold Order.le. exploit writable_lt_coh_ts; eauto. lia.
+    - i. funtac. inversion e.
+      unfold Order.le. exploit writable_lt_coh_ts; eauto. lia.
+    - i. apply join_l.
   Qed.
 
   Lemma rmw_failure_incr
@@ -466,6 +542,25 @@ Section Local.
     le lc1 lc2.
   Proof.
     inv LC. econs; ss; try refl; try apply join_l.
+    i. condtac; ss. apply join_l.
+  Qed.
+
+  Lemma flush_incr
+        vloc lc1 lc2
+        (LC: flush vloc lc1 lc2):
+    le lc1 lc2.
+  Proof.
+    inv LC. econs; ss; try refl.
+    i. funtac. inversion e. apply join_l.
+  Qed.
+
+  Lemma flushopt_incr
+        vloc lc1 lc2
+        (LC: flushopt vloc lc1 lc2):
+    le lc1 lc2.
+  Proof.
+    inv LC. econs; ss; try refl.
+    i. funtac. inversion e. apply join_l.
   Qed.
 
   Lemma step_incr
@@ -479,6 +574,8 @@ Section Local.
     - eapply rmw_incr. eauto.
     - eapply rmw_failure_incr. eauto.
     - eapply dmb_incr. eauto.
+    - eapply flush_incr. eauto.
+    - eapply flushopt_incr. eauto.
   Qed.
 
   Lemma high_ts_spec
@@ -599,6 +696,7 @@ Section Local.
     - inversion WRITABLE.
       econs; viewtac; rewrite <- ? TS0, <- ? TS1.
       + i. rewrite fun_add_spec. condtac; viewtac.
+      + i. viewtac.
       + i. rewrite ? fun_add_spec. condtac; viewtac.
         inversion e. subst.
         econs; viewtac.
@@ -673,9 +771,16 @@ Section Local.
           eapply NFWD; eauto. inversion e. ss.
         * i. rewrite <- TS. viewtac; rewrite <- join_r; ss.
     - econs; viewtac.
+      + i. condtac; ss. viewtac.
       + inv COHMAX0. econs; [econs|]; ss.
         viewtac. inv COHMAX. specialize (COHMAX1 mloc0). lia.
       + i. rewrite <- join_l. eapply NFWD; eauto.
+    - econs; viewtac.
+      + i. funtac. viewtac.
+      + inv COHMAX. inv COHMAX0. econs; [econs|]; ss.
+    - econs; viewtac.
+      + i. funtac. viewtac.
+      + inv COHMAX. inv COHMAX0. econs; [econs|]; ss.
   Qed.
 
   Lemma view_step_wf
@@ -743,6 +848,8 @@ Section Local.
     - inversion MEM. subst. econs; try rewrite app_length; viewtac; ss.
       all: try by lia.
       + i. funtac; try rewrite COH; lia.
+      + i. rewrite LPER. lia.
+      + i. rewrite PER. lia.
       + i. funtac; cycle 1.
         { apply wf_fwdbank_mon. specialize (FWDBANK loc). ss. }
         inversion e. subst. econs.
@@ -769,6 +876,8 @@ Section Local.
     - inversion MEM. subst. econs; try rewrite app_length; viewtac; ss.
       all: try by lia.
       + i. funtac; try rewrite COH; lia.
+      + i. rewrite LPER. lia.
+      + i. viewtac; [rewrite PER|rewrite LPER]; lia.
       + i. funtac; cycle 1.
         { apply wf_fwdbank_mon. specialize (FWDBANK loc). ss. }
         inversion e. subst. econs.
@@ -840,9 +949,16 @@ Section Local.
           eapply NFWD; eauto. inversion e. ss.
         * i. rewrite <- TS. viewtac; rewrite <- join_r; ss.
     - econs; viewtac.
+      + i. condtac; ss. viewtac.
       + inv COHMAX0. econs; [econs|]; ss.
         viewtac. inv COHMAX. specialize (COHMAX1 mloc0). lia.
       + i. rewrite <- join_l. eapply NFWD; eauto.
+    - econs; viewtac.
+      + i. funtac. viewtac.
+      + inv COHMAX. inv COHMAX0. econs; [econs|]; ss.
+    - econs; viewtac.
+      + i. funtac. viewtac.
+      + inv COHMAX. inv COHMAX0. econs; [econs|]; ss.
   Qed.
 End Local.
 End Local.
@@ -943,6 +1059,8 @@ Section ExecUnit.
     econs; eauto.
     all: try rewrite List.app_length; s; try lia.
     - i. rewrite COH. lia.
+    - i. rewrite LPER. lia.
+    - i. rewrite PER. lia.
     - i. destruct (FWDBANK loc0). des. econs; esplits; ss.
       apply Memory.read_mon; eauto.
     - i. revert IN. rewrite Promises.set_o. condtac.
@@ -1064,6 +1182,8 @@ Section ExecUnit.
         rewrite UNSET. eqvtac.
     - inv STEP. rewrite LC2. ss.
     - inv STEP. rewrite LC2. ss.
+    - inv STEP. rewrite LC2. ss.
+    - inv STEP. rewrite LC2. ss.
   Qed.
 
   Lemma rtc_state_step_promise_remained tid eu1 eu2 ts loc val
@@ -1086,6 +1206,8 @@ Section ExecUnit.
         inversion e. subst. exploit Local.writable_lt_coh_ts; eauto. lia.
       + inv STEP0. rewrite LC2. ss. rewrite fun_add_spec. condtac; ss.
         inversion e. subst. etrans; eauto. apply join_l.
+      + inv STEP0. rewrite LC2. ss.
+      + inv STEP0. rewrite LC2. ss.
       + inv STEP0. rewrite LC2. ss.
     - inv H. inv STEP0. rewrite MEM. ss.
     - exploit state_step_promise_remained; eauto.
@@ -1267,6 +1389,8 @@ Module Machine.
       inv LOCAL. econs; eauto.
       all: try rewrite List.app_length; s; try lia.
       + i. rewrite COH. lia.
+      + i. rewrite LPER. lia.
+      + i. rewrite PER. lia.
       + i. destruct (FWDBANK loc0). des. econs; esplits; ss.
         apply Memory.read_mon; eauto.
       + i. exploit PROMISES; eauto. lia.
@@ -1326,6 +1450,8 @@ Module Machine.
       + inv STEP. inv MEM. econs; ss.
         * i. rewrite COH. rewrite app_length. lia.
         * rewrite app_length. lia.
+        * i. rewrite LPER. rewrite app_length. lia.
+        * i. rewrite PER. rewrite app_length. lia.
         * i. apply Local.wf_fwdbank_mon. ss.
         * i. exploit PROMISES; eauto. rewrite List.app_length. lia.
         * i. apply Memory.get_msg_snoc_inv in MSG. des.
@@ -1337,6 +1463,8 @@ Module Machine.
       + inv STEP. inv MEM. econs; ss.
         * i. rewrite COH. rewrite app_length. lia.
         * rewrite app_length. lia.
+        * i. rewrite LPER. rewrite app_length. lia.
+        * i. rewrite PER. rewrite app_length. lia.
         * i. apply Local.wf_fwdbank_mon. ss.
         * i. exploit PROMISES; eauto. rewrite List.app_length. lia.
         * i. apply Memory.get_msg_snoc_inv in MSG. des.
