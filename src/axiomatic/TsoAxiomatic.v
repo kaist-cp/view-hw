@@ -870,7 +870,7 @@ Module Execution.
     (⦗ex.(label_is) Label.is_write⦘ ⨾
      (po_cl ex) ⨾
      ⦗ex.(label_is) Label.is_flushopt⦘) ∪
-    (⦗ex.(label_is) Label.is_read⦘ ⨾
+    (⦗ex.(label_is) Label.is_write⦘ ⨾
      po ⨾
      ⦗ex.(label_is) Label.is_persist_barrier⦘ ⨾
      po ⨾

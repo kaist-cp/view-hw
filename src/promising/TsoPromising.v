@@ -224,14 +224,7 @@ Section Local.
             mk
               lc1.(coh)
               lc1.(vrn)
-              (* CHECK: need to incorporate lper?
-                        (1) YES: To get an invariant "per <= lper"
-                                 -> when incorporated into per,
-                                    just okay to replace, not to join.
-                        (2) NO: Useless & Complex
-              *)
               (lc1.(lper))
-              (* CHECK: need join? *)
               (fun_add loc (join (lc1.(per) loc) view_post) lc1.(per))
               lc1.(promises))
   .
@@ -247,7 +240,6 @@ Section Local.
             mk
               lc1.(coh)
               lc1.(vrn)
-              (* CHECK: need join? *)
               (fun_add loc (join (lc1.(lper) loc) view_post) lc1.(lper))
               lc1.(per)
               lc1.(promises))
