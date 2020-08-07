@@ -169,6 +169,16 @@ Module Label.
     | _ => false
     end.
 
+  Definition is_access_persisting (loc:Loc.t) (label:t): bool :=
+    match label with
+    | read loc' _ => loc' == loc
+    | write loc' _ => loc' == loc
+    | update loc' _ _ => loc' == loc
+    | flush loc' => loc' == loc
+    | flushopt loc' => loc' == loc
+    | _ => false
+    end.
+
   Definition is_kinda_write_persist (label:t): bool :=
     match label with
     | write _ _ => true
@@ -748,6 +758,15 @@ Module Execution.
   .
   Hint Constructors label_loc : tso.
 
+  (* TODO: add real cacheline *)
+  Inductive label_cl (x y:Label.t): Prop :=
+  | label_cl_intro
+      loc
+      (X: Label.is_access_persisting loc x)
+      (Y: Label.is_access_persisting loc y)
+  .
+  Hint Constructors label_cl : tso.
+
   Lemma label_is_mon
         exec p1 p2 eid
         (PREL: p1 <1= p2)
@@ -828,8 +847,8 @@ Module Execution.
   Hint Constructors e : tso.
 
   Definition po_loc (ex:t): relation eidT := po ∩ ex.(label_rel) label_loc.
-  (* TODO: add real cacheline *)
-  Definition po_cl (ex:t): relation eidT := po ∩ ex.(label_rel) label_loc.
+
+  Definition po_cl (ex:t): relation eidT := po ∩ ex.(label_rel) label_cl.
 
   Definition fr (ex:t): relation eidT :=
     (ex.(rf)⁻¹ ⨾ ex.(co)) ∪
@@ -879,13 +898,12 @@ Module Execution.
   Definition ob (ex:t): relation eidT :=
     (obs ex) ∪ (dob ex) ∪ (bob ex) ∪ (pob ex).
 
-  (* TODO: add real cacheline *)
   Definition fl (ex:t): relation eidT :=
     (⦗ex.(label_is) Label.is_kinda_write⦘ ⨾
-     (ob ex ∩ ex.(label_rel) label_loc) ⨾
+     (ob ex ∩ ex.(label_rel) label_cl) ⨾
      ⦗ex.(label_is) Label.is_flush⦘) ∪
     (⦗ex.(label_is) Label.is_kinda_write⦘ ⨾
-     (ob ex ∩ ex.(label_rel) label_loc) ⨾
+     (ob ex ∩ ex.(label_rel) label_cl) ⨾
      ⦗ex.(label_is) Label.is_flushopt⦘ ⨾
      po ⨾
      ⦗ex.(label_is) Label.is_persist_barrier⦘).
