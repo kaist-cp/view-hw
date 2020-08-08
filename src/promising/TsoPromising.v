@@ -1498,6 +1498,16 @@ Module Machine.
     inv STEP0. inv STEP. inv LOCAL; try inv STEP; ss; subst; ss.
   Qed.
 
+  Lemma rtc_step_view_step_no_promise
+        m1 m2
+        (STEP: rtc (step ExecUnit.view_step) m1 m2)
+        (NOPROMISE: no_promise m1):
+    no_promise m2.
+  Proof.
+    induction STEP; ss.
+    exploit step_view_step_no_promise; eauto.
+  Qed.
+
   Lemma step_mon
         (eustep1 eustep2: _ -> _ -> _ -> Prop)
         (EUSTEP: forall tid m1 m2, eustep1 tid m1 m2 -> eustep2 tid m1 m2):

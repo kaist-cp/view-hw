@@ -24,34 +24,25 @@ Set Implicit Arguments.
 Lemma sim_machine_step
       vm1 vm2 pm1
       (WF: Machine.wf vm1)
-      (VNOPROMISE: Machine.no_promise vm1)
+      (NOPROMISE: Machine.no_promise vm1)
       (STEP: Machine.step ExecUnit.view_step vm1 vm2)
-      (SIM: Machine.equiv vm1 pm1)
-      (NOPROMISE: Machine.no_promise pm1):
+      (SIM: vm1 = pm1):
   exists pm2,
     <<STEP: rtc (Machine.step ExecUnit.step) pm1 pm2>> /\
-    <<SIM: Machine.equiv vm2 pm2>> /\
-    <<NOPROMISE: Machine.no_promise pm2>>.
+    <<SIM: vm2 = pm2>>.
 Proof.
-  inv SIM. inv STEP. rewrite MEM in *.
-  generalize (TPOOL tid). intro TPEQ. rewrite TPEQ in *.
+  inv SIM. inv STEP.
   inv STEP0. inv STEP. inv STATE; inv LOCAL; inv EVENT; ss; subst.
   - (* skip *)
     eexists (Machine.mk _ _). esplits.
     + econs; eauto. econs; ss; eauto.
       econs 1. econs. econs; econs; ss.
-    + econs; ss.
-      ii. rewrite TPOOL0. repeat rewrite IdMap.add_spec. repeat condtac; ss.
-    + inv NOPROMISE. econs; ss. i.
-      rewrite IdMap.add_spec in *. destruct (tid0 == tid); [inv FIND0|]; eapply PROMISES; eauto.
+    + destruct vm2. rewrite <- TPOOL, <- MEM. ss.
   - (* assign *)
     eexists (Machine.mk _ _). esplits.
     + econs; eauto. econs; ss; eauto.
       econs 1. econs. econs; econs; ss.
-    + econs; ss.
-      ii. rewrite TPOOL0. repeat rewrite IdMap.add_spec. repeat condtac; ss.
-    + inv NOPROMISE. econs; ss. i.
-      rewrite IdMap.add_spec in *. destruct (tid0 == tid); [inv FIND0|]; eapply PROMISES; eauto.
+    + destruct vm2. rewrite <- TPOOL, <- MEM. ss.
   - (* read *)
     inv STEP.
     eexists (Machine.mk _ _). esplits.
@@ -59,40 +50,32 @@ Proof.
       econs 1. econs. econs; ss.
       { econs; ss. }
       econs 2; ss. econs; try exact LATEST; eauto.
-    + econs; ss.
-      ii. rewrite TPOOL0. repeat rewrite IdMap.add_spec. repeat condtac; ss.
-    + inv NOPROMISE. econs; ss. i.
-      rewrite IdMap.add_spec in *. destruct (tid0 == tid).
-      * inv FIND0. apply PROMISES in FIND. ss.
-      * eapply PROMISES. eauto.
+    + destruct vm2. rewrite <- TPOOL, <- MEM. ss.
   - (* write *)
     remember lc2. guardH Heqt.
-    rewrite <- TPEQ in FIND. generalize FIND. intro NPROM.
-    inv VNOPROMISE. eapply PROMISES in NPROM. clear PROMISES.
+    generalize FIND. intro NPROM. inv NOPROMISE. eapply PROMISES in NPROM. clear PROMISES.
     inv STEP.
 
-    assert (PROMISE: exists lcmid mem,
+    assert (PROMISE: exists lcmid,
                       Local.promise
                         (ValA.val (sem_expr rmap eloc))
                         (ValA.val (sem_expr rmap eval))
-                        ts tid lc1 (Machine.mem pm1) lcmid mem).
+                        ts tid lc1 (Machine.mem pm1) lcmid (Machine.mem vm2)).
     { esplits. econs; eauto. }
     des.
 
     assert (FULFILL: Local.fulfill
                        (sem_expr rmap eloc)
                        (sem_expr rmap eval)
-                       (ValA.mk _ 0 bot) ts tid lcmid mem lc2).
+                       (ValA.mk _ 0 bot) ts tid lcmid (Machine.mem vm2) lc2).
     { generalize FIND. intro PWF.
       inv WF. apply WF0 in PWF. inv PWF.
       inv LOCAL. inv COHMAX. inv COHMAX0; ss. rewrite COH in *.
-      inv PROMISE. rewrite MEM0 in MEM2. inv MEM2.
-      generalize MEM0. intro X. inv X.
+      inv PROMISE. inv MEM2.
       esplits. econs; eauto; ss.
       - econs; eauto; ss.
         + econs; ss.
-        + inv MEM0. rewrite MEM in *.
-          specialize (COH mloc). lia.
+        + specialize (COH mloc). lia.
       - eapply Memory.append_spec; eauto. ss.
       - rewrite Promises.set_o. condtac; [|congr]. ss.
       - unguardH Heqt. subst.
@@ -103,9 +86,8 @@ Proof.
     eexists (Machine.mk _ _). esplits.
     + econs 2.
       { (* 1. promise *)
-        rewrite TPEQ in FIND. econs; ss; eauto.
-        - econs 2. instantiate (1 := Machine.mk _ mem). econs; eauto; ss.
-        - ss.
+        instantiate (1 := Machine.mk _ (Machine.mem vm2)).
+        econs; ss; eauto. econs 2. econs; eauto; ss.
       }
       econs 2; eauto.
       (* 2. fulfill *)
@@ -114,41 +96,33 @@ Proof.
         { econs 4; ss. }
         econs 3; eauto.
       * rewrite IdMap.add_spec. condtac; ss. congr.
-    + rewrite <- Heqt. econs; ss; cycle 1.
-      { inv PROMISE. rewrite MEM0 in MEM2. inv MEM2. ss. }
-      ii. rewrite TPOOL0. repeat rewrite IdMap.add_spec. repeat condtac; ss.
-    + inv NOPROMISE. econs; ss. i.
-      rewrite IdMap.add_spec in *. destruct (tid0 == tid).
-      * inv FIND0. inv PROMISE. inv FULFILL. ss.
-        rewrite NPROM. rewrite Promises.unset_set_bot. ss.
-      * rewrite IdMap.add_spec in *. destruct (tid0 == tid); ss. eapply PROMISES. eauto.
+    + destruct vm2. ss.
+      rewrite Heqt in TPOOL. rewrite TPOOL. rewrite IdMap.add_add. ss.
   - (* rmw *)
     remember lc2. guardH Heqt.
-    rewrite <- TPEQ in FIND. generalize FIND. intro NPROM.
-    inv VNOPROMISE. eapply PROMISES in NPROM. clear PROMISES.
+    generalize FIND. intro NPROM. inv NOPROMISE. eapply PROMISES in NPROM. clear PROMISES.
     inv STEP.
 
-    assert (PROMISE: exists lcmid mem,
+    assert (PROMISE: exists lcmid,
                       Local.promise
                         (ValA.val (sem_expr rmap eloc))
                         (ValA.val vnew)
-                        ts tid lc1 (Machine.mem pm1) lcmid mem).
+                        ts tid lc1 (Machine.mem pm1) lcmid (Machine.mem vm2)).
     { esplits. econs; eauto. }
     des.
 
-    assert (PRMW: Local.rmw (sem_expr rmap eloc) vold vnew old_ts ts tid lcmid mem lc2).
+    assert (PRMW: Local.rmw (sem_expr rmap eloc) vold vnew old_ts ts tid lcmid (Machine.mem vm2) lc2).
     { generalize FIND. intro PWF.
       inv WF. apply WF0 in PWF. inv PWF.
       inv LOCAL. inv COHMAX. inv COHMAX0; ss. rewrite COH0 in *.
-      inv PROMISE. rewrite MEM0 in MEM2. inv MEM2. inv MEM0.
+      inv PROMISE. inv MEM.
       esplits. econs; eauto.
       - exploit Memory.read_spec; eauto. lia.
       - rewrite <- H1 in *. ss.
       - eapply Memory.read_mon. ss.
       - econs; eauto; ss.
         + econs; ss.
-        + rewrite MEM in *.
-          specialize (COH0 mloc). lia.
+        + specialize (COH0 mloc). lia.
       - eapply Memory.append_spec; eauto. ss.
       - ss. rewrite Promises.set_o. condtac; [|congr]. ss.
       - unguardH Heqt. subst.
@@ -159,9 +133,8 @@ Proof.
     eexists (Machine.mk _ _). esplits.
     + econs 2.
       { (* 1. promise *)
-        rewrite TPEQ in FIND. econs; ss; eauto.
-        - econs 2. instantiate (1 := Machine.mk _ mem). econs; eauto; ss.
-        - ss.
+        instantiate (1 := Machine.mk _ (Machine.mem vm2)).
+        econs; ss; eauto. econs 2. econs; eauto; ss.
       }
       econs 2; eauto.
       (* 2. rmw *)
@@ -170,14 +143,8 @@ Proof.
         { econs 5; eauto. }
         econs 4; eauto.
       * rewrite IdMap.add_spec. condtac; ss. congr.
-    + rewrite <- Heqt. econs; ss; cycle 1.
-      { inv PROMISE. rewrite MEM0 in MEM2. inv MEM2. ss. }
-      ii. rewrite TPOOL0. repeat rewrite IdMap.add_spec. repeat condtac; ss.
-    + inv NOPROMISE. econs; ss. i.
-      rewrite IdMap.add_spec in *. destruct (tid0 == tid).
-      * inv FIND0. inv PROMISE. inv PRMW. ss.
-        rewrite NPROM. rewrite Promises.unset_set_bot. ss.
-      * rewrite IdMap.add_spec in *. destruct (tid0 == tid); ss. eapply PROMISES. eauto.
+    + destruct vm2. ss.
+      rewrite Heqt in TPOOL. rewrite TPOOL. rewrite IdMap.add_add. ss.
   - (* rmw_failure *)
     inv STEP.
     eexists (Machine.mk _ _). esplits.
@@ -185,12 +152,7 @@ Proof.
       econs 1. econs. econs; ss.
       { inversion RMW. inv H0. econs 6; ss. }
       econs 5; ss. econs; try exact LATEST; eauto.
-    + econs; ss.
-      ii. rewrite TPOOL0. repeat rewrite IdMap.add_spec. repeat condtac; ss.
-    + inv NOPROMISE. econs; ss. i.
-      rewrite IdMap.add_spec in *. destruct (tid0 == tid).
-      * inv FIND0. apply PROMISES in FIND. ss.
-      * eapply PROMISES. eauto.
+    + destruct vm2. rewrite <- TPOOL, <- MEM. ss.
   - (* dmb *)
     inv STEP.
     eexists (Machine.mk _ _). esplits.
@@ -198,38 +160,24 @@ Proof.
       econs 1. econs. econs; ss.
       { econs; ss. }
       econs 6; ss. econs; try exact LATEST; eauto.
-    + econs; ss.
-      ii. rewrite TPOOL0. repeat rewrite IdMap.add_spec. repeat condtac; ss.
-    + inv NOPROMISE. econs; ss. i.
-      rewrite IdMap.add_spec in *. destruct (tid0 == tid).
-      * inv FIND0. apply PROMISES in FIND. ss.
-      * eapply PROMISES. eauto.
+    + destruct vm2. rewrite <- TPOOL, <- MEM. ss.
   - (* dowhile *)
     eexists (Machine.mk _ _). esplits.
     + econs; eauto. econs; ss; eauto.
       econs 1; ss. econs. econs; ss; econs; ss.
-    + econs; ss.
-      ii. rewrite TPOOL0. repeat rewrite IdMap.add_spec. repeat condtac; ss.
-    + inv NOPROMISE. econs; ss. i.
-      rewrite IdMap.add_spec in *. destruct (tid0 == tid); [inv FIND0|]; eapply PROMISES; eauto.
+    + destruct vm2. rewrite <- TPOOL, <- MEM. ss.
   - (* flushopt *)
     inv STEP.
     eexists (Machine.mk _ _). esplits.
     + econs; eauto. econs; ss; eauto.
       econs 1; ss. econs. econs; ss; [econs | econs 8]; ss. econs; ss.
-    + econs; ss.
-      ii. rewrite TPOOL0. repeat rewrite IdMap.add_spec. repeat condtac; ss.
-    + inv NOPROMISE. econs; ss. i.
-      rewrite IdMap.add_spec in *. destruct (tid0 == tid); [inv FIND0|]; ss; eapply PROMISES; eauto.
+    + destruct vm2. rewrite <- TPOOL, <- MEM. ss.
   - (* flush *)
     inv STEP.
     eexists (Machine.mk _ _). esplits.
     + econs; eauto. econs; ss; eauto.
       econs 1; ss. econs. econs; ss; [econs | econs 7]; ss. econs; ss.
-    + econs; ss.
-      ii. rewrite TPOOL0. repeat rewrite IdMap.add_spec. repeat condtac; ss.
-    + inv NOPROMISE. econs; ss. i.
-      rewrite IdMap.add_spec in *. destruct (tid0 == tid); [inv FIND0|]; ss; eapply PROMISES; eauto.
+    + destruct vm2. rewrite <- TPOOL, <- MEM. ss.
 
   Grab Existential Variables.
   auto. (* vold when rmw_failure *)
@@ -238,14 +186,12 @@ Qed.
 Lemma sim_machine_rtc_step
       vm1 vm2 pm1
       (WF: Machine.wf vm1)
-      (VNOPROMISE: Machine.no_promise vm1)
+      (NOPROMISE: Machine.no_promise vm1)
       (STEP: rtc (Machine.step ExecUnit.view_step) vm1 vm2)
-      (SIM: Machine.equiv vm1 pm1)
-      (NOPROMISE: Machine.no_promise pm1):
+      (SIM: vm1 = pm1):
   exists pm2,
     <<STEP: rtc (Machine.step ExecUnit.step) pm1 pm2>> /\
-    <<SIM: Machine.equiv vm2 pm2>> /\
-    <<NOPROMISE: Machine.no_promise pm2>>.
+    <<SIM: vm2 = pm2>>.
 Proof.
   revert WF SIM NOPROMISE. revert pm1. induction STEP; eauto. i.
   exploit sim_machine_step; eauto. i. des.
@@ -253,19 +199,17 @@ Proof.
   exploit IHSTEP; try exact SIM0; ss.
   { eapply Machine.step_view_step_no_promise; eauto. }
   i. des.
-  esplits; [etrans; eauto | exact SIM1 |]; eauto.
+  esplits; [etrans; eauto | exact SIM1].
 Qed.
 
 Theorem view_to_promising
-        p vm
-        (EXEC: Machine.view_exec p vm):
-  exists pm,
-    <<STEP: Machine.exec p pm>> /\
-    <<SIM: Machine.equiv vm pm>>.
+        p m
+        (EXEC: Machine.view_exec p m):
+  Machine.exec p m.
 Proof.
   inv EXEC.
   generalize (Machine.init_wf p). intro WF.
   generalize (Machine.init_no_promise p). intro NOPROMISE.
-  exploit sim_machine_rtc_step; eauto; ss. i. des.
-  esplits; eauto.
+  exploit sim_machine_rtc_step; eauto. i. des. subst.
+  exploit Machine.rtc_step_view_step_no_promise; eauto.
 Qed.
