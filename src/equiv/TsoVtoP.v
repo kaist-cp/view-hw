@@ -22,35 +22,25 @@ Set Implicit Arguments.
 
 
 Lemma sim_machine_step
-      vm1 vm2 pm1
-      (WF: Machine.wf vm1)
-      (NOPROMISE: Machine.no_promise vm1)
-      (STEP: Machine.step ExecUnit.view_step vm1 vm2)
-      (SIM: vm1 = pm1):
-  exists pm2,
-    <<STEP: rtc (Machine.step ExecUnit.step) pm1 pm2>> /\
-    <<SIM: vm2 = pm2>>.
+      m1 m2
+      (WF: Machine.wf m1)
+      (NOPROMISE: Machine.no_promise m1)
+      (STEP: Machine.step ExecUnit.view_step m1 m2):
+  rtc (Machine.step ExecUnit.step) m1 m2.
 Proof.
-  inv SIM. inv STEP.
-  inv STEP0. inv STEP. inv STATE; inv LOCAL; inv EVENT; ss; subst.
+  inv STEP. inv STEP0. inv STEP. inv STATE; inv LOCAL; inv EVENT; ss; subst.
   - (* skip *)
-    eexists (Machine.mk _ _). esplits.
-    + econs; eauto. econs; ss; eauto.
-      econs 1. econs. econs; econs; ss.
-    + destruct vm2. rewrite <- TPOOL, <- MEM. ss.
+    econs; eauto. econs; ss; eauto.
+    econs 1. econs. econs; try econs; ss.
   - (* assign *)
-    eexists (Machine.mk _ _). esplits.
-    + econs; eauto. econs; ss; eauto.
-      econs 1. econs. econs; econs; ss.
-    + destruct vm2. rewrite <- TPOOL, <- MEM. ss.
+    econs; eauto. econs; ss; eauto.
+    econs 1. econs. econs; try econs; ss.
   - (* read *)
     inv STEP.
-    eexists (Machine.mk _ _). esplits.
-    + econs; eauto. econs; ss; eauto.
-      econs 1. econs. econs; ss.
-      { econs; ss. }
-      econs 2; ss. econs; try exact LATEST; eauto.
-    + destruct vm2. rewrite <- TPOOL, <- MEM. ss.
+    econs; eauto. econs; ss; eauto.
+    econs 1. econs. econs; ss.
+    { econs; ss. }
+    econs 2; ss. econs; try exact LATEST; eauto.
   - (* write *)
     remember lc2. guardH Heqt.
     generalize FIND. intro NPROM. inv NOPROMISE. eapply PROMISES in NPROM. clear PROMISES.
@@ -60,14 +50,14 @@ Proof.
                       Local.promise
                         (ValA.val (sem_expr rmap eloc))
                         (ValA.val (sem_expr rmap eval))
-                        ts tid lc1 (Machine.mem pm1) lcmid (Machine.mem vm2)).
+                        ts tid lc1 (Machine.mem m1) lcmid (Machine.mem m2)).
     { esplits. econs; eauto. }
     des.
 
     assert (FULFILL: Local.fulfill
                        (sem_expr rmap eloc)
                        (sem_expr rmap eval)
-                       (ValA.mk _ 0 bot) ts tid lcmid (Machine.mem vm2) lc2).
+                       (ValA.mk _ 0 bot) ts tid lcmid (Machine.mem m2) lc2).
     { generalize FIND. intro PWF.
       inv WF. apply WF0 in PWF. inv PWF.
       inv LOCAL. inv COHMAX. inv COHMAX0; ss. rewrite COH in *.
@@ -83,21 +73,20 @@ Proof.
     }
     des.
 
-    eexists (Machine.mk _ _). esplits.
-    + econs 2.
-      { (* 1. promise *)
-        instantiate (1 := Machine.mk _ (Machine.mem vm2)).
-        econs; ss; eauto. econs 2. econs; eauto; ss.
-      }
-      econs 2; eauto.
-      (* 2. fulfill *)
-      econs; ss; cycle 1.
-      * econs. econs. econs; ss.
-        { econs 4; ss. }
-        econs 3; eauto.
-      * rewrite IdMap.add_spec. condtac; ss. congr.
-    + destruct vm2. ss.
-      rewrite Heqt in TPOOL. rewrite TPOOL. rewrite IdMap.add_add. ss.
+    econs 2.
+    { (* 1. promise *)
+      instantiate (1 := Machine.mk _ (Machine.mem m2)).
+      econs; ss; eauto. econs 2. econs; eauto; ss.
+    }
+    econs 2; eauto.
+    (* 2. fulfill *)
+    econs; ss; cycle 1.
+    + econs. econs. econs; ss.
+      { econs 4; ss. }
+      econs 3; eauto.
+    + rewrite IdMap.add_add.
+      rewrite Heqt in TPOOL. rewrite TPOOL. ss.
+    + rewrite IdMap.add_spec. condtac; ss. congr.
   - (* rmw *)
     remember lc2. guardH Heqt.
     generalize FIND. intro NPROM. inv NOPROMISE. eapply PROMISES in NPROM. clear PROMISES.
@@ -107,11 +96,11 @@ Proof.
                       Local.promise
                         (ValA.val (sem_expr rmap eloc))
                         (ValA.val vnew)
-                        ts tid lc1 (Machine.mem pm1) lcmid (Machine.mem vm2)).
+                        ts tid lc1 (Machine.mem m1) lcmid (Machine.mem m2)).
     { esplits. econs; eauto. }
     des.
 
-    assert (PRMW: Local.rmw (sem_expr rmap eloc) vold vnew old_ts ts tid lcmid (Machine.mem vm2) lc2).
+    assert (PRMW: Local.rmw (sem_expr rmap eloc) vold vnew old_ts ts tid lcmid (Machine.mem m2) lc2).
     { generalize FIND. intro PWF.
       inv WF. apply WF0 in PWF. inv PWF.
       inv LOCAL. inv COHMAX. inv COHMAX0; ss. rewrite COH0 in *.
@@ -130,76 +119,61 @@ Proof.
     }
     des.
 
-    eexists (Machine.mk _ _). esplits.
-    + econs 2.
-      { (* 1. promise *)
-        instantiate (1 := Machine.mk _ (Machine.mem vm2)).
-        econs; ss; eauto. econs 2. econs; eauto; ss.
-      }
-      econs 2; eauto.
-      (* 2. rmw *)
-      econs; ss; cycle 1.
-      * econs. econs. econs; ss.
-        { econs 5; eauto. }
-        econs 4; eauto.
-      * rewrite IdMap.add_spec. condtac; ss. congr.
-    + destruct vm2. ss.
-      rewrite Heqt in TPOOL. rewrite TPOOL. rewrite IdMap.add_add. ss.
+    econs 2.
+    { (* 1. promise *)
+      instantiate (1 := Machine.mk _ (Machine.mem m2)).
+      econs; ss; eauto. econs 2. econs; eauto; ss.
+    }
+    econs 2; eauto.
+    (* 2. rmw *)
+    econs; ss; cycle 1.
+    + econs. econs. econs; ss.
+      { econs 5; eauto. }
+      econs 4; eauto.
+    + rewrite IdMap.add_add.
+      rewrite Heqt in TPOOL. rewrite TPOOL. ss.
+    + rewrite IdMap.add_spec. condtac; ss. congr.
   - (* rmw_failure *)
     inv STEP.
-    eexists (Machine.mk _ _). esplits.
-    + econs; eauto. econs; ss; eauto.
-      econs 1. econs. econs; ss.
-      { inversion RMW. inv H0. econs 6; ss. }
-      econs 5; ss. econs; try exact LATEST; eauto.
-    + destruct vm2. rewrite <- TPOOL, <- MEM. ss.
+    econs; eauto. econs; ss; eauto.
+    econs 1. econs. econs; ss.
+    { inversion RMW. inv H0. econs 6; ss. }
+    econs 5; ss. econs; try exact LATEST; eauto.
   - (* dmb *)
     inv STEP.
-    eexists (Machine.mk _ _). esplits.
-    + econs; eauto. econs; ss; eauto.
-      econs 1. econs. econs; ss.
-      { econs; ss. }
-      econs 6; ss. econs; try exact LATEST; eauto.
-    + destruct vm2. rewrite <- TPOOL, <- MEM. ss.
+    econs; eauto. econs; ss; eauto.
+    econs 1. econs. econs; ss.
+    { econs; ss. }
+    econs 6; ss. econs; try exact LATEST; eauto.
   - (* dowhile *)
-    eexists (Machine.mk _ _). esplits.
-    + econs; eauto. econs; ss; eauto.
-      econs 1; ss. econs. econs; ss; econs; ss.
-    + destruct vm2. rewrite <- TPOOL, <- MEM. ss.
+    econs; eauto. econs; ss; eauto.
+    econs 1; ss. econs. econs; ss; econs; ss.
   - (* flushopt *)
     inv STEP.
-    eexists (Machine.mk _ _). esplits.
-    + econs; eauto. econs; ss; eauto.
-      econs 1; ss. econs. econs; ss; [econs | econs 8]; ss. econs; ss.
-    + destruct vm2. rewrite <- TPOOL, <- MEM. ss.
+    econs; eauto. econs; ss; eauto.
+    econs 1; ss. econs. econs; ss; [econs | econs 8]; ss. econs; ss.
   - (* flush *)
     inv STEP.
-    eexists (Machine.mk _ _). esplits.
-    + econs; eauto. econs; ss; eauto.
-      econs 1; ss. econs. econs; ss; [econs | econs 7]; ss. econs; ss.
-    + destruct vm2. rewrite <- TPOOL, <- MEM. ss.
+    econs; eauto. econs; ss; eauto.
+    econs 1; ss. econs. econs; ss; [econs | econs 7]; ss. econs; ss.
 
   Grab Existential Variables.
   auto. (* vold when rmw_failure *)
 Qed.
 
 Lemma sim_machine_rtc_step
-      vm1 vm2 pm1
-      (WF: Machine.wf vm1)
-      (NOPROMISE: Machine.no_promise vm1)
-      (STEP: rtc (Machine.step ExecUnit.view_step) vm1 vm2)
-      (SIM: vm1 = pm1):
-  exists pm2,
-    <<STEP: rtc (Machine.step ExecUnit.step) pm1 pm2>> /\
-    <<SIM: vm2 = pm2>>.
+      m1 m2
+      (WF: Machine.wf m1)
+      (NOPROMISE: Machine.no_promise m1)
+      (STEP: rtc (Machine.step ExecUnit.view_step) m1 m2):
+  rtc (Machine.step ExecUnit.step) m1 m2.
 Proof.
-  revert WF SIM NOPROMISE. revert pm1. induction STEP; eauto. i.
+  revert WF NOPROMISE. induction STEP; eauto. i.
   exploit sim_machine_step; eauto. i. des.
   exploit Machine.step_view_step_wf; eauto. intro WF0.
-  exploit IHSTEP; try exact SIM0; ss.
+  exploit IHSTEP; eauto.
   { eapply Machine.step_view_step_no_promise; eauto. }
-  i. des.
-  esplits; [etrans; eauto | exact SIM1].
+  etrans; eauto.
 Qed.
 
 Theorem view_to_promising
