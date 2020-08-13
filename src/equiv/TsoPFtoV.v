@@ -128,32 +128,27 @@ Qed.
 
 Inductive eu_order (ti1 ti2: (Id.t * nat)) (eutrs: IdMap.t (list ((option (Event.t (A:=unit))) * ExecUnit.t))): Prop :=
 | eu_order_intro
-    tid1 tid2 i1 i2
     l1 l2 eopt1 eopt2 eu1 eu2
     mloc1 mloc2 cohm1 cohm2
     e
-    (TID1: tid1 = fst ti1)
-    (TID2: tid2 = fst ti2)
-    (I1: i1 = snd ti1)
-    (I2: i2 = snd ti2)
-    (L1: Some l1 = IdMap.find tid1 eutrs)
-    (L2: Some l2 = IdMap.find tid2 eutrs)
-    (EEU1: Some (eopt1, eu1) = nth_error l1 i1)
-    (EEU2: Some (eopt2, eu2) = nth_error l2 i2)
+    (L1: Some l1 = IdMap.find (fst ti1) eutrs)
+    (L2: Some l2 = IdMap.find (fst ti2) eutrs)
+    (EEU1: Some (eopt1, eu1) = nth_error l1 (snd ti1))
+    (EEU2: Some (eopt2, eu2) = nth_error l2 (snd ti2))
     (MLOC1: Local.cohmax mloc1 eu1.(ExecUnit.local))
     (MLOC2: Local.cohmax mloc2 eu2.(ExecUnit.local))
     (COHM1: cohm1 = (eu1.(ExecUnit.local).(Local.coh) mloc1).(View.ts))
     (COHM2: cohm2 = (eu2.(ExecUnit.local).(Local.coh) mloc2).(View.ts))
-    (TH_ORD: tid1 = tid2 -> i1 < i2)
+    (TH_ORD: fst ti1 = fst ti2 -> snd ti1 < snd ti2)
     (COHMAX_ORD: cohm1 <> cohm2 -> cohm1 < cohm2)
     (OTHER_ORD: cohm1 = cohm2 -> (eopt1 = Some e /\ event_is_kinda_write e))
 .
 Hint Constructors eu_order.
 
 Lemma eu_order_antisym
-      tid1 tid2 i1 i2 eutrs
-      (ORD1: eu_order (tid1, i1) (tid2, i2) eutrs)
-      (ORD2: eu_order (tid2, i2) (tid1, i1) eutrs):
+      ti1 ti2 eutrs
+      (ORD1: eu_order ti1 ti2 eutrs)
+      (ORD2: eu_order ti2 ti1 eutrs):
   False.
 Proof.
   inv ORD1. inv ORD2. ss.
@@ -170,7 +165,7 @@ Proof.
     { exact L1. }
     { exact L2. }
     all: eauto.
-    destruct (tid1 == tid2); cycle 1.
+    destruct (fst ti1 == fst ti2); cycle 1.
     { left. ss. }
     inv e1. exploit TH_ORD; ss. exploit TH_ORD0; ss. lia.
 Qed.
