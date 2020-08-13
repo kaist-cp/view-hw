@@ -391,6 +391,15 @@ Section Local.
     inv WF. exploit PROMISES; eauto. clear -ABOVE. lia.
   Qed.
 
+  Lemma two_cohmax_ts_eq
+        mloc1 mloc2 lc
+        (COHMAX1: cohmax mloc1 lc)
+        (COHMAX2: cohmax mloc2 lc):
+    (lc.(Local.coh) mloc1).(View.ts) = (lc.(Local.coh) mloc2).(View.ts).
+  Proof.
+    apply le_antisym; [inv COHMAX2 | inv COHMAX1]; apply COHMAX.
+  Qed.
+
   Inductive le (lhs rhs:t): Prop :=
   | le_intro
       (COH: forall loc, Order.le (lhs.(coh) loc).(View.ts) (rhs.(coh) loc).(View.ts))

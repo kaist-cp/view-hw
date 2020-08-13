@@ -22,13 +22,6 @@ Require Import PromisingArch.equiv.TsoPtoPF.
 Set Implicit Arguments.
 
 
-Inductive sim_state (state1 state2:State.t (A:=unit)): Prop :=
-| sim_state_intro
-    (STMTS: state1.(State.stmts) = state2.(State.stmts))
-    (RMAP: state1.(State.rmap) = state2.(State.rmap))
-.
-Hint Constructors sim_state.
-
 Inductive sim_local (local1 local2:Local.t): Prop :=
 | sim_local_intro
     (COH: local1.(Local.coh) = local2.(Local.coh))
@@ -36,149 +29,156 @@ Inductive sim_local (local1 local2:Local.t): Prop :=
 .
 Hint Constructors sim_local.
 
-(* TODO: describe fulfilled message
-  exist M,
-    PF 실행 메모리의 프리픽스
-    M의 모든 메시지는 L[0..i] 사이에서 fulfill 되어있다.
-    L[0..i] 사이에서 fulfill 된 모든 메세지는 M에 있다.
-*)
-Inductive sim_mem (pmem vmem:Memory.t) (n:Nat.t) (reord: list ((Event.t (A:=unit) * Id.t) * ExecUnit.t))
-          : Prop :=
-| sim_mem_intro
-    (MEM: Memory.prefix vmem pmem)
-.
+Definition last_error A (l:list A): option A := nth_error l (Nat.pred (length l)).
 
-Definition tid_step_cnt (tid:Id.t) (reord: list ((Event.t (A:=unit) * Id.t) * ExecUnit.t)): Nat.t :=
-  length (filter (fun ete => tid == (snd (fst ete))) reord).
+Lemma get_eutr
+      tid eu1 eu2
+      (STEP: rtc (ExecUnit.state_step tid) eu1 eu2):
+  exists (eutr:list ((option (Event.t (A:=unit)) * ExecUnit.t))),
+    <<FIRST: hd_error eutr = Some (None, eu1)>> /\
+    <<LAST:
+      <<ONE: 1 = length eutr -> last_error eutr = Some (None, eu2)>> /\
+      <<MORE: 1 < length eutr -> exists e, last_error eutr = Some (Some e, eu2)>>>> /\
+    <<STEP:
+      forall n eopt e eu1 eu2
+             (N: n < length eutr)
+             (EU1: nth_error eutr n = Some (eopt, eu1))
+             (EU2: nth_error eutr (S n) = Some (Some e, eu2)),
+        ExecUnit.state_step0 tid e e eu1 eu2>>.
+Proof.
+  induction STEP.
+  { eexists [(None, x)]. splits; ss; [lia|].
+    i. destruct n; ss.
+  }
+  des. inv H.
+  eexists ((None, x) :: (Some e, y) :: (tl eutr)).
+  splits; ss.
+  - i. destruct (lt_eq_lt_dec 1 (length eutr)); cycle 1.
+    { destruct eutr; ss; try lia. }
+    inv s.
+    + apply MORE in H0. des.
+      eexists e0. destruct eutr; ss. destruct eutr; ss.
+      inv FIRST. inv H0.
+    + destruct eutr; ss. inv FIRST. destruct eutr; ss.
+      exploit ONE; try lia. intro HL. inv HL.
+      eexists e. ss.
+  - i. destruct n; ss.
+    { inv EU1. inv EU2. ss. }
+    destruct eutr; ss. inv FIRST.
+    assert (n < S (length eutr)); try lia.
+    destruct n; [inv EU1|]; exploit STEP0; eauto; ss.
+Qed.
 
-Inductive sim_machine (eutrs: IdMap.t (list (ExecUnit.t))) (pmem:Memory.t) (vm:Machine.t) (n:Nat.t) (reord: list ((Event.t (A:=unit) * Id.t) * ExecUnit.t)): Prop :=
-| sim_machine_intro
-    (TPOOL: IdMap.Forall2
-            (fun tid eutr sl =>
-              forall eu,
-                List.nth_error eutr (tid_step_cnt tid reord) = Some eu /\
-                sim_state eu.(ExecUnit.state) (fst sl) /\
-                sim_local eu.(ExecUnit.local) (snd sl))
-             eutrs vm.(Machine.tpool))
-    (MEM: sim_mem pmem vm.(Machine.mem) n reord)
-.
+Lemma get_eutrs
+      p m1 m
+      (STEP1: rtc (Machine.step ExecUnit.promise_step) (Machine.init p) m1)
+      (STEP2: Machine.state_exec m1 m):
+  exists eutrs,
+    IdMap.Forall3
+      (fun tid eu_m1 eu_m eutr =>
+        <<FIRST: hd_error eutr = Some (None, ExecUnit.mk (fst eu_m1) (snd eu_m1) m.(Machine.mem))>> /\
+        <<LAST:
+          <<ONE: 1 = length eutr -> last_error eutr = Some (None, ExecUnit.mk (fst eu_m) (snd eu_m) m.(Machine.mem))>> /\
+          <<MORE: 1 < length eutr -> exists e, last_error eutr = Some (Some e, ExecUnit.mk (fst eu_m) (snd eu_m) m.(Machine.mem))>>>> /\
+        <<STEP:
+            forall n eopt e eu1 eu2
+                  (N: n < length eutr)
+                  (EU1: nth_error eutr n = Some (eopt, eu1))
+                  (EU2: nth_error eutr (S n) = Some (Some e, eu2)),
+              ExecUnit.state_step0 tid e e eu1 eu2>>)
+      m1.(Machine.tpool) m.(Machine.tpool) eutrs.
+Proof.
+  inv STEP2.
+  destruct m1. ss. induction tpool.
+  { eexists (IdMap.empty (list (option Event.t * ExecUnit.t))).
+    ii. specialize (TPOOL id). inv TPOOL.
+    - rewrite IdMap.gempty. ss.
+    - exploit IdMap.gempty. unfold IdMap.empty. intro EMPTY.
+      rewrite <- H0 in EMPTY. ss.
+  }
+  admit.
+Qed.
 
-Inductive insert_eu (new: (Event.t (A:=unit) * Id.t) * ExecUnit.t) (l1 l2: list ((Event.t (A:=unit) * Id.t) * ExecUnit.t)): Prop :=
-| insert_eu_empty
-    (L1: l1 = [])
-    (L2: l2 = [new])
-| insert_eu_cohmax_lt
-    l
-    e1 tid1 eu1
-    mloc1 mloc2
-    (L1: l1 = (e1, tid1, eu1) :: l)
-    (COHMAX1: Local.cohmax mloc1 eu1.(ExecUnit.local))
-    (COHMAX2: Local.cohmax mloc2 (snd new).(ExecUnit.local))
-    (LT: (eu1.(ExecUnit.local).(Local.coh) mloc1).(View.ts) < ((snd new).(ExecUnit.local).(Local.coh) mloc2).(View.ts))
-    (L2: l2 = new :: l1)
-| insert_eu_wu
-    l
-    e1 tid1 eu1
-    mloc1 mloc2
-    (L1: l1 = (e1, tid1, eu1) :: l)
-    (COHMAX1: Local.cohmax mloc1 eu1.(ExecUnit.local))
-    (COHMAX2: Local.cohmax mloc2 (snd new).(ExecUnit.local))
-    (EQ: (eu1.(ExecUnit.local).(Local.coh) mloc1).(View.ts) = ((snd new).(ExecUnit.local).(Local.coh) mloc2).(View.ts))
-    (WU: match (fst (fst new)) with
-         | Event.write _ _ _ _ _
-         | Event.rmw _ _ _ _ _ => True
-         | _ => False
-         end)
-    (L2: l2 = new :: l1)
-| insert_eu_prior
-    l recl
-    e1 tid1 eu1
-    mloc1 mloc2
-    (L1: l1 = (e1, tid1, eu1) :: l)
-    (COHMAX1: Local.cohmax mloc1 eu1.(ExecUnit.local))
-    (COHMAX2: Local.cohmax mloc2 (snd new).(ExecUnit.local))
-    (EQ: (eu1.(ExecUnit.local).(Local.coh) mloc1).(View.ts) = ((snd new).(ExecUnit.local).(Local.coh) mloc2).(View.ts))
-    (NWU: match (fst (fst new)) with
-          | Event.write _ _ _ _ _
-          | Event.rmw _ _ _ _ _ => False
-          | _ => True
-          end)
-    (L2: l2 = (e1, tid1, eu1) :: recl)
-    (REC: insert_eu new l recl)
-| insert_eu_cohmax_gt
-    l recl
-    e1 tid1 eu1
-    mloc1 mloc2
-    (L1: l1 = (e1, tid1, eu1) :: l)
-    (COHMAX1: Local.cohmax mloc1 eu1.(ExecUnit.local))
-    (COHMAX2: Local.cohmax mloc2 (snd new).(ExecUnit.local))
-    (GT: (eu1.(ExecUnit.local).(Local.coh) mloc1).(View.ts) > ((snd new).(ExecUnit.local).(Local.coh) mloc2).(View.ts))
-    (L2: l2 = (e1, tid1, eu1) :: recl)
-    (REC: insert_eu new l recl)
-.
+Definition event_is_kinda_write (e:Event.t (A:=unit)) :=
+  match e with
+  | Event.write _ _ _ _ _
+  | Event.rmw _ _ _ _ _ => true
+  | _ => false
+  end.
 
-Inductive traces (p: program) (mem: Memory.t):
-  forall (tr: list (Machine.t)) (eutrs: IdMap.t (list (ExecUnit.t))) (reord: list ((Event.t (A:=unit) * Id.t) * ExecUnit.t)), Prop :=
-| traces_init
-    eutrs_init
-    (INIT: IdMap.Forall2
-            (fun _ eutr sl => eutr = [ExecUnit.mk (fst sl) (snd sl) mem])
-            eutrs_init (Machine.init_with_promises p mem).(Machine.tpool)):
-    traces p mem [Machine.init_with_promises p mem] eutrs_init []
-| traces_step
-    e tid tr1 m1 m2 eu1 eu2 eutr eutrs1 eutrs2 reord1 reord2
-    (STEP: ExecUnit.state_step0 tid e e eu1 eu2)
-    (M1: IdMap.find tid m1.(Machine.tpool) = Some (eu1.(ExecUnit.state), eu1.(ExecUnit.local)))
-    (M2: IdMap.find tid m2.(Machine.tpool) = Some (eu2.(ExecUnit.state), eu2.(ExecUnit.local)))
-    (REORD: insert_eu ((e, tid), eu2) reord1 reord2)
-    (EUTRS1: IdMap.find tid eutrs1 = Some eutr)
-    (EUTRS2: eutrs2 = IdMap.add tid (eutr++[eu2]) eutrs1)
-    (TRACES: traces p mem (tr1++[m1]) eutrs1 reord1):
-    traces p mem (tr1++[m1]++[m2]) eutrs2 reord2
-.
-
-Lemma sim_eu_init
-      p m mem
-      tr eutrs reord
-      (EXEC: Machine.pf_exec p m)
-      (TRACES: traces p mem (tr++[m]) eutrs reord):
-  sim_machine eutrs mem (Machine.init p) 0 reord.
+Lemma eutrs_unique_write
+      eutrs
+      tid1 tid2 i1 i2
+      l1 l2 e1 e2 eu1 eu2
+      mloc1 mloc2
+      (L1: Some l1 = IdMap.find tid1 eutrs)
+      (L2: Some l2 = IdMap.find tid2 eutrs)
+      (EEU1: Some (Some e1, eu1) = nth_error l1 i1)
+      (EEU2: Some (Some e2, eu2) = nth_error l2 i2)
+      (MLOC1: Local.cohmax mloc1 eu1.(ExecUnit.local))
+      (MLOC2: Local.cohmax mloc2 eu2.(ExecUnit.local))
+      (COHMEQ: (eu1.(ExecUnit.local).(Local.coh) mloc1).(View.ts) = (eu2.(ExecUnit.local).(Local.coh) mloc2).(View.ts))
+      (NEQ: tid1 <> tid2 \/ i1 <> i2)
+      (W1: event_is_kinda_write e1)
+      (W2: event_is_kinda_write e2):
+  False.
 Proof.
   admit.
 Qed.
 
-Lemma sim_eu_step
-      p m mem
-      tr eutrs n reord
-      vm1
-      (EXEC: Machine.pf_exec p m)
-      (TRACES: traces p mem (tr++[m]) eutrs reord)
-      (SIM: sim_machine eutrs mem vm1 n reord):
-  exists vm2,
-    <<STEP: Machine.step ExecUnit.view_step vm1 vm2>> /\
-    <<SIM: sim_machine eutrs mem vm2 (S n) reord>>.
-Proof.
-  admit.
-Qed.
+Inductive eu_order (ti1 ti2: (Id.t * nat)) (eutrs: IdMap.t (list ((option (Event.t (A:=unit))) * ExecUnit.t))): Prop :=
+| eu_order_intro
+    tid1 tid2 i1 i2
+    l1 l2 eopt1 eopt2 eu1 eu2
+    mloc1 mloc2 cohm1 cohm2
+    e
+    (TID1: tid1 = fst ti1)
+    (TID2: tid2 = fst ti2)
+    (I1: i1 = snd ti1)
+    (I2: i2 = snd ti2)
+    (L1: Some l1 = IdMap.find tid1 eutrs)
+    (L2: Some l2 = IdMap.find tid2 eutrs)
+    (EEU1: Some (eopt1, eu1) = nth_error l1 i1)
+    (EEU2: Some (eopt2, eu2) = nth_error l2 i2)
+    (MLOC1: Local.cohmax mloc1 eu1.(ExecUnit.local))
+    (MLOC2: Local.cohmax mloc2 eu2.(ExecUnit.local))
+    (COHM1: cohm1 = (eu1.(ExecUnit.local).(Local.coh) mloc1).(View.ts))
+    (COHM2: cohm2 = (eu2.(ExecUnit.local).(Local.coh) mloc2).(View.ts))
+    (TH_ORD: tid1 = tid2 -> i1 < i2)
+    (COHMAX_ORD: cohm1 <> cohm2 -> cohm1 < cohm2)
+    (OTHER_ORD: cohm1 = cohm2 -> (eopt1 = Some e /\ event_is_kinda_write e))
+.
+Hint Constructors eu_order.
 
-Lemma sim_eu_final
-      p m mem
-      tr eutrs reord
-      (EXEC: Machine.pf_exec p m)
-      (TRACES: traces p mem (tr++[m]) eutrs reord):
-  exists vm,
-    <<STEP: rtc (Machine.step ExecUnit.view_step) (Machine.init p) vm>> /\
-    <<SIM: sim_machine eutrs mem vm (length reord) reord>>.
+Lemma eu_order_antisym
+      tid1 tid2 i1 i2 eutrs
+      (ORD1: eu_order (tid1, i1) (tid2, i2) eutrs)
+      (ORD2: eu_order (tid2, i2) (tid1, i1) eutrs):
+  False.
 Proof.
-  admit.
+  inv ORD1. inv ORD2. ss.
+  rewrite <- L1 in L3. inv L3. rewrite <- L2 in L0. inv L0.
+  rewrite <- EEU1 in EEU3. inv EEU3. rewrite <- EEU2 in EEU0. inv EEU0.
+  exploit Local.two_cohmax_ts_eq; [exact MLOC1 | exact MLOC3 |]; eauto. intro MLOCEQ. rewrite MLOCEQ in *.
+  exploit Local.two_cohmax_ts_eq; [exact MLOC2 | exact MLOC0 |]; eauto. intro MLOCEQ0. rewrite MLOCEQ0 in *.
+  destruct (View.ts (Local.coh (ExecUnit.local eu1) mloc3) == View.ts (Local.coh (ExecUnit.local eu2) mloc0)); cycle 1.
+  - generalize c. intro c0.
+    apply COHMAX_ORD in c. symmetry in c0. apply COHMAX_ORD0 in c0. lia.
+  - inv e1. rewrite H0 in *.
+    exploit OTHER_ORD; eauto. exploit OTHER_ORD0; eauto. i. des. subst.
+    eapply eutrs_unique_write.
+    { exact L1. }
+    { exact L2. }
+    all: eauto.
+    destruct (tid1 == tid2); cycle 1.
+    { left. ss. }
+    inv e1. exploit TH_ORD; ss. exploit TH_ORD0; ss. lia.
 Qed.
 
 Theorem promising_pf_to_view
-        p pm
-        (EXEC: Machine.pf_exec p pm):
-  exists vm,
-    <<STEP: Machine.view_exec p vm>> /\
-    <<SIM: Machine.equiv pm vm>>.
+        p m
+        (EXEC: Machine.pf_exec p m):
+  Machine.view_exec p m.
 Proof.
   inv EXEC.
   generalize (Machine.init_wf p). intro WF.
@@ -188,11 +188,9 @@ Proof.
 Qed.
 
 Theorem promising_to_view
-        p pm
-        (EXEC: Machine.exec p pm):
-  exists vm,
-    <<STEP: Machine.view_exec p vm>> /\
-    <<SIM: Machine.equiv pm vm>>.
+        p m
+        (EXEC: Machine.exec p m):
+  Machine.view_exec p m.
 Proof.
   apply promising_to_promising_pf in EXEC.
   apply promising_pf_to_view; auto.

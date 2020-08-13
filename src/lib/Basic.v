@@ -195,6 +195,16 @@ Inductive opt_rel A B (rel: A -> B -> Prop): forall (a:option A) (b:option B), P
 .
 Hint Constructors opt_rel.
 
+Inductive opt_rel3 A B C (rel3: A -> B -> C -> Prop): forall (a:option A) (b:option B) (c: option C), Prop :=
+| opt_rel3_None:
+    opt_rel3 rel3 None None None
+| opt_rel3_Some
+    a b c
+    (REL: rel3 a b c):
+    opt_rel3 rel3 (Some a) (Some b) (Some c)
+.
+Hint Constructors opt_rel3.
+
 Inductive opt_rel6 A B C D E F (rel6: A -> B -> C -> D -> E -> F -> Prop):
   forall (a: option A) (b: option B) (c: option C) (d: option D) (e: option E) (f: option F), Prop :=
 | opt_rel6_None:
@@ -835,6 +845,14 @@ Module IdMap.
              (b: t B)
     : Prop :=
     forall id, opt_rel (rel id) (find id a) (find id b).
+
+  Definition Forall3 A B C
+             (rel3: Id.t -> A -> B -> C -> Prop)
+             (a: t A)
+             (b: t B)
+             (c: t C)
+    : Prop :=
+    forall id, opt_rel3 (rel3 id) (find id a) (find id b) (find id c).
 
   Definition Forall6 A B C D E F
              (rel6: Id.t -> A -> B -> C -> D -> E -> F -> Prop)
