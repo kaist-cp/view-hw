@@ -1547,17 +1547,17 @@ Module Machine.
   .
   Hint Constructors view_exec.
 
-  Inductive persisted (p:program) (m:t) (smem:Loc.t -> Val.t): Prop :=
-  | persisted_intro
-      loc val
-      (VAL: smem loc = val)
-      (MEM: exists ts,
-              Memory.read loc ts m.(mem) = Some val /\
-              IdMap.Forall (fun _ sl =>
-                Memory.latest loc ts ((snd sl).(Local.per) loc).(View.ts) m.(mem))
-                m.(tpool))
+  Inductive persisted_loc (p:program) (m:t) (loc:Loc.t) (val:Val.t): Prop :=
+  | persisted_loc_intro
+      ts
+      (TS: Memory.read loc ts m.(mem) = Some val)
+      (LATEST: IdMap.Forall (fun _ sl =>
+                 Memory.latest loc ts ((snd sl).(Local.per) loc).(View.ts) m.(mem))
+                 m.(tpool))
   .
-  Hint Constructors persisted.
+  Hint Constructors persisted_loc.
+
+  Definition persisted p m smem := forall loc, persisted_loc p m loc (smem loc).
 
   Inductive equiv (m1 m2:t): Prop :=
   | equiv_intro
