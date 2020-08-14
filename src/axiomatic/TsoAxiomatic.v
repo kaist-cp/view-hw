@@ -979,7 +979,26 @@ Module Valid.
 
   Definition rf_wf (ex: Execution.t) := functional (ex.(Execution.rf))⁻¹.
 
-  (* TODO: add persistency *)
+  (* TODO: Actually, do we need, say, "co_cl"? not co *)
+  Definition persisted_before (ex:Execution.t) (loc:Loc.t) (eid: eidT) :=
+    forall peid,
+      (<<PEID: ex.(Execution.label_is) (Label.is_kinda_writing loc) peid>> /\
+       <<DOM: dom_rel (Execution.fl ex) peid>> \/
+       <<COFL: forall peid2, dom_rel (Execution.fl ex) peid2 /\ ex.(Execution.co) peid peid2>>) ->
+      ex.(Execution.co) peid eid \/ peid = eid.
+
+  Inductive persisted_loc (ex:Execution.t) (loc:Loc.t) (val:Val.t): Prop :=
+  | persisted_loc_intro
+      eid
+      (EID: ex.(Execution.label_is) (Label.is_kinda_writing_val loc val) eid)
+      (BEFORE: persisted_before ex loc eid)
+  .
+  Hint Constructors persisted_loc : tso.
+
+  Definition persisted ex smem :=
+    forall loc, persisted_loc ex loc (smem loc).
+  (* TODO: How to express uninit event? *)
+
   Inductive ex (p:program) (ex:Execution.t) := mk_ex {
     PRE: pre_ex p ex;
     CO1: co1 ex;
