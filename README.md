@@ -10,9 +10,13 @@ Please visit the [project website](https://sf.snu.ac.kr/promising-arm-riscv/) fo
 
 - Requirement: [Coq 8.11](https://coq.inria.fr/download), Make, Rsync.
 
+        apt install -y build-essential rsync opam
+        opam init
+        opam install coq.8.11.0
+
 - Initialization
 
-        cd promising-arm
+        cd promising-hw
         git submodule init
         git submodule update
 
