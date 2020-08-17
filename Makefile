@@ -6,10 +6,10 @@ COQTHEORIES  := lib/sflib/*.v lib/hahn/*.v $(foreach dir, $(COQDIRS), src/$(dir)
 
 all: quick
 
-build: sflib Makefile.coq
+build: sflib hahn Makefile.coq
 	$(MAKE) -f Makefile.coq all
 
-quick: sflib-quick Makefile.coq
+quick: sflib-quick hahn-quick Makefile.coq
 	$(MAKE) -f Makefile.coq vio
 
 sflib: lib/sflib
@@ -18,9 +18,15 @@ sflib: lib/sflib
 sflib-quick: lib/sflib
 	$(MAKE) -C lib/sflib quick
 
+hahn: lib/hahn
+	$(MAKE) -C lib/hahn
+
+hahn-quick: lib/hahn
+	$(MAKE) -C lib/hahn quick
+
 Makefile.coq: Makefile $(COQTHEORIES)
 	(echo "-R lib/sflib sflib"; \
-   echo "-R lib/hahn Top"; \
+   echo "-R lib/hahn hahn"; \
    \
    echo $(foreach dir, $(COQDIRS), "-R src/$(dir) $(COQMODULE).$(dir)"); \
    \
