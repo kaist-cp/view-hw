@@ -8,11 +8,11 @@ Please visit the [project website](https://sf.snu.ac.kr/promising-arm-riscv/) fo
 
 ## Build
 
-- Requirement: [Coq 8.11](https://coq.inria.fr/download), Make, Rsync.
+- Requirement: [Coq 8.11.2](https://coq.inria.fr/download), Make, Rsync.
 
         apt install -y build-essential rsync opam
         opam init
-        opam install coq.8.11.0
+        opam install coq.8.11.2
 
 - Initialization
 
