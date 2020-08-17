@@ -607,20 +607,24 @@ Proof.
 Qed.
 
 Theorem promising_pf_to_axiomatic
-        p m
-        (STEP: Machine.pf_exec p m):
+        p m smem
+        (STEP: Machine.pf_exec p m)
+        (PER: Machine.persisted p m smem):
   exists ex (EX: Valid.ex p ex),
     <<TERMINAL: Machine.is_terminal m -> Valid.is_terminal EX>> /\
     <<STATE: IdMap.Forall2
                (fun tid sl aeu => sim_state_weak (fst sl) aeu.(AExecUnit.state))
-               m.(Machine.tpool) EX.(Valid.aeus)>>.
+               m.(Machine.tpool) EX.(Valid.aeus)>> /\
+    <<PER: Valid.persisted ex smem>>.
 Proof.
   exploit promising_pf_valid; eauto. i. des.
   exists ex. eexists (Valid.mk_ex PRE CO1 CO2 RF1 RF2 RF_WF _ _ _).
   s. esplits; eauto.
-  ii. inv H. specialize (STATE tid). inv STATE; try congr.
-  rewrite FIND in H. inv H. destruct a. destruct aeu. ss.
-  exploit TERMINAL; eauto. i. des. inv REL. inv x. congr.
+  - ii. inv H. specialize (STATE tid). inv STATE; try congr.
+    rewrite FIND in H. inv H. destruct a. destruct aeu. ss.
+    exploit TERMINAL; eauto. i. des. inv REL. inv x. congr.
+  - admit.
+
 Grab Existential Variables.
 { (* external *)
   ii. exploit Valid.ob_cycle; eauto. i. des. rename x1 into NONBARRIER.
@@ -639,13 +643,15 @@ Grab Existential Variables.
 Qed.
 
 Theorem promising_to_axiomatic
-        p m
-        (STEP: Machine.exec p m):
+        p m smem
+        (STEP: Machine.exec p m)
+        (PER: Machine.persisted p m smem):
   exists ex (EX: Valid.ex p ex),
     <<TERMINAL: Machine.is_terminal m -> Valid.is_terminal EX>> /\
     <<STATE: IdMap.Forall2
                (fun tid sl aeu => sim_state_weak (fst sl) aeu.(AExecUnit.state))
-               m.(Machine.tpool) EX.(Valid.aeus)>>.
+               m.(Machine.tpool) EX.(Valid.aeus)>> /\
+    <<PER: Valid.persisted ex smem>>.
 Proof.
   apply promising_to_promising_pf in STEP.
   apply promising_pf_to_axiomatic; auto.

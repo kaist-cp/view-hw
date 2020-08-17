@@ -1357,15 +1357,17 @@ Proof.
 Qed.
 
 Theorem axiomatic_to_promising
-      p ex
-      (EX: Valid.ex p ex):
+      p ex smem
+      (EX: Valid.ex p ex)
+      (PER: Valid.persisted ex smem):
   exists m,
     <<STEP: Machine.exec p m>> /\
     <<TERMINAL: Valid.is_terminal EX -> Machine.is_terminal m>> /\
     <<STATE: IdMap.Forall2
                (fun tid sl aeu => sim_state_weak (fst sl) aeu.(AExecUnit.state))
                m.(Machine.tpool) EX.(Valid.aeus)>> /\
-    <<MEM: sim_mem ex m.(Machine.mem)>>.
+    <<MEM: sim_mem ex m.(Machine.mem)>> /\
+    <<PER: Machine.persisted p m smem>>.
 Proof.
   (* Linearize events and construct memory. *)
   exploit (linearize (Execution.eids ex)).
@@ -1405,6 +1407,7 @@ Proof.
     etrans.
     - eapply rtc_mon; [|by eauto]. apply Machine.step_mon. right. ss.
     - eapply rtc_mon; [|by eauto]. apply Machine.step_mon. left. ss.
+    - admit.
   }
   clear STEP.
 
