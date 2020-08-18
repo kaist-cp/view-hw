@@ -43,6 +43,7 @@ Definition adj A (rel: A -> A -> Prop) (l: list A): Prop :=
     (NEXT: nth_error l (S i) = Some next),
     rel prev next.
 
+(* TODO: Machine equality seems to be possible like VtoP *)
 Theorem promising_pf_to_view
         p pm
         (EXEC: Machine.pf_exec p pm):
