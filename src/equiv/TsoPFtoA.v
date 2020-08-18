@@ -505,8 +505,9 @@ Proof.
 Qed.
 
 Lemma promising_pf_valid
-      p m
-      (STEP: Machine.pf_exec p m):
+      p m smem
+      (STEP: Machine.pf_exec p m)
+      (PMEM: Machine.persisted m smem):
   exists ex (PRE: Valid.pre_ex p ex) (cov: forall (eid: eidT), Time.t) (vext: forall (eid: eidT), Time.t),
     <<CO1: Valid.co1 ex>> /\
     <<CO2: Valid.co2 ex>> /\
@@ -543,7 +544,8 @@ Lemma promising_pf_valid
          ex.(Execution.label_is) Label.is_read eid2)>> /\
     <<STATE: IdMap.Forall2
                (fun tid sl aeu => sim_state_weak (fst sl) aeu.(AExecUnit.state))
-               m.(Machine.tpool) PRE.(Valid.aeus)>>.
+               m.(Machine.tpool) PRE.(Valid.aeus)>> /\
+    <<PMEM: Valid.persisted ex smem>>.
 Proof.
   exploit promising_pf_sim_traces; eauto. i. des.
   destruct PRE, ex. ss.
@@ -604,26 +606,26 @@ Proof.
         symmetry in FIND. inv FIND. rewrite H0.
         apply sim_state_weak_init.
       }
+  - admit.
 Qed.
 
 Theorem promising_pf_to_axiomatic
         p m smem
         (STEP: Machine.pf_exec p m)
-        (PER: Machine.persisted p m smem):
+        (PMEM: Machine.persisted m smem):
   exists ex (EX: Valid.ex p ex),
     <<TERMINAL: Machine.is_terminal m -> Valid.is_terminal EX>> /\
     <<STATE: IdMap.Forall2
                (fun tid sl aeu => sim_state_weak (fst sl) aeu.(AExecUnit.state))
                m.(Machine.tpool) EX.(Valid.aeus)>> /\
-    <<PER: Valid.persisted ex smem>>.
+    <<PMEM: Valid.persisted ex smem>>.
 Proof.
   exploit promising_pf_valid; eauto. i. des.
   exists ex. eexists (Valid.mk_ex PRE CO1 CO2 RF1 RF2 RF_WF _ _ _).
   s. esplits; eauto.
-  - ii. inv H. specialize (STATE tid). inv STATE; try congr.
-    rewrite FIND in H. inv H. destruct a. destruct aeu. ss.
-    exploit TERMINAL; eauto. i. des. inv REL. inv x. congr.
-  - admit.
+  ii. inv H. specialize (STATE tid). inv STATE; try congr.
+  rewrite FIND in H. inv H. destruct a. destruct aeu. ss.
+  exploit TERMINAL; eauto. i. des. inv REL. inv x. congr.
 
 Grab Existential Variables.
 { (* external *)
