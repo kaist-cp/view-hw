@@ -1399,12 +1399,12 @@ Proof.
           <<STATE: IdMap.Forall2
                      (fun tid sl aeu => sim_state_weak (fst sl) aeu.(AExecUnit.state))
                      m0.(Machine.tpool) EX.(Valid.aeus)>> /\
-          <<MEM: sim_mem ex (Machine.mem m0)>>).
+          <<MEM: sim_mem ex (Machine.mem m0)>> /\
+          <<PER: Machine.persisted p m0 smem>>).
   { i. des. esplits; eauto. econs; eauto.
     etrans.
     - eapply rtc_mon; [|by eauto]. apply Machine.step_mon. right. ss.
     - eapply rtc_mon; [|by eauto]. apply Machine.step_mon. left. ss.
-    - admit.
   }
   clear STEP.
 
@@ -1421,7 +1421,10 @@ Proof.
              exists aeu,
                <<AEU: IdMap.find tid EX.(Valid.aeus) = Some aeu>> /\
                <<STATE: sim_state_weak st aeu.(AExecUnit.state)>> /\
-               <<PROMISE: lc.(Local.promises) = bot>>).
+               <<PROMISE: lc.(Local.promises) = bot>> /\
+               <<PER: forall loc ts
+                             (READ: Memory.read loc ts m.(Machine.mem) = Some (smem loc)),
+                        Memory.latest loc ts (lc.(Local.per) loc).(View.ts) m.(Machine.mem)>>).
   { i. rewrite TPOOL, FIND1 in FIND2. ss. }
   assert (INVALID: forall tid
                      (FIND1: IdMap.find tid p = None)
@@ -1448,6 +1451,18 @@ Proof.
     - ii. destruct (IdMap.find id (Machine.tpool m)) as [[]|] eqn:T.
       + exploit OUT; eauto. i. des. rewrite AEU. econs. ss.
       + exploit INVALID; eauto. intro X. rewrite X. ss.
+    - ii. specialize (PER loc). inv PER.
+      + assert (ZERO: Memory.read loc 0 m.(Machine.mem) = Some (smem loc)).
+        { rewrite UNINIT. ss. }
+        econs; eauto.
+        intros tid [st0 lc0]. i. s.
+        hexploit OUT; eauto. i. des.
+        eapply PER; eauto.
+      + exploit label_write_mem_of_ex; eauto. i. des. rewrite <- MEM0 in *.
+        econs; eauto.
+        intros tid [st0 lc0]. i. s.
+        hexploit OUT; eauto. i. des.
+        eapply PER; eauto.
   }
   i.
 
@@ -1465,7 +1480,10 @@ Proof.
           <<TERMINAL: Valid.is_terminal EX -> State.is_terminal st2>> /\
           <<AEU: IdMap.find tid EX.(Valid.aeus) = Some aeu>> /\
           <<STATE: sim_state_weak st2 aeu.(AExecUnit.state)>> /\
-          <<NOPROMISE: lc2.(Local.promises) = bot>>).
+          <<NOPROMISE: lc2.(Local.promises) = bot>> /\
+          <<PER: forall loc ts
+                        (READ: Memory.read loc ts m.(Machine.mem) = Some (smem loc)),
+                  Memory.latest loc ts (lc2.(Local.per) loc).(View.ts) m.(Machine.mem)>>).
   { i. des. subst.
     exploit Machine.rtc_eu_step_step; try exact STEP; eauto. i.
     assert (NOTIN: SetoidList.findA (fun id' : IdMap.key => if equiv_dec tid id' then true else false) ps = None).
@@ -1555,4 +1573,7 @@ Proof.
     inv WRITE. unfold Execution.label in EID. ss.
     rewrite EX.(Valid.LABELS), IdMap.map_spec, <- AEU in EID. ss.
     apply List.nth_error_None in N. congr.
+  - i. inv LOCAL.
+
+    admit.
 Qed.
