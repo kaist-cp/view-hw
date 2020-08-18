@@ -252,6 +252,7 @@ Inductive sim_local (tid:Id.t) (ex:Execution.t) (ob: list eidT) (alocal:ALocal.t
           <<VIEW: view_of_eid ex ob (tid, n) = Some view>>);
   PER: forall loc val ts
               (PMEM: Valid.persisted_loc ex loc val)
+              (* TODO: This is wrong. how to express ts? *)
               (READ: Memory.read loc ts (mem_of_ex ex ob) = Some val),
         <<LATEST: Memory.latest loc ts (local.(Local.per) loc).(View.ts) (mem_of_ex ex ob)>>
 }.
@@ -1001,7 +1002,8 @@ Proof.
           - esplits; cycle 1; eauto. lia.
         }
         { esplits; cycle 1; eauto. lia. }
-      * admit.
+      * (* TODO: need LPER invariant *)
+        admit.
   - (* rmw_failure *)
     exploit LABEL.
     { rewrite List.nth_error_app2; [|refl]. rewrite Nat.sub_diag. ss. }
@@ -1262,7 +1264,10 @@ Proof.
         - esplits; cycle 1; eauto. lia.
       }
       { esplits; cycle 1; eauto. lia. }
-    + admit.
+    + i. condtac; cycle 1.
+      { ii. eapply SIM_LOCAL.(PER); eauto. }
+      (* TODO: need LPER invariant *)
+      admit.
   - (* dowhile *)
     eexists (ExecUnit.mk _ _ _). esplits.
     + econs. econs; ss; econs; ss.
