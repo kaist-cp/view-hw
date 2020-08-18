@@ -1578,7 +1578,7 @@ Module Machine.
   .
   Hint Constructors view_exec.
 
-  Inductive persisted_loc (p:program) (m:t) (loc:Loc.t) (val:Val.t): Prop :=
+  Inductive persisted_loc (m:t) (loc:Loc.t) (val:Val.t): Prop :=
   | persisted_loc_intro
       ts
       (TS: Memory.read loc ts m.(mem) = Some val)
@@ -1588,7 +1588,7 @@ Module Machine.
   .
   Hint Constructors persisted_loc.
 
-  Definition persisted p m smem := forall loc, persisted_loc p m loc (smem loc).
+  Definition persisted m smem := forall loc, persisted_loc m loc (smem loc).
 
   Inductive equiv (m1 m2:t): Prop :=
   | equiv_intro
