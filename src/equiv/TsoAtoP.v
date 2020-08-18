@@ -250,6 +250,10 @@ Inductive sim_local (tid:Id.t) (ex:Execution.t) (ob: list eidT) (alocal:ALocal.t
           <<N: (length alocal.(ALocal.labels)) <= n>> /\
           <<WRITE: ex.(Execution.label_is) Label.is_kinda_write (tid, n)>> /\
           <<VIEW: view_of_eid ex ob (tid, n) = Some view>>);
+  PER: forall loc val ts
+              (PMEM: Valid.persisted_loc ex loc val)
+              (READ: Memory.read loc ts (mem_of_ex ex ob) = Some val),
+        <<LATEST: Memory.latest loc ts (local.(Local.per) loc).(View.ts) (mem_of_ex ex ob)>>
 }.
 Hint Constructors sim_local.
 
@@ -755,6 +759,8 @@ Proof.
           - esplits; cycle 1; eauto. lia.
         }
         { esplits; cycle 1; eauto. lia. }
+      * (* sim_local per *)
+        ii. eapply SIM_LOCAL.(PER); eauto.
   - (* write *)
     exploit LABEL.
     { rewrite List.nth_error_app2; [|refl]. rewrite Nat.sub_diag. ss. }
@@ -828,6 +834,7 @@ Proof.
           - esplits; cycle 1; eauto. lia.
         }
         { esplits; cycle 1; eauto. lia. }
+      * ii. eapply SIM_LOCAL.(PER); eauto.
   - (* rmw *)
     exploit LABEL.
     { rewrite List.nth_error_app2; [|refl]. rewrite Nat.sub_diag. ss. }
@@ -994,6 +1001,7 @@ Proof.
           - esplits; cycle 1; eauto. lia.
         }
         { esplits; cycle 1; eauto. lia. }
+      * admit.
   - (* rmw_failure *)
     exploit LABEL.
     { rewrite List.nth_error_app2; [|refl]. rewrite Nat.sub_diag. ss. }
@@ -1215,6 +1223,7 @@ Proof.
           - esplits; cycle 1; eauto. lia.
         }
         { esplits; cycle 1; eauto. lia. }
+      * ii. eapply SIM_LOCAL.(PER); eauto.
   - (* dmb *)
     exploit LABEL.
     { rewrite List.nth_error_app2; ss. rewrite Nat.sub_diag. ss. }
@@ -1253,6 +1262,7 @@ Proof.
         - esplits; cycle 1; eauto. lia.
       }
       { esplits; cycle 1; eauto. lia. }
+    + admit.
   - (* dowhile *)
     eexists (ExecUnit.mk _ _ _). esplits.
     + econs. econs; ss; econs; ss.
@@ -1289,6 +1299,7 @@ Proof.
         - esplits; cycle 1; eauto. lia.
       }
       { esplits; cycle 1; eauto. lia. }
+    + ii. eapply SIM_LOCAL.(PER); eauto.
   - (* flush *)
     exploit LABEL.
     { rewrite List.nth_error_app2; ss. rewrite Nat.sub_diag. ss. }
@@ -1320,6 +1331,9 @@ Proof.
         - esplits; cycle 1; eauto. lia.
       }
       { esplits; cycle 1; eauto. lia. }
+    + ii. revert TS2. funtac; cycle 1.
+      { i. eapply SIM_LOCAL.(PER); eauto. }
+      admit.
 Qed.
 
 Lemma sim_eu_rtc_step
@@ -1356,7 +1370,7 @@ Qed.
 Theorem axiomatic_to_promising
       p ex smem
       (EX: Valid.ex p ex)
-      (PER: Valid.persisted ex smem):
+      (PMEM: Valid.persisted ex smem):
   exists m,
     <<STEP: Machine.exec p m>> /\
     <<TERMINAL: Valid.is_terminal EX -> Machine.is_terminal m>> /\
@@ -1364,7 +1378,7 @@ Theorem axiomatic_to_promising
                (fun tid sl aeu => sim_state_weak (fst sl) aeu.(AExecUnit.state))
                m.(Machine.tpool) EX.(Valid.aeus)>> /\
     <<MEM: sim_mem ex m.(Machine.mem)>> /\
-    <<PER: Machine.persisted p m smem>>.
+    <<PMEM: Machine.persisted m smem>>.
 Proof.
   (* Linearize events and construct memory. *)
   exploit (linearize (Execution.eids ex)).
@@ -1400,7 +1414,7 @@ Proof.
                      (fun tid sl aeu => sim_state_weak (fst sl) aeu.(AExecUnit.state))
                      m0.(Machine.tpool) EX.(Valid.aeus)>> /\
           <<MEM: sim_mem ex (Machine.mem m0)>> /\
-          <<PER: Machine.persisted p m0 smem>>).
+          <<PMEM: Machine.persisted m0 smem>>).
   { i. des. esplits; eauto. econs; eauto.
     etrans.
     - eapply rtc_mon; [|by eauto]. apply Machine.step_mon. right. ss.
@@ -1422,8 +1436,8 @@ Proof.
                <<AEU: IdMap.find tid EX.(Valid.aeus) = Some aeu>> /\
                <<STATE: sim_state_weak st aeu.(AExecUnit.state)>> /\
                <<PROMISE: lc.(Local.promises) = bot>> /\
-               <<PER: forall loc ts
-                             (READ: Memory.read loc ts m.(Machine.mem) = Some (smem loc)),
+               <<PMEM: forall loc ts
+                              (READ: Memory.read loc ts m.(Machine.mem) = Some (smem loc)),
                         Memory.latest loc ts (lc.(Local.per) loc).(View.ts) m.(Machine.mem)>>).
   { i. rewrite TPOOL, FIND1 in FIND2. ss. }
   assert (INVALID: forall tid
@@ -1451,18 +1465,17 @@ Proof.
     - ii. destruct (IdMap.find id (Machine.tpool m)) as [[]|] eqn:T.
       + exploit OUT; eauto. i. des. rewrite AEU. econs. ss.
       + exploit INVALID; eauto. intro X. rewrite X. ss.
-    - ii. specialize (PER loc). inv PER.
+    - ii. specialize (PMEM loc). inv PMEM.
       + assert (ZERO: Memory.read loc 0 m.(Machine.mem) = Some (smem loc)).
         { rewrite UNINIT. ss. }
         econs; eauto.
+        intros tid [st0 lc0]. i. s. hexploit OUT; eauto. i. des.
+        specialize (PMEM loc 0). apply PMEM in ZERO. ss.
+      + exploit label_write_mem_of_ex; eauto. i. des.
+        rewrite <- MEM0 in *. econs; eauto.
         intros tid [st0 lc0]. i. s.
         hexploit OUT; eauto. i. des.
-        eapply PER; eauto.
-      + exploit label_write_mem_of_ex; eauto. i. des. rewrite <- MEM0 in *.
-        econs; eauto.
-        intros tid [st0 lc0]. i. s.
-        hexploit OUT; eauto. i. des.
-        eapply PER; eauto.
+        eapply PMEM; eauto.
   }
   i.
 
@@ -1481,7 +1494,7 @@ Proof.
           <<AEU: IdMap.find tid EX.(Valid.aeus) = Some aeu>> /\
           <<STATE: sim_state_weak st2 aeu.(AExecUnit.state)>> /\
           <<NOPROMISE: lc2.(Local.promises) = bot>> /\
-          <<PER: forall loc ts
+          <<PMEM: forall loc ts
                         (READ: Memory.read loc ts m.(Machine.mem) = Some (smem loc)),
                   Memory.latest loc ts (lc2.(Local.per) loc).(View.ts) m.(Machine.mem)>>).
   { i. des. subst.
@@ -1546,6 +1559,7 @@ Proof.
           rewrite VIEW in VIEW0. inv VIEW0.
           unfold Memory.get_msg in MSG. ss. apply Promises.promises_from_mem_spec. eauto.
       }
+    - ii. ss. unfold bot in *. unfold Time.bot in *. lia.
   }
   { clear. econs; ss.
     econs; ss; i; try by apply bot_spec.
@@ -1573,7 +1587,6 @@ Proof.
     inv WRITE. unfold Execution.label in EID. ss.
     rewrite EX.(Valid.LABELS), IdMap.map_spec, <- AEU in EID. ss.
     apply List.nth_error_None in N. congr.
-  - i. inv LOCAL.
-
-    admit.
+  - ii. specialize (PMEM loc).
+    eapply LOCAL.(PER); eauto.
 Qed.
