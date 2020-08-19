@@ -68,6 +68,12 @@ Module Label.
     | _ => false
     end.
 
+  Definition is_flushing (loc:Loc.t) (label:t): bool :=
+    match label with
+    | flush loc' => loc' == loc
+    | _ => false
+    end.
+
   Definition is_flushopt (label:t): bool :=
     match label with
     | flushopt _ => true
