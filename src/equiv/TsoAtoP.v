@@ -255,6 +255,11 @@ Inductive sim_local (tid:Id.t) (ex:Execution.t) (ob: list eidT) (alocal:ALocal.t
           ex ob
           (inverse (sim_local_lper ex loc) (eq (tid, List.length (alocal.(ALocal.labels)))))
           (local.(Local.lper) loc).(View.ts);
+  PER: forall loc,
+        sim_view
+          ex ob
+          (inverse (sim_local_per ex loc) (eq (tid, List.length (alocal.(ALocal.labels)))))
+          (local.(Local.per) loc).(View.ts)
 }.
 Hint Constructors sim_local.
 
@@ -517,6 +522,15 @@ Proof.
     erewrite List_nth_error_find_pos; eauto. s. f_equal. ss.
 Qed.
 
+Ltac simtac :=
+  repeat match goal with
+           | [H: _ |- (_⨾ _) _ _] => econs
+           | [H: _ |- ⦗Execution.label_is _ _⦘ _ _ /\ _] => econs; econs; eauto with tso
+           | [H: _ |- ⦗Execution.label_is _ _⦘ _ _] => econs; eauto with tso
+           | [H: _ |- Execution.po _ _ /\ _] => econs; eauto
+           | [H: _ |- rc _ _ /\ _] => econs; eauto
+          end.
+
 Lemma sim_eu_step
       p ex ob tid aeu1 eu1 aeu2
       (EX: Valid.ex p ex)
@@ -765,6 +779,11 @@ Proof.
         rewrite sim_local_lper_step. rewrite inverse_step.
         rewrite inverse_union.
         eapply sim_view_le; [|exact (SIM_LOCAL.(LPER) loc)]. eauto.
+      * (* sim_local per *)
+        i. rewrite List.app_length, Nat.add_1_r.
+        rewrite sim_local_per_step. rewrite inverse_step.
+        rewrite inverse_union.
+        eapply sim_view_le; [|exact (SIM_LOCAL.(PER) loc)]. eauto.
   - (* write *)
     exploit LABEL.
     { rewrite List.nth_error_app2; [|refl]. rewrite Nat.sub_diag. ss. }
@@ -843,6 +862,11 @@ Proof.
         rewrite sim_local_lper_step. rewrite inverse_step.
         rewrite inverse_union.
         eapply sim_view_le; [|exact (SIM_LOCAL.(LPER) loc)]. eauto.
+      * (* sim_local per *)
+        i. rewrite List.app_length, Nat.add_1_r.
+        rewrite sim_local_per_step. rewrite inverse_step.
+        rewrite inverse_union.
+        eapply sim_view_le; [|exact (SIM_LOCAL.(PER) loc)]. eauto.
   - (* rmw *)
     exploit LABEL.
     { rewrite List.nth_error_app2; [|refl]. rewrite Nat.sub_diag. ss. }
@@ -1014,6 +1038,18 @@ Proof.
         rewrite sim_local_lper_step. rewrite inverse_step.
         rewrite inverse_union.
         eapply sim_view_le; [|exact (SIM_LOCAL.(LPER) loc)]. eauto.
+      * i. rewrite List.app_length, Nat.add_1_r.
+        rewrite sim_local_per_step. rewrite inverse_step.
+        rewrite inverse_union. apply sim_view_join.
+        { eapply sim_view_le; [|exact (SIM_LOCAL.(PER) loc)]. eauto. }
+        eapply sim_view_le; [|exact (SIM_LOCAL.(LPER) loc)]. i.
+        right. econs; eauto.
+        inv PR. unfold sim_local_lper in REL.
+        obtac; [
+          repeat left |
+          left; left; left; left; right |
+          left; left; left; right
+        ]; simtac; right; econs; eauto with tso.
   - (* rmw_failure *)
     exploit LABEL.
     { rewrite List.nth_error_app2; [|refl]. rewrite Nat.sub_diag. ss. }
@@ -1240,6 +1276,11 @@ Proof.
         rewrite sim_local_lper_step. rewrite inverse_step.
         rewrite inverse_union.
         eapply sim_view_le; [|exact (SIM_LOCAL.(LPER) loc)]. eauto.
+      * (* sim_local per *)
+        i. rewrite List.app_length, Nat.add_1_r.
+        rewrite sim_local_per_step. rewrite inverse_step.
+        rewrite inverse_union.
+        eapply sim_view_le; [|exact (SIM_LOCAL.(PER) loc)]. eauto.
   - (* dmb *)
     exploit LABEL.
     { rewrite List.nth_error_app2; ss. rewrite Nat.sub_diag. ss. }
@@ -1283,6 +1324,23 @@ Proof.
       rewrite sim_local_lper_step. rewrite inverse_step.
       rewrite inverse_union.
       eapply sim_view_le; [|exact (SIM_LOCAL.(LPER) loc)]. eauto.
+    + i. rewrite List.app_length, Nat.add_1_r.
+      rewrite sim_local_per_step. rewrite inverse_step.
+      rewrite inverse_union. condtac; cycle 1.
+      { eapply sim_view_le; [|exact (SIM_LOCAL.(PER) loc)]. eauto. }
+      apply sim_view_join.
+      { eapply sim_view_le; [|exact (SIM_LOCAL.(PER) loc)]. eauto. }
+      eapply sim_view_le; [|exact (SIM_LOCAL.(LPER) loc)]. i.
+      right. econs; eauto.
+      inv PR. unfold sim_local_lper in REL.
+      (* destruct wr; destruct ww; ss. *)
+      obtac; [
+        repeat left |
+        left; left; left; left; right |
+        left; left; left; right
+      ]; simtac; left.
+      all: destruct wr; [left; econs; eauto with tso|].
+      all: destruct ww; [right; econs; eauto with tso|ss].
   - (* dowhile *)
     eexists (ExecUnit.mk _ _ _). esplits.
     + econs. econs; ss; econs; ss.
@@ -1329,18 +1387,15 @@ Proof.
       * eapply sim_view_le; [|exact (SIM_LOCAL.(COH) (sem_expr armap2 eloc).(ValA.val))]. i.
         right. econs; eauto.
         inv PR. inv REL. obtac.
-        left. left.
-        econs. econs; econs; eauto with tso.
-        econs; eauto. econs. econs; eauto. econs; eauto with tso.
+        left. left. simtac.
       * eapply sim_view_le; [|exact SIM_LOCAL.(VRN)]. i.
         right. econs; eauto.
-        inv PR. inv REL; obtac.
-        { left. right.
-          econs. econs; econs; eauto with tso.
-          econs; eauto. econs; eauto with tso.
-        }
-        right. econs. econs; econs; eauto with tso. econs; eauto.
-        econs. econs; econs; eauto with tso. econs; eauto. econs; eauto with tso.
+        inv PR. inv REL; obtac; [left; right | right]; simtac.
+    + (* sim_local per *)
+      i. rewrite List.app_length, Nat.add_1_r.
+      rewrite sim_local_per_step. rewrite inverse_step.
+      rewrite inverse_union.
+      eapply sim_view_le; [|exact (SIM_LOCAL.(PER) loc)]. eauto.
   - (* flush *)
     exploit LABEL.
     { rewrite List.nth_error_app2; ss. rewrite Nat.sub_diag. ss. }
@@ -1377,6 +1432,20 @@ Proof.
       rewrite sim_local_lper_step. rewrite inverse_step.
       rewrite inverse_union.
       eapply sim_view_le; [|exact (SIM_LOCAL.(LPER) loc)]. eauto.
+    + i. rewrite List.app_length, Nat.add_1_r.
+      rewrite sim_local_per_step. rewrite inverse_step.
+      rewrite inverse_union. funtac; cycle 1; clear X.
+      { eapply sim_view_le; [|exact (SIM_LOCAL.(PER) loc)]. eauto. }
+      inv e.
+      repeat apply sim_view_join.
+      * eapply sim_view_le; [|exact (SIM_LOCAL.(PER) (sem_expr armap2 eloc).(ValA.val))]. eauto.
+      * eapply sim_view_le; [|exact (SIM_LOCAL.(COH) (sem_expr armap2 eloc).(ValA.val))]. i.
+        right. econs; eauto.
+        inv PR. inv REL. obtac.
+        left. left. right. simtac.
+      * eapply sim_view_le; [|exact SIM_LOCAL.(VRN)]. i.
+        right. econs; eauto.
+        inv PR. inv REL; obtac; [left; right | right]; simtac.
 Qed.
 
 Lemma sim_eu_rtc_step
