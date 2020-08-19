@@ -74,6 +74,12 @@ Module Label.
     | _ => false
     end.
 
+  Definition is_flushopting (loc:Loc.t) (label:t): bool :=
+    match label with
+    | flushopt loc' => loc' == loc
+    | _ => false
+    end.
+
   Definition is_kinda_read (label:t): bool :=
     match label with
     | read _ _ => true
@@ -385,6 +391,12 @@ Module Label.
     - destruct (equiv_dec loc loc1); ss. inv e. destruct (equiv_dec loc1 loc2); ss.
   Qed.
 
+  Lemma flushopt_is_flushopting loc:
+    is_flushopting loc (flushopt loc).
+  Proof.
+    s. destruct (equiv_dec loc loc); ss. exfalso. apply c. ss.
+  Qed.
+
   Lemma flushopt_is_persist
         l
         (LABEL: is_flushopt l):
@@ -433,6 +445,7 @@ Module Label.
        accessing_is_access read_is_accessing write_is_accessing update_is_accessing
        kinda_writing_same_loc
        access_is_access_persist
+       flushopt_is_flushopting
        flushopt_is_persist persist_is_kinda_write_persist
        kinda_write_flush_is_kinda_write_persist kinda_write_persist_is_access_persist
     : tso.

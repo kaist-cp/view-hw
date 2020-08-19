@@ -647,7 +647,7 @@ Qed.
 Theorem promising_to_axiomatic
         p m smem
         (STEP: Machine.exec p m)
-        (PER: Machine.persisted p m smem):
+        (PER: Machine.persisted m smem):
   exists ex (EX: Valid.ex p ex),
     <<TERMINAL: Machine.is_terminal m -> Valid.is_terminal EX>> /\
     <<STATE: IdMap.Forall2

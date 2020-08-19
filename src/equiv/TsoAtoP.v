@@ -250,11 +250,11 @@ Inductive sim_local (tid:Id.t) (ex:Execution.t) (ob: list eidT) (alocal:ALocal.t
           <<N: (length alocal.(ALocal.labels)) <= n>> /\
           <<WRITE: ex.(Execution.label_is) Label.is_kinda_write (tid, n)>> /\
           <<VIEW: view_of_eid ex ob (tid, n) = Some view>>);
-  PER: forall loc val ts
-              (PMEM: Valid.persisted_loc ex loc val)
-              (* TODO: This is wrong. how to express ts? *)
-              (READ: Memory.read loc ts (mem_of_ex ex ob) = Some val),
-        <<LATEST: Memory.latest loc ts (local.(Local.per) loc).(View.ts) (mem_of_ex ex ob)>>
+  LPER: forall loc,
+        sim_view
+          ex ob
+          (inverse (sim_local_lper ex loc) (eq (tid, List.length (alocal.(ALocal.labels)))))
+          (local.(Local.lper) loc).(View.ts);
 }.
 Hint Constructors sim_local.
 
@@ -760,8 +760,11 @@ Proof.
           - esplits; cycle 1; eauto. lia.
         }
         { esplits; cycle 1; eauto. lia. }
-      * (* sim_local per *)
-        ii. eapply SIM_LOCAL.(PER); eauto.
+      * (* sim_local lper *)
+        i. rewrite List.app_length, Nat.add_1_r.
+        rewrite sim_local_lper_step. rewrite inverse_step.
+        rewrite inverse_union.
+        eapply sim_view_le; [|exact (SIM_LOCAL.(LPER) loc)]. eauto.
   - (* write *)
     exploit LABEL.
     { rewrite List.nth_error_app2; [|refl]. rewrite Nat.sub_diag. ss. }
@@ -835,7 +838,11 @@ Proof.
           - esplits; cycle 1; eauto. lia.
         }
         { esplits; cycle 1; eauto. lia. }
-      * ii. eapply SIM_LOCAL.(PER); eauto.
+      * (* sim_local lper *)
+        i. rewrite List.app_length, Nat.add_1_r.
+        rewrite sim_local_lper_step. rewrite inverse_step.
+        rewrite inverse_union.
+        eapply sim_view_le; [|exact (SIM_LOCAL.(LPER) loc)]. eauto.
   - (* rmw *)
     exploit LABEL.
     { rewrite List.nth_error_app2; [|refl]. rewrite Nat.sub_diag. ss. }
@@ -1002,8 +1009,11 @@ Proof.
           - esplits; cycle 1; eauto. lia.
         }
         { esplits; cycle 1; eauto. lia. }
-      * (* TODO: need LPER invariant *)
-        admit.
+      * (* sim_local lper *)
+        i. rewrite List.app_length, Nat.add_1_r.
+        rewrite sim_local_lper_step. rewrite inverse_step.
+        rewrite inverse_union.
+        eapply sim_view_le; [|exact (SIM_LOCAL.(LPER) loc)]. eauto.
   - (* rmw_failure *)
     exploit LABEL.
     { rewrite List.nth_error_app2; [|refl]. rewrite Nat.sub_diag. ss. }
@@ -1225,7 +1235,11 @@ Proof.
           - esplits; cycle 1; eauto. lia.
         }
         { esplits; cycle 1; eauto. lia. }
-      * ii. eapply SIM_LOCAL.(PER); eauto.
+      * (* sim_local lper *)
+        i. rewrite List.app_length, Nat.add_1_r.
+        rewrite sim_local_lper_step. rewrite inverse_step.
+        rewrite inverse_union.
+        eapply sim_view_le; [|exact (SIM_LOCAL.(LPER) loc)]. eauto.
   - (* dmb *)
     exploit LABEL.
     { rewrite List.nth_error_app2; ss. rewrite Nat.sub_diag. ss. }
@@ -1264,10 +1278,11 @@ Proof.
         - esplits; cycle 1; eauto. lia.
       }
       { esplits; cycle 1; eauto. lia. }
-    + i. condtac; cycle 1.
-      { ii. eapply SIM_LOCAL.(PER); eauto. }
-      (* TODO: need LPER invariant *)
-      admit.
+    + (* sim_local lper *)
+      i. rewrite List.app_length, Nat.add_1_r.
+      rewrite sim_local_lper_step. rewrite inverse_step.
+      rewrite inverse_union.
+      eapply sim_view_le; [|exact (SIM_LOCAL.(LPER) loc)]. eauto.
   - (* dowhile *)
     eexists (ExecUnit.mk _ _ _). esplits.
     + econs. econs; ss; econs; ss.
@@ -1304,7 +1319,28 @@ Proof.
         - esplits; cycle 1; eauto. lia.
       }
       { esplits; cycle 1; eauto. lia. }
-    + ii. eapply SIM_LOCAL.(PER); eauto.
+    + i. rewrite List.app_length, Nat.add_1_r.
+      rewrite sim_local_lper_step. rewrite inverse_step.
+      rewrite inverse_union. funtac; cycle 1; clear X.
+      { eapply sim_view_le; [|exact (SIM_LOCAL.(LPER) loc)]. eauto. }
+      inv e.
+      repeat apply sim_view_join.
+      * eapply sim_view_le; [|exact (SIM_LOCAL.(LPER) (sem_expr armap2 eloc).(ValA.val))]. eauto.
+      * eapply sim_view_le; [|exact (SIM_LOCAL.(COH) (sem_expr armap2 eloc).(ValA.val))]. i.
+        right. econs; eauto.
+        inv PR. inv REL. obtac.
+        left. left.
+        econs. econs; econs; eauto with tso.
+        econs; eauto. econs. econs; eauto. econs; eauto with tso.
+      * eapply sim_view_le; [|exact SIM_LOCAL.(VRN)]. i.
+        right. econs; eauto.
+        inv PR. inv REL; obtac.
+        { left. right.
+          econs. econs; econs; eauto with tso.
+          econs; eauto. econs; eauto with tso.
+        }
+        right. econs. econs; econs; eauto with tso. econs; eauto.
+        econs. econs; econs; eauto with tso. econs; eauto. econs; eauto with tso.
   - (* flush *)
     exploit LABEL.
     { rewrite List.nth_error_app2; ss. rewrite Nat.sub_diag. ss. }
@@ -1336,9 +1372,11 @@ Proof.
         - esplits; cycle 1; eauto. lia.
       }
       { esplits; cycle 1; eauto. lia. }
-    + ii. revert TS2. funtac; cycle 1.
-      { i. eapply SIM_LOCAL.(PER); eauto. }
-      admit.
+    + (* sim_local lper *)
+      i. rewrite List.app_length, Nat.add_1_r.
+      rewrite sim_local_lper_step. rewrite inverse_step.
+      rewrite inverse_union.
+      eapply sim_view_le; [|exact (SIM_LOCAL.(LPER) loc)]. eauto.
 Qed.
 
 Lemma sim_eu_rtc_step
@@ -1442,6 +1480,7 @@ Proof.
                <<STATE: sim_state_weak st aeu.(AExecUnit.state)>> /\
                <<PROMISE: lc.(Local.promises) = bot>> /\
                <<PMEM: forall loc ts
+                              (* TODO: 알맞게 고치기 *)
                               (READ: Memory.read loc ts m.(Machine.mem) = Some (smem loc)),
                         Memory.latest loc ts (lc.(Local.per) loc).(View.ts) m.(Machine.mem)>>).
   { i. rewrite TPOOL, FIND1 in FIND2. ss. }
@@ -1500,6 +1539,7 @@ Proof.
           <<STATE: sim_state_weak st2 aeu.(AExecUnit.state)>> /\
           <<NOPROMISE: lc2.(Local.promises) = bot>> /\
           <<PMEM: forall loc ts
+                        (* TODO: 알맞게 고치기 *)
                         (READ: Memory.read loc ts m.(Machine.mem) = Some (smem loc)),
                   Memory.latest loc ts (lc2.(Local.per) loc).(View.ts) m.(Machine.mem)>>).
   { i. des. subst.
@@ -1564,7 +1604,6 @@ Proof.
           rewrite VIEW in VIEW0. inv VIEW0.
           unfold Memory.get_msg in MSG. ss. apply Promises.promises_from_mem_spec. eauto.
       }
-    - ii. ss. unfold bot in *. unfold Time.bot in *. lia.
   }
   { clear. econs; ss.
     econs; ss; i; try by apply bot_spec.
@@ -1592,6 +1631,5 @@ Proof.
     inv WRITE. unfold Execution.label in EID. ss.
     rewrite EX.(Valid.LABELS), IdMap.map_spec, <- AEU in EID. ss.
     apply List.nth_error_None in N. congr.
-  - ii. specialize (PMEM loc).
-    eapply LOCAL.(PER); eauto.
+  - admit.
 Qed.
