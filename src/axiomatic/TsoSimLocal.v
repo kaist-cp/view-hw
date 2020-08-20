@@ -437,8 +437,7 @@ Definition sim_local_per ex loc :=
    Execution.po ⨾
    ⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘ ⨾
    Execution.po ⨾
-   (⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_wr)⦘ ∪
-    ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_ww)⦘ ∪
+   (⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_ww)⦘ ∪
     ⦗ex.(Execution.label_is) (Label.is_update)⦘) ⨾
    Execution.po) ∪
 
@@ -446,8 +445,7 @@ Definition sim_local_per ex loc :=
    Execution.po ⨾
    ⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘ ⨾
    Execution.po ⨾
-   (⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_wr)⦘ ∪
-    ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_ww)⦘ ∪
+   (⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_ww)⦘ ∪
     ⦗ex.(Execution.label_is) (Label.is_update)⦘) ⨾
    Execution.po) ∪
 
@@ -457,8 +455,7 @@ Definition sim_local_per ex loc :=
    Execution.po ⨾
    ⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘ ⨾
    Execution.po ⨾
-   (⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_wr)⦘ ∪
-    ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_ww)⦘ ∪
+   (⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_ww)⦘ ∪
     ⦗ex.(Execution.label_is) (Label.is_update)⦘) ⨾
    Execution.po) ∪
 
@@ -486,16 +483,14 @@ Lemma sim_local_per_step ex loc:
       Execution.po ⨾
       ⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘ ⨾
       Execution.po ⨾
-      (⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_wr)⦘ ∪
-        ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_ww)⦘ ∪
+      (⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_ww)⦘ ∪
         ⦗ex.(Execution.label_is) (Label.is_update)⦘)) ∪
 
     (⦗ex.(Execution.label_is) (Label.is_kinda_read)⦘ ⨾
       Execution.po ⨾
       ⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘ ⨾
       Execution.po ⨾
-      (⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_wr)⦘ ∪
-        ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_ww)⦘ ∪
+      (⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_ww)⦘ ∪
         ⦗ex.(Execution.label_is) (Label.is_update)⦘)) ∪
 
     (⦗ex.(Execution.label_is) Label.is_access⦘ ⨾
@@ -504,8 +499,7 @@ Lemma sim_local_per_step ex loc:
       Execution.po ⨾
       ⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘ ⨾
       Execution.po ⨾
-      (⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_wr)⦘ ∪
-        ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_ww)⦘ ∪
+      (⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_ww)⦘ ∪
         ⦗ex.(Execution.label_is) (Label.is_update)⦘)) ∪
 
     (⦗ex.(Execution.label_is) (Label.is_kinda_writing loc)⦘ ⨾ (Execution.rfe ex)^? ⨾

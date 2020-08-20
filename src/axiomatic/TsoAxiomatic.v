@@ -203,7 +203,7 @@ Module Label.
   Definition is_persist_barrier (label:t): bool :=
     match label with
     | update _ _ _ => true
-    | barrier b => orb (Barrier.is_dmb_dsb_wr b) (Barrier.is_dmb_dsb_ww b)
+    | barrier b => Barrier.is_dmb_dsb_ww b
     | _ => false
     end.
 

@@ -167,7 +167,7 @@ Section Local.
               lc1.(coh)
               (joins [lc1.(vrn); ifc wr (lc1.(coh) mloc)])
               lc1.(lper)
-              (if (orb wr ww)
+              (if ww
                then fun_join lc1.(per) lc1.(lper)
                else lc1.(per))
               lc1.(promises))
