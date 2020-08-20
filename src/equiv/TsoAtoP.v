@@ -1338,9 +1338,7 @@ Proof.
         repeat left |
         left; left; left; left; right |
         left; left; left; right
-      ]; simtac; left.
-      all: destruct wr; [left; econs; eauto with tso|].
-      all: destruct ww; [right; econs; eauto with tso|ss].
+      ]; simtac; left; econs; eauto with tso.
   - (* dowhile *)
     eexists (ExecUnit.mk _ _ _). esplits.
     + econs. econs; ss; econs; ss.
