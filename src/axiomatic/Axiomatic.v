@@ -981,7 +981,7 @@ Module Execution.
 
   Definition fl (ex:t): relation eidT :=
     (⦗ex.(label_is) Label.is_write⦘ ⨾
-     (ob ex ∩ ex.(label_rel) label_cl) ⨾
+     ((ob ex)⁺ ∩ ex.(label_rel) label_cl) ⨾
      ⦗ex.(label_is) Label.is_flushopt⦘ ⨾
      po ⨾
      ⦗ex.(label_is) (Label.is_barrier_c Barrier.is_dsb_full)⦘).
