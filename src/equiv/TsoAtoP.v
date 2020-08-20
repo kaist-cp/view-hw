@@ -1044,12 +1044,10 @@ Proof.
         { eapply sim_view_le; [|exact (SIM_LOCAL.(PER) loc)]. eauto. }
         eapply sim_view_le; [|exact (SIM_LOCAL.(LPER) loc)]. i.
         right. econs; eauto.
-        inv PR. unfold sim_local_lper in REL.
-        obtac; [
-          repeat left |
-          left; left; left; left; right |
-          left; left; left; right
-        ]; simtac; right; econs; eauto with tso.
+        inv PR. unfold sim_local_lper in REL. inv REL. des.
+        econs. econs; eauto.
+        clear H. obtac.
+        right. simtac.
   - (* rmw_failure *)
     exploit LABEL.
     { rewrite List.nth_error_app2; [|refl]. rewrite Nat.sub_diag. ss. }
@@ -1332,13 +1330,10 @@ Proof.
       { eapply sim_view_le; [|exact (SIM_LOCAL.(PER) loc)]. eauto. }
       eapply sim_view_le; [|exact (SIM_LOCAL.(LPER) loc)]. i.
       right. econs; eauto.
-      inv PR. unfold sim_local_lper in REL.
-      (* destruct wr; destruct ww; ss. *)
-      obtac; [
-        repeat left |
-        left; left; left; left; right |
-        left; left; left; right
-      ]; simtac; left; econs; eauto with tso.
+      inv PR. unfold sim_local_lper in REL. inv REL. des.
+      econs. econs; eauto.
+      clear H. obtac.
+      right. simtac.
   - (* dowhile *)
     eexists (ExecUnit.mk _ _ _). esplits.
     + econs. econs; ss; econs; ss.
@@ -1384,11 +1379,12 @@ Proof.
       * eapply sim_view_le; [|exact (SIM_LOCAL.(LPER) (sem_expr armap2 eloc).(ValA.val))]. eauto.
       * eapply sim_view_le; [|exact (SIM_LOCAL.(COH) (sem_expr armap2 eloc).(ValA.val))]. i.
         right. econs; eauto.
-        inv PR. inv REL. obtac.
-        left. left. simtac.
+        inv PR. econs. econs; [left|]; eauto.
+        inv REL. obtac. simtac.
       * eapply sim_view_le; [|exact SIM_LOCAL.(VRN)]. i.
         right. econs; eauto.
-        inv PR. inv REL; obtac; [left; right | right]; simtac.
+        inv PR. econs. econs; [right|]; eauto.
+        inv REL; obtac; simtac.
     + (* sim_local per *)
       i. rewrite List.app_length, Nat.add_1_r.
       rewrite sim_local_per_step. rewrite inverse_step.
@@ -1439,11 +1435,12 @@ Proof.
       * eapply sim_view_le; [|exact (SIM_LOCAL.(PER) (sem_expr armap2 eloc).(ValA.val))]. eauto.
       * eapply sim_view_le; [|exact (SIM_LOCAL.(COH) (sem_expr armap2 eloc).(ValA.val))]. i.
         right. econs; eauto.
-        inv PR. inv REL. obtac.
-        left. left. right. simtac.
+        inv PR. econs. econs; [left|]; eauto.
+        repeat left. simtac.
       * eapply sim_view_le; [|exact SIM_LOCAL.(VRN)]. i.
         right. econs; eauto.
-        inv PR. inv REL; obtac; [left; right | right]; simtac.
+        inv PR. econs. econs; [right|]; eauto.
+        repeat left. simtac.
 Qed.
 
 Lemma sim_eu_rtc_step

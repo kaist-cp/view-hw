@@ -382,152 +382,54 @@ Proof.
 Qed.
 
 Definition sim_local_lper ex loc :=
-  (⦗ex.(Execution.label_is) (Label.is_kinda_writing loc)⦘ ⨾ (Execution.rfe ex)^? ⨾
-   Execution.po ⨾
-   ⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘ ⨾
-   Execution.po) ∪
-
-  (⦗ex.(Execution.label_is) (Label.is_kinda_read)⦘ ⨾
-   Execution.po ⨾
-   ⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘ ⨾
-   Execution.po) ∪
-
-  (⦗ex.(Execution.label_is) Label.is_access⦘ ⨾
-   Execution.po ⨾
-   ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_wr)⦘ ⨾
-   Execution.po ⨾
+  ((sim_local_coh ex loc ∪ sim_local_vrn ex) ⨾
    ⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘ ⨾
    Execution.po).
 
 Lemma sim_local_lper_step ex loc:
   sim_local_lper ex loc =
   (sim_local_lper ex loc ∪
-   ((⦗ex.(Execution.label_is) (Label.is_kinda_writing loc)⦘ ⨾ (Execution.rfe ex)^? ⨾
-      Execution.po ⨾
-      ⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘) ∪
-
-    (⦗ex.(Execution.label_is) (Label.is_kinda_read)⦘ ⨾
-      Execution.po ⨾
-      ⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘) ∪
-
-    (⦗ex.(Execution.label_is) Label.is_access⦘ ⨾
-      Execution.po ⨾
-      ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_wr)⦘ ⨾
-      Execution.po ⨾
-      ⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘))) ⨾
+   ((sim_local_coh ex loc ∪ sim_local_vrn ex) ⨾
+    ⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘)) ⨾
   Execution.po_adj.
 Proof.
   unfold sim_local_lper. rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
-  rewrite Execution.po_po_adj at 2 4 7.
-  rewrite (clos_refl_union Execution.po), union_seq, eq_seq.
+  rewrite Execution.po_po_adj at 1.
+  rewrite (clos_refl_union Execution.po).
+  replace ((Execution.po ∪ eq) ⨾ Execution.po_adj)
+    with (Execution.po ⨾ Execution.po_adj ∪ eq ⨾ Execution.po_adj); cycle 1.
+  { rewrite union_seq. ss. }
+  rewrite eq_seq.
   rewrite ? (seq_union' (Execution.po ⨾ Execution.po_adj) Execution.po_adj), ? seq_assoc, ? union_assoc.
-  funext. i. funext. i. propext. econs; i.
-  - repeat match goal with
-           | [H: (_ ∪ _) _ _ |- _] => inv H
-           end;
-      eauto 10 using union_l, union_r.
-  - repeat match goal with
-           | [H: (_ ∪ _) _ _ |- _] => inv H
-           end;
-      eauto 10 using union_l, union_r.
+  refl.
 Qed.
 
 Definition sim_local_per ex loc :=
-  (⦗ex.(Execution.label_is) (Label.is_kinda_writing loc)⦘ ⨾ (Execution.rfe ex)^? ⨾
-   Execution.po ⨾
-   ⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘ ⨾
-   Execution.po ⨾
-   (⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_ww)⦘ ∪
-    ⦗ex.(Execution.label_is) (Label.is_update)⦘) ⨾
-   Execution.po) ∪
-
-  (⦗ex.(Execution.label_is) (Label.is_kinda_read)⦘ ⨾
-   Execution.po ⨾
-   ⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘ ⨾
-   Execution.po ⨾
-   (⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_ww)⦘ ∪
-    ⦗ex.(Execution.label_is) (Label.is_update)⦘) ⨾
-   Execution.po) ∪
-
-  (⦗ex.(Execution.label_is) Label.is_access⦘ ⨾
-   Execution.po ⨾
-   ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_wr)⦘ ⨾
-   Execution.po ⨾
-   ⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘ ⨾
-   Execution.po ⨾
-   (⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_ww)⦘ ∪
-    ⦗ex.(Execution.label_is) (Label.is_update)⦘) ⨾
-   Execution.po) ∪
-
-  (⦗ex.(Execution.label_is) (Label.is_kinda_writing loc)⦘ ⨾ (Execution.rfe ex)^? ⨾
-   Execution.po ⨾
-   ⦗ex.(Execution.label_is) (Label.is_flushing loc)⦘ ⨾
-   Execution.po) ∪
-
-  (⦗ex.(Execution.label_is) (Label.is_kinda_read)⦘ ⨾
-   Execution.po ⨾
-   ⦗ex.(Execution.label_is) (Label.is_flushing loc)⦘ ⨾
-   Execution.po) ∪
-
-  (⦗ex.(Execution.label_is) Label.is_access⦘ ⨾
-   Execution.po ⨾
-   ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_wr)⦘ ⨾
-   Execution.po ⨾
-   ⦗ex.(Execution.label_is) (Label.is_flushing loc)⦘ ⨾
+  ((sim_local_coh ex loc ∪ sim_local_vrn ex) ⨾
+   (⦗ex.(Execution.label_is) (Label.is_flushing loc)⦘ ∪
+    (⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘ ⨾
+     Execution.po ⨾
+     ⦗ex.(Execution.label_is) (Label.is_persist_barrier)⦘)) ⨾
    Execution.po).
 
 Lemma sim_local_per_step ex loc:
   sim_local_per ex loc =
   (sim_local_per ex loc ∪
-   ((⦗ex.(Execution.label_is) (Label.is_kinda_writing loc)⦘ ⨾ (Execution.rfe ex)^? ⨾
-      Execution.po ⨾
-      ⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘ ⨾
-      Execution.po ⨾
-      (⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_ww)⦘ ∪
-        ⦗ex.(Execution.label_is) (Label.is_update)⦘)) ∪
-
-    (⦗ex.(Execution.label_is) (Label.is_kinda_read)⦘ ⨾
-      Execution.po ⨾
-      ⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘ ⨾
-      Execution.po ⨾
-      (⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_ww)⦘ ∪
-        ⦗ex.(Execution.label_is) (Label.is_update)⦘)) ∪
-
-    (⦗ex.(Execution.label_is) Label.is_access⦘ ⨾
-      Execution.po ⨾
-      ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_wr)⦘ ⨾
-      Execution.po ⨾
-      ⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘ ⨾
-      Execution.po ⨾
-      (⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_ww)⦘ ∪
-        ⦗ex.(Execution.label_is) (Label.is_update)⦘)) ∪
-
-    (⦗ex.(Execution.label_is) (Label.is_kinda_writing loc)⦘ ⨾ (Execution.rfe ex)^? ⨾
-      Execution.po ⨾
-      ⦗ex.(Execution.label_is) (Label.is_flushing loc)⦘) ∪
-
-    (⦗ex.(Execution.label_is) (Label.is_kinda_read)⦘ ⨾
-      Execution.po ⨾
-      ⦗ex.(Execution.label_is) (Label.is_flushing loc)⦘) ∪
-
-    (⦗ex.(Execution.label_is) Label.is_access⦘ ⨾
-      Execution.po ⨾
-      ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_wr)⦘ ⨾
-      Execution.po ⨾
-      ⦗ex.(Execution.label_is) (Label.is_flushing loc)⦘))) ⨾
+   (sim_local_coh ex loc ∪ sim_local_vrn ex) ⨾
+   (⦗ex.(Execution.label_is) (Label.is_flushing loc)⦘ ∪
+    (⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘ ⨾
+     Execution.po ⨾
+     ⦗ex.(Execution.label_is) (Label.is_persist_barrier)⦘))) ⨾
   Execution.po_adj.
 Proof.
-  unfold sim_local_per. rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
-  rewrite Execution.po_po_adj at 3 6 10 12 14 17.
-  rewrite (clos_refl_union Execution.po), union_seq, eq_seq.
+  unfold sim_local_per.
+  rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
+  rewrite Execution.po_po_adj at 2.
+  rewrite (clos_refl_union Execution.po).
+  replace ((Execution.po ∪ eq) ⨾ Execution.po_adj)
+    with (Execution.po ⨾ Execution.po_adj ∪ eq ⨾ Execution.po_adj); cycle 1.
+  { rewrite union_seq. ss. }
+  rewrite eq_seq.
   rewrite ? (seq_union' (Execution.po ⨾ Execution.po_adj) Execution.po_adj), ? seq_assoc, ? union_assoc.
-  funext. i. funext. i. propext. econs; i.
-  - repeat match goal with
-           | [H: (_ ∪ _) _ _ |- _] => inv H
-           end;
-      eauto 20 using union_l, union_r.
-  - repeat match goal with
-           | [H: (_ ∪ _) _ _ |- _] => inv H
-           end;
-      eauto 20 using union_l, union_r.
+  refl.
 Qed.
