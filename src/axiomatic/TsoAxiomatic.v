@@ -171,6 +171,13 @@ Module Label.
     | _ => false
     end.
 
+  Definition is_persisting (loc:Loc.t) (label:t): bool :=
+    match label with
+    | flush loc' => loc' == loc
+    | flushopt loc' => loc' == loc
+    | _ => false
+    end.
+
   Definition is_access_persist (label:t): bool :=
     match label with
     | read _ _ => true
@@ -397,6 +404,22 @@ Module Label.
     - destruct (equiv_dec loc loc1); ss. inv e. destruct (equiv_dec loc1 loc2); ss.
   Qed.
 
+  Lemma flushopting_is_flushopt
+        loc l
+        (RD: is_flushopting loc l):
+    is_flushopt l.
+  Proof.
+    destruct l; ss.
+  Qed.
+
+  Lemma flushing_is_flush
+        loc l
+        (RD: is_flushing loc l):
+    is_flush l.
+  Proof.
+    destruct l; ss.
+  Qed.
+
   Lemma flushopt_is_flushopting loc:
     is_flushopting loc (flushopt loc).
   Proof.
@@ -443,6 +466,38 @@ Module Label.
     destruct l; ss.
   Qed.
 
+  Lemma flushing_is_persisting
+        loc l
+        (LABEL: is_flushing loc l):
+    is_persisting loc l.
+  Proof.
+    destruct l; ss.
+  Qed.
+
+  Lemma flushopting_is_persisting
+        loc l
+        (LABEL: is_flushopting loc l):
+    is_persisting loc l.
+  Proof.
+    destruct l; ss.
+  Qed.
+
+  Lemma persisting_is_access_persisting
+        loc l
+        (LABEL: is_persisting loc l):
+    is_access_persisting loc l.
+  Proof.
+    destruct l; ss.
+  Qed.
+
+  Lemma accessing_is_access_persisting
+        loc l
+        (LABEL: is_accessing loc l):
+    is_access_persisting loc l.
+  Proof.
+    destruct l; ss.
+  Qed.
+
   Hint Resolve
        read_is_reading_val reading_val_is_reading reading_is_read
        kinda_reading_is_kinda_read kinda_read_is_access kinda_reading_is_accessing read_is_kinda_reading read_is_kinda_reading_val kinda_reading_exists_val kinda_reading_val_is_kinda_reading
@@ -451,9 +506,10 @@ Module Label.
        accessing_is_access read_is_accessing write_is_accessing update_is_accessing
        kinda_writing_same_loc
        access_is_access_persist
-       flushopt_is_flushopting
+       flushopting_is_flushopt flushing_is_flush flushopt_is_flushopting
        flushopt_is_persist persist_is_kinda_write_persist
        kinda_write_flush_is_kinda_write_persist kinda_write_persist_is_access_persist
+       flushing_is_persisting flushopting_is_persisting persisting_is_access_persisting accessing_is_access_persisting
     : tso.
 End Label.
 
