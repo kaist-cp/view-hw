@@ -426,6 +426,22 @@ Module Label.
     s. destruct (equiv_dec loc loc); ss. exfalso. apply c. ss.
   Qed.
 
+  Lemma persisting_is_persist
+        loc l
+        (RD: is_persisting loc l):
+    is_persist l.
+  Proof.
+    destruct l; ss.
+  Qed.
+
+  Lemma flush_is_persist
+        l
+        (LABEL: is_flush l):
+    is_persist l.
+  Proof.
+    destruct l; ss.
+  Qed.
+
   Lemma flushopt_is_persist
         l
         (LABEL: is_flushopt l):
@@ -507,7 +523,7 @@ Module Label.
        kinda_writing_same_loc
        access_is_access_persist
        flushopting_is_flushopt flushing_is_flush flushopt_is_flushopting
-       flushopt_is_persist persist_is_kinda_write_persist
+       persisting_is_persist flush_is_persist flushopt_is_persist persist_is_kinda_write_persist
        kinda_write_flush_is_kinda_write_persist kinda_write_persist_is_access_persist
        flushing_is_persisting flushopting_is_persisting persisting_is_access_persisting accessing_is_access_persisting
     : tso.
