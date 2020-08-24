@@ -1016,7 +1016,7 @@ Proof.
 
     inversion RMW. ss.
 
-    assert (RMW_FAIL_STEP: exists vold local2, Local.rmw_failure (sem_expr rmap1 eloc) vold vres n local1 (mem_of_ex ex ob) local2).
+    assert (RMW_FAIL_STEP: exists local2, Local.rmw_failure (sem_expr rmap1 eloc) (ValA.mk _ res0 bot)  vres n local1 (mem_of_ex ex ob) local2).
     { esplits. econs; eauto.
       { eapply read_msg_latest_coh; eauto with tso. }
       (* external *)
@@ -1122,7 +1122,7 @@ Proof.
         exploit MSG; [lia|]. i. des.
         exploit EX.(Valid.RF1).
         instantiate (1 := (tid, length (ALocal.labels alocal1))).
-        instantiate (1 := old). instantiate (1 := ValA.val (sem_expr rmap1 eloc)).
+        instantiate (1 := res0). instantiate (1 := ValA.val (sem_expr rmap1 eloc)).
         eauto with tso.
         i. des.
         { contradict NORF. econs. eauto. }
@@ -1320,9 +1320,6 @@ Proof.
         - esplits; cycle 1; eauto. lia.
       }
       { esplits; cycle 1; eauto. lia. }
-
-  Grab Existential Variables.
-  eauto. (* vold when rmw_failure*)
 Qed.
 
 Lemma sim_eu_rtc_step

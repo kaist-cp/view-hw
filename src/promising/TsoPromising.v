@@ -120,7 +120,7 @@ Section Local.
       (OLD_RANGE: lt old_ts ts)
       (EX: Memory.exclusive tid loc old_ts ts mem1)
       (OLD_MSG: Memory.read loc old_ts mem1 = Some old)
-      (OLD: vold.(ValA.val) = old)
+      (OLD: old = vold.(ValA.val))
       (NEW: new = vnew.(ValA.val))
       (WRITABLE: writable vloc vnew tid lc1 mem1 ts)
       (MSG: Memory.get_msg ts mem1 = Some (Msg.mk loc new tid))
@@ -144,6 +144,7 @@ Section Local.
       (COH: (lc1.(coh) loc).(View.ts) <= old_ts)
       (LATEST: Memory.latest loc old_ts view_pre.(View.ts) mem1)
       (OLD_MSG: Memory.read loc old_ts mem1 = Some old)
+      (OLD: old = vold.(ValA.val))
       (VIEW_OLD: view_old = read_view (lc1.(coh) loc) old_ts)
       (VIEW_POST: view_post = view_old)
       (RES: res = ValA.mk _ old bot)
@@ -731,8 +732,8 @@ Section Local.
         econs; eauto. rewrite fun_add_spec. condtac; ss; eauto.
         inversion e. subst.
         unfold read_view. condtac; ss.
-        * eexists val. rewrite bot_join; [|apply Time.order]. ss.
-        * eexists old. rewrite le_join; [|apply Time.order|]; eauto.
+        * exists val. rewrite bot_join; [|apply Time.order]. ss.
+        * exists vold.(ValA.val). rewrite le_join; [|apply Time.order|]; eauto.
       + i. eapply PROMISES0; eauto. eapply Time.le_lt_trans; [|by eauto].
         rewrite fun_add_spec. condtac; ss. inversion e. rewrite H0. apply join_l.
       + inv COHMAX. inv COHMAX0. destruct (lt_eq_lt_dec old_ts (View.ts (coh lc1 mloc))).
@@ -910,7 +911,7 @@ Section Local.
         inversion e. subst.
         unfold read_view. condtac; ss.
         * eexists val. rewrite bot_join; [|apply Time.order]. ss.
-        * eexists old. rewrite le_join; [|apply Time.order|]; eauto.
+        * eexists vold.(ValA.val). rewrite le_join; [|apply Time.order|]; eauto.
       + i. eapply PROMISES0; eauto. eapply Time.le_lt_trans; [|by eauto].
         rewrite fun_add_spec. condtac; ss. inversion e. rewrite H0. apply join_l.
       + inv COHMAX. inv COHMAX0. destruct (lt_eq_lt_dec old_ts (View.ts (coh lc1 mloc))).

@@ -156,9 +156,6 @@ Proof.
     inv STEP.
     econs; eauto. econs; ss; eauto.
     econs 1; ss. econs. econs; ss; [econs | econs 7]; ss. econs; ss.
-
-  Grab Existential Variables.
-  auto. (* vold when rmw_failure *)
 Qed.
 
 Lemma sim_machine_rtc_step
