@@ -21,19 +21,18 @@ Require Import PromisingArch.promising.TsoPromising.
 
 Set Implicit Arguments.
 
-(* TODO: move *)
-Require Import ClassicalChoice.
 
 (* TODO: move *)
-Inductive opt_rel3 A B C (rel: A -> B -> C -> Prop): forall (a:option A) (b:option B) (c:option C), Prop :=
-| opt_rel3_None:
-    opt_rel3 rel None None None
-| opt_rel3_Some
-    a b c
-    (REL: rel a b c):
-    opt_rel3 rel (Some a) (Some b) (Some c)
-.
-Hint Constructors opt_rel3.
+Lemma nth_error_last A (l: list A) a:
+  nth_error (l ++ [a]) (length l) = Some a.
+Proof.
+  destruct (nth_error (l ++ [a]) (length l)) eqn:H.
+  - exploit nth_error_snoc_inv_last; eauto. congr.
+  - rewrite nth_error_None in *. rewrite app_length in *. ss. nia.
+Qed.
+
+
+(* simulation relations *)
 
 Inductive sim_memory (n: nat) (mem_pf mem_v: Memory.t): Prop :=
 | sim_memory_intro
@@ -186,6 +185,91 @@ Proof.
 Qed.
 
 
+Lemma init_sim p:
+  (<<SIM: sim 0 (Machine.init p) (Machine.init p)>>) /\
+  (<<PROMISES_WF: promises_wf 0 (Machine.init p)>>).
+Proof.
+  split; unnw.
+  - unfold Machine.init. econs; ss.
+    + i. rewrite IdMap.map_spec.
+      destruct (IdMap.find tid p); ss. econs. econs; ss. econs; ss. i.
+      unfold Promises.lookup, bot, fun_bot in *. des_ifs.
+    + econs; ss.
+  - econs; ii.
+    + revert FIND. unfold Machine.init. s. rewrite IdMap.map_spec.
+      destruct (IdMap.find tid p); ss. i. inv FIND.
+      unfold Promises.lookup, bot, fun_bot in *. des_ifs.
+    + ss. unfold Memory.get_msg in *. des_ifs. destruct t; ss.
+Qed.
+
+Lemma promise_step_sim
+      n m1_pf m2_pf m_v
+      (SIM1: sim n m1_pf m_v)
+      (STEP: Machine.step ExecUnit.promise_step m1_pf m2_pf):
+  sim n m2_pf m_v.
+Proof.
+  inv SIM1. inv STEP. inv STEP0. ss. subst. inv LOCAL.
+  econs; i.
+  - rewrite TPOOL0. rewrite IdMap.add_spec. condtac; ss.
+    rewrite e in *. specialize (TPOOL tid). rewrite FIND in *. inv TPOOL.
+    destruct b as [st lc]. inv REL. ss. econs. econs; ss.
+    inv LOCAL. econs; ss. i. revert PROMISE.
+    rewrite Promises.set_o. condtac; ss; eauto. i.
+    rewrite e0 in *. unfold Memory.append in *. inv MEM2.
+    inv MEMORY. rewrite MEMORY0. rewrite app_length. nia.
+  - inv MEMORY. unfold Memory.append in *. inv MEM2. econs; ss.
+    rewrite MEMORY0. rewrite <- app_assoc. refl.
+Qed.
+
+Lemma promise_step_promises_wf
+      n m1 m2
+      (WF1: promises_wf n m1)
+      (STEP: Machine.step ExecUnit.promise_step m1 m2):
+  promises_wf n m2.
+Proof.
+  inv WF1. inv STEP. inv STEP0. ss. subst. inv LOCAL.
+  econs; ii.
+  - revert FIND0. rewrite TPOOL. rewrite IdMap.add_spec. condtac; ss.
+    + rewrite e in *. i. inv FIND0. ss.
+      revert LOOKUP. rewrite Promises.set_o. condtac; ss.
+      * i. rewrite e0 in *. inv MEM2.
+        unfold Memory.get_msg. ss.
+        rewrite nth_error_last. esplits; eauto.
+      * i. inv MEM2. exploit SOUND; eauto. i. des.
+        unfold Memory.get_msg in *. destruct ts0; ss.
+        rewrite nth_error_app1; eauto.
+        exploit nth_error_some; eauto.
+    + i. exploit SOUND; eauto. i. des. inv MEM2.
+      unfold Memory.get_msg in *. destruct ts0; ss.
+      rewrite nth_error_app1; eauto.
+      exploit nth_error_some; eauto.
+  - inv MEM2. rewrite <- H1 in *.
+    unfold Memory.get_msg in *. destruct ts0; ss.
+    destruct (classic (ts0 = length m1.(Machine.mem))).
+    + rewrite H in *. rewrite nth_error_last in GET. inv GET.
+      rewrite TPOOL. rewrite IdMap.gss. esplits; eauto. s.
+      rewrite Promises.set_o. condtac; ss. congr.
+    + exploit nth_error_some; eauto. rewrite app_length. s. i.
+      rewrite nth_error_app1 in GET by nia.
+      exploit COMPLETE; eauto. i. des.
+      rewrite TPOOL. rewrite IdMap.add_spec. condtac; ss; eauto.
+      rewrite e in *. rewrite FIND in *. inv FIND0.
+      esplits; eauto. s.
+      rewrite Promises.set_o. condtac; eauto.
+Qed.
+
+Lemma rtc_promise_step_sim
+      n m1_pf m2_pf m_v
+      (SIM1: sim n m1_pf m_v)
+      (WF1: promises_wf n m1_pf)
+      (STEP: rtc (Machine.step ExecUnit.promise_step) m1_pf m2_pf):
+  (<<SIM2: sim n m2_pf m_v>>) /\
+  (<<PROMISES_WF2: promises_wf n m2_pf>>).
+Proof.
+  dependent induction STEP; eauto using promise_step_sim, promise_step_promises_wf.
+Qed.
+
+
 (* next fulfillment *)
 
 Definition is_writing (e: Event.t (A:=unit)): bool :=
@@ -221,7 +305,7 @@ Proof.
   - inv x0. inv LC. ss. etrans; eauto. apply COH0.
 Qed.
 
-Lemma next_fulfill_exists_aux
+Lemma next_fulfill_exists_eu
       tid st1 lc1 st lc mem ts
       (STEPS: rtc (ExecUnit.state_step tid)
                   (ExecUnit.mk st1 lc1 mem)
@@ -321,7 +405,7 @@ Proof.
   specialize (TPOOL tid). inv TPOOL; try congr.
   rewrite FIND in *. inv H0.
   destruct b as [st_end lc_end]. ss.
-  exploit next_fulfill_exists_aux; eauto.
+  exploit next_fulfill_exists_eu; eauto.
   { inv SIM. specialize (TPOOL tid). inv TPOOL; try congr.
     rewrite FIND in *. inv H1. inv REL0. inv LOCAL. ss.
     i. exploit PROMISES_PF; eauto. i. nia. }
@@ -360,7 +444,7 @@ Proof.
 Qed.
 
 
-(* simulating thread steps *)
+(* simulating eu steps *)
 
 Lemma sim_step
       n
@@ -782,99 +866,6 @@ Proof.
     + inversion e. subst. exfalso. eapply TID; eauto.
     + eapply P. destruct (equiv_dec tid0 tid); ss.
   - i. des. esplits; [|eauto]. etrans; eauto.
-Qed.
-
-Lemma init_sim p:
-  (<<SIM: sim 0 (Machine.init p) (Machine.init p)>>) /\
-  (<<PROMISES_WF: promises_wf 0 (Machine.init p)>>).
-Proof.
-  split; unnw.
-  - unfold Machine.init. econs; ss.
-    + i. rewrite IdMap.map_spec.
-      destruct (IdMap.find tid p); ss. econs. econs; ss. econs; ss. i.
-      unfold Promises.lookup, bot, fun_bot in *. des_ifs.
-    + econs; ss.
-  - econs; ii.
-    + revert FIND. unfold Machine.init. s. rewrite IdMap.map_spec.
-      destruct (IdMap.find tid p); ss. i. inv FIND.
-      unfold Promises.lookup, bot, fun_bot in *. des_ifs.
-    + ss. unfold Memory.get_msg in *. des_ifs. destruct t; ss.
-Qed.
-
-Lemma promise_step_sim
-      n m1_pf m2_pf m_v
-      (SIM1: sim n m1_pf m_v)
-      (STEP: Machine.step ExecUnit.promise_step m1_pf m2_pf):
-  sim n m2_pf m_v.
-Proof.
-  inv SIM1. inv STEP. inv STEP0. ss. subst. inv LOCAL.
-  econs; i.
-  - rewrite TPOOL0. rewrite IdMap.add_spec. condtac; ss.
-    rewrite e in *. specialize (TPOOL tid). rewrite FIND in *. inv TPOOL.
-    destruct b as [st lc]. inv REL. ss. econs. econs; ss.
-    inv LOCAL. econs; ss. i. revert PROMISE.
-    rewrite Promises.set_o. condtac; ss; eauto. i.
-    rewrite e0 in *. unfold Memory.append in *. inv MEM2.
-    inv MEMORY. rewrite MEMORY0. rewrite app_length. nia.
-  - inv MEMORY. unfold Memory.append in *. inv MEM2. econs; ss.
-    rewrite MEMORY0. rewrite <- app_assoc. refl.
-Qed.
-
-(* TODO: move *)
-Lemma nth_error_last A (l: list A) a:
-  nth_error (l ++ [a]) (length l) = Some a.
-Proof.
-  destruct (nth_error (l ++ [a]) (length l)) eqn:H.
-  - exploit nth_error_snoc_inv_last; eauto. congr.
-  - rewrite nth_error_None in *. rewrite app_length in *. ss. nia.
-Qed.
-
-Lemma promise_step_promises_wf
-      n m1 m2
-      (WF1: promises_wf n m1)
-      (STEP: Machine.step ExecUnit.promise_step m1 m2):
-  promises_wf n m2.
-Proof.
-  inv WF1. inv STEP. inv STEP0. ss. subst. inv LOCAL.
-  econs; ii.
-  - revert FIND0. rewrite TPOOL. rewrite IdMap.add_spec. condtac; ss.
-    + rewrite e in *. i. inv FIND0. ss.
-      revert LOOKUP. rewrite Promises.set_o. condtac; ss.
-      * i. rewrite e0 in *. inv MEM2.
-        unfold Memory.get_msg. ss.
-        rewrite nth_error_last. esplits; eauto.
-      * i. inv MEM2. exploit SOUND; eauto. i. des.
-        unfold Memory.get_msg in *. destruct ts0; ss.
-        rewrite nth_error_app1; eauto.
-        exploit nth_error_some; eauto.
-    + i. exploit SOUND; eauto. i. des. inv MEM2.
-      unfold Memory.get_msg in *. destruct ts0; ss.
-      rewrite nth_error_app1; eauto.
-      exploit nth_error_some; eauto.
-  - inv MEM2. rewrite <- H1 in *.
-    unfold Memory.get_msg in *. destruct ts0; ss.
-    destruct (classic (ts0 = length m1.(Machine.mem))).
-    + rewrite H in *. rewrite nth_error_last in GET. inv GET.
-      rewrite TPOOL. rewrite IdMap.gss. esplits; eauto. s.
-      rewrite Promises.set_o. condtac; ss. congr.
-    + exploit nth_error_some; eauto. rewrite app_length. s. i.
-      rewrite nth_error_app1 in GET by nia.
-      exploit COMPLETE; eauto. i. des.
-      rewrite TPOOL. rewrite IdMap.add_spec. condtac; ss; eauto.
-      rewrite e in *. rewrite FIND in *. inv FIND0.
-      esplits; eauto. s.
-      rewrite Promises.set_o. condtac; eauto.
-Qed.
-
-Lemma rtc_promise_step_sim
-      n m1_pf m2_pf m_v
-      (SIM1: sim n m1_pf m_v)
-      (WF1: promises_wf n m1_pf)
-      (STEP: rtc (Machine.step ExecUnit.promise_step) m1_pf m2_pf):
-  (<<SIM2: sim n m2_pf m_v>>) /\
-  (<<PROMISES_WF2: promises_wf n m2_pf>>).
-Proof.
-  dependent induction STEP; eauto using promise_step_sim, promise_step_promises_wf.
 Qed.
 
 
