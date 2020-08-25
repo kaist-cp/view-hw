@@ -975,10 +975,10 @@ Module Execution.
 
   Definition fl (ex:t): relation eidT :=
     (⦗ex.(label_is) Label.is_kinda_write⦘ ⨾
-     ((ob ex)⁺ ∩ ex.(label_rel) label_cl) ⨾
+     ex.(co) ⨾
      ⦗ex.(label_is) Label.is_flush⦘) ∪
     (⦗ex.(label_is) Label.is_kinda_write⦘ ⨾
-     ((ob ex)⁺ ∩ ex.(label_rel) label_cl) ⨾
+     ex.(co) ⨾
      ⦗ex.(label_is) Label.is_flushopt⦘ ⨾
      po ⨾
      ⦗ex.(label_is) Label.is_persist_barrier⦘).
@@ -1028,7 +1028,14 @@ Module Valid.
     forall eid1 eid2,
       (exists loc,
           <<LABEL: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid1>> /\
-          <<LABEL: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid2>>) ->
+          <<LABEL: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid2>>
+          \/
+          <<WRITE_PER:
+            <<LABEL: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid1>> \/
+            <<LABEL: ex.(Execution.label_is) (Label.is_persist) eid1>>
+          >> /\
+          <<LABEL: ex.(Execution.label_is) (Label.is_persist) eid2>> /\
+          <<SCL: ex.(Execution.label_rel) Execution.label_cl eid1 eid2>>) ->
       (eid1 = eid2 \/ ex.(Execution.co) eid1 eid2 \/ ex.(Execution.co) eid2 eid1).
 
   Definition co2 (ex: Execution.t) :=
@@ -1036,7 +1043,19 @@ Module Valid.
       ex.(Execution.co) eid1 eid2 ->
       exists loc,
         <<LABEL: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid1>> /\
-        <<LABEL: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid2>>.
+        <<LABEL: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid2>>
+        \/
+        <<LABELS:
+          <<LABEL: ex.(Execution.label_is) (Label.is_persist) eid1>> /\
+          <<LABEL: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid2>>
+          \/
+          <<WRITE_PER:
+            <<LABEL: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid1>> \/
+            <<LABEL: ex.(Execution.label_is) (Label.is_persist) eid1>>
+          >> /\
+          <<LABEL: ex.(Execution.label_is) (Label.is_persist) eid2>>
+        >> /\
+        <<SCL: ex.(Execution.label_rel) Execution.label_cl eid1 eid2>>.
 
   Definition rf1 (ex: Execution.t) :=
     forall eid1 loc val
