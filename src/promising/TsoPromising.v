@@ -1382,6 +1382,16 @@ Module Machine.
     - inv STEP. ss. i. subst. exploit WF0; eauto.
   Qed.
 
+  Lemma rtc_step_state_step_wf
+        m1 m2
+        (STEP: rtc (step ExecUnit.state_step) m1 m2)
+        (WF: wf m1):
+    wf m2.
+  Proof.
+    revert WF. induction STEP; ss. i. apply IHSTEP.
+    eapply step_state_step_wf; eauto.
+  Qed.
+
   Lemma step_promise_step_wf
         m1 m2
         (STEP: step ExecUnit.promise_step m1 m2)
