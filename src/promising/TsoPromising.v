@@ -1140,6 +1140,16 @@ Section ExecUnit.
     - rewrite MEM, app_nil_r. ss.
   Qed.
 
+  Lemma rtc_state_step_incr
+        tid eu1 eu2
+        (STEP: rtc (state_step tid) eu1 eu2):
+    le eu1 eu2.
+  Proof.
+    induction STEP; try refl.
+    exploit state_step_incr; eauto. i.
+    etrans; eauto.
+  Qed.
+
   Lemma promise_step_incr tid eu1 eu2
         (STEP: promise_step tid eu1 eu2):
     le eu1 eu2.

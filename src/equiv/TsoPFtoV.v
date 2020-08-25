@@ -129,29 +129,180 @@ Proof.
   rewrite nth_error_app1 in *; try nia. ss.
 Qed.
 
+
+(* next fulfillment *)
+
+Definition is_writing (e: Event.t (A:=unit)): bool :=
+  match e with
+  | Event.write _ _ _ _ _
+  | Event.rmw _ _ _ _ _  => true
+  | _ => false
+  end.
+
+Lemma non_fulfillable
+      tid st1 lc1 st lc mem ts loc
+      (STEPS: rtc (ExecUnit.state_step tid)
+                  (ExecUnit.mk st1 lc1 mem)
+                  (ExecUnit.mk st lc mem))
+      (PROMISE: Promises.lookup ts lc1.(Local.promises) = true)
+      (PROMISES_BOT: lc.(Local.promises) = bot)
+      (COH: ts <= (lc1.(Local.coh) loc).(View.ts)):
+  False.
+Proof.
+  revert PROMISE COH. dependent induction STEPS; i.
+  { rewrite PROMISES_BOT in *.
+    unfold Promises.lookup, bot, fun_bot in *. des_ifs. }
+  exploit ExecUnit.state_step_incr; eauto. i.
+  destruct y. inv H. inv STEP. ss. subst.
+  apply (IHSTEPS state local st lc mem); eauto.
+  - inv LOCAL; try inv STEP; ss.
+    + rewrite Promises.unset_o. condtac; ss. rewrite e in *.
+      inv WRITABLE. inv COHMAX.
+      exploit le_lt_trans; [eapply (COHMAX0 loc)|eapply EXT|]. i. nia.
+    + rewrite Promises.unset_o. condtac; ss. rewrite e in *.
+      inv WRITABLE. inv COHMAX.
+      exploit le_lt_trans; [eapply (COHMAX0 loc)|eapply EXT|]. i. nia.
+  - inv x0. inv LC. ss. etrans; eauto. apply COH0.
+Qed.
+
+Lemma next_fulfill_exists_aux
+      tid st1 lc1 st lc mem ts
+      (STEPS: rtc (ExecUnit.state_step tid)
+                  (ExecUnit.mk st1 lc1 mem)
+                  (ExecUnit.mk st lc mem))
+      (PROMISE: Promises.lookup ts lc1.(Local.promises) = true)
+      (PROMISES_TS: forall ts' (GET: Promises.lookup ts' lc1.(Local.promises) = true), ts' >= ts)
+      (BOT: lc.(Local.promises) = bot):
+  exists st2 lc2,
+    (<<STEPS: rtc (ExecUnit.state_step tid)
+                  (ExecUnit.mk st1 lc1 mem)
+                  (ExecUnit.mk st2 lc2 mem)>>) /\
+    ((exists st3 lc3 ord vloc vval res,
+         (<<STEP_ST: State.step (Event.write false ord vloc vval res) st2 st3>>) /\
+         (<<STEP_LC: Local.fulfill vloc vval res ts tid lc2 mem lc3>>) /\
+         (<<PROMISES: lc3.(Local.promises) = Promises.unset ts lc1.(Local.promises)>>) /\
+         (<<STEPS_POST: rtc (ExecUnit.state_step tid)
+                            (ExecUnit.mk st3 lc3 mem)
+                            (ExecUnit.mk st lc mem)>>)) \/
+    (exists st3 lc3 ordr ordw vloc vold vnew old_ts,
+        (<<STEP_ST: State.step (Event.rmw ordr ordw vloc vold vnew) st2 st3>>) /\
+        (<<STEP_LC: Local.rmw vloc vold vnew old_ts ts tid lc2 mem lc3>>) /\
+        (<<PROMISES: lc3.(Local.promises) = Promises.unset ts lc1.(Local.promises)>>) /\
+        (<<STEPS_POST: rtc (ExecUnit.state_step tid)
+                           (ExecUnit.mk st3 lc3 mem)
+                           (ExecUnit.mk st lc mem)>>))).
+Proof.
+  dependent induction STEPS; i.
+  { rewrite BOT in *.
+    unfold Promises.lookup, bot, fun_bot in *.
+    des_ifs. }
+  destruct y. dup H. inv H0. inv STEP. ss. subst.
+  destruct (is_writing e) eqn:EVENT; cycle 1.
+  { assert (local.(Local.promises) = lc1.(Local.promises)).
+    { destruct e; ss; try (inv LOCAL; ss); inv STEP; ss. }
+    exploit (IHSTEPS state local st lc mem); eauto; try congr.
+    { destruct e; ss; try (inv LOCAL; ss); inv STEP; ss. }
+    i. des.
+    - esplits.
+      + econs 2; eauto.
+      + left. esplits; eauto. congr.
+    - esplits.
+      + econs 2; eauto.
+      + right. esplits; eauto. congr.
+  }
+
+  destruct e; ss.
+  - inv LOCAL; ss. inv EVENT0.
+    destruct (classic (ts0 = ts)).
+    { subst. esplits; try refl. left. esplits; eauto. inv STEP. ss. }
+    exfalso. eapply (@non_fulfillable _ _ _ _ _ _ ts vloc0.(ValA.val)); eauto.
+    + inv STEP. s. rewrite Promises.unset_o. condtac; ss. congr.
+    + inv STEP. s. rewrite fun_add_spec_eq. ss.
+      exploit PROMISES_TS; try exact PROMISE0. i. ss.
+  - inv LOCAL; ss. inv EVENT0.
+    destruct (classic (ts0 = ts)).
+    { subst. esplits; try refl. right. esplits; eauto. inv STEP. ss. }
+    exfalso. eapply (@non_fulfillable _ _ _ _ _ _ ts vloc0.(ValA.val)); eauto.
+    + inv STEP. s. rewrite Promises.unset_o. condtac; ss. congr.
+    + inv STEP. s. rewrite fun_add_spec_eq. ss.
+      exploit PROMISES_TS; try exact PROMISE0. i. ss.
+Qed.
+
 Lemma next_fulfill_exists
-      n m1 m
+      n m1 m m1_v
+      (SIM: sim n m1 m1_v)
       (EXEC1: Machine.state_exec m1 m)
-      (PROMISES1: promises_wf n m1):
+      (N: n < length m1.(Machine.mem))
+      (PROMISES1: promises_wf n m1)
+      (PROMISES_BOT: Machine.no_promise m):
   exists tid st1 lc1 st2 lc2,
     (<<FIND: IdMap.find tid m1.(Machine.tpool) = Some (st1, lc1)>>) /\
     (<<STEPS: rtc (ExecUnit.state_step tid)
                   (ExecUnit.mk st1 lc1 m1.(Machine.mem))
                   (ExecUnit.mk st2 lc2 m1.(Machine.mem))>>) /\
-    (exists st3 lc3 ord vloc vval res m2,
-        (<<STEP_ST: State.step (Event.write false ord vloc vval res) st2 st3>>) /\
-        (<<STEP_LC: Local.fulfill vloc vval res (n + 1) tid lc2 m1.(Machine.mem) lc3>>) /\
-        (<<MACHINE2: m2 = Machine.mk (IdMap.add tid (st3, lc3) m1.(Machine.tpool)) m1.(Machine.mem)>>) /\
-        (<<EXEC2: Machine.state_exec m2 m>>) /\
-        (<<PROMISES2: promises_wf (n + 1) m2>>)) \/
-    (exists st3 lc3 ordr ordw vloc vold vnew old_ts m2,
-        (<<STEP_ST: State.step (Event.rmw ordr ordw vloc vold vnew) st2 st3>>) /\
-        (<<STEP_LC: Local.rmw vloc vold vnew old_ts (n + 1) tid lc2 m1.(Machine.mem) lc3>>) /\
-        (<<MACHINE2: m2 = Machine.mk (IdMap.add tid (st3, lc3) m1.(Machine.tpool)) m1.(Machine.mem)>>) /\
-        (<<EXEC2: Machine.state_exec m2 m>>) /\
-        (<<PROMISES2: promises_wf (n + 1) m2>>)).
+    ((exists st3 lc3 ord vloc vval res m2,
+         (<<STEP_ST: State.step (Event.write false ord vloc vval res) st2 st3>>) /\
+         (<<STEP_LC: Local.fulfill vloc vval res (n + 1) tid lc2 m1.(Machine.mem) lc3>>) /\
+         (<<MACHINE2: m2 = Machine.mk (IdMap.add tid (st3, lc3) m1.(Machine.tpool)) m1.(Machine.mem)>>) /\
+         (<<EXEC2: Machine.state_exec m2 m>>) /\
+         (<<PROMISES2: promises_wf (n + 1) m2>>)) \/
+     (exists st3 lc3 ordr ordw vloc vold vnew old_ts m2,
+         (<<STEP_ST: State.step (Event.rmw ordr ordw vloc vold vnew) st2 st3>>) /\
+         (<<STEP_LC: Local.rmw vloc vold vnew old_ts (n + 1) tid lc2 m1.(Machine.mem) lc3>>) /\
+         (<<MACHINE2: m2 = Machine.mk (IdMap.add tid (st3, lc3) m1.(Machine.tpool)) m1.(Machine.mem)>>) /\
+         (<<EXEC2: Machine.state_exec m2 m>>) /\
+         (<<PROMISES2: promises_wf (n + 1) m2>>))).
 Proof.
-Admitted.
+  destruct m1 as [tpool1 mem]. dup EXEC1. inv EXEC0. ss.
+  destruct (Memory.get_msg (n + 1) mem) as [[]|] eqn:GET; cycle 1.
+  { unfold Memory.get_msg in *. rewrite Nat.add_1_r in *. ss.
+    exploit nth_error_None. i. des.
+    exploit x0; eauto. i. nia. }
+  dup PROMISES1. inv PROMISES0.
+  exploit COMPLETE; try exact GET; try nia. s. i. des.
+  specialize (TPOOL tid). inv TPOOL; try congr.
+  rewrite FIND in *. inv H0.
+  destruct b as [st_end lc_end]. ss.
+  exploit next_fulfill_exists_aux; eauto.
+  { inv SIM. specialize (TPOOL tid). inv TPOOL; try congr.
+    rewrite FIND in *. inv H1. inv REL0. inv LOCAL. ss.
+    i. exploit PROMISES_PF; eauto. i. nia. }
+  { inv PROMISES_BOT. eauto. }
+  i. des.
+  - esplits; eauto. left. esplits; eauto.
+    + econs; ss. ii.
+      rewrite IdMap.add_spec. condtac; ss.
+      * rewrite <- e in *. rewrite <- H. econs. ss.
+      * inv EXEC1. ss.
+    + inv PROMISES1. econs; s; i; unnw.
+      * revert FIND0. rewrite IdMap.add_spec. condtac; eauto.
+        i. inv FIND0. rewrite e in *. rewrite PROMISES. ii.
+        revert LOOKUP. rewrite Promises.unset_o. condtac; ss. i.
+        eapply SOUND0; eauto.
+      * exploit COMPLETE0; try exact GET0; try by nia. i. des.
+        rewrite IdMap.add_spec. condtac; ss; eauto.
+        rewrite e, FIND in *. inv x. esplits; eauto.
+        rewrite PROMISES. rewrite Promises.unset_o. condtac; ss.
+        rewrite e0 in *. nia.
+  - esplits; eauto. right. esplits; eauto.
+    + econs; ss. ii.
+      rewrite IdMap.add_spec. condtac; ss.
+      * rewrite <- e in *. rewrite <- H. econs. ss.
+      * inv EXEC1. ss.
+    + inv PROMISES1. econs; s; i; unnw.
+      * revert FIND0. rewrite IdMap.add_spec. condtac; eauto.
+        i. inv FIND0. rewrite e in *. rewrite PROMISES. ii.
+        revert LOOKUP. rewrite Promises.unset_o. condtac; ss. i.
+        eapply SOUND0; eauto.
+      * exploit COMPLETE0; try exact GET0; try by nia. i. des.
+        rewrite IdMap.add_spec. condtac; ss; eauto.
+        rewrite e, FIND in *. inv x. esplits; eauto.
+        rewrite PROMISES. rewrite Promises.unset_o. condtac; ss.
+        rewrite e0 in *. nia.
+Qed.
+
+
+(* simulating thread steps *)
 
 Lemma sim_step
       n
@@ -314,18 +465,6 @@ Proof.
   - ss.
 Qed.
 
-(* TODO: move *)
-
-Lemma rtc_state_step_incr
-      tid eu1 eu2
-      (STEP: rtc (ExecUnit.state_step tid) eu1 eu2):
-  ExecUnit.le eu1 eu2.
-Proof.
-  induction STEP; try refl.
-  exploit ExecUnit.state_step_incr; eauto. i.
-  etrans; eauto.
-Qed.
-
 Lemma sim_next_fulfill
       n tid
       mem_pf mem1_v
@@ -369,7 +508,7 @@ Proof.
     + congr.
     + congr.
   - exfalso.
-    exploit rtc_state_step_incr; try exact STEPS. i.
+    exploit ExecUnit.rtc_state_step_incr; try exact STEPS. i.
     inv STEP_LC. inv WRITABLE. inv COHMAX. inv x0. inv LC. ss.
     specialize (COH0 loc). specialize (COHMAX0 loc).
     rewrite COHMAX0 in COH0.
@@ -419,11 +558,105 @@ Proof.
     + congr.
     + congr.
   - exfalso.
-    exploit rtc_state_step_incr; try exact STEPS. i.
+    exploit ExecUnit.rtc_state_step_incr; try exact STEPS. i.
     inv STEP_LC. inv WRITABLE. inv COHMAX. inv x0. inv LC. ss.
     specialize (COH1 loc). specialize (COHMAX0 loc).
     rewrite COHMAX0 in COH1.
     exploit le_lt_trans; [exact COH1|exact EXT|]. i. nia.
+Qed.
+
+
+Lemma init_sim p:
+  (<<SIM: sim 0 (Machine.init p) (Machine.init p)>>) /\
+  (<<PROMISES_WF: promises_wf 0 (Machine.init p)>>).
+Proof.
+  split; unnw.
+  - unfold Machine.init. econs; ss.
+    + i. rewrite IdMap.map_spec.
+      destruct (IdMap.find tid p); ss. econs. econs; ss. econs; ss. i.
+      unfold Promises.lookup, bot, fun_bot in *. des_ifs.
+    + econs; ss.
+  - econs; ii.
+    + revert FIND. unfold Machine.init. s. rewrite IdMap.map_spec.
+      destruct (IdMap.find tid p); ss. i. inv FIND.
+      unfold Promises.lookup, bot, fun_bot in *. des_ifs.
+    + ss. unfold Memory.get_msg in *. des_ifs. destruct t; ss.
+Qed.
+
+Lemma promise_step_sim
+      n m1_pf m2_pf m_v
+      (SIM1: sim n m1_pf m_v)
+      (STEP: Machine.step ExecUnit.promise_step m1_pf m2_pf):
+  sim n m2_pf m_v.
+Proof.
+  inv SIM1. inv STEP. inv STEP0. ss. subst. inv LOCAL.
+  econs; i.
+  - rewrite TPOOL0. rewrite IdMap.add_spec. condtac; ss.
+    rewrite e in *. specialize (TPOOL tid). rewrite FIND in *. inv TPOOL.
+    destruct b as [st lc]. inv REL. ss. econs. econs; ss.
+    inv LOCAL. econs; ss. i. revert PROMISE.
+    rewrite Promises.set_o. condtac; ss; eauto. i.
+    rewrite e0 in *. unfold Memory.append in *. inv MEM2.
+    inv MEMORY. rewrite MEMORY0. rewrite app_length. nia.
+  - inv MEMORY. unfold Memory.append in *. inv MEM2. econs; ss.
+    rewrite MEMORY0. rewrite <- app_assoc. refl.
+Qed.
+
+(* TODO: move *)
+Lemma nth_error_last A (l: list A) a:
+  nth_error (l ++ [a]) (length l) = Some a.
+Proof.
+  destruct (nth_error (l ++ [a]) (length l)) eqn:H.
+  - exploit nth_error_snoc_inv_last; eauto. congr.
+  - rewrite nth_error_None in *. rewrite app_length in *. ss. nia.
+Qed.
+
+Lemma promise_step_promises_wf
+      n m1 m2
+      (WF1: promises_wf n m1)
+      (STEP: Machine.step ExecUnit.promise_step m1 m2):
+  promises_wf n m2.
+Proof.
+  inv WF1. inv STEP. inv STEP0. ss. subst. inv LOCAL.
+  econs; ii.
+  - revert FIND0. rewrite TPOOL. rewrite IdMap.add_spec. condtac; ss.
+    + rewrite e in *. i. inv FIND0. ss.
+      revert LOOKUP. rewrite Promises.set_o. condtac; ss.
+      * i. rewrite e0 in *. inv MEM2.
+        unfold Memory.get_msg. ss.
+        rewrite nth_error_last. esplits; eauto.
+      * i. inv MEM2. exploit SOUND; eauto. i. des.
+        unfold Memory.get_msg in *. destruct ts0; ss.
+        rewrite nth_error_app1; eauto.
+        exploit nth_error_some; eauto.
+    + i. exploit SOUND; eauto. i. des. inv MEM2.
+      unfold Memory.get_msg in *. destruct ts0; ss.
+      rewrite nth_error_app1; eauto.
+      exploit nth_error_some; eauto.
+  - inv MEM2. rewrite <- H1 in *.
+    unfold Memory.get_msg in *. destruct ts0; ss.
+    destruct (classic (ts0 = length m1.(Machine.mem))).
+    + rewrite H in *. rewrite nth_error_last in GET. inv GET.
+      rewrite TPOOL. rewrite IdMap.gss. esplits; eauto. s.
+      rewrite Promises.set_o. condtac; ss. congr.
+    + exploit nth_error_some; eauto. rewrite app_length. s. i.
+      rewrite nth_error_app1 in GET by nia.
+      exploit COMPLETE; eauto. i. des.
+      rewrite TPOOL. rewrite IdMap.add_spec. condtac; ss; eauto.
+      rewrite e in *. rewrite FIND in *. inv FIND0.
+      esplits; eauto. s.
+      rewrite Promises.set_o. condtac; eauto.
+Qed.
+
+Lemma rtc_promise_step_sim
+      n m1_pf m2_pf m_v
+      (SIM1: sim n m1_pf m_v)
+      (WF1: promises_wf n m1_pf)
+      (STEP: rtc (Machine.step ExecUnit.promise_step) m1_pf m2_pf):
+  (<<SIM2: sim n m2_pf m_v>>) /\
+  (<<PROMISES_WF2: promises_wf n m2_pf>>).
+Proof.
+  dependent induction STEP; eauto using promise_step_sim, promise_step_promises_wf.
 Qed.
 
 
@@ -434,4 +667,10 @@ Theorem promising_pf_to_view
     <<STEP: Machine.view_exec p vm>> /\
     <<SIM: Machine.equiv pm vm>>.
 Proof.
+  (* inv EXEC. specialize (init_sim p). i. des. *)
+  (* exploit rtc_promise_step_sim; eauto. i. des. *)
+  (* specialize (Machine.init_wf p). i. *)
+  (* exploit Machine.rtc_step_promise_step_wf; eauto. i. *)
+  (* remember (Machine.init p) as m1_v. *)
+  (* clear p Heqm1_v STEP1 SIM PROMISES_WF. *)
 Admitted.
