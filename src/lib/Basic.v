@@ -605,6 +605,13 @@ Proof.
   rewrite List.nth_error_app1; ss. apply List.nth_error_Some. congr.
 Qed.
 
+Lemma nth_error_last A (l: list A) a:
+  nth_error (l ++ [a]) (length l) = Some a.
+Proof.
+  destruct (nth_error (l ++ [a]) (length l)) eqn:H.
+  - exploit nth_error_snoc_inv_last; eauto. congr.
+  - rewrite nth_error_None in *. rewrite app_length in *. ss. nia.
+Qed.
 
 Lemma strong_nat_ind
       (P: nat -> Prop)
