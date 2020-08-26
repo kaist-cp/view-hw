@@ -22,16 +22,6 @@ Require Import PromisingArch.promising.TsoPromising.
 Set Implicit Arguments.
 
 
-(* TODO: move *)
-Lemma nth_error_last A (l: list A) a:
-  nth_error (l ++ [a]) (length l) = Some a.
-Proof.
-  destruct (nth_error (l ++ [a]) (length l)) eqn:H.
-  - exploit nth_error_snoc_inv_last; eauto. congr.
-  - rewrite nth_error_None in *. rewrite app_length in *. ss. nia.
-Qed.
-
-
 (* simulation relations *)
 
 Inductive sim_memory (n: nat) (mem_pf mem_v: Memory.t): Prop :=
@@ -165,7 +155,7 @@ Proof.
   inv WF. exploit WF0; try eapply H0. i. inv x.
   exploit sim_local_last; eauto. s. i. subst. ss.
 Qed.
-  
+
 Lemma sim_local_refl
       n lc
       (PROMISES: lc.(Local.promises) = bot):
@@ -656,7 +646,7 @@ Proof.
     rewrite COHMAX0 in COH0.
     exploit le_lt_trans; [exact COH0|exact EXT|]. i. nia.
 Qed.
-      
+
 Lemma sim_next_rmw
       n tid
       mem_pf mem1_v
@@ -902,7 +892,6 @@ Proof.
 
   remember (length m_pf.(Machine.mem) - 0) as n.
   replace 0 with (length m_pf.(Machine.mem) - n) in SIM2, PROMISES_WF2 by nia.
-  (* assert (N: n <= length m_pf.(Machine.mem)) by nia. *)
   clear Heqn.
   rename STEP2 into EXEC_PF, SIM2 into SIM, PROMISES_WF2 into PROMISES_WF.
   revert m1 m1_v EXEC_PF SIM PROMISES_WF WF_PF WF_V.
