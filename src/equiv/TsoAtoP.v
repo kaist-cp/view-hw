@@ -408,7 +408,7 @@ Proof.
     { unfold bot in *. unfold Time.bot in *. lia. }
     inv EID1. inv REL. des. inv H. inv H2.
     exploit EX.(Valid.CO1).
-    { esplits; [eauto with tso |]. instantiate (1 := (tid, n0)). eauto with tso. }
+    { esplits. left. econs; econs; [exact EID1| |exact EID0|]; eauto with tso. }
     i. des.
     + subst. rewrite VIEW0 in VIEW_OF_EID. inv VIEW_OF_EID. exploit le_antisym; eauto.
     + assert (v < S n).
@@ -522,15 +522,6 @@ Proof.
     erewrite List_nth_error_find_pos; eauto. s. f_equal. ss.
 Qed.
 
-Ltac simtac :=
-  repeat match goal with
-           | [H: _ |- (_⨾ _) _ _] => econs
-           | [H: _ |- ⦗Execution.label_is _ _⦘ _ _ /\ _] => econs; econs; eauto with tso
-           | [H: _ |- ⦗Execution.label_is _ _⦘ _ _] => econs; eauto with tso
-           | [H: _ |- Execution.po _ _ /\ _] => econs; eauto
-           | [H: _ |- rc _ _ /\ _] => econs; eauto
-          end.
-
 Lemma sim_eu_step
       p ex ob tid aeu1 eu1 aeu2
       (EX: Valid.ex p ex)
@@ -626,8 +617,7 @@ Proof.
       { contradict NORF. econs. eauto. }
       exploit EX.(Valid.RF_WF); [exact RF|exact RF0|]. i. subst.
       exploit EX.(Valid.CO1).
-      instantiate (1 := eid2). instantiate (1 := (tid0, n0)).
-      { inv LABEL1. esplits; eauto with tso. }
+      { obtac. esplits. left. econs; econs; [exact EID| |exact EID0|]; eauto with tso. }
       i. des.
       { subst. rewrite VIEW0 in VIEW1. inv VIEW1. lia. }
       { cut (S ts < S n); [lia|].
@@ -958,8 +948,7 @@ Proof.
         { contradict NORF. econs. eauto. }
         exploit EX.(Valid.RF_WF); [exact RF|exact RF0|]. i. subst.
         exploit EX.(Valid.CO1).
-        instantiate (1 := eid2). instantiate (1 := (tid0, n0)).
-        { inv LABEL1. esplits; eauto with tso. }
+        { obtac. esplits. left. econs; econs; [exact EID| |exact EID0|]; eauto with tso. }
         i. des.
         { subst. rewrite VIEW0 in VIEW1. inv VIEW1. lia. }
         { cut (S ts < S old_ts); [lia|].
@@ -1116,8 +1105,7 @@ Proof.
       { contradict NORF. econs. eauto. }
       exploit EX.(Valid.RF_WF); [exact RF|exact RF0|]. i. subst.
       exploit EX.(Valid.CO1).
-      instantiate (1 := eid2). instantiate (1 := (tid0, n0)).
-      { inv LABEL1. esplits; eauto with tso. }
+      { obtac. esplits. left. econs; econs; [exact EID| |exact EID0|]; eauto with tso. }
       i. des.
       { subst. rewrite VIEW0 in VIEW1. inv VIEW1. lia. }
       { cut (S ts < S n); [lia|].
