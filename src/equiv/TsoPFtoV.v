@@ -871,11 +871,13 @@ Qed.
 
 
 Theorem promising_pf_to_view
-        p m_pf
-        (EXEC_PF: Machine.pf_exec p m_pf):
+        p m_pf smem
+        (EXEC_PF: Machine.pf_exec p m_pf)
+        (PMEM: Machine.persisted m_pf smem):
   exists m_v,
     <<EXEC_V: Machine.view_exec p m_v>> /\
-    <<EQUIV: Machine.equiv m_pf m_v>>.
+    <<EQUIV: Machine.equiv m_pf m_v>> /\
+    <<PMEM: Machine.persisted m_v smem>>.
 Proof.
   cut (exists m2_pf m2_v,
           (<<EXEC_PF: Machine.state_exec m2_pf m_pf>>) /\
@@ -887,11 +889,20 @@ Proof.
     exploit sim_rtc_machine_step_last; try exact SIM2; eauto.
     { inv EXEC_PF0. rewrite MEM. ss. }
     i. des.
-    esplits.
-    - econs. etrans; eauto.
-    - exploit Machine.state_exec_wf; eauto. i.
+    assert (EQUIV: Machine.equiv m_pf m2_v0).
+    { exploit Machine.state_exec_wf; eauto. i.
       eapply sim_last; eauto.
       inv EXEC_PF0. rewrite MEM in *. ss.
+    }
+    esplits.
+    - econs. etrans; eauto.
+    - ss.
+    - ii. specialize (PMEM loc). inv PMEM.
+      inv EQUIV. econs.
+      + rewrite <- MEM. eauto.
+      + intros tid sl. i.
+        specialize (LATEST tid sl). rewrite <- TPOOL in FIND. eapply LATEST in FIND.
+        rewrite <- MEM. ss.
   }
 
   inv EXEC_PF. specialize (init_sim p). i. des.
