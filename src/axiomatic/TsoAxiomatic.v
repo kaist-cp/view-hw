@@ -210,7 +210,7 @@ Module Label.
   Definition is_persist_barrier (label:t): bool :=
     match label with
     | update _ _ _ => true
-    | barrier b => Barrier.is_dmb_dsb_ww b
+    | barrier b => orb (Barrier.is_mfence b) (Barrier.is_sfence b)
     | _ => false
     end.
 
@@ -564,12 +564,16 @@ Module ALocal.
       (ALOCAL: alocal2 =
                mk
                  (alocal1.(labels) ++ [Label.update vloc.(ValA.val) voldv.(ValA.val) vnewv.(ValA.val)]))
-  | step_dmb
-      rr rw wr ww
-      (EVENT: event = Event.barrier (Barrier.dmb rr rw wr ww))
+  | step_mfence
+      (EVENT: event = Event.barrier (Barrier.dmb false false true true))
       (ALOCAL: alocal2 =
                mk
-                 (alocal1.(labels) ++ [Label.barrier (Barrier.dmb rr rw wr ww)]))
+                 (alocal1.(labels) ++ [Label.barrier (Barrier.dmb false false true true)]))
+  | step_sfence
+      (EVENT: event = Event.barrier (Barrier.dmb false false false true))
+      (ALOCAL: alocal2 =
+               mk
+                 (alocal1.(labels) ++ [Label.barrier (Barrier.dmb false false false true)]))
   | step_flush
       vloc
       (EVENT: event = Event.flush vloc)
@@ -701,6 +705,9 @@ Module AExecUnit.
     - splits.
       + inv WF. econs; ss.
       + destruct local1. refl.
+    - splits.
+      + inv WF. econs; ss.
+      + econs; ss. eauto.
     - splits.
       + inv WF. econs; ss.
       + econs; ss. eauto.
@@ -979,7 +986,7 @@ Module Execution.
   Definition bob (ex:t): relation eidT :=
     ⦗ex.(label_is) Label.is_access⦘ ⨾
      po ⨾
-     ⦗ex.(label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_wr)⦘ ⨾
+     ⦗ex.(label_is) (Label.is_barrier_c Barrier.is_mfence)⦘ ⨾
      po ⨾
      ⦗ex.(label_is) Label.is_access⦘.
 
