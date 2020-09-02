@@ -36,6 +36,7 @@ Inductive sim_local (n: nat) (lc_pf lc_v: Local.t): Prop :=
 | sim_local_intro
     (COH: lc_pf.(Local.coh) = lc_v.(Local.coh))
     (VRN: lc_pf.(Local.vrn) = lc_v.(Local.vrn))
+    (VPN: lc_pf.(Local.vpn) = lc_v.(Local.vpn))
     (LPER: lc_pf.(Local.lper) = lc_v.(Local.lper))
     (PER: lc_pf.(Local.per) = lc_v.(Local.per))
     (PROMISES_PF: forall ts (PROMISE: Promises.lookup ts lc_pf.(Local.promises) = true), ts > n)
@@ -496,19 +497,24 @@ Proof.
       { rewrite <- e in *.
         eapply le_gt_trans; [eapply join_l|]. nia. }
       eapply le_gt_trans; [eapply join_r|]. nia.
-  - (* dmb *)
+  - (* mfence *)
     left. inv STEP. inv COHMAX. ss. esplits.
     + econs 6; eauto. econs; eauto. econs. ss.
     + eauto.
     + ss.
+  - (* sfence *)
+    left. inv STEP. inv COHMAX. ss. esplits.
+    + econs 7; eauto. econs; eauto. econs. ss.
+    + eauto.
+    + ss.
   - (* flush *)
-    left. inv STEP. ss. esplits.
-    + econs 7; eauto. econs; eauto.
+    left. inv STEP. inv COHMAX. ss. esplits.
+    + econs 8; eauto. econs; eauto. econs. ss.
     + eauto.
     + ss.
   - (* flushopt *)
     left. inv STEP. ss. esplits.
-    + econs 8; eauto. econs; eauto.
+    + econs 9; eauto. econs; eauto.
     + eauto.
     + ss.
 Qed.
@@ -729,19 +735,24 @@ Proof.
     + econs 5; eauto.
     + eapply sim_local_refl; eauto. inv STEP. ss.
     + inv STEP. ss.
-  - (* dmb *)
+  - (* mfence *)
     esplits.
     + econs 6; eauto.
     + eapply sim_local_refl; eauto. inv STEP. ss.
     + inv STEP. ss.
-  - (* flush *)
+  - (* sfence *)
     esplits.
     + econs 7; eauto.
     + eapply sim_local_refl; eauto. inv STEP. ss.
     + inv STEP. ss.
-  - (* flushopt *)
+  - (* flush *)
     esplits.
     + econs 8; eauto.
+    + eapply sim_local_refl; eauto. inv STEP. ss.
+    + inv STEP. ss.
+  - (* flushopt *)
+    esplits.
+    + econs 9; eauto.
     + eapply sim_local_refl; eauto. inv STEP. ss.
     + inv STEP. ss.
 Qed.
