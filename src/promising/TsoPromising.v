@@ -25,6 +25,7 @@ Section Local.
   Inductive t := mk {
     coh: Loc.t -> View.t (A:=unit);
     vrn: View.t (A:=unit);
+    vpn: View.t (A:=unit);
     lper: Loc.t -> View.t (A:=unit);
     per: Loc.t -> View.t (A:=unit);
     promises: Promises.t;
@@ -36,10 +37,10 @@ Section Local.
     then View.mk bot bot
     else View.mk tsx bot.
 
-  Definition init: t := mk bot bot bot bot bot.
+  Definition init: t := mk bot bot bot bot bot bot.
 
   Definition init_with_promises (promises: Promises.t): Local.t :=
-    mk bot bot bot bot promises.
+    mk bot bot bot bot bot promises.
 
   Inductive promise (loc:Loc.t) (val:Val.t) (ts:Time.t) (tid:Id.t) (lc1:t) (mem1:Memory.t) (lc2:t) (mem2:Memory.t): Prop :=
   | promise_intro
@@ -47,6 +48,7 @@ Section Local.
             mk
               lc1.(coh)
               lc1.(vrn)
+              lc1.(vpn)
               lc1.(lper)
               lc1.(per)
               (Promises.set ts lc1.(promises)))
@@ -70,6 +72,7 @@ Section Local.
             mk
               (fun_add loc (join (lc1.(coh) loc) view_post) lc1.(coh))
               (join lc1.(vrn) view_post)
+              (join lc1.(vpn) view_post)
               lc1.(lper)
               lc1.(per)
               lc1.(promises))
@@ -106,6 +109,7 @@ Section Local.
             mk
               (fun_add loc (View.mk ts bot) lc1.(coh))
               lc1.(vrn)
+              lc1.(vpn)
               lc1.(lper)
               lc1.(per)
               (Promises.unset ts lc1.(promises)))
@@ -129,6 +133,7 @@ Section Local.
             mk
               (fun_add loc (View.mk ts bot) lc1.(coh))
               (join lc1.(vrn) (View.mk ts bot))
+              (join lc1.(vpn) (View.mk ts bot))
               lc1.(lper)
               (fun_join lc1.(per) lc1.(lper))
               (Promises.unset ts lc1.(promises)))
@@ -152,6 +157,7 @@ Section Local.
             mk
               (fun_add loc (join (lc1.(coh) loc) view_post) lc1.(coh))
               (join lc1.(vrn) view_post)
+              (join lc1.(vpn) view_post)
               lc1.(lper)
               lc1.(per)
               lc1.(promises))
@@ -166,6 +172,7 @@ Section Local.
             mk
               lc1.(coh)
               (joins [lc1.(vrn); ifc wr (lc1.(coh) mloc)])
+              (joins [lc1.(vpn); ifc (orb wr ww) (lc1.(coh) mloc)])
               lc1.(lper)
               (if ww
                then fun_join lc1.(per) lc1.(lper)
@@ -187,6 +194,7 @@ Section Local.
             mk
               (fun_add loc view_post lc1.(coh))
               lc1.(vrn)
+              lc1.(vpn)
               lc1.(lper)
               lc1.(per)
               lc1.(promises))
@@ -209,6 +217,7 @@ Section Local.
             mk
               (fun_add loc view_post lc1.(coh))
               (join lc1.(vrn) view_post)
+              (join lc1.(vpn) view_post)
               lc1.(lper)
               (fun_join lc1.(per) lc1.(lper))
               lc1.(promises))
@@ -218,13 +227,15 @@ Section Local.
   (* TODO: + same cacheline *)
   Inductive flush (vloc:ValA.t (A:=unit)) (lc1:t) (lc2:t): Prop :=
   | flush_intro
-      loc view_post
+      loc mloc view_post
       (LOC: loc = vloc.(ValA.val))
-      (VIEW_POST: view_post = join (lc1.(coh) loc) lc1.(vrn))
+      (COHMAX: cohmax mloc lc1)
+      (VIEW_POST: view_post = lc1.(coh) mloc)
       (LC2: lc2 =
             mk
               lc1.(coh)
               lc1.(vrn)
+              lc1.(vpn)
               (lc1.(lper))
               (fun_add loc (join (lc1.(per) loc) view_post) lc1.(per))
               lc1.(promises))
@@ -236,11 +247,12 @@ Section Local.
   | flushopt_intro
       loc view_post
       (LOC: loc = vloc.(ValA.val))
-      (VIEW_POST: view_post = join (lc1.(coh) loc) lc1.(vrn))
+      (VIEW_POST: view_post = join (lc1.(coh) loc) lc1.(vpn))
       (LC2: lc2 =
             mk
               lc1.(coh)
               lc1.(vrn)
+              lc1.(vpn)
               (fun_add loc (join (lc1.(lper) loc) view_post) lc1.(lper))
               lc1.(per)
               lc1.(promises))
@@ -339,6 +351,7 @@ Section Local.
   | wf_intro
       (COH: forall loc, (lc.(coh) loc).(View.ts) <= List.length mem)
       (VRN: lc.(vrn).(View.ts) <= List.length mem)
+      (VPN: lc.(vpn).(View.ts) <= List.length mem)
       (LPER: forall loc, (lc.(lper) loc).(View.ts) <= List.length mem)
       (PER: forall loc, (lc.(per) loc).(View.ts) <= List.length mem)
       (FWDBANK: forall loc, wf_fwdbank loc mem (lc.(coh) loc).(View.ts))
@@ -470,6 +483,7 @@ Section Local.
   | le_intro
       (COH: forall loc, Order.le (lhs.(coh) loc).(View.ts) (rhs.(coh) loc).(View.ts))
       (VRN: Order.le lhs.(vrn).(View.ts) rhs.(vrn).(View.ts))
+      (VPN: Order.le lhs.(vpn).(View.ts) rhs.(vpn).(View.ts))
       (LPER: forall loc, Order.le (lhs.(lper) loc).(View.ts) (rhs.(lper) loc).(View.ts))
       (PER: forall loc, Order.le (lhs.(per) loc).(View.ts) (rhs.(per) loc).(View.ts))
   .
@@ -778,7 +792,7 @@ Section Local.
       + i. rewrite <- join_l. eapply NFWD; eauto.
     - econs; viewtac.
       + i. funtac. viewtac.
-      + inv COHMAX. inv COHMAX0. econs; [econs|]; ss.
+      + inv COHMAX. inv COHMAX1. econs; [econs|]; ss.
     - econs; viewtac.
       + i. funtac. viewtac.
       + inv COHMAX. inv COHMAX0. econs; [econs|]; ss.
@@ -956,7 +970,7 @@ Section Local.
       + i. rewrite <- join_l. eapply NFWD; eauto.
     - econs; viewtac.
       + i. funtac. viewtac.
-      + inv COHMAX. inv COHMAX0. econs; [econs|]; ss.
+      + inv COHMAX. inv COHMAX1. econs; [econs|]; ss.
     - econs; viewtac.
       + i. funtac. viewtac.
       + inv COHMAX. inv COHMAX0. econs; [econs|]; ss.
@@ -1471,6 +1485,7 @@ Module Machine.
       + inv STEP. inv MEM. econs; ss.
         * i. rewrite COH. rewrite app_length. lia.
         * rewrite app_length. lia.
+        * rewrite app_length. lia.
         * i. rewrite LPER. rewrite app_length. lia.
         * i. rewrite PER. rewrite app_length. lia.
         * i. apply Local.wf_fwdbank_mon. ss.
@@ -1483,6 +1498,7 @@ Module Machine.
           { rewrite MSG in TS. specialize (COH (Msg.loc msg)). lia. }
       + inv STEP. inv MEM. econs; ss.
         * i. rewrite COH. rewrite app_length. lia.
+        * rewrite app_length. lia.
         * rewrite app_length. lia.
         * i. rewrite LPER. rewrite app_length. lia.
         * i. rewrite PER. rewrite app_length. lia.
