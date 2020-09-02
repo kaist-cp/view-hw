@@ -901,7 +901,12 @@ Proof.
     condtac; ss. apply Nat.eqb_eq in X. lia.
   - eapply LABELS_REV0; eauto. apply nth_error_app_mon. ss.
 
-  (* barrier *)
+  (* mfence *)
+  - rewrite XVEXT0; eauto; tac; try lia.
+  - erewrite XR0; eauto; tac; try lia.
+  - eapply LABELS_REV0; eauto. apply nth_error_app_mon. ss.
+
+  (* sfence *)
   - rewrite XVEXT0; eauto; tac; try lia.
   - erewrite XR0; eauto; tac; try lia.
   - eapply LABELS_REV0; eauto. apply nth_error_app_mon. ss.

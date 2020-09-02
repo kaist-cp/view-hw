@@ -441,8 +441,14 @@ Proof.
       split; eauto using Nat.lt_le_incl with tso.
     + exploit sim_traces_vext_co; eauto. i.
       split; eauto using Nat.lt_le_incl with tso.
-  - des_union; [exploit FRE | exploit sim_traces_vext_co |]; eauto with tso.
-  - des_union; [exploit FRE | exploit sim_traces_vext_co |]; eauto with tso.
+    + (* add fco *)
+      admit.
+  - admit.
+    (* add fco *)
+    (* des_union; [exploit FRE | exploit sim_traces_vext_co |]; eauto with tso. *)
+  - admit.
+    (* add fco *)
+    (* des_union; [exploit FRE | exploit sim_traces_vext_co |]; eauto with tso. *)
 Qed.
 
 Lemma corw_irrefl
@@ -514,6 +520,8 @@ Lemma promising_pf_valid
     <<RF1: Valid.rf1 ex>> /\
     <<RF2: Valid.rf2 ex>> /\
     <<RF_WF: Valid.rf_wf ex>> /\
+    <<FCO1: Valid.fco1 ex>> /\
+    <<FCO2: Valid.fco2 ex>> /\
     <<RF_REFL: forall eid1 eid2
                (RF: Execution.rf ex eid1 eid2),
                Time.eq (cov eid1) (cov eid2) /\
@@ -549,7 +557,8 @@ Lemma promising_pf_valid
 Proof.
   exploit promising_pf_sim_traces; eauto. i. des.
   destruct PRE, ex. ss.
-  remember (Execution.mk labels (co_gen ws) (rf_gen ws rs)) as ex'.
+  (* TODO: replace the last co_gen with fco_gen *)
+  remember (Execution.mk labels (co_gen ws) (rf_gen ws rs) (co_gen ws)) as ex'.
   replace labels with ex'.(Execution.labels) in LABELS; [|subst; ss].
   remember (@Valid.mk_pre_ex p ex' aeus AEUS LABELS) as PRE'.
   replace aeus with PRE'.(Valid.aeus) in ATR; [|subst; ss].
@@ -563,6 +572,13 @@ Proof.
   replace (co_gen ws) with (ex'.(Execution.co)) in CO1, CO2;[|subst; ss].
   replace (rf_gen ws rs) with (ex'.(Execution.rf)) in RF1, RF2, RF_WF; [|subst; ss].
   esplits; eauto.
+
+  - (* FCO1 *)
+    (* This case will disappear after adding fco *)
+    admit.
+  - (* FCO2 *)
+    (* This case will disappear after adding fco *)
+    admit.
 
   - (* RF_REFL *)
     hexploit sim_traces_valid_rf_refl; eauto; try by (subst; ss).
@@ -579,6 +595,8 @@ Proof.
       inversion x1. destruct l; ss.
       right. destruct l1; ss; [left|right|right]; splits; eauto with tso.
       eapply Valid.ob_read_read_po; eauto with tso.
+      (* This case will disappear after adding fco *)
+      admit.
     + des.
       * left. etrans; eauto.
       * left. eapply le_lt_trans; eauto.
@@ -606,7 +624,8 @@ Proof.
         symmetry in FIND. inv FIND. rewrite H0.
         apply sim_state_weak_init.
       }
-  - admit.
+  - (* persisted *)
+    admit.
 Qed.
 
 Theorem promising_pf_to_axiomatic
@@ -621,7 +640,8 @@ Theorem promising_pf_to_axiomatic
     <<PMEM: Valid.persisted ex smem>>.
 Proof.
   exploit promising_pf_valid; eauto. i. des.
-  exists ex. eexists (Valid.mk_ex PRE CO1 CO2 RF1 RF2 RF_WF _ _ _).
+  (* TODO: add FCO1, FCO2 *)
+  exists ex. eexists (Valid.mk_ex PRE CO1 CO2 RF1 RF2 RF_WF _ _ _ _ _ _).
   s. esplits; eauto.
   ii. inv H. specialize (STATE tid). inv STATE; try congr.
   rewrite FIND in H. inv H. destruct a. destruct aeu. ss.
@@ -631,16 +651,32 @@ Grab Existential Variables.
 { (* external *)
   ii. exploit Valid.ob_cycle; eauto. i. des. rename x1 into NONBARRIER.
   clear - EXTERNAL NONBARRIER.
-  exploit EXTERNAL; eauto. i. des.
+  exploit EXTERNAL; eauto.
+  { (* This case will disappear after adding view of FL/FO *)
+    repeat instantiate (1 := eid_nb). admit.
+  }
+  i. des.
   - inv x; lia.
   - inv x0. lia.
   - inv x0. inv x2. rewrite EID in EID0. inv EID0. destruct l0; ss.
+}
+{ (* cof *)
+  admit.
 }
 { (* corw *)
   eapply corw_irrefl; eauto.
 }
 { (* cowr *)
   eapply cowr_irrefl; eauto.
+}
+
+{ (* FCO1 *)
+  (* This case will disappear after adding fco *)
+  admit.
+}
+{ (* FCO2 *)
+  (* This case will disappear after adding fco *)
+  admit.
 }
 Qed.
 

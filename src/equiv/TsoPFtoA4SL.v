@@ -622,7 +622,7 @@ Proof.
         rewrite List.nth_error_app2, Nat.sub_diag; ss.
         destruct l; ss.
       * clear -H. lia.
-  - (* dmb *)
+  - (* mfence *)
     inv STEP0. inv ASTATE_STEP; inv ALOCAL_STEP; ss; inv EVENT; ss. splits.
     econs; ss.
     { econs; ss. apply L. }
@@ -654,17 +654,66 @@ Proof.
         exploit EX2.(LABELS); eauto; ss.
         { rewrite List.app_length. s. lia. }
         rewrite List.nth_error_app2, Nat.sub_diag; ss. i. simplify.
-        destruct wr0; ss. destruct l0; ss.
+        destruct l0; ss.
         -- rewrite <- join_l. apply L. econs; eauto.
            left. econs. econs; eauto. econs; eauto with tso.
-        -- rewrite <- join_r, <- join_l.
+        -- rewrite <- join_r.
            inv COHMAX. specialize (COHMAX0 loc). rewrite <- COHMAX0.
            apply L. econs; eauto.
            econs. split; [| econs]; econs; eauto with tso.
-        -- rewrite <- join_r, <- join_l.
+        -- rewrite <- join_r.
            inv COHMAX. specialize (COHMAX0 loc). rewrite <- COHMAX0.
            apply L. econs; eauto.
            econs. split; [| econs]; econs; eauto with tso.
+    + move VWN at bottom. des.
+      eexists mloc0. split; ss.
+      rewrite List.app_length, Nat.add_1_r.
+      i. rewrite sim_local_vwn_step. rewrite inverse_step.
+      rewrite ? inverse_union. ii. des; eauto.
+      inv EID. inv REL. inv H0.
+      exploit EX2.(LABELS); eauto; ss.
+      { rewrite List.app_length. s. lia. }
+      rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x0. inv LABEL.
+    + i. exploit PROMISES; eauto. i. des. esplits; cycle 1; eauto.
+      rewrite List.app_length, Nat.add_1_r. inv N.
+      * inv WRITE. exploit EX2.(LABELS); eauto; ss.
+        { rewrite List.app_length. s. lia. }
+        rewrite List.nth_error_app2, Nat.sub_diag; ss.
+        destruct l; ss.
+      * clear -H. lia.
+  - (* sfence *)
+    inv STEP0. inv ASTATE_STEP; inv ALOCAL_STEP; ss; inv EVENT; ss. splits.
+    econs; ss.
+    { econs; ss. apply L. }
+    destruct L.(LC). ss. econs; ss.
+    + rewrite List.app_length, Nat.add_1_r.
+      i. rewrite sim_local_coh_step. rewrite inverse_step.
+      rewrite inverse_union. ii. des; [apply COH|]; eauto.
+      inv EID. inv REL. inv H. inv H0. inv H2. inv H1.
+      * exploit EX2.(LABELS); eauto; ss.
+        { rewrite List.app_length. s. lia. }
+        rewrite List.nth_error_app2, Nat.sub_diag; ss.
+        destruct l; ss.
+      * inv H. exploit RF2; eauto. i. des.
+        inv WRITE. inv READ.
+        rename EID0 into WRITE. rewrite EID in WRITE. inv WRITE.
+        exploit EX2.(LABELS); eauto; ss.
+        { rewrite List.app_length. s. lia. }
+        rewrite List.nth_error_app2, Nat.sub_diag; ss.
+        destruct l1; ss.
+    + rewrite List.app_length, Nat.add_1_r.
+      i. rewrite sim_local_vrn_step. rewrite inverse_step.
+      rewrite ? inverse_union. ii. des.
+      * exploit VRN; eauto.
+      * inv EID. inv REL. inv H0.
+        exploit EX2.(LABELS); eauto; ss.
+        { rewrite List.app_length. s. lia. }
+        rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x0. inv LABEL.
+      * inv EID. obtac.
+        exploit EX2.(LABELS); eauto; ss.
+        { rewrite List.app_length. s. lia. }
+        rewrite List.nth_error_app2, Nat.sub_diag; ss. i. simplify.
+        destruct l; ss.
     + move VWN at bottom. des.
       eexists mloc0. split; ss.
       rewrite List.app_length, Nat.add_1_r.

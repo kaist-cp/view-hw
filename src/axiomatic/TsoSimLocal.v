@@ -165,7 +165,7 @@ Definition sim_local_vrn ex :=
 
   (⦗ex.(Execution.label_is) Label.is_access⦘ ⨾
    Execution.po ⨾
-   ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_wr)⦘ ⨾
+   ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_mfence)⦘ ⨾
    Execution.po).
 
 Lemma sim_local_vrn_step ex:
@@ -175,7 +175,7 @@ Lemma sim_local_vrn_step ex:
 
    (⦗ex.(Execution.label_is) Label.is_access⦘ ⨾
      Execution.po ⨾
-     ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_wr)⦘))) ⨾
+     ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_mfence)⦘))) ⨾
   Execution.po_adj.
 Proof.
   unfold sim_local_vrn. rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
@@ -337,7 +337,7 @@ Proof.
     exploit EX.(Valid.RF_WF); [exact H|exact RF|]. i. subst.
     inv CO.
     + inv H1. lia.
-    + exfalso. eapply EX.(Valid.EXTERNAL). econs 2; econs; left; left; left; right; eauto.
+    + exfalso. eapply EX.(Valid.EXTERNAL). econs 2; econs; left; left; left; left; right; eauto.
   - exfalso. eapply EX.(Valid.CORW). econs. esplits; [|exact H]. econs 2. ss.
 Qed.
 
