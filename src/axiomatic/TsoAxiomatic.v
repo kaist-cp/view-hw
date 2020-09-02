@@ -514,6 +514,22 @@ Module Label.
     destruct l; ss.
   Qed.
 
+  Lemma mfence_is_persist_barrier
+        l
+        (LABEL: Label.is_barrier_c Barrier.is_mfence l):
+    is_persist_barrier l.
+  Proof.
+    destruct l; ss. unfold orb. condtac; ss.
+  Qed.
+
+  Lemma sfence_is_persist_barrier
+        l
+        (LABEL: Label.is_barrier_c Barrier.is_sfence l):
+    is_persist_barrier l.
+  Proof.
+    destruct l; ss. unfold orb. condtac; ss.
+  Qed.
+
   Hint Resolve
        read_is_reading_val reading_val_is_reading reading_is_read
        kinda_reading_is_kinda_read kinda_read_is_access kinda_reading_is_accessing read_is_kinda_reading read_is_kinda_reading_val kinda_reading_exists_val kinda_reading_val_is_kinda_reading
@@ -526,6 +542,7 @@ Module Label.
        persisting_is_persist flush_is_persist flushopt_is_persist persist_is_kinda_write_persist
        kinda_write_flush_is_kinda_write_persist kinda_write_persist_is_access_persist
        flushing_is_persisting flushopting_is_persisting persisting_is_access_persisting accessing_is_access_persisting
+       mfence_is_persist_barrier sfence_is_persist_barrier
     : tso.
 End Label.
 
@@ -1092,7 +1109,7 @@ Module Valid.
           <<LABEL: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid1>> /\
           <<LABEL: ex.(Execution.label_is) (Label.is_persist) eid2>> /\
           <<SCL: ex.(Execution.label_rel) Execution.label_cl eid1 eid2>>) ->
-      (eid1 = eid2 \/ ex.(Execution.fco) eid1 eid2 \/ ex.(Execution.fco) eid2 eid1).
+      (ex.(Execution.fco) eid1 eid2 \/ ex.(Execution.fco) eid2 eid1).
 
   Definition fco2 (ex: Execution.t) :=
     forall eid1 eid2,
