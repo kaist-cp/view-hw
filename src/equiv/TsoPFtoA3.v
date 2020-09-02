@@ -44,20 +44,22 @@ Ltac des_union :=
 Lemma ob_ob'
       ex eid1 eid2:
   Execution.ob ex eid1 eid2 <->
-  (Execution.fre ex ∪ ex.(Execution.co) ∪ ob' ex) eid1 eid2.
+  (Execution.fre ex ∪ ex.(Execution.co) ∪ ex.(Execution.fco) ∪ ob' ex) eid1 eid2.
 Proof.
   split; i.
   - des_union.
     + right. left. left. left. auto.
-    + left. left. auto.
+    + repeat left. auto.
+    + left. left. right. auto.
     + left. right. auto.
     + right. left. left. right. auto.
     + right. left. right. auto.
     + right. right. auto.
   - unfold ob' in *. des_union.
+    + left. left. left. left. left. right. auto.
     + left. left. left. left. right. auto.
     + left. left. left. right. auto.
-    + left. left. left. left. left. auto.
+    + repeat left. auto.
     + left. left. right. auto.
     + left. right. auto.
     + right. auto.

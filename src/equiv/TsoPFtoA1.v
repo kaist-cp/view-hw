@@ -237,6 +237,12 @@ Proof.
     + econs 5; ss.
     + econs; ss.
     + econs; ss.
+  - inv STEP.
+    eexists _, (AExecUnit.mk (State.mk _ _) _). splits; ss.
+    + econs 7; ss.
+    + econs 6; ss.
+    + econs; ss.
+    + econs; ss.
   - eexists _, (AExecUnit.mk (State.mk _ _) _). splits; ss.
     + econs 9. ss.
     + econs; ss.
@@ -244,12 +250,12 @@ Proof.
     + ss.
   - eexists _, (AExecUnit.mk (State.mk _ _) _). splits; ss.
     + econs 10. ss.
-    + econs 7; ss.
+    + econs 8; ss.
     + econs. eauto using sim_rmap_weak_expr.
     + ss.
   - eexists _, (AExecUnit.mk (State.mk _ _) _). splits; ss.
     + econs 11. ss.
-    + econs 6; ss.
+    + econs 7; ss.
     + econs. eauto using sim_rmap_weak_expr.
     + ss.
 Qed.
@@ -286,7 +292,7 @@ Proof.
     eexists (IdMap.mapi (fun _ _ => [fun _ => None]) p).
     eexists (IdMap.mapi (fun _ _ => [bot]) p).
     eexists (IdMap.mapi (fun _ _ => [bot]) p).
-    eexists (Execution.mk (IdMap.mapi (fun _ _ => _) p) bot bot).
+    eexists (Execution.mk (IdMap.mapi (fun _ _ => _) p) bot bot bot).
     eexists (@Valid.mk_pre_ex _ _ (IdMap.mapi (fun tid stmts => AExecUnit.mk (State.init stmts) ALocal.init) p)  _ _).
     hexploit Machine.rtc_promise_step_spec; eauto. s. intro X.
     s. splits; cycle 1.
@@ -318,7 +324,7 @@ Proof.
   eexists (IdMap.add tid _ rs).
   eexists (IdMap.add tid _ covs).
   eexists (IdMap.add tid _ vexts).
-  eexists (Execution.mk _ _ _).
+  eexists (Execution.mk _ _ _ _).
   eexists (@Valid.mk_pre_ex _ _ (IdMap.add tid _ PRE.(Valid.aeus)) _ _).
   s. splits; cycle 1.
   - i. rewrite ? IdMap.add_spec. condtac; eauto.
@@ -332,10 +338,11 @@ all: ss.
      generalize (ATR tid). rewrite <- H. intro Y. inv Y. des. inv REL.
      rewrite <- H6 in X. inv X. econs. etrans; eauto with tso.
 }
-4: { ii. rewrite IdMap.mapi_spec. destruct (IdMap.find id p); ss. econs. refl. }
-3: { unfold IdMap.map. rewrite IdMap.mapi_mapi. f_equal. }
+5: { ii. rewrite IdMap.mapi_spec. destruct (IdMap.find id p); ss. econs. refl. }
+4: { unfold IdMap.map. rewrite IdMap.mapi_mapi. f_equal. }
 1: { apply bot. (* it's ex's co. *) }
 1: { apply bot. (* it's ex's rf. *) }
+1: { apply bot. (* it's ex's fco. *) }
 Qed.
 
 Inductive sim_th
@@ -1141,9 +1148,35 @@ Proof.
       + subst. repeat condtac; ss.
         all: try apply Nat.eqb_eq in X; ss; try lia.
   }
-  { (* barrier *)
+  { (* mfence *)
     inv LOCAL; ss.
-    (* dmb *)
+    inv STEP. inv ASTATE_STEP. ss. inv EVENT. econs; ss.
+    - i. exploit IH.(WPROP1); eauto. s. i. des; [left|right]; esplits; eauto.
+      eapply nth_error_app_mon. eauto.
+    - i. des. exploit IH.(WPROP2); eauto.
+      apply nth_error_snoc_inv in GET. des; eauto. destruct l; ss.
+    - i. des. exploit IH.(WPROP2'); eauto.
+      apply nth_error_snoc_inv in GET. des; eauto. destruct l; ss.
+    - i. exploit IH.(WPROP3); eauto. s. i. des. esplits; eauto.
+      eapply nth_error_app_mon. eauto.
+    - eapply IH.(WPROP4).
+    - i. des. exploit IH.(RPROP1); eauto.
+      apply nth_error_snoc_inv in GET. des.
+      + esplits; eauto.
+      + rewrite <- GET1 in GET0. ss.
+    - i. exploit IH.(RPROP2); eauto. s. i. des; [left|right]; esplits; eauto.
+      all: eapply nth_error_app_mon; eauto.
+    - i. eapply IH.(UPROP); eauto.
+    - i. apply AExecUnit.label_is_mon. eapply IH.(COVPROP); eauto.
+    - i. apply AExecUnit.label_is_mon. eapply IH.(VEXTPROP); eauto.
+    - i. apply nth_error_snoc_inv in LABEL1. des; cycle 1.
+      { subst. inv REL. inv X. }
+      apply nth_error_snoc_inv in LABEL2. des; cycle 1.
+      { subst. inv REL. inv Y. }
+      eapply IH.(PO); eauto.
+  }
+  { (* sfence *)
+    inv LOCAL; ss.
     inv STEP. inv ASTATE_STEP. ss. inv EVENT. econs; ss.
     - i. exploit IH.(WPROP1); eauto. s. i. des; [left|right]; esplits; eauto.
       eapply nth_error_app_mon. eauto.

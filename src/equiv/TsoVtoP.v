@@ -139,23 +139,29 @@ Proof.
     econs 1. econs. econs; ss.
     { inversion RMW. inv H0. econs 6; ss. }
     econs 5; ss. econs; try exact LATEST; eauto.
-  - (* dmb *)
+  - (* mfence *)
     inv STEP.
     econs; eauto. econs; ss; eauto.
     econs 1. econs. econs; ss.
     { econs; ss. }
     econs 6; ss. econs; try exact LATEST; eauto.
+  - (* sfence *)
+    inv STEP.
+    econs; eauto. econs; ss; eauto.
+    econs 1. econs. econs; ss.
+    { econs; ss. }
+    econs 7; ss. econs; try exact LATEST; eauto.
   - (* dowhile *)
     econs; eauto. econs; ss; eauto.
     econs 1; ss. econs. econs; ss; econs; ss.
   - (* flushopt *)
     inv STEP.
     econs; eauto. econs; ss; eauto.
-    econs 1; ss. econs. econs; ss; [econs | econs 8]; ss. econs; ss.
+    econs 1; ss. econs. econs; ss; [econs | econs 9]; ss. econs; ss.
   - (* flush *)
     inv STEP.
     econs; eauto. econs; ss; eauto.
-    econs 1; ss. econs. econs; ss; [econs | econs 7]; ss. econs; ss.
+    econs 1; ss. econs. econs; ss; [econs | econs 8]; ss. econs; eauto.
 Qed.
 
 Lemma sim_machine_rtc_step
