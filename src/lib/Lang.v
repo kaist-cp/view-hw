@@ -164,6 +164,18 @@ Module Barrier.
     | dsb rr rw wr ww => andb rr (andb rw (andb wr ww))
     | _ => false
     end.
+
+  Definition is_mfence (b:t): bool :=
+    match b with
+    | dmb rr rw wr ww => andb wr ww
+    | _ => false
+    end.
+
+  Definition is_sfence (b:t): bool :=
+    match b with
+    | dmb rr rw wr ww => ww
+    | _ => false
+    end.
 End Barrier.
 
 Inductive rmwT :=

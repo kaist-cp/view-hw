@@ -164,22 +164,35 @@ Section Local.
   .
   Hint Constructors rmw_failure.
 
-  Inductive dmb (rr rw wr ww:bool) (lc1 lc2:t): Prop :=
-  | dmb_intro
+  Inductive mfence (lc1 lc2:t): Prop :=
+  | mfence_intro
       mloc
       (COHMAX: cohmax mloc lc1)
       (LC2: lc2 =
             mk
               lc1.(coh)
-              (joins [lc1.(vrn); ifc wr (lc1.(coh) mloc)])
-              (joins [lc1.(vpn); ifc (orb wr ww) (lc1.(coh) mloc)])
+              (join lc1.(vrn) (lc1.(coh) mloc))
+              (join lc1.(vpn) (lc1.(coh) mloc))
               lc1.(lper)
-              (if ww
-               then fun_join lc1.(per) lc1.(lper)
-               else lc1.(per))
+              (fun_join lc1.(per) lc1.(lper))
               lc1.(promises))
   .
-  Hint Constructors dmb.
+  Hint Constructors mfence.
+
+  Inductive sfence (lc1 lc2:t): Prop :=
+  | sfence_intro
+      mloc
+      (COHMAX: cohmax mloc lc1)
+      (LC2: lc2 =
+            mk
+              lc1.(coh)
+              lc1.(vrn)
+              (join lc1.(vpn) (lc1.(coh) mloc))
+              lc1.(lper)
+              (fun_join lc1.(per) lc1.(lper))
+              lc1.(promises))
+  .
+  Hint Constructors sfence.
 
   Inductive write (vloc vval res:ValA.t (A:=unit)) (ts:Time.t) (tid:Id.t) (lc1:t) (mem1: Memory.t) (lc2:t) (mem2: Memory.t): Prop :=
   | write_intro
@@ -279,10 +292,12 @@ Section Local.
       vloc vold old_ts ord res
       (EVENT: event = Event.read false true ord vloc res)
       (STEP: rmw_failure vloc vold res old_ts lc1 mem lc2)
-  | step_dmb
-      rr rw wr ww
-      (EVENT: event = Event.barrier (Barrier.dmb rr rw wr ww))
-      (STEP: dmb rr rw wr ww lc1 lc2)
+  | step_mfence
+      (EVENT: event = Event.barrier (Barrier.dmb false false true true))
+      (STEP: mfence lc1 lc2)
+  | step_sfence
+      (EVENT: event = Event.barrier (Barrier.dmb false false false true))
+      (STEP: sfence lc1 lc2)
   | step_flush
       vloc
       (EVENT: event = Event.flush vloc)
@@ -317,10 +332,13 @@ Section Local.
       (EVENT: event = Event.read false true ord vloc res)
       (STEP: rmw_failure vloc vold res old_ts lc1 mem1 lc2)
       (MEM: mem2 = mem1)
-  | view_step_dmb
-      rr rw wr ww
-      (EVENT: event = Event.barrier (Barrier.dmb rr rw wr ww))
-      (STEP: dmb rr rw wr ww lc1 lc2)
+  | view_step_mfence
+      (EVENT: event = Event.barrier (Barrier.dmb false false true true))
+      (STEP: mfence lc1 lc2)
+      (MEM: mem2 = mem1)
+  | view_step_sfence
+      (EVENT: event = Event.barrier (Barrier.dmb false false false true))
+      (STEP: sfence lc1 lc2)
       (MEM: mem2 = mem1)
   | view_step_flush
       vloc
@@ -551,13 +569,22 @@ Section Local.
     clear X. inv e. s. apply join_l.
   Qed.
 
-  Lemma dmb_incr
-        rr rw wr ww lc1 lc2
-        (LC: dmb rr rw wr ww lc1 lc2):
+  Lemma mfence_incr
+        lc1 lc2
+        (LC: mfence lc1 lc2):
     le lc1 lc2.
   Proof.
     inv LC. econs; ss; try refl; try apply join_l.
-    i. condtac; ss. apply join_l.
+    i. apply join_l.
+  Qed.
+
+  Lemma sfence_incr
+        lc1 lc2
+        (LC: sfence lc1 lc2):
+    le lc1 lc2.
+  Proof.
+    inv LC. econs; ss; try refl; try apply join_l.
+    i. apply join_l.
   Qed.
 
   Lemma flush_incr
@@ -588,7 +615,8 @@ Section Local.
     - eapply fulfill_incr. eauto.
     - eapply rmw_incr. eauto.
     - eapply rmw_failure_incr. eauto.
-    - eapply dmb_incr. eauto.
+    - eapply mfence_incr. eauto.
+    - eapply sfence_incr. eauto.
     - eapply flush_incr. eauto.
     - eapply flushopt_incr. eauto.
   Qed.
@@ -786,10 +814,14 @@ Section Local.
           eapply NFWD; eauto. inversion e. ss.
         * i. rewrite <- TS. viewtac; rewrite <- join_r; ss.
     - econs; viewtac.
-      + i. condtac; ss. viewtac.
+      + i. viewtac.
       + inv COHMAX0. econs; [econs|]; ss.
         viewtac. inv COHMAX. specialize (COHMAX1 mloc0). lia.
       + i. rewrite <- join_l. eapply NFWD; eauto.
+    - econs; viewtac.
+      + i. viewtac.
+      + inv COHMAX0. econs; [econs|]; ss.
+        viewtac. inv COHMAX. specialize (COHMAX1 mloc0). lia.
     - econs; viewtac.
       + i. funtac. viewtac.
       + inv COHMAX. inv COHMAX1. econs; [econs|]; ss.
@@ -964,10 +996,14 @@ Section Local.
           eapply NFWD; eauto. inversion e. ss.
         * i. rewrite <- TS. viewtac; rewrite <- join_r; ss.
     - econs; viewtac.
-      + i. condtac; ss. viewtac.
+      + i. viewtac.
       + inv COHMAX0. econs; [econs|]; ss.
         viewtac. inv COHMAX. specialize (COHMAX1 mloc0). lia.
       + i. rewrite <- join_l. eapply NFWD; eauto.
+    - econs; viewtac.
+      + i. viewtac.
+      + inv COHMAX0. econs; [econs|]; ss.
+        viewtac. inv COHMAX. specialize (COHMAX1 mloc0). lia.
     - econs; viewtac.
       + i. funtac. viewtac.
       + inv COHMAX. inv COHMAX1. econs; [econs|]; ss.
@@ -1209,6 +1245,7 @@ Section ExecUnit.
     - inv STEP. rewrite LC2. ss.
     - inv STEP. rewrite LC2. ss.
     - inv STEP. rewrite LC2. ss.
+    - inv STEP. rewrite LC2. ss.
   Qed.
 
   Lemma rtc_state_step_promise_remained tid eu1 eu2 ts loc val
@@ -1231,6 +1268,7 @@ Section ExecUnit.
         inversion e. subst. exploit Local.writable_lt_coh_ts; eauto. lia.
       + inv STEP0. rewrite LC2. ss. rewrite fun_add_spec. condtac; ss.
         inversion e. subst. etrans; eauto. apply join_l.
+      + inv STEP0. rewrite LC2. ss.
       + inv STEP0. rewrite LC2. ss.
       + inv STEP0. rewrite LC2. ss.
       + inv STEP0. rewrite LC2. ss.
