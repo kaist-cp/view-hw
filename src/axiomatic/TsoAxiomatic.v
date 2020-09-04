@@ -1118,8 +1118,8 @@ Module Valid.
         (<<LABEL: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid1>> /\
          <<LABEL: ex.(Execution.label_is) (Label.is_persist) eid2>>
          \/
-         <<LABEL: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid1>> /\
-         <<LABEL: ex.(Execution.label_is) (Label.is_persist) eid2>>
+         <<LABEL: ex.(Execution.label_is) (Label.is_persist) eid1>> /\
+         <<LABEL: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid2>>
         ) /\
         <<SCL: ex.(Execution.label_rel) Execution.label_cl eid1 eid2>>.
 
