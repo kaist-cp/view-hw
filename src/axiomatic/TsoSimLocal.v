@@ -204,14 +204,14 @@ Proof.
   repeat match goal with
          | [H: (_ ∪ _) _ _ |- _] => inv H
          end.
-  - left. left. right. left.
+  - left. left. left. right. left.
     inv H. des. econs. splits; eauto.
     econs. instantiate (1 := eid2). splits; ss.
     econs; eauto. econs; eauto.
-  - left. right. obtac.
+  - left. left. right. obtac.
     rewrite ? seq_assoc. econs. splits; econs; eauto with tso. split; eauto.
     econs. split; econs; eauto with tso. split; eauto. econs; eauto with tso.
-  - left. left. right. right.
+  - left. left. left. right. right.
     inv VRN; inv H; des; inv H0; inv H2.
     + rewrite seq_assoc. econs. splits; cycle 1.
       { econs; eauto. econs; eauto. }
@@ -249,7 +249,7 @@ Lemma sim_local_vwn_spec
   <<OB: Execution.ob ex eid1 eid2>>.
 Proof.
   inv EID2. inv VWN. des.
-  left. left. right. right.
+  left. left. left. right. right.
   econs. econs; eauto. econs. econs; eauto. econs; eauto with tso.
 Qed.
 
