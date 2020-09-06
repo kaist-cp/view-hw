@@ -1009,7 +1009,7 @@ Module Execution.
 
   Definition fp (ex:t): relation eidT :=
     (ex.(pf)⁻¹ ⨾ ex.(co)) ∪
-    ((ex.(label_rel) label_loc) ∩
+    ((ex.(label_rel) label_cl) ∩
      ((ex.(label_is) Label.is_persist) \₁ codom_rel ex.(pf)) × (ex.(label_is) Label.is_kinda_write)).
 
   Definition fob (ex:t): relation eidT :=
@@ -1034,13 +1034,11 @@ Module Execution.
     (obs ex) ∪ (dob ex) ∪ (bob ex) ∪ (fob ex) ∪ (fobs ex).
 
   Definition per (ex:t): relation eidT :=
-    (⦗ex.(label_is) Label.is_kinda_write⦘ ⨾
-     ex.(pf) ⨾
-     (⦗ex.(label_is) Label.is_flush⦘
-      ∪
-      (⦗ex.(label_is) Label.is_flushopt⦘ ⨾
-        po ⨾
-        ⦗ex.(label_is) Label.is_persist_barrier⦘))).
+    ex.(pf) ⨾
+    (⦗ex.(label_is) Label.is_flush⦘ ∪
+     (⦗ex.(label_is) Label.is_flushopt⦘ ⨾
+      po ⨾
+      ⦗ex.(label_is) Label.is_persist_barrier⦘)).
 
 End Execution.
 
@@ -1127,22 +1125,15 @@ Module Valid.
       <<READ: ex.(Execution.label_is) (Label.is_persisting loc) eid1>> /\
       <<WRITE: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid2>>.
 
-  Inductive persisted_event (ex:Execution.t) (loc:Loc.t) (peid: eidT): Prop :=
-  | persisted_event_intro
-      (PEID: ex.(Execution.label_is) (Label.is_kinda_writing loc) peid)
-      (DOM: dom_rel (Execution.per ex) peid)
-  .
-  Hint Constructors persisted_event : tso.
-
   Inductive persisted_loc (ex:Execution.t) (loc:Loc.t) (val:Val.t): Prop :=
   | persisted_loc_uninit
       (UNINIT: val = Val.default)
-      (NPER: forall peid (PERSISTED: persisted_event ex loc peid), False)
+      (NPER: forall eid (DOM: dom_rel (Execution.per ex) eid), False)
   | persisted_loc_init
       eid
       (EID: ex.(Execution.label_is) (Label.is_kinda_writing_val loc val) eid)
-      (PER: forall peid (PERSISTED: persisted_event ex loc peid),
-              ex.(Execution.co) peid eid \/ peid = eid)
+      (DOM: dom_rel (Execution.per ex) eid)
+      (PER: forall eid2 (CO: ex.(Execution.co) eid eid2) (DOM: dom_rel (Execution.per ex) eid2), False)
   .
   Hint Constructors persisted_loc : tso.
 
@@ -1178,6 +1169,7 @@ Module Valid.
            | [H: Execution.fre _ _ _ |- _] => inv H
            | [H: Execution.rfe _ _ _ |- _] => inv H
            | [H: Execution.fp _ _ _ |- _] => inv H
+           | [H: Execution.per _ _ _ |- _] => inv H
            | [H: (_⨾ _) _ _ |- _] => inv H
            | [H: ⦗_⦘ _ _ |- _] => inv H
            | [H: (_ ∪ _) _ _ |- _] => inv H
@@ -1197,9 +1189,10 @@ Module Valid.
            | [H: _ |- ⦗Execution.label_is _ _⦘ _ _ /\ _] => econs; econs; eauto with tso
            | [H: _ |- ⦗Execution.label_is _ _⦘ _ _] => econs; eauto with tso
            | [H: _ |- Execution.label_is _ _ _] => eauto with tso
+           | [H: _ |- rc _ _ /\ _] => econs; eauto
            | [H: _ |- Execution.po _ _ /\ _] => econs; eauto
            | [H: _ |- Execution.po_cl _ _ _ /\ _] => econs; eauto
-           | [H: _ |- rc _ _ /\ _] => econs; eauto
+           | [H: _ |- Execution.pf _ _ _ /\ _] => econs; eauto
           end.
 
   Definition is_terminal
