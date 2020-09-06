@@ -773,7 +773,7 @@ Module Execution.
     labels: IdMap.t (list Label.t);
     co: relation eidT;
     rf: relation eidT;
-    fco: relation eidT;
+    pf: relation eidT;
   }.
   Hint Constructors t : tso.
 
@@ -892,24 +892,25 @@ Module Execution.
     destruct P1; eauto with tso.
   Qed.
 
-  (* let obs = rfe | fre | co | fco *)
-  (* let dob = ([R]; po; [E]) U ([E]; po; [W]) *)
-  (* let bob = [E]; po; [MF]; po; [E] ~~~> [W]; po; [dmb wr]; po; [R] *)
-  (* let pob =
+  (* let obs = rfe | fre | co *)
+  (* let dob = ((W U U U R); po; (W U U U R)) \ (W × R) ~~~> ([R]; po; [W U U U R]) U ([W U U U R]; po; [W]) *)
+  (* let bob = [W U U U R]; po; [MF]; po; [W U U U R] *)
+  (* let fob =
       | [W U U U R]; po; [FL]
-      | [U U R]; po; [FO]
-      | [W]; po; [MF U SF]; po; [FO]
+      | ([U U R] U ([W]; po; [MF U SF])); po; [FO]
+      | [W]; (po; [FL])?; po_cl; [FO]
   *)
-  (* let ob = obs | dob | bob | pob *)
+  (* let fobs = pf | fp *)
+  (* let ob = obs | dob | bob | fob | fobs *)
 
   (* irrefl po?; rf as corw *)
   (* irrefl po; fr as cowr *)
-  (* irrefl po; fco as cof *)
   (* acyclic ob as external *)
 
-  (* let fl = [W U U]; fco; ([FL] U ([FO]; po; [MF U SF U U])) *)
+  (* let per = [D]; pf; ([FL] U ([FO]; po; [MF U SF U U])) *)
 
-  (* dom(fl) <= P <= W & D *)
+  (* dom(per) <= P *)
+  (* dom(co; [P]) <= P *)
 
   Inductive po (eid1 eid2:eidT): Prop :=
   | po_intro
@@ -975,8 +976,6 @@ Module Execution.
 
   Definition po_loc (ex:t): relation eidT := po ∩ ex.(label_rel) label_loc.
 
-  Definition po_cl (ex:t): relation eidT := po ∩ ex.(label_rel) label_cl.
-
   Definition fr (ex:t): relation eidT :=
     (ex.(rf)⁻¹ ⨾ ex.(co)) ∪
     ((ex.(label_rel) label_loc) ∩
@@ -988,9 +987,8 @@ Module Execution.
 
   Definition cowr (ex:t): relation eidT := po ⨾ (fr ex).
   Definition corw (ex:t): relation eidT := po^? ⨾ ex.(rf).
-  Definition cof (ex:t): relation eidT := po ⨾ ex.(fco).
 
-  Definition obs (ex:t): relation eidT := (rfe ex) ∪ (fre ex) ∪ ex.(co) ∪ ex.(fco).
+  Definition obs (ex:t): relation eidT := (rfe ex) ∪ (fre ex) ∪ ex.(co).
 
   Definition dob (ex:t): relation eidT :=
     (⦗ex.(label_is) Label.is_kinda_read⦘ ⨾
@@ -1007,25 +1005,37 @@ Module Execution.
      po ⨾
      ⦗ex.(label_is) Label.is_access⦘.
 
-  Definition pob (ex:t): relation eidT :=
+  Definition po_cl (ex:t): relation eidT := po ∩ ex.(label_rel) label_cl.
+
+  Definition fp (ex:t): relation eidT :=
+    (ex.(pf)⁻¹ ⨾ ex.(co)) ∪
+    ((ex.(label_rel) label_loc) ∩
+     ((ex.(label_is) Label.is_persist) \₁ codom_rel ex.(pf)) × (ex.(label_is) Label.is_kinda_write)).
+
+  Definition fob (ex:t): relation eidT :=
     (⦗ex.(label_is) Label.is_access⦘ ⨾
      po ⨾
      ⦗ex.(label_is) Label.is_flush⦘) ∪
-    (⦗ex.(label_is) Label.is_kinda_read⦘ ⨾
+    ((⦗ex.(label_is) Label.is_kinda_read⦘ ∪
+      (⦗ex.(label_is) Label.is_write⦘ ⨾
+       po ⨾
+       ⦗ex.(label_is) Label.is_persist_barrier⦘))⨾
      po ⨾
      ⦗ex.(label_is) Label.is_flushopt⦘) ∪
     (⦗ex.(label_is) Label.is_write⦘ ⨾
-     po ⨾
-     ⦗ex.(label_is) Label.is_persist_barrier⦘ ⨾
-     po ⨾
+     (po ⨾
+      ⦗ex.(label_is) Label.is_flush⦘)^? ⨾
+     (po_cl ex) ⨾
      ⦗ex.(label_is) Label.is_flushopt⦘).
 
-  Definition ob (ex:t): relation eidT :=
-    (obs ex) ∪ (dob ex) ∪ (bob ex) ∪ (pob ex).
+  Definition fobs (ex:t): relation eidT := ex.(pf) ∪ (fp ex).
 
-  Definition fl (ex:t): relation eidT :=
+  Definition ob (ex:t): relation eidT :=
+    (obs ex) ∪ (dob ex) ∪ (bob ex) ∪ (fob ex) ∪ (fobs ex).
+
+  Definition per (ex:t): relation eidT :=
     (⦗ex.(label_is) Label.is_kinda_write⦘ ⨾
-     ex.(fco) ⨾
+     ex.(pf) ⨾
      (⦗ex.(label_is) Label.is_flush⦘
       ∪
       (⦗ex.(label_is) Label.is_flushopt⦘ ⨾
@@ -1103,30 +1113,24 @@ Module Valid.
 
   Definition rf_wf (ex: Execution.t) := functional (ex.(Execution.rf))⁻¹.
 
-  Definition fco1 (ex: Execution.t) :=
-    forall eid1 eid2,
-      (exists loc,
-          <<LABEL: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid1>> /\
-          <<LABEL: ex.(Execution.label_is) (Label.is_persist) eid2>> /\
-          <<SCL: ex.(Execution.label_rel) Execution.label_cl eid1 eid2>>) ->
-      (ex.(Execution.fco) eid1 eid2 \/ ex.(Execution.fco) eid2 eid1).
+  Definition pf1 (ex: Execution.t) :=
+    forall eid1 loc
+       (LABEL: ex.(Execution.label_is) (Label.is_persisting loc) eid1),
+      (<<NOPF: ~ codom_rel ex.(Execution.pf) eid1>>) \/
+      (exists eid2,
+          <<LABEL: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid2>> /\
+          <<PF: ex.(Execution.pf) eid2 eid1>>).
 
-  Definition fco2 (ex: Execution.t) :=
-    forall eid1 eid2,
-      ex.(Execution.fco) eid1 eid2 ->
-      exists loc,
-        (<<LABEL: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid1>> /\
-         <<LABEL: ex.(Execution.label_is) (Label.is_persist) eid2>>
-         \/
-         <<LABEL: ex.(Execution.label_is) (Label.is_persist) eid1>> /\
-         <<LABEL: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid2>>
-        ) /\
-        <<SCL: ex.(Execution.label_rel) Execution.label_cl eid1 eid2>>.
+  Definition pf2 (ex: Execution.t) :=
+    forall eid1 eid2 (RF: ex.(Execution.pf) eid2 eid1),
+    exists loc,
+      <<READ: ex.(Execution.label_is) (Label.is_persisting loc) eid1>> /\
+      <<WRITE: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid2>>.
 
   Inductive persisted_event (ex:Execution.t) (loc:Loc.t) (peid: eidT): Prop :=
   | persisted_event_intro
       (PEID: ex.(Execution.label_is) (Label.is_kinda_writing loc) peid)
-      (DOM: dom_rel (Execution.fl ex) peid)
+      (DOM: dom_rel (Execution.per ex) peid)
   .
   Hint Constructors persisted_event : tso.
 
@@ -1152,11 +1156,10 @@ Module Valid.
     RF1: rf1 ex;
     RF2: rf2 ex;
     RF_WF: rf_wf ex;
-    FCO1: fco1 ex;
-    FCO2: fco2 ex;
+    PF1: pf1 ex;
+    PF2: pf2 ex;
     COWR: irreflexive (Execution.cowr ex);
     CORW: irreflexive (Execution.corw ex);
-    COF: irreflexive (Execution.cof ex);
     EXTERNAL: acyclic (Execution.ob ex);
   }.
   Hint Constructors ex : tso.
@@ -1169,10 +1172,12 @@ Module Valid.
            | [H: Execution.obs _ _ _ |- _] => inv H
            | [H: Execution.dob _ _ _ |- _] => inv H
            | [H: Execution.bob _ _ _ |- _] => inv H
-           | [H: Execution.pob _ _ _ |- _] => inv H
+           | [H: Execution.fob _ _ _ |- _] => inv H
+           | [H: Execution.fobs _ _ _ |- _] => inv H
            | [H: Execution.fr _ _ _ |- _] => inv H
            | [H: Execution.fre _ _ _ |- _] => inv H
            | [H: Execution.rfe _ _ _ |- _] => inv H
+           | [H: Execution.fp _ _ _ |- _] => inv H
            | [H: (_⨾ _) _ _ |- _] => inv H
            | [H: ⦗_⦘ _ _ |- _] => inv H
            | [H: (_ ∪ _) _ _ |- _] => inv H
@@ -1253,7 +1258,7 @@ Module Valid.
     { left. left. left. left. right. eauto. }
     exploit EX.(CO2); eauto. i. des. inv LABEL. inv LABEL0.
     destruct s.
-    + econs 1. left. left. right. right. econs. esplits.
+    + econs 1.  left. left. left. right. right. econs. esplits.
       * econs; eauto with tso.
       * econs. esplits; cycle 1.
         { econs; eauto with tso. }
@@ -1294,7 +1299,7 @@ Module Valid.
     { subst. apply po_irrefl in PO. inv PO. }
     exfalso. eapply EX.(EXTERNAL). apply t_step_rt. esplits.
     - left. left. left. left. right. eauto.
-    - econs. left. left. right. right. econs. esplits.
+    - econs. left. left. left. right. right. econs. esplits.
       + econs; eauto with tso.
       + econs. esplits; eauto. econs; eauto with tso.
   Qed.
@@ -1369,7 +1374,7 @@ Module Valid.
       + exfalso. exploit EX.(EXTERNAL); eauto. instantiate (1 := (tid3, iid3)).
         apply t_step_rt. econs; eauto. esplits; [|etrans; [econs|econs]].
         * repeat left. econs; eauto with tso.
-        * left. left. right. left. econs. esplits.
+        * left. left. left. right. left. econs. esplits.
           -- econs; eauto with tso.
           -- econs. esplits; eauto. econs; eauto with tso.
         * left. left. left. left. left. right. split; ss. right. econs.
@@ -1381,7 +1386,7 @@ Module Valid.
         exfalso. exploit EX.(EXTERNAL); eauto. instantiate (1 := (tid3, iid3)).
         apply t_step_rt. econs; eauto. esplits; [|etrans; [econs|econs]].
         * repeat left. econs; eauto with tso.
-        * left. left. right. left. econs. esplits.
+        * left. left. left. right. left. econs. esplits.
           -- econs; eauto with tso.
           -- econs. esplits; eauto. econs; eauto with tso.
         * left. left. left. left. left. right. split; ss. econs. econs. econs; eauto.
@@ -1412,7 +1417,7 @@ Module Valid.
       exfalso. eapply EX.(EXTERNAL). apply t_step_rt. esplits.
       { repeat left. econs; eauto with tso. }
       etrans.
-      + instantiate (1 := eid2). econs. left. left. right. left. econs. econs.
+      + instantiate (1 := eid2). econs. left. left. left. right. left. econs. econs.
         * econs; eauto with tso.
         * econs; eauto. econs; eauto. econs; eauto with tso.
       + econs. left. left. left. left. right. eauto.
@@ -1437,7 +1442,7 @@ Module Valid.
         (EX: pre_ex p exec)
         (CO2: co2 exec)
         (RF2: rf2 exec)
-        (FCO2: fco2 exec)
+        (PF2: pf2 exec)
         (EID1: Execution.label_is exec Label.is_barrier eid1)
         (OB: Execution.ob exec eid1 eid2):
     False.
@@ -1452,7 +1457,9 @@ Module Valid.
       inv READ. destruct l; ss; try congr.
     - inv H0. destruct l1; ss; try congr.
     - exploit CO2; eauto. i. des; obtac; destruct l; destruct l0; ss; congr.
-    - exploit FCO2; eauto. i. des; obtac; destruct l; destruct l0; ss; congr.
+    - exploit PF2; eauto. i. des; obtac; destruct l; destruct l0; ss; congr.
+    - exploit PF2; eauto. i. des; obtac; destruct l; destruct l0; ss; congr.
+    - inv H. destruct l1; ss; try congr.
   Qed.
 
   Lemma ob_label
@@ -1461,7 +1468,7 @@ Module Valid.
         (PRE: pre_ex p exec)
         (CO2: co2 exec)
         (RF2: rf2 exec)
-        (FCO2: fco2 exec)
+        (PF2: pf2 exec)
         (OB: Execution.ob exec eid1 eid2)
         (EID1: Execution.label eid1 exec = None):
     False.
@@ -1476,7 +1483,8 @@ Module Valid.
       destruct l; ss. destruct l0; ss. congr. congr.
       destruct l0; ss. congr. congr.
     - exploit CO2. eauto. i. des; obtac; destruct l; destruct l0; ss; congr.
-    - exploit FCO2. eauto. i. des; obtac; destruct l; destruct l0; ss; congr.
+    - exploit PF2. eauto. i. des; obtac; destruct l; destruct l0; ss; congr.
+    - exploit PF2. eauto. i. des; obtac; destruct l; destruct l0; ss; congr.
   Qed.
 
   Lemma ob_cycle
@@ -1484,7 +1492,7 @@ Module Valid.
         (PRE: pre_ex p exec)
         (CO2: co2 exec)
         (RF2: rf2 exec)
-        (FCO2: fco2 exec)
+        (PF2: pf2 exec)
         (CYCLE: (Execution.ob exec)⁺ eid eid):
     exists eid_nb,
       (Execution.ob exec ∩ (Execution.label_is_rel exec Label.is_access_persist))⁺ eid_nb eid_nb.
@@ -1512,7 +1520,7 @@ Module Valid.
         (PRE: pre_ex p ex)
         (CO2: co2 ex)
         (RF2: rf2 ex)
-        (FCO2: fco2 ex)
+        (PF2: pf2 ex)
         (OB: Execution.ob ex eid1 eid2)
         (EID1: ex.(Execution.label_is) Label.is_read eid1)
         (EID2: ex.(Execution.label_is) Label.is_read eid2):
@@ -1528,7 +1536,9 @@ Module Valid.
       inv WRITE. rewrite EID in EID1. destruct l; ss.
     - exploit CO2; eauto. i. des; obtac; destruct l; ss; congr.
     - exploit CO2; eauto. i. des; obtac; destruct l; ss; congr.
-    - exploit FCO2; eauto. i. des; obtac; destruct l; ss; congr.
+    - exploit PF2; eauto. i. des; obtac; destruct l; ss; congr.
+    - exploit PF2; eauto. i. des.
+      obtac. rewrite EID in EID2. inv EID2. ss.
   Qed.
 End Valid.
 

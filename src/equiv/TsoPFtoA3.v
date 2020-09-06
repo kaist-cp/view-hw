@@ -28,8 +28,9 @@ Require Import PromisingArch.equiv.TsoPFtoA2.
 Set Implicit Arguments.
 
 
+(* TODO: seperate persist ob *)
 Definition ob' (ex: Execution.t): relation eidT :=
-  Execution.rfe ex ∪ Execution.dob ex ∪ Execution.bob ex ∪ Execution.pob ex.
+  Execution.rfe ex ∪ Execution.dob ex ∪ Execution.bob ex ∪ Execution.fob ex ∪ Execution.fobs ex.
 
 Ltac des_union :=
   repeat
@@ -44,7 +45,7 @@ Ltac des_union :=
 Lemma ob_ob'
       ex eid1 eid2:
   Execution.ob ex eid1 eid2 <->
-  (Execution.fre ex ∪ ex.(Execution.co) ∪ ex.(Execution.fco) ∪ ob' ex) eid1 eid2.
+  (Execution.fre ex ∪ ex.(Execution.co) ∪ ob' ex) eid1 eid2.
 Proof.
   split; i.
   - des_union.

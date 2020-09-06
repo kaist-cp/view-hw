@@ -520,8 +520,8 @@ Lemma promising_pf_valid
     <<RF1: Valid.rf1 ex>> /\
     <<RF2: Valid.rf2 ex>> /\
     <<RF_WF: Valid.rf_wf ex>> /\
-    <<FCO1: Valid.fco1 ex>> /\
-    <<FCO2: Valid.fco2 ex>> /\
+    <<PF1: Valid.pf1 ex>> /\
+    <<PF2: Valid.pf2 ex>> /\
     <<RF_REFL: forall eid1 eid2
                (RF: Execution.rf ex eid1 eid2),
                Time.eq (cov eid1) (cov eid2) /\
