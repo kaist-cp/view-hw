@@ -278,12 +278,12 @@ Hint Constructors sim_eu.
 Inductive persisted_event_view (ex:Execution.t) (ob: list eidT) (loc:Loc.t) (view: Time.t): Prop :=
 | persisted_event_view_uninit
   (VIEW: view = bot)
-  (NPER: forall eid (DOM: dom_rel (Execution.per ex) eid), False)
+  (NPER: forall eid (PEID: Valid.persisted_event ex loc eid), False)
 | persisted_event_view_init
   eid
   (VIEW: view_of_eid ex ob eid = Some view)
   (EID: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid)
-  (PER: forall eid2 (CO: ex.(Execution.co) eid eid2) (DOM: dom_rel (Execution.per ex) eid2), False)
+  (PER: forall eid2 (CO: ex.(Execution.co) eid eid2) (PEID: Valid.persisted_event ex loc eid2), False)
 .
 Hint Constructors persisted_event_view.
 
@@ -1817,11 +1817,12 @@ Proof.
         econs. econs. simtac. econs; eauto. right. simtac.
       }
       inv PVIEW.
-      { eapply NPER. eauto. }
+      { eapply NPER. econs; eauto. }
       destruct (eid0 == eid2); cycle 1.
       { obtac. exploit EX.(Valid.CO1).
         { esplits; econs; [try exact EID2 | | try exact EID3|]; eauto with tso. }
-        i. des; [congr| |eapply PER0; eauto].
+        i. des; [congr|..]; cycle 1.
+        { eapply PER0; eauto. econs; eauto with tso. }
         cut (fview <= view).
         { i. lia. }
         eapply view_of_eid_ob; eauto.

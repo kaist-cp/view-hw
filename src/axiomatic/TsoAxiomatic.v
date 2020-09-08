@@ -1195,14 +1195,21 @@ Module Valid.
       <<READ: ex.(Execution.label_is) (Label.is_persisting loc) eid1>> /\
       <<WRITE: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid2>>.
 
+  Inductive persisted_event (ex:Execution.t) (loc:Loc.t) (eid:eidT) :=
+  | persisted_event_intro
+    (EID: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid)
+    (DOM: dom_rel (Execution.per ex) eid)
+  .
+  Hint Constructors persisted_event : tso.
+
   Inductive persisted_loc (ex:Execution.t) (loc:Loc.t) (val:Val.t): Prop :=
   | persisted_loc_uninit
       (UNINIT: val = Val.default)
-      (NPER: forall eid (DOM: dom_rel (Execution.per ex) eid), False)
+      (NPER: forall eid (PEID: persisted_event ex loc eid), False)
   | persisted_loc_init
       eid
       (EID: ex.(Execution.label_is) (Label.is_kinda_writing_val loc val) eid)
-      (PER: forall eid2 (CO: ex.(Execution.co) eid eid2) (DOM: dom_rel (Execution.per ex) eid2), False)
+      (PER: forall eid2 (CO: ex.(Execution.co) eid eid2) (PEID: persisted_event ex loc eid2), False)
   .
   Hint Constructors persisted_loc : tso.
 

@@ -639,8 +639,7 @@ Lemma promising_pf_valid
            ex.(Execution.label_is) Label.is_persist eid2)))>> /\
     <<STATE: IdMap.Forall2
                (fun tid sl aeu => sim_state_weak (fst sl) aeu.(AExecUnit.state))
-               m.(Machine.tpool) PRE.(Valid.aeus)>> /\
-    <<PMEM: Valid.persisted ex smem>>.
+               m.(Machine.tpool) PRE.(Valid.aeus)>>.
 Proof.
   exploit promising_pf_sim_traces; eauto. i. des.
   destruct PRE, ex. ss.
@@ -717,8 +716,6 @@ Proof.
         symmetry in FIND. inv FIND. rewrite H0.
         apply sim_state_weak_init.
       }
-  - (* persisted *)
-    admit.
 Qed.
 
 Theorem promising_pf_to_axiomatic
@@ -735,12 +732,19 @@ Proof.
   exploit promising_pf_valid; eauto. i. des.
   exists ex. eexists (Valid.mk_ex PRE CO1 CO2 RF1 RF2 RF_WF PF1 PF2 _ _ _ _).
   s. esplits; eauto.
-  ii. inv H. specialize (STATE tid). inv STATE; try congr.
-  rewrite FIND in H. inv H. destruct a. destruct aeu. ss.
-  exploit TERMINAL; eauto. i. des. inv REL. inv x. congr.
+  - (* terminal *)
+    ii. inv H. specialize (STATE tid). inv STATE; try congr.
+    rewrite FIND in H. inv H. destruct a. destruct aeu. ss.
+    exploit TERMINAL; eauto. i. des. inv REL. inv x. congr.
+  - (* persisted *)
+    ii. specialize (PMEM loc). inv PMEM.
+    (* hard *)
+    admit.
+
 
 Grab Existential Variables.
 { (* pf_min *)
+  (* hard *)
   admit.
 }
 { (* external *)
