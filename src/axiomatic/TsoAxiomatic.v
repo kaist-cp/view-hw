@@ -293,10 +293,26 @@ Module Label.
     destruct l; ss.
   Qed.
 
+  Lemma read_is_kinda_read
+        l
+        (RD: is_read l):
+    is_kinda_read l.
+  Proof.
+    destruct l; ss.
+  Qed.
+
   Lemma kinda_read_is_access
         l
         (WR: is_kinda_read l):
     is_access l.
+  Proof.
+    destruct l; ss.
+  Qed.
+
+  Lemma write_is_kinda_write
+        l
+        (WR: is_write l):
+    is_kinda_write l.
   Proof.
     destruct l; ss.
   Qed.
@@ -532,8 +548,8 @@ Module Label.
 
   Hint Resolve
        read_is_reading_val reading_val_is_reading reading_is_read
-       kinda_reading_is_kinda_read kinda_read_is_access kinda_reading_is_accessing read_is_kinda_reading read_is_kinda_reading_val kinda_reading_exists_val kinda_reading_val_is_kinda_reading
-       kinda_writing_is_kinda_write kinda_write_is_access kinda_writing_is_accessing write_is_kinda_writing write_is_kinda_writing_val kinda_writing_exists_val kinda_writing_val_is_kinda_writing
+       kinda_reading_is_kinda_read read_is_kinda_read kinda_read_is_access kinda_reading_is_accessing read_is_kinda_reading read_is_kinda_reading_val kinda_reading_exists_val kinda_reading_val_is_kinda_reading
+       kinda_writing_is_kinda_write write_is_kinda_write kinda_write_is_access kinda_writing_is_accessing write_is_kinda_writing write_is_kinda_writing_val kinda_writing_exists_val kinda_writing_val_is_kinda_writing
        update_is_kinda_reading update_is_kinda_writing update_is_kinda_writing_val
        accessing_is_access read_is_accessing write_is_accessing update_is_accessing
        kinda_writing_same_loc
@@ -1041,7 +1057,58 @@ Module Execution.
 
   Definition pf_min (ex:t) := ex.(pf) ⊆ (ob ex)⁺.
 
+  Ltac obtac :=
+    repeat
+      (try match goal with
+           | [H: Execution.ob _ _ _ |- _] => inv H
+           | [H: Execution.obs _ _ _ |- _] => inv H
+           | [H: Execution.dob _ _ _ |- _] => inv H
+           | [H: Execution.bob _ _ _ |- _] => inv H
+           | [H: Execution.fob _ _ _ |- _] => inv H
+           | [H: Execution.fr _ _ _ |- _] => inv H
+           | [H: Execution.fre _ _ _ |- _] => inv H
+           | [H: Execution.rfe _ _ _ |- _] => inv H
+           | [H: Execution.fp _ _ _ |- _] => inv H
+           | [H: Execution.per _ _ _ |- _] => inv H
+           | [H: (_⨾ _) _ _ |- _] => inv H
+           | [H: ⦗_⦘ _ _ |- _] => inv H
+           | [H: (_ ∪ _) _ _ |- _] => inv H
+           | [H: (_ ∩ _) _ _ |- _] => inv H
+           | [H: (_ × _) _ _ |- _] => inv H
+           | [H: (minus_rel _ _) _ |- _] => inv H
+           | [H: Execution.label_is _ _ _ |- _] => inv H
+           | [H: Execution.label_rel _ _ _ _ |- _] => inv H
+           | [H: Execution.label_loc _ _ |- _] => inv H
+           | [H: Execution.label_cl _ _ |- _] => inv H
+           end;
+       des).
+
+  Ltac simtac :=
+  repeat match goal with
+           | [H: _ |- (_⨾ _) _ _] => econs
+           | [H: _ |- ⦗Execution.label_is _ _⦘ _ _ /\ _] => econs; econs; eauto with tso
+           | [H: _ |- ⦗Execution.label_is _ _⦘ _ _] => econs; eauto with tso
+           | [H: _ |- Execution.label_is _ _ _] => eauto with tso
+           | [H: _ |- Execution.label_rel _ _ _ _] => econs; eauto with tso
+           | [H: _ |- rc _ _ /\ _] => econs; eauto
+           | [H: _ |- Execution.po _ _ /\ _] => econs; eauto
+           | [H: _ |- Execution.po_cl _ _ _ /\ _] => econs; eauto
+           | [H: _ |- Execution.pf _ _ _ /\ _] => econs; eauto
+          end.
+
+  Lemma fob_persist
+        ex
+        eid1 eid2
+        (FOB: (fob ex) eid1 eid2):
+    ex.(label_is) Label.is_persist eid2.
+  Proof.
+    obtac; simtac.
+  Qed.
+
 End Execution.
+
+Ltac obtac := Execution.obtac.
+Ltac simtac := Execution.simtac.
 
 Inductive tid_lift (tid:Id.t) (rel:relation nat) (eid1 eid2:eidT): Prop :=
 | tid_lift_intro
@@ -1158,45 +1225,6 @@ Module Valid.
   }.
   Hint Constructors ex : tso.
   Coercion PRE: ex >-> pre_ex.
-
-  Ltac obtac :=
-    repeat
-      (try match goal with
-           | [H: Execution.ob _ _ _ |- _] => inv H
-           | [H: Execution.obs _ _ _ |- _] => inv H
-           | [H: Execution.dob _ _ _ |- _] => inv H
-           | [H: Execution.bob _ _ _ |- _] => inv H
-           | [H: Execution.fob _ _ _ |- _] => inv H
-           | [H: Execution.fr _ _ _ |- _] => inv H
-           | [H: Execution.fre _ _ _ |- _] => inv H
-           | [H: Execution.rfe _ _ _ |- _] => inv H
-           | [H: Execution.fp _ _ _ |- _] => inv H
-           | [H: Execution.per _ _ _ |- _] => inv H
-           | [H: (_⨾ _) _ _ |- _] => inv H
-           | [H: ⦗_⦘ _ _ |- _] => inv H
-           | [H: (_ ∪ _) _ _ |- _] => inv H
-           | [H: (_ ∩ _) _ _ |- _] => inv H
-           | [H: (_ × _) _ _ |- _] => inv H
-           | [H: (minus_rel _ _) _ |- _] => inv H
-           | [H: Execution.label_is _ _ _ |- _] => inv H
-           | [H: Execution.label_rel _ _ _ _ |- _] => inv H
-           | [H: Execution.label_loc _ _ |- _] => inv H
-           | [H: Execution.label_cl _ _ |- _] => inv H
-           end;
-       des).
-
-  Ltac simtac :=
-  repeat match goal with
-           | [H: _ |- (_⨾ _) _ _] => econs
-           | [H: _ |- ⦗Execution.label_is _ _⦘ _ _ /\ _] => econs; econs; eauto with tso
-           | [H: _ |- ⦗Execution.label_is _ _⦘ _ _] => econs; eauto with tso
-           | [H: _ |- Execution.label_is _ _ _] => eauto with tso
-           | [H: _ |- Execution.label_rel _ _ _ _] => econs; eauto with tso
-           | [H: _ |- rc _ _ /\ _] => econs; eauto
-           | [H: _ |- Execution.po _ _ /\ _] => econs; eauto
-           | [H: _ |- Execution.po_cl _ _ _ /\ _] => econs; eauto
-           | [H: _ |- Execution.pf _ _ _ /\ _] => econs; eauto
-          end.
 
   Definition is_terminal
              p ex (EX: pre_ex p ex): Prop :=
@@ -1545,9 +1573,79 @@ Module Valid.
     - exploit PF2; eauto. i. des.
       obtac. rewrite EID in EID2. inv EID2. ss.
   Qed.
-End Valid.
 
-Ltac obtac := Valid.obtac.
-Ltac simtac := Valid.simtac.
+  Lemma persist_ob_write
+        ex
+        eid1 eid2
+        (CO2: co2 ex)
+        (RF2: rf2 ex)
+        (OB: Execution.ob ex eid1 eid2)
+        (EID1: ex.(Execution.label_is) Label.is_persist eid1):
+    ex.(Execution.label_is) Label.is_kinda_write eid2.
+  Proof.
+    obtac.
+    all: try by destruct l; destruct l2; ss; congr.
+    all: try by destruct l; destruct l1; ss; congr.
+    - exploit RF2; eauto. i. des. obtac.
+      destruct l0; destruct l; ss; congr.
+    - exploit RF2; eauto. i. des. obtac.
+      destruct l1; destruct l; ss; congr.
+    - rewrite EID1 in EID0. inv EID0. destruct l0; ss.
+    - exploit CO2; eauto. i. des. obtac.
+      destruct l1; destruct l; ss; congr.
+    - exploit CO2; eauto. i. des. obtac. simtac.
+    - simtac.
+  Qed.
+
+  Lemma access_ob_persist
+        ex
+        eid1 eid2
+        (CO2: co2 ex)
+        (RF2: rf2 ex)
+        (OB: Execution.ob ex eid1 eid2)
+        (EID1: ex.(Execution.label_is) Label.is_persist eid2):
+    ex.(Execution.label_is) Label.is_access eid1.
+  Proof.
+    obtac.
+    all: try by destruct l0; destruct l2; ss; congr.
+    all: try by destruct l0; destruct l1; ss; congr.
+    all: try by destruct l0; destruct l; ss; congr.
+    all: try by destruct l1; destruct l2; ss; congr.
+    all: try simtac.
+    - exploit RF2; eauto. i. des. obtac.
+      destruct l; destruct l1; ss; congr.
+    - exploit CO2; eauto. i. des. obtac.
+      destruct l; destruct l0; ss; congr.
+    - exploit CO2; eauto. i. des. obtac.
+      destruct l; destruct l0; ss; congr.
+    - exploit CO2; eauto. i. des. obtac.
+      destruct l; destruct l0; ss; congr.
+  Qed.
+
+  Lemma ob_persist_po
+        ex
+        eid1 eid2
+        (CO2: co2 ex)
+        (RF2: rf2 ex)
+        (EID1: Execution.label_is ex Label.is_persist eid2)
+        (OB: Execution.ob ex eid1 eid2):
+    Execution.po eid1 eid2.
+  Proof.
+    inv EID1. unfold co2, rf2 in *.
+    obtac; ss.
+    all: try by etrans; eauto.
+    all: try by destruct l; destruct l0; ss; congr.
+    - exploit RF2; eauto. i. des. obtac.
+      destruct l; destruct l1; ss; congr.
+    - exploit CO2; eauto. i. des. obtac.
+      destruct l; destruct l0; ss; congr.
+    - exploit CO2; eauto. i. des. obtac.
+      destruct l; destruct l0; ss; congr.
+    - inv H; inv H2; ss.
+      obtac. eapply Execution.po_chain. econs. simtac.
+    - exploit CO2; eauto. i. des. obtac.
+      destruct l; destruct l0; ss; congr.
+  Qed.
+End Valid.
 
 Coercion Valid.PRE: Valid.ex >-> Valid.pre_ex.

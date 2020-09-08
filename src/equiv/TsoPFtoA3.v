@@ -30,7 +30,7 @@ Set Implicit Arguments.
 
 (* TODO: seperate persist ob *)
 Definition ob' (ex: Execution.t): relation eidT :=
-  Execution.rfe ex ∪ Execution.dob ex ∪ Execution.bob ex ∪ Execution.fob ex ∪ Execution.fobs ex.
+  Execution.rfe ex ∪ Execution.dob ex ∪ Execution.bob ex.
 
 Ltac des_union :=
   repeat
@@ -45,25 +45,40 @@ Ltac des_union :=
 Lemma ob_ob'
       ex eid1 eid2:
   Execution.ob ex eid1 eid2 <->
-  (Execution.fre ex ∪ ex.(Execution.co) ∪ ob' ex) eid1 eid2.
+  (Execution.fre ex ∪ ex.(Execution.co) ∪ Execution.fob ex ∪ Execution.fp ex ∪ ob' ex) eid1 eid2.
 Proof.
   split; i.
   - des_union.
-    + right. left. left. left. auto.
+    + right. left. left. auto.
     + repeat left. auto.
-    + left. left. right. auto.
-    + left. right. auto.
-    + right. left. left. right. auto.
+    + left. left. left. right. auto.
     + right. left. right. auto.
     + right. right. auto.
+    + left. left. right. auto.
+    + left. right. auto.
   - unfold ob' in *. des_union.
     + left. left. left. left. left. right. auto.
     + left. left. left. left. right. auto.
-    + left. left. left. right. auto.
-    + repeat left. auto.
-    + left. left. right. auto.
     + left. right. auto.
     + right. auto.
+    + repeat left. auto.
+    + left. left. left. right. auto.
+    + left. left. right. auto.
+Qed.
+
+Lemma ob'_persist
+      ex eid1 eid2
+      (RF2: Valid.rf2 ex)
+      (OB': ob' ex eid1 eid2)
+      (EID2: ex.(Execution.label_is) Label.is_persist eid2):
+  False.
+Proof.
+  inv OB'; obtac.
+  - exploit RF2; eauto. i. des. obtac.
+    rewrite EID in EID1. simplify. destruct l1; ss.
+  - rewrite EID0 in EID1. simplify. destruct l1; ss.
+  - rewrite EID0 in EID1. simplify. destruct l1; ss.
+  - rewrite EID3 in EID1. simplify. destruct l1; ss.
 Qed.
 
 Lemma nth_error_last A (l: list A) a n
@@ -194,6 +209,22 @@ Definition sim_fre
     (FR: Execution.fre ex (tid, eid1) eid2),
     Time.lt (vext (tid, eid1)) (vext eid2).
 
+Definition sim_fob
+           (tid:Id.t) (ex:Execution.t) (vext: eidT -> Time.t)
+           (eu:ExecUnit.t) (aeu:AExecUnit.t): Prop :=
+  forall eid1 eid2
+    (LABEL: eid2 < List.length aeu.(AExecUnit.local).(ALocal.labels))
+    (FOB: Execution.fob ex eid1 (tid, eid2)),
+    Time.le (vext eid1) (vext (tid, eid2)).
+
+Definition sim_fp
+           (tid:Id.t) (ex:Execution.t) (vext: eidT -> Time.t)
+           (eu:ExecUnit.t) (aeu:AExecUnit.t): Prop :=
+  forall eid1 eid2
+    (LABEL: eid1 < List.length aeu.(AExecUnit.local).(ALocal.labels))
+    (FP: Execution.fp ex (tid, eid1) eid2),
+    Time.lt (vext (tid, eid1)) (vext eid2).
+
 Inductive sim_th'
           (tid:Id.t) (mem:Memory.t) (ex:Execution.t) (vext: eidT -> Time.t)
           (eu:ExecUnit.t) (aeu:AExecUnit.t): Prop := {
@@ -202,5 +233,7 @@ Inductive sim_th'
   OBW: sim_ob_write tid ex vext eu aeu;
   OBR: sim_ob_read tid ex vext eu aeu;
   FRE: sim_fre tid ex vext eu aeu;
+  FOB: sim_fob tid ex vext eu aeu;
+  FP: sim_fp tid ex vext eu aeu;
 }.
 Hint Constructors sim_th'.

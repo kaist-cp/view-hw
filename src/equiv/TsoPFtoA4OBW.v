@@ -125,7 +125,7 @@ Proof.
     inv STEP0. ss. subst. inv LOCAL; inv EVENT; inv STEP0; ss.
     move OB at bottom. unfold ob' in OB. des_union.
     - (* rfe *)
-      inv H. exploit RF2; eauto. i. des.
+      obtac. exploit RF2; eauto. i. des.
       inv READ. destruct l0; ss; try congr.
     - (* dob *)
       generalize L.(LC).(VWN). intro VWN. des.
@@ -146,13 +146,10 @@ Proof.
       eapply Nat.le_lt_trans.
       { apply VWN0; ss. econs; ss.
         exploit Execution.po_chain.
-        { econs. split; try exact H3. econs 2. eauto. }
+        { econs. split; try exact H. econs 2. eauto. }
         i. econs. split; eauto. econs; eauto with tso.
       }
       inv WRITABLE. inv COHMAX. specialize (COHMAX0 mloc). lia.
-    - (* pob *)
-      funtac. obtac; try by rewrite EID1 in EID; inv EID; ss.
-      rewrite EID2 in EID; inv EID; ss.
   }
   { (* update *)
     exploit sim_trace_sim_th; try exact SIMTR; eauto. intro TH_tmp.
@@ -184,9 +181,9 @@ Proof.
     inv EVENT. inversion STEP1. guardH LC2.
     move OB at bottom. unfold ob' in OB. des_union.
     - (* rfe *)
-      rename H into RFE.
+      obtac.
       assert (v_gen vexts eid1 = old_ts).
-      { inv RFE. destruct eid1 as [tid1 eid1]. inv H2. ss.
+      { destruct eid1 as [tid1 eid1]. inv H2. ss.
         generalize H. intro Y. rewrite RF in Y. inv Y. ss.
         erewrite EX2.(XR) in R; eauto; cycle 1.
         { s. rewrite List.app_length. s. clear. lia. }
@@ -237,12 +234,9 @@ Proof.
       eapply Nat.le_lt_trans.
       { apply VWN0; ss. econs; ss.
         exploit Execution.po_chain.
-        { econs. split; try exact H3. econs 2. eauto. }
+        { econs. split; try exact H. econs 2. eauto. }
         i. econs. split; eauto. econs; eauto with tso.
       }
       inv WRITABLE. inv COHMAX. specialize (COHMAX0 mloc). lia.
-    - (* pob *)
-      funtac. obtac; try by rewrite EID1 in EID; inv EID; ss.
-      rewrite EID2 in EID; inv EID; ss.
   }
 Qed.
