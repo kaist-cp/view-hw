@@ -1191,6 +1191,7 @@ Module Valid.
            | [H: _ |- ⦗Execution.label_is _ _⦘ _ _ /\ _] => econs; econs; eauto with tso
            | [H: _ |- ⦗Execution.label_is _ _⦘ _ _] => econs; eauto with tso
            | [H: _ |- Execution.label_is _ _ _] => eauto with tso
+           | [H: _ |- Execution.label_rel _ _ _ _] => econs; eauto with tso
            | [H: _ |- rc _ _ /\ _] => econs; eauto
            | [H: _ |- Execution.po _ _ /\ _] => econs; eauto
            | [H: _ |- Execution.po_cl _ _ _ /\ _] => econs; eauto
@@ -1429,6 +1430,18 @@ Module Valid.
     exploit EX.(RF1); eauto. i. des.
     - contradict NORF. econs. eauto.
     - exploit EX.(RF_WF); [exact RF3|exact RF|]. i. subst. eauto.
+  Qed.
+
+  Lemma pf_is_t_ob_cl
+        p exec
+        eid1 eid2
+        (EX: ex p exec)
+        (PF: Execution.pf exec eid1 eid2):
+    ((Execution.ob exec)⁺ ∩ exec.(Execution.label_rel) Execution.label_cl) eid1 eid2.
+  Proof.
+    econs.
+    - eapply EX.(PF_MIN); eauto.
+    - exploit EX.(PF2); eauto. i. des. obtac. simtac.
   Qed.
 
   Lemma barrier_ob
