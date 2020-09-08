@@ -1028,17 +1028,18 @@ Module Execution.
      (po_cl ex) ⨾
      ⦗ex.(label_is) Label.is_flushopt⦘).
 
-  Definition fobs (ex:t): relation eidT := ex.(pf) ∪ (fp ex).
-
   Definition ob (ex:t): relation eidT :=
-    (obs ex) ∪ (dob ex) ∪ (bob ex) ∪ (fob ex) ∪ (fobs ex).
+    (obs ex) ∪ (dob ex) ∪ (bob ex) ∪ (fob ex) ∪ (fp ex).
 
   Definition per (ex:t): relation eidT :=
-    ex.(pf) ⨾
+    ⦗ex.(label_is) Label.is_kinda_write⦘ ⨾
+    ((ob ex)⁺ ∩ ex.(label_rel) label_cl) ⨾
     (⦗ex.(label_is) Label.is_flush⦘ ∪
      (⦗ex.(label_is) Label.is_flushopt⦘ ⨾
       po ⨾
       ⦗ex.(label_is) Label.is_persist_barrier⦘)).
+
+  Definition pf_min (ex:t) := ex.(pf) ⊆ (ob ex)⁺.
 
 End Execution.
 
@@ -1111,6 +1112,7 @@ Module Valid.
 
   Definition rf_wf (ex: Execution.t) := functional (ex.(Execution.rf))⁻¹.
 
+  (* TODO: add real cacheline *)
   Definition pf1 (ex: Execution.t) :=
     forall eid1 loc
        (LABEL: ex.(Execution.label_is) (Label.is_persisting loc) eid1),
@@ -1119,6 +1121,7 @@ Module Valid.
           <<LABEL: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid2>> /\
           <<PF: ex.(Execution.pf) eid2 eid1>>).
 
+  (* TODO: add real cacheline *)
   Definition pf2 (ex: Execution.t) :=
     forall eid1 eid2 (RF: ex.(Execution.pf) eid2 eid1),
     exists loc,
@@ -1132,7 +1135,6 @@ Module Valid.
   | persisted_loc_init
       eid
       (EID: ex.(Execution.label_is) (Label.is_kinda_writing_val loc val) eid)
-      (DOM: dom_rel (Execution.per ex) eid)
       (PER: forall eid2 (CO: ex.(Execution.co) eid eid2) (DOM: dom_rel (Execution.per ex) eid2), False)
   .
   Hint Constructors persisted_loc : tso.
@@ -1152,6 +1154,7 @@ Module Valid.
     COWR: irreflexive (Execution.cowr ex);
     CORW: irreflexive (Execution.corw ex);
     EXTERNAL: acyclic (Execution.ob ex);
+    PF_MIN: Execution.pf_min ex;
   }.
   Hint Constructors ex : tso.
   Coercion PRE: ex >-> pre_ex.
@@ -1164,7 +1167,6 @@ Module Valid.
            | [H: Execution.dob _ _ _ |- _] => inv H
            | [H: Execution.bob _ _ _ |- _] => inv H
            | [H: Execution.fob _ _ _ |- _] => inv H
-           | [H: Execution.fobs _ _ _ |- _] => inv H
            | [H: Execution.fr _ _ _ |- _] => inv H
            | [H: Execution.fre _ _ _ |- _] => inv H
            | [H: Execution.rfe _ _ _ |- _] => inv H
@@ -1451,8 +1453,7 @@ Module Valid.
     - inv H0. destruct l1; ss; try congr.
     - exploit CO2; eauto. i. des; obtac; destruct l; destruct l0; ss; congr.
     - exploit PF2; eauto. i. des; obtac; destruct l; destruct l0; ss; congr.
-    - exploit PF2; eauto. i. des; obtac; destruct l; destruct l0; ss; congr.
-    - inv H. destruct l1; ss; try congr.
+    - inv H0. destruct l1; ss; try congr.
   Qed.
 
   Lemma ob_label
@@ -1476,7 +1477,6 @@ Module Valid.
       destruct l; ss. destruct l0; ss. congr. congr.
       destruct l0; ss. congr. congr.
     - exploit CO2. eauto. i. des; obtac; destruct l; destruct l0; ss; congr.
-    - exploit PF2. eauto. i. des; obtac; destruct l; destruct l0; ss; congr.
     - exploit PF2. eauto. i. des; obtac; destruct l; destruct l0; ss; congr.
   Qed.
 
@@ -1529,7 +1529,6 @@ Module Valid.
       inv WRITE. rewrite EID in EID1. destruct l; ss.
     - exploit CO2; eauto. i. des; obtac; destruct l; ss; congr.
     - exploit CO2; eauto. i. des; obtac; destruct l; ss; congr.
-    - exploit PF2; eauto. i. des; obtac; destruct l; ss; congr.
     - exploit PF2; eauto. i. des.
       obtac. rewrite EID in EID2. inv EID2. ss.
   Qed.
