@@ -283,7 +283,6 @@ Inductive persisted_event_view (ex:Execution.t) (ob: list eidT) (loc:Loc.t) (vie
   eid
   (VIEW: view_of_eid ex ob eid = Some view)
   (EID: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid)
-  (DOM: dom_rel (Execution.per ex) eid)
   (PER: forall eid2 (CO: ex.(Execution.co) eid eid2) (DOM: dom_rel (Execution.per ex) eid2), False)
 .
 Hint Constructors persisted_event_view.
@@ -1811,10 +1810,11 @@ Proof.
         repeat right. repeat econs; eauto with tso.
       }
       assert (DOM: dom_rel (Execution.per ex) eid2).
-      { destruct l0; ss; eqvtac.
-        { econs. econs. simtac. left. simtac. }
+      { obtac. exploit Valid.pf_is_t_ob_cl; eauto. i.
+        destruct l0; ss; eqvtac.
+        { econs. econs. simtac. econs; eauto. left. simtac. }
         exploit FLUSHOPT; eauto with tso. i. des.
-        econs. econs. simtac. right. simtac.
+        econs. econs. simtac. econs; eauto. right. simtac.
       }
       inv PVIEW.
       { eapply NPER. eauto. }
@@ -1825,7 +1825,7 @@ Proof.
         cut (fview <= view).
         { i. lia. }
         eapply view_of_eid_ob; eauto.
-        right. right. left. econs; eauto.
+        right. left. econs; eauto.
       }
       inv e. obtac. exploit EX.(Valid.CO1).
       { esplits; econs; [try exact EID0 | | try exact EID2|]; eauto with tso. }
@@ -1838,7 +1838,7 @@ Proof.
       * cut (fview < S ts).
         { i. lia. }
         eapply view_of_eid_ob_write; eauto with tso.
-        right. right. left. econs; eauto.
+        right. left. econs; eauto.
     }
 
     inv EID.
