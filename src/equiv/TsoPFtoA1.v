@@ -27,16 +27,16 @@ Set Implicit Arguments.
 
 Inductive sim_trace (p: program) (mem: Memory.t) (tid: Id.t):
   forall (tr: list (ExecUnit.t)) (atr: list AExecUnit.t)
-     (wl: list (nat -> option (Loc.t * Time.t))) (rl: list (nat -> option (Loc.t * Time.t)))
+     (wl: list (nat -> option (Loc.t * Time.t))) (rl: list (nat -> option (Loc.t * Time.t))) (fl: list (nat -> option (Loc.t * Time.t)))
      (cov: list (nat -> Time.t)) (vext: list (nat -> Time.t)), Prop :=
 | sim_trace_init
     st lc stmts
     (FIND: IdMap.find tid (Machine.init_with_promises p mem).(Machine.tpool) = Some (st, lc))
     (STMT: IdMap.find tid p = Some stmts):
     sim_trace p mem tid [ExecUnit.mk st lc mem] [AExecUnit.mk (State.init stmts) ALocal.init]
-              [fun _ => None] [fun _ => None] [fun _ => Time.bot] [fun _ => Time.bot]
+              [fun _ => None] [fun _ => None] [fun _ => None] [fun _ => Time.bot] [fun _ => Time.bot]
 | sim_trace_step
-    e ae tr eu1 eu2 atr aeu1 aeu2 rl r1 r2 wl w1 w2 covl cov1 cov2 vextl vext1 vext2
+    e ae tr eu1 eu2 atr aeu1 aeu2 rl r1 r2 wl w1 w2 fl f1 f2 covl cov1 cov2 vextl vext1 vext2
     (STEP: ExecUnit.state_step0 tid e e eu1 eu2)
     (ASTATE_STEP: State.step ae aeu1.(AExecUnit.state) aeu2.(AExecUnit.state))
     (ALOCAL_STEP: ALocal.step ae aeu1.(AExecUnit.local) aeu2.(AExecUnit.local))
@@ -67,6 +67,25 @@ Inductive sim_trace (p: program) (mem: Memory.t) (tid: Id.t):
                             else r1 eid)
                | _ => r1
                end)
+    (F: f2 = match e with
+               | Event.flush vloc =>
+                 (fun eid => if Nat.eqb eid (ALocal.next_eid aeu1.(AExecUnit.local))
+                            then Some (vloc.(ValA.val),
+                                       Memory.latest_ts
+                                         vloc.(ValA.val)
+                                         (eu2.(ExecUnit.local).(Local.per) vloc.(ValA.val)).(View.ts)
+                                         mem)
+                            else f1 eid)
+               | Event.flushopt vloc =>
+                 (fun eid => if Nat.eqb eid (ALocal.next_eid aeu1.(AExecUnit.local))
+                            then Some (vloc.(ValA.val),
+                                       Memory.latest_ts
+                                         vloc.(ValA.val)
+                                         (eu2.(ExecUnit.local).(Local.lper) vloc.(ValA.val)).(View.ts)
+                                         mem)
+                            else f1 eid)
+               | _ => f1
+               end)
     (COV: cov2 = match e with
                  | Event.read _ _ _ vloc _
                  | Event.write _ _ vloc _ (ValA.mk _ 0 _)
@@ -74,6 +93,20 @@ Inductive sim_trace (p: program) (mem: Memory.t) (tid: Id.t):
                    (fun eid => if Nat.eqb eid (ALocal.next_eid aeu1.(AExecUnit.local))
                               then (eu2.(ExecUnit.local).(Local.coh) vloc.(ValA.val)).(View.ts)
                               else cov1 eid)
+                 | Event.flush vloc =>
+                   (fun eid => if Nat.eqb eid (ALocal.next_eid aeu1.(AExecUnit.local))
+                               then Memory.latest_ts
+                                      vloc.(ValA.val)
+                                      (eu2.(ExecUnit.local).(Local.per) vloc.(ValA.val)).(View.ts)
+                                      mem
+                               else cov1 eid)
+                 | Event.flushopt vloc =>
+                   (fun eid => if Nat.eqb eid (ALocal.next_eid aeu1.(AExecUnit.local))
+                               then Memory.latest_ts
+                                      vloc.(ValA.val)
+                                      (eu2.(ExecUnit.local).(Local.lper) vloc.(ValA.val)).(View.ts)
+                                      mem
+                               else cov1 eid)
                  | _ => cov1
                  end)
     (VEXT: vext2 = match e with
@@ -86,10 +119,18 @@ Inductive sim_trace (p: program) (mem: Memory.t) (tid: Id.t):
                      (fun eid => if Nat.eqb eid (ALocal.next_eid aeu1.(AExecUnit.local))
                                 then (eu2.(ExecUnit.local).(Local.coh) vloc.(ValA.val)).(View.ts)
                                 else vext1 eid)
+                   | Event.flush vloc =>
+                     (fun eid => if Nat.eqb eid (ALocal.next_eid aeu1.(AExecUnit.local))
+                                 then (eu2.(ExecUnit.local).(Local.per) vloc.(ValA.val)).(View.ts)
+                                 else vext1 eid)
+                   | Event.flushopt vloc =>
+                     (fun eid => if Nat.eqb eid (ALocal.next_eid aeu1.(AExecUnit.local))
+                                 then (eu2.(ExecUnit.local).(Local.lper) vloc.(ValA.val)).(View.ts)
+                                 else vext1 eid)
                    | _ => vext1
                    end)
-    (TRACE: sim_trace p mem tid (eu1::tr) (aeu1::atr) (w1::wl) (r1::rl) (cov1::covl) (vext1::vextl)):
-    sim_trace p mem tid (eu2::eu1::tr) (aeu2::aeu1::atr) (w2::w1::wl) (r2::r1::rl) (cov2::cov1::covl) (vext2::vext1::vextl)
+    (TRACE: sim_trace p mem tid (eu1::tr) (aeu1::atr) (w1::wl) (r1::rl) (f1::fl) (cov1::covl) (vext1::vextl)):
+    sim_trace p mem tid (eu2::eu1::tr) (aeu2::aeu1::atr) (w2::w1::wl) (r2::r1::rl) (f2::f1::fl) (cov2::cov1::covl) (vext2::vext1::vextl)
 .
 
 Definition sim_traces
@@ -98,19 +139,21 @@ Definition sim_traces
            (atrs: IdMap.t (list AExecUnit.t))
            (ws: IdMap.t (list (nat -> option (Loc.t * Time.t))))
            (rs: IdMap.t (list (nat -> option (Loc.t * Time.t))))
+           (fs: IdMap.t (list (nat -> option (Loc.t * Time.t))))
            (covs: IdMap.t (list (nat -> Time.t)))
            (vexts: IdMap.t (list (nat -> Time.t)))
   : Prop :=
-  IdMap.Forall6 (sim_trace p mem) trs atrs ws rs covs vexts.
+  IdMap.Forall7 (sim_trace p mem) trs atrs ws rs fs covs vexts.
 
 Lemma sim_trace_last
-      p mem tid tr atr wl rl covl vextl
-      (SIM: sim_trace p mem tid tr atr wl rl covl vextl):
-  exists eu tr' aeu atr' w wl' r rl' cov covl' vext vextl',
+      p mem tid tr atr wl rl fl covl vextl
+      (SIM: sim_trace p mem tid tr atr wl rl fl covl vextl):
+  exists eu tr' aeu atr' w wl' r rl' f fl' cov covl' vext vextl',
     <<HDTR: tr = eu :: tr'>> /\
     <<HDATR: atr = aeu :: atr'>> /\
     <<HDWL: wl = w :: wl'>> /\
     <<HDRL: rl = r :: rl'>> /\
+    <<HDFL: fl = f :: fl'>> /\
     <<HDCOVL: covl = cov :: covl'>> /\
     <<HDVEXTL: vextl = vext :: vextl'>>.
 Proof.
@@ -118,11 +161,12 @@ Proof.
 Qed.
 
 Lemma sim_trace_length
-      p mem tid tr atr wl rl covl vextl
-      (SIM: sim_trace p mem tid tr atr wl rl covl vextl):
+      p mem tid tr atr wl rl fl covl vextl
+      (SIM: sim_trace p mem tid tr atr wl rl fl covl vextl):
   <<LENGTH_ATR: List.length atr = List.length tr>> /\
   <<LENGTH_WL: List.length wl = List.length tr>> /\
   <<LENGTH_RL: List.length rl = List.length tr>> /\
+  <<LENGTH_FL: List.length fl = List.length tr>> /\
   <<LENGTH_COVL: List.length covl = List.length tr>> /\
   <<LENGTH_VEXTL: List.length vextl = List.length tr>>.
 Proof.
@@ -130,9 +174,9 @@ Proof.
 Qed.
 
 Lemma sim_trace_memory
-      p mem tid tr atr rl wl covl vextl
+      p mem tid tr atr wl rl fl covl vextl
       eu tr'
-      (SIM: sim_trace p mem tid tr atr rl wl covl vextl)
+      (SIM: sim_trace p mem tid tr atr wl rl fl covl vextl)
       (EU: tr = eu :: tr'):
   mem = eu.(ExecUnit.mem).
 Proof.
@@ -144,11 +188,11 @@ Proof.
 Qed.
 
 Lemma sim_traces_memory
-      p trs atrs rs ws covs vexts
+      p trs atrs ws rs fs covs vexts
       m
       ts loc val tid
       (STEP: Machine.pf_exec p m)
-      (SIM: sim_traces p m.(Machine.mem) trs atrs ws rs covs vexts)
+      (SIM: sim_traces p m.(Machine.mem) trs atrs ws rs fs covs vexts)
       (TR: IdMap.Forall2
              (fun tid tr sl => exists l, tr = (ExecUnit.mk (fst sl) (snd sl) m.(Machine.mem)) :: l)
              trs m.(Machine.tpool))
@@ -263,8 +307,8 @@ Qed.
 Lemma promising_pf_sim_traces
       p m
       (STEP: Machine.pf_exec p m):
-  exists trs atrs ws rs covs vexts ex (PRE: Valid.pre_ex p ex),
-    <<SIM: sim_traces p m.(Machine.mem) trs atrs ws rs covs vexts>> /\
+  exists trs atrs ws rs fs covs vexts ex (PRE: Valid.pre_ex p ex),
+    <<SIM: sim_traces p m.(Machine.mem) trs atrs ws rs fs covs vexts>> /\
     <<TR: IdMap.Forall2
             (fun tid tr sl => exists l, tr = (ExecUnit.mk (fst sl) (snd sl) m.(Machine.mem)) :: l)
             trs m.(Machine.tpool)>> /\
@@ -274,8 +318,8 @@ Lemma promising_pf_sim_traces
 Proof.
   inv STEP. exploit state_exec_rtc_state_step; eauto. i. des.
   eapply Machine.equiv_no_promise in NOPROMISE; eauto. revert NOPROMISE.
-  cut (exists trs atrs ws rs covs vexts ex (PRE: Valid.pre_ex p ex),
-    <<SIM: sim_traces p (Machine.mem m2') trs atrs ws rs covs vexts>> /\
+  cut (exists trs atrs ws rs fs covs vexts ex (PRE: Valid.pre_ex p ex),
+    <<SIM: sim_traces p (Machine.mem m2') trs atrs ws rs fs covs vexts>> /\
     <<TR: forall tid, opt_rel
             (fun tr sl => exists l, tr = (ExecUnit.mk (fst sl) (snd sl) (Machine.mem m2')) :: l)
             (IdMap.find tid trs)
@@ -288,6 +332,7 @@ Proof.
   apply clos_rt_rt1n_iff, clos_rt_rtn1_iff in EXEC. induction EXEC.
   { eexists (IdMap.map (fun x => [x]) (IdMap.mapi (fun _ _ => _) p)).
     eexists (IdMap.map (fun x => [x]) (IdMap.mapi (fun _ _ => _) p)).
+    eexists (IdMap.mapi (fun _ _ => [fun _ => None]) p).
     eexists (IdMap.mapi (fun _ _ => [fun _ => None]) p).
     eexists (IdMap.mapi (fun _ _ => [fun _ => None]) p).
     eexists (IdMap.mapi (fun _ _ => [bot]) p).
@@ -310,7 +355,7 @@ Proof.
   generalize (SIM tid). intro Y. inv Y; [congr|]. rewrite TRS in H0. inv H0.
   hexploit sim_trace_last; eauto. i. des. subst. simplify.
   exploit promising_pf_sim_step; eauto.
-  { inv REL6; eauto. s.
+  { inv REL7; eauto. s.
     unfold Machine.init_with_promises in FIND0. ss.
     rewrite IdMap.mapi_spec, STMT in *. inv FIND0.
     apply sim_state_weak_init.
@@ -322,6 +367,7 @@ Proof.
   eexists (IdMap.add tid _ atrs).
   eexists (IdMap.add tid _ ws).
   eexists (IdMap.add tid _ rs).
+  eexists (IdMap.add tid _ fs).
   eexists (IdMap.add tid _ covs).
   eexists (IdMap.add tid _ vexts).
   eexists (Execution.mk _ _ _ _).
@@ -336,7 +382,7 @@ all: ss.
 1: { ii. generalize (PRE.(Valid.AEUS) id). intro X.
      rewrite IdMap.add_spec. condtac; ss. inversion e0. subst. clear e0 X0.
      generalize (ATR tid). rewrite <- H. intro Y. inv Y. des. inv REL.
-     rewrite <- H6 in X. inv X. econs. etrans; eauto with tso.
+     rewrite <- H7 in X. inv X. econs. etrans; eauto with tso.
 }
 5: { ii. rewrite IdMap.mapi_spec. destruct (IdMap.find id p); ss. econs. refl. }
 4: { unfold IdMap.map. rewrite IdMap.mapi_mapi. f_equal. }
@@ -351,6 +397,7 @@ Inductive sim_th
           (aeu:AExecUnit.t)
           (w: nat -> option (Loc.t * Time.t))
           (r: nat -> option (Loc.t * Time.t))
+          (f: nat -> option (Loc.t * Time.t))
           (cov: nat -> Time.t)
           (vext: nat -> Time.t): Prop := mk {
   WPROP1:
@@ -426,10 +473,10 @@ Inductive sim_th
       Memory.latest loc old_ts (pred ts) mem;
   COVPROP:
     forall eid (COV: cov eid > 0),
-      AExecUnit.label_is aeu.(AExecUnit.local).(ALocal.labels) Label.is_access eid;
+      AExecUnit.label_is aeu.(AExecUnit.local).(ALocal.labels) Label.is_access_persist eid;
   VEXTPROP:
     forall eid (VEXT: vext eid > 0),
-      AExecUnit.label_is aeu.(AExecUnit.local).(ALocal.labels) Label.is_access eid;
+      AExecUnit.label_is aeu.(AExecUnit.local).(ALocal.labels) Label.is_access_persist eid;
 
   PO: forall iid1 iid2 label1 label2
      (PO: iid1 < iid2)
@@ -453,13 +500,15 @@ Lemma sim_trace_sim_state_weak
       atr aeu atr'
       wl w wl'
       rl r rl'
+      fl f fl'
       covl cov covl'
       vextl vext vextl'
-      (SIM: sim_trace p mem tid tr atr wl rl covl vextl)
+      (SIM: sim_trace p mem tid tr atr wl rl fl covl vextl)
       (EU: tr = eu :: tr')
       (AEU: atr = aeu :: atr')
-      (RL: rl = r :: rl')
       (WL: wl = w :: wl')
+      (RL: rl = r :: rl')
+      (FL: fl = f :: fl')
       (COV: covl = cov :: covl')
       (VEXT: vextl = vext :: vextl'):
   sim_state_weak eu.(ExecUnit.state) aeu.(AExecUnit.state).
@@ -470,14 +519,14 @@ Proof.
 Qed.
 
 Lemma sim_trace_lastn
-      p mem tid tr atr wl rl covl vextl
+      p mem tid tr atr wl rl fl covl vextl
       n
-      (SIM: sim_trace p mem tid tr atr wl rl covl vextl):
+      (SIM: sim_trace p mem tid tr atr wl rl fl covl vextl):
   sim_trace p mem tid
-            (lastn (S n) tr) (lastn (S n) atr) (lastn (S n) wl)
-            (lastn (S n) rl) (lastn (S n) covl) (lastn (S n) vextl).
+            (lastn (S n) tr) (lastn (S n) atr) (lastn (S n) wl) (lastn (S n) rl)
+            (lastn (S n) fl) (lastn (S n) covl) (lastn (S n) vextl).
 Proof.
-  revert n atr wl rl covl vextl SIM. induction tr; i; [by inv SIM|].
+  revert n atr wl rl fl covl vextl SIM. induction tr; i; [by inv SIM|].
   exploit sim_trace_length; eauto. s. i. des.
   destruct (le_lt_dec (length tr) n).
   { rewrite ? lastn_all in *; ss; try lia. }
@@ -487,15 +536,15 @@ Proof.
 Qed.
 
 Lemma sim_trace_lastn_rtc_step
-      p mem tid tr atr wl rl covl vextl
+      p mem tid tr atr wl rl fl covl vextl
       n k
-      (SIM: sim_trace p mem tid tr atr wl rl covl vextl)
+      (SIM: sim_trace p mem tid tr atr wl rl fl covl vextl)
       (SIM_N: sim_trace p mem tid
-              (lastn (S n) tr) (lastn (S n) atr) (lastn (S n) wl)
-              (lastn (S n) rl) (lastn (S n) covl) (lastn (S n) vextl))
+              (lastn (S n) tr) (lastn (S n) atr) (lastn (S n) wl) (lastn (S n) rl)
+              (lastn (S n) fl) (lastn (S n) covl) (lastn (S n) vextl))
       (SIM_NK: sim_trace p mem tid
-               (lastn ((S n) + k) tr) (lastn ((S n) + k) atr) (lastn ((S n) + k) wl)
-               (lastn ((S n) + k) rl) (lastn ((S n) + k) covl) (lastn ((S n) + k) vextl)):
+               (lastn ((S n) + k) tr) (lastn ((S n) + k) atr) (lastn ((S n) + k) wl) (lastn ((S n) + k) rl)
+               (lastn ((S n) + k) fl) (lastn ((S n) + k) covl) (lastn ((S n) + k) vextl)):
   forall eu1 eu2 l l'
          (TR: lastn (S n) tr = eu1 :: l)
          (TR2: lastn ((S n) + k) tr = eu2 :: l'),
@@ -512,10 +561,11 @@ Proof.
                 lastn (S (S (n + k))) atr = lastn (S (n + k)) atr /\
                 lastn (S (S (n + k))) wl = lastn (S (n + k)) wl /\
                 lastn (S (S (n + k))) rl = lastn (S (n + k)) rl /\
+                lastn (S (S (n + k))) fl = lastn (S (n + k)) fl /\
                 lastn (S (S (n + k))) covl = lastn (S (n + k)) covl /\
                 lastn (S (S (n + k))) vextl = lastn (S (n + k)) vextl).
-      { repeat rewrite lastn_all; ss; try lia. }
-      des. rewrite EQ_S, EQ_S0, EQ_S1, EQ_S2, EQ_S3, EQ_S4 in SIM_NK.
+      { repeat rewrite lastn_all; ss; try lia. splits; ss. }
+      des. rewrite EQ_S, EQ_S0, EQ_S1, EQ_S2, EQ_S3, EQ_S4, EQ_S5 in SIM_NK.
       eapply IHk; eauto. rewrite <- EQ_S. eauto.
     + inversion SIM_NK.
       * exploit lastn_length_incr; eauto. intro LT_NK.
@@ -528,22 +578,23 @@ Proof.
         { instantiate (1 := tr). instantiate (1 := S n). lia. }
         rewrite plus_Sn_m. rewrite LT_NK. lia.
       * clear W R COV VEXT.
-        rewrite <- H0 in TR2. inversion TR2. rewrite H6 in *. clear H6 H7.
+        rewrite <- H0 in TR2. inversion TR2. rewrite H7 in *. clear H7 H8.
         symmetry in H0. eapply lastn_S1 in H0; ss. rewrite <- H0 in TRACE.
         symmetry in H. eapply lastn_S1 in H; [| eapply lt_le_trans]; eauto; try lia. rewrite <- H in TRACE.
         symmetry in H2. eapply lastn_S1 in H2; [| eapply lt_le_trans]; eauto; try lia. rewrite <- H2 in TRACE.
         symmetry in H3. eapply lastn_S1 in H3; [| eapply lt_le_trans]; eauto; try lia. rewrite <- H3 in TRACE.
         symmetry in H4. eapply lastn_S1 in H4; [| eapply lt_le_trans]; eauto; try lia. rewrite <- H4 in TRACE.
         symmetry in H5. eapply lastn_S1 in H5; [| eapply lt_le_trans]; eauto; try lia. rewrite <- H5 in TRACE.
+        symmetry in H6. eapply lastn_S1 in H6; [| eapply lt_le_trans]; eauto; try lia. rewrite <- H6 in TRACE.
         etrans; cycle 1.
         { econs 2; eauto. econs; eauto. }
         eapply IHk; eauto.
 Qed.
 
 Lemma sim_trace_rtc_step
-      p mem tid tr atr wl rl covl vextl
+      p mem tid tr atr wl rl fl covl vextl
       n
-      (SIM: sim_trace p mem tid tr atr wl rl covl vextl):
+      (SIM: sim_trace p mem tid tr atr wl rl fl covl vextl):
   forall eu_to l eu_from l'
       (TR: tr = eu_to :: l)
       (TR_N: lastn (S n) tr = eu_from :: l'),
@@ -566,6 +617,8 @@ Proof.
   exploit lastn_all.
   { instantiate (1 := rl). instantiate (1 := S n + k). lia. }
   exploit lastn_all.
+  { instantiate (1 := fl). instantiate (1 := S n + k). lia. }
+  exploit lastn_all.
   { instantiate (1 := covl). instantiate (1 := S n + k). lia. }
   exploit lastn_all.
   { instantiate (1 := vextl). instantiate (1 := S n + k). lia. }
@@ -577,7 +630,8 @@ Proof.
   rewrite <- x3 in SIM_NK.
   rewrite <- x4 in SIM_NK.
   rewrite <- x5 in SIM_NK.
-  rewrite <- x5 in TR.
+  rewrite <- x6 in SIM_NK.
+  rewrite <- x6 in TR.
   eapply sim_trace_lastn_rtc_step.
   3: exact SIM_NK.
   all: eauto.
@@ -589,25 +643,27 @@ Lemma sim_trace_sim_th
       atrs atr aeu atr'
       ws wl w wl'
       rs rl r rl'
+      fs fl f fl'
       covs covl cov covl'
       vexts vextl vext vextl'
       (PF: Machine.pf_exec p m)
-      (SIM: sim_trace p m.(Machine.mem) tid tr atr wl rl covl vextl)
-      (SIMS: sim_traces p m.(Machine.mem) trs atrs ws rs covs vexts)
+      (SIM: sim_trace p m.(Machine.mem) tid tr atr wl rl fl covl vextl)
+      (SIMS: sim_traces p m.(Machine.mem) trs atrs ws rs fs covs vexts)
       (TR: IdMap.Forall2
            (fun _ tr sl => exists l, tr = (ExecUnit.mk (fst sl) (snd sl) m.(Machine.mem)) :: l)
            trs m.(Machine.tpool))
       (TRS: Some trt = IdMap.find tid trs)
       (EU: tr = eu :: tr')
       (AEU: atr = aeu :: atr')
-      (RL: rl = r :: rl')
       (WL: wl = w :: wl')
+      (RL: rl = r :: rl')
+      (FL: fl = f :: fl')
       (COV: covl = cov :: covl')
       (VEXT: vextl = vext :: vextl'):
   forall trt' (TRT: trt = trt' ++ tr),
-    sim_th p m.(Machine.mem) tid eu aeu w r cov vext.
+    sim_th p m.(Machine.mem) tid eu aeu w r f cov vext.
 Proof.
-  revert r rl' w wl' eu tr' aeu atr' cov covl' vext vextl' RL WL EU AEU COV VEXT. induction SIM.
+  revert f fl' r rl' r rl' w wl' eu tr' aeu atr' cov covl' vext vextl' FL RL WL EU AEU COV VEXT. induction SIM.
   { i. simplify. ss. econs; ss.
     - rewrite IdMap.mapi_spec, STMT in FIND. inv FIND. s. i.
       left. splits; ss. destruct ts; ss.
@@ -1006,7 +1062,7 @@ Proof.
       { rewrite EU1. ss. }
       rewrite <- VAL0.
       eapply ExecUnit.no_promise_rmw_spec; try exact RTC_STEP; try rewrite EU1; try rewrite EU; eauto.
-      inv PF. inv NOPROMISE. generalize H6. intro PROMBOT.
+      inv PF. inv NOPROMISE. rename H7 into PROMBOT.
       symmetry in PROMBOT. destruct b0. eapply PROMISES in PROMBOT. ss.
     }
     unguardH LC2. inv LC2.
@@ -1211,23 +1267,56 @@ Proof.
       apply nth_error_snoc_inv in GET. des; eauto. destruct l; ss.
     - i. des. exploit IH.(WPROP2'); eauto.
       apply nth_error_snoc_inv in GET. des; eauto. destruct l; ss.
-    - i. exploit IH.(WPROP3); eauto. s. i. des. esplits; eauto.
+    - i. exploit IH.(WPROP3); eauto. s. i. des. des_ifs.
+      { exfalso. apply Nat.eqb_eq in Heq. subst.
+        unfold ALocal.next_eid in *.
+        assert (H: List.nth_error (ALocal.labels alc1) (length (ALocal.labels alc1)) <> None) by (ii; congr).
+        apply List.nth_error_Some in H. lia.
+      }
+      esplits; eauto.
       eapply nth_error_app_mon. eauto.
     - eapply IH.(WPROP4).
     - i. des. exploit IH.(RPROP1); eauto.
       apply nth_error_snoc_inv in GET. des.
       + esplits; eauto.
       + rewrite <- GET1 in GET0. ss.
-    - i. exploit IH.(RPROP2); eauto. s. i. des; [left|right]; esplits; eauto.
-      all: eapply nth_error_app_mon; eauto.
+    - i. exploit IH.(RPROP2); eauto. s. i. des; [left|right].
+      + esplits; eauto.
+        * des_ifs.
+          exfalso. apply Nat.eqb_eq in Heq. subst.
+          unfold ALocal.next_eid in *.
+          assert (H: List.nth_error (ALocal.labels alc1) (length (ALocal.labels alc1)) <> None) by (ii; congr).
+          apply List.nth_error_Some in H. lia.
+        * eapply nth_error_app_mon in x2. eauto.
+      + esplits; eauto.
+        * des_ifs.
+          exfalso. apply Nat.eqb_eq in Heq. subst.
+          unfold ALocal.next_eid in *.
+          assert (H: List.nth_error (ALocal.labels alc1) (length (ALocal.labels alc1)) <> None) by (ii; congr).
+          apply List.nth_error_Some in H. lia.
+        * eapply nth_error_app_mon in x2. eauto.
     - i. eapply IH.(UPROP); eauto.
-    - i. apply AExecUnit.label_is_mon. eapply IH.(COVPROP); eauto.
-    - i. apply AExecUnit.label_is_mon. eapply IH.(VEXTPROP); eauto.
-    - i. apply nth_error_snoc_inv in LABEL1. des; cycle 1.
-      { subst. inv REL. inv X. }
-      apply nth_error_snoc_inv in LABEL2. des; cycle 1.
-      { subst. inv REL. inv Y. }
-      eapply IH.(PO); eauto.
+    - unfold ALocal.next_eid in *. s. i. des_ifs.
+        { apply Nat.eqb_eq in Heq. subst. econs; eauto.
+          - rewrite List.nth_error_app2, Nat.sub_diag; [|refl]. ss.
+          - econs; ss.
+        }
+        apply AExecUnit.label_is_mon. eapply IH.(COVPROP); eauto.
+    - unfold ALocal.next_eid in *. s. i. des_ifs.
+      { apply Nat.eqb_eq in Heq. subst. econs; eauto.
+        - rewrite List.nth_error_app2, Nat.sub_diag; [|refl]. ss.
+        - econs; ss.
+      }
+      apply AExecUnit.label_is_mon. eapply IH.(VEXTPROP); eauto.
+    - unfold ALocal.next_eid in *.
+      i. apply nth_error_snoc_inv in LABEL1. apply nth_error_snoc_inv in LABEL2. des.
+      + repeat condtac; ss.
+        all: try apply Nat.eqb_eq in X; ss; subst; try lia.
+        all: try apply Nat.eqb_eq in X0; ss; subst; try lia.
+        eapply IH.(PO); eauto.
+      + lia.
+      + subst. repeat condtac; ss.
+      + subst. repeat condtac; ss.
   }
   { (* flushopt *)
     inv LOCAL; ss.
@@ -1238,23 +1327,56 @@ Proof.
       apply nth_error_snoc_inv in GET. des; eauto. destruct l; ss.
     - i. des. exploit IH.(WPROP2'); eauto.
       apply nth_error_snoc_inv in GET. des; eauto. destruct l; ss.
-    - i. exploit IH.(WPROP3); eauto. s. i. des. esplits; eauto.
+    - i. exploit IH.(WPROP3); eauto. s. i. des. des_ifs.
+      { exfalso. apply Nat.eqb_eq in Heq. subst.
+        unfold ALocal.next_eid in *.
+        assert (H: List.nth_error (ALocal.labels alc1) (length (ALocal.labels alc1)) <> None) by (ii; congr).
+        apply List.nth_error_Some in H. lia.
+      }
+      esplits; eauto.
       eapply nth_error_app_mon. eauto.
     - eapply IH.(WPROP4).
     - i. des. exploit IH.(RPROP1); eauto.
       apply nth_error_snoc_inv in GET. des.
       + esplits; eauto.
       + rewrite <- GET1 in GET0. ss.
-    - i. exploit IH.(RPROP2); eauto. s. i. des; [left|right]; esplits; eauto.
-      all: eapply nth_error_app_mon; eauto.
+    - i. exploit IH.(RPROP2); eauto. s. i. des; [left|right].
+      + esplits; eauto.
+        * des_ifs.
+          exfalso. apply Nat.eqb_eq in Heq. subst.
+          unfold ALocal.next_eid in *.
+          assert (H: List.nth_error (ALocal.labels alc1) (length (ALocal.labels alc1)) <> None) by (ii; congr).
+          apply List.nth_error_Some in H. lia.
+        * eapply nth_error_app_mon in x2. eauto.
+      + esplits; eauto.
+        * des_ifs.
+          exfalso. apply Nat.eqb_eq in Heq. subst.
+          unfold ALocal.next_eid in *.
+          assert (H: List.nth_error (ALocal.labels alc1) (length (ALocal.labels alc1)) <> None) by (ii; congr).
+          apply List.nth_error_Some in H. lia.
+        * eapply nth_error_app_mon in x2. eauto.
     - i. eapply IH.(UPROP); eauto.
-    - i. apply AExecUnit.label_is_mon. eapply IH.(COVPROP); eauto.
-    - i. apply AExecUnit.label_is_mon. eapply IH.(VEXTPROP); eauto.
-    - i. apply nth_error_snoc_inv in LABEL1. des; cycle 1.
-      { subst. inv REL. inv X. }
-      apply nth_error_snoc_inv in LABEL2. des; cycle 1.
-      { subst. inv REL. inv Y. }
-      eapply IH.(PO); eauto.
+    - unfold ALocal.next_eid in *. s. i. des_ifs.
+        { apply Nat.eqb_eq in Heq. subst. econs; eauto.
+          - rewrite List.nth_error_app2, Nat.sub_diag; [|refl]. ss.
+          - econs; ss.
+        }
+        apply AExecUnit.label_is_mon. eapply IH.(COVPROP); eauto.
+    - unfold ALocal.next_eid in *. s. i. des_ifs.
+      { apply Nat.eqb_eq in Heq. subst. econs; eauto.
+        - rewrite List.nth_error_app2, Nat.sub_diag; [|refl]. ss.
+        - econs; ss.
+      }
+      apply AExecUnit.label_is_mon. eapply IH.(VEXTPROP); eauto.
+    - unfold ALocal.next_eid in *.
+      i. apply nth_error_snoc_inv in LABEL1. apply nth_error_snoc_inv in LABEL2. des.
+      + repeat condtac; ss.
+        all: try apply Nat.eqb_eq in X; ss; subst; try lia.
+        all: try apply Nat.eqb_eq in X0; ss; subst; try lia.
+        eapply IH.(PO); eauto.
+      + lia.
+      + subst. repeat condtac; ss.
+      + subst. repeat condtac; ss.
   }
 
   Grab Existential Variables.

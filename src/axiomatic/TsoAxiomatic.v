@@ -250,6 +250,19 @@ Module Label.
     all: apply c; ss.
   Qed.
 
+  Lemma kinda_read_exists_loc_val
+        l
+        (RD: is_kinda_read l):
+    exists loc val,
+      is_kinda_reading_val loc val l.
+  Proof.
+    destruct l; ss.
+    - exists loc. exists val.
+      destruct (equiv_dec loc loc); destruct (equiv_dec val val); ss; try by exfalso; apply c; ss.
+    - exists loc. exists vold.
+      destruct (equiv_dec loc loc); destruct (equiv_dec vold vold); ss; try by exfalso; apply c; ss.
+  Qed.
+
   Lemma kinda_reading_exists_val
         loc l
         (RDING: is_kinda_reading loc l):
@@ -344,6 +357,19 @@ Module Label.
   Proof.
     s. destruct (equiv_dec loc loc); destruct (equiv_dec val val); ss; exfalso.
     all: apply c; ss.
+  Qed.
+
+  Lemma kinda_write_exists_loc_val
+        l
+        (WR: is_kinda_write l):
+    exists loc val,
+      is_kinda_writing_val loc val l.
+  Proof.
+    destruct l; ss.
+    - exists loc. exists val.
+      destruct (equiv_dec loc loc); destruct (equiv_dec val val); ss; try by exfalso; apply c; ss.
+    - exists loc. exists vnew.
+      destruct (equiv_dec loc loc); destruct (equiv_dec vnew vnew); ss; try by exfalso; apply c; ss.
   Qed.
 
   Lemma kinda_writing_exists_val
@@ -548,8 +574,8 @@ Module Label.
 
   Hint Resolve
        read_is_reading_val reading_val_is_reading reading_is_read
-       kinda_reading_is_kinda_read read_is_kinda_read kinda_read_is_access kinda_reading_is_accessing read_is_kinda_reading read_is_kinda_reading_val kinda_reading_exists_val kinda_reading_val_is_kinda_reading
-       kinda_writing_is_kinda_write write_is_kinda_write kinda_write_is_access kinda_writing_is_accessing write_is_kinda_writing write_is_kinda_writing_val kinda_writing_exists_val kinda_writing_val_is_kinda_writing
+       kinda_reading_is_kinda_read read_is_kinda_read kinda_read_is_access kinda_reading_is_accessing read_is_kinda_reading read_is_kinda_reading_val kinda_read_exists_loc_val kinda_reading_exists_val kinda_reading_val_is_kinda_reading
+       kinda_writing_is_kinda_write write_is_kinda_write kinda_write_is_access kinda_writing_is_accessing write_is_kinda_writing write_is_kinda_writing_val kinda_write_exists_loc_val kinda_writing_exists_val kinda_writing_val_is_kinda_writing
        update_is_kinda_reading update_is_kinda_writing update_is_kinda_writing_val
        accessing_is_access read_is_accessing write_is_accessing update_is_accessing
        kinda_writing_same_loc
