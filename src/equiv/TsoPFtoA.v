@@ -647,8 +647,7 @@ Lemma promising_pf_valid
 Proof.
   exploit promising_pf_sim_traces; eauto. i. des.
   destruct PRE, ex. ss.
-  (* TODO: replace the last co_gen with fco_gen *)
-  remember (Execution.mk labels (co_gen ws) (rf_gen ws rs) (co_gen ws)) as ex'.
+  remember (Execution.mk labels (co_gen ws) (rf_gen ws rs) (pf_gen ws fs)) as ex'.
   replace labels with ex'.(Execution.labels) in LABELS; [|subst; ss].
   remember (@Valid.mk_pre_ex p ex' aeus AEUS LABELS) as PRE'.
   replace aeus with PRE'.(Valid.aeus) in ATR; [|subst; ss].
@@ -659,15 +658,11 @@ Proof.
   generalize (sim_traces_rf1 STEP PRE' NOPROMISE SIM TR ATR). intro RF1.
   generalize (sim_traces_rf2 STEP PRE' SIM TR ATR). intro RF2.
   generalize (sim_traces_rf_wf STEP SIM TR). intro RF_WF.
+  generalize (sim_traces_pf1 STEP PRE' NOPROMISE SIM TR ATR). intro PF1.
+  generalize (sim_traces_pf2 STEP PRE' SIM TR ATR). intro PF2.
   replace (co_gen ws) with (ex'.(Execution.co)) in CO1, CO2;[|subst; ss].
   replace (rf_gen ws rs) with (ex'.(Execution.rf)) in RF1, RF2, RF_WF; [|subst; ss].
-
-
-  (* TODO: This assertion will disappear after adding fco *)
-  assert (PF1: Valid.pf1 ex'); [admit|].
-  assert (PF2: Valid.pf2 ex'); [admit|].
-
-
+  replace (pf_gen ws fs) with (ex'.(Execution.pf)) in PF1, PF2; [|subst; ss].
   esplits; eauto.
   - (* RF_REFL *)
     hexploit sim_traces_valid_rf_refl; eauto; try by (subst; ss).
