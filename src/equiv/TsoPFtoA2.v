@@ -195,7 +195,7 @@ Proof.
   generalize (SIM tid1). intro SIM1. inv SIM1; try congr.
   des. simplify.
   exploit sim_trace_last; eauto. i. des. simplify.
-  exploit sim_trace_sim_th; try exact REL6; eauto. intro TH_tmp.
+  exploit sim_trace_sim_th; try exact REL7; eauto. intro TH_tmp.
   exploit TH_tmp; eauto. { instantiate (1 := []). ss. } clear TH_tmp. intro TH.
   exploit TH.(RPROP1); eauto with tso. i. des. unguardH READ_TS_SPEC. des.
   - left. esplits; subst; eauto.
@@ -337,6 +337,139 @@ Proof.
     exploit TH1.(WPROP3); eauto. i. des.
     exploit TH2.(WPROP3); eauto. i. des.
     congr.
+Qed.
+
+Lemma sim_traces_pf1_aux
+      p trs atrs rs ws fs covs vexts ex m
+      (STEP: Machine.pf_exec p m)
+      (PRE: Valid.pre_ex p ex)
+      (NOPROMISE: Machine.no_promise m)
+      (SIM: sim_traces p m.(Machine.mem) trs atrs ws rs fs covs vexts)
+      (TR: IdMap.Forall2
+             (fun tid tr sl => exists l, tr = (ExecUnit.mk (fst sl) (snd sl) m.(Machine.mem)) :: l)
+             trs m.(Machine.tpool))
+      (ATR: IdMap.Forall2
+              (fun tid atr aeu => exists l, atr = aeu :: l)
+              atrs PRE.(Valid.aeus)):
+  forall eid1 loc
+     (LABEL: ex.(Execution.label_is) (Label.is_persisting loc) eid1),
+    (<<NOPF: ~ codom_rel (pf_gen ws fs) eid1>> /\
+     <<F: exists f fl loc, IdMap.find (fst eid1) fs = Some (f::fl) /\ f (snd eid1) = Some (loc, Time.bot)>>) \/
+    (exists eid2,
+        <<LABEL: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid2>> /\
+        <<PF: (pf_gen ws fs) eid2 eid1>>).
+Proof.
+  i. destruct eid1 as [tid1 eid1].
+  destruct PRE, ex.
+  inversion LABEL. inversion LABEL0.
+  unfold Execution.label in *. ss. rewrite LABELS in *.
+  rewrite IdMap.map_spec in *.
+  destruct (IdMap.find tid1 aeus) eqn:FIND1; ss.
+  generalize (ATR tid1). intro ATR1. inv ATR1; try congr.
+  generalize (SIM tid1). intro SIM1. inv SIM1; try congr.
+  des. simplify.
+  exploit sim_trace_last; eauto. i. des. simplify.
+  exploit sim_trace_sim_th; try exact REL7; eauto. intro TH_tmp.
+  exploit TH_tmp; eauto. { instantiate (1 := []). ss. } clear TH_tmp. intro TH.
+  exploit TH.(FPROP1); eauto with tso. i. des. unguardH FLUSH_TS_SPEC. des.
+  - left. esplits; subst; eauto.
+    ii. inv H. inv H2.
+    destruct x as [tid2 eid2]. ss. simplify.
+    rewrite R in x0. inv x0.
+    generalize (SIM tid2). intro SIM1. inv SIM1; try congr.
+    simplify.
+    exploit sim_trace_last; try exact REL0; eauto. i. des. simplify.
+    exploit sim_trace_sim_th; try exact REL0; eauto. intro TH'_tmp.
+    exploit TH'_tmp; eauto. { instantiate (1 := []). ss. } intro TH'.
+    exploit TH'.(WPROP3); eauto. i. des.
+    unfold Memory.get_msg in x0. ss.
+  - right. exploit sim_traces_memory; eauto. i. des.
+    generalize (TR tid'). intro TR2. inv TR2; try congr.
+    generalize (SIM tid'). intro SIM2. inv SIM2; try congr.
+    des. simplify.
+    exploit sim_trace_last; try exact REL0; eauto. i. des. simplify.
+    exploit sim_trace_sim_th; try exact REL0; eauto. intro TH'_tmp.
+    exploit TH'_tmp; eauto. { instantiate (1 := []). ss. } intro TH'.
+    exploit TH'.(WPROP1); eauto. i. des; ss.
+    + destruct b. ss. inv NOPROMISE.
+      exploit PROMISES; eauto. i. rewrite x in x2.
+      rewrite Promises.lookup_bot in x2. ss.
+    + generalize (ATR tid'). intro ATR2. inv ATR2; try congr.
+      des. simplify. eexists (tid', eid). esplits; ss.
+      * econs; cycle 1.
+        { instantiate (1 := l0). eauto with tso. }
+        unfold Execution.label in *. ss.
+        rewrite IdMap.map_spec. rewrite <- H10. ss.
+      * econs; eauto.
+Qed.
+
+Lemma sim_traces_pf1
+      p trs atrs rs ws fs covs vexts ex m
+      (STEP: Machine.pf_exec p m)
+      (PRE: Valid.pre_ex p ex)
+      (NOPROMISE: Machine.no_promise m)
+      (SIM: sim_traces p m.(Machine.mem) trs atrs ws rs fs covs vexts)
+      (TR: IdMap.Forall2
+             (fun tid tr sl => exists l, tr = (ExecUnit.mk (fst sl) (snd sl) m.(Machine.mem)) :: l)
+             trs m.(Machine.tpool))
+      (ATR: IdMap.Forall2
+              (fun tid atr aeu => exists l, atr = aeu :: l)
+              atrs PRE.(Valid.aeus)):
+  forall eid1 loc
+     (LABEL: ex.(Execution.label_is) (Label.is_persisting loc) eid1),
+    (<<NOPF: ~ codom_rel (pf_gen ws fs) eid1>>) \/
+    (exists eid2,
+        <<LABEL: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid2>> /\
+        <<PF: (pf_gen ws fs) eid2 eid1>>).
+Proof.
+  ii. exploit sim_traces_pf1_aux; eauto. i. des.
+  - left. esplits; eauto.
+  - right. esplits; eauto.
+Qed.
+
+Lemma sim_traces_pf2
+      p m trs atrs rs ws fs covs vexts ex
+      (STEP: Machine.pf_exec p m)
+      (PRE: Valid.pre_ex p ex)
+      (SIM: sim_traces p m.(Machine.mem) trs atrs ws rs fs covs vexts)
+      (TR: IdMap.Forall2
+             (fun tid tr sl => exists l, tr = (ExecUnit.mk (fst sl) (snd sl) m.(Machine.mem)) :: l)
+             trs m.(Machine.tpool))
+      (ATR: IdMap.Forall2
+              (fun tid atr aeu => exists l, atr = aeu :: l)
+              atrs PRE.(Valid.aeus)):
+  forall eid1 eid2 (PF: (pf_gen ws fs) eid2 eid1),
+  exists loc,
+    <<READ: ex.(Execution.label_is) (Label.is_persisting loc) eid1>> /\
+    <<WRITE: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid2>>.
+Proof.
+  i. inv PF. destruct eid1 as [tid1 eid1], eid2 as [tid2 eid2]. ss.
+  generalize (SIM tid1). intro SIM1. inv SIM1; try congr.
+  generalize (SIM tid2). intro SIM2. inv SIM2; try congr.
+  simplify.
+  exploit sim_trace_last; try exact REL0; eauto. i. des. simplify.
+  exploit sim_trace_sim_th; try exact REL0; eauto. intro TH1_tmp.
+  exploit TH1_tmp; eauto. { instantiate (1 := []). ss. } intro TH1.
+  exploit sim_trace_last; try exact REL7; eauto. i. des. simplify.
+  exploit sim_trace_sim_th; try exact REL7; eauto. intro TH2_tmp.
+  exploit TH2_tmp; eauto. { instantiate (1 := []). ss. } intro TH2.
+  exploit TH1.(WPROP3); eauto. i. des.
+  exploit TH2.(FPROP2); eauto. i. des.
+  unguardH FLUSH_TS_SPEC. des; subst; ss.
+  { rewrite FLUSH_TS_SPEC in *. unfold Time.lt in x0. lia. }
+  rewrite FLUSH_TS_SPEC in x6. inv x6.
+  generalize (ATR tid1). intro ATR1. inv ATR1; try congr.
+  generalize (ATR tid2). intro ATR2. inv ATR2; try congr.
+  des. simplify. destruct PRE, ex. ss. rewrite LABELS.
+  eqvtac. esplits.
+  + econs.
+    * unfold Execution.label in *. ss.
+      repeat rewrite IdMap.map_spec. rewrite <- H9. eauto.
+    * eauto with tso.
+  + econs; cycle 1.
+    { instantiate (1 := l). eauto with tso. }
+    unfold Execution.label in *. ss.
+    repeat rewrite IdMap.map_spec. rewrite <- H15. ss.
 Qed.
 
 Lemma sim_traces_cov_co
