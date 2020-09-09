@@ -37,10 +37,10 @@ Set Implicit Arguments.
 
 
 Lemma sim_traces_sim_th'_step
-      p trs atrs ws rs covs vexts
+      p trs atrs ws rs fs covs vexts
       m ex
       (STEP: Machine.pf_exec p m)
-      (SIM: sim_traces p m.(Machine.mem) trs atrs ws rs covs vexts)
+      (SIM: sim_traces p m.(Machine.mem) trs atrs ws rs fs covs vexts)
       (PRE: Valid.pre_ex p ex)
       (CO: ex.(Execution.co) = co_gen ws)
       (RF: ex.(Execution.rf) = rf_gen ws rs)
@@ -55,18 +55,20 @@ Lemma sim_traces_sim_th'_step
       (ATR: IdMap.Forall2
               (fun _ atr aeu => exists l, atr = aeu :: l)
               atrs (Valid.aeus PRE)):
-  forall tid tr atr wl rl covl vextl
-    n eu1 eu2 tr' aeu1 aeu2 atr' w1 w2 wl' r1 r2 rl' cov1 cov2 covl' vext1 vext2 vextl'
+  forall tid tr atr wl rl fl covl vextl
+    n eu1 eu2 tr' aeu1 aeu2 atr' w1 w2 wl' r1 r2 rl' f1 f2 fl' cov1 cov2 covl' vext1 vext2 vextl'
     (FIND_TR: IdMap.find tid trs = Some tr)
     (FIND_ATR: IdMap.find tid atrs = Some atr)
     (FIND_WL: IdMap.find tid ws = Some wl)
     (FIND_RL: IdMap.find tid rs = Some rl)
+    (FIND_FL: IdMap.find tid fs = Some fl)
     (FIND_COVL: IdMap.find tid covs = Some covl)
     (FIND_VEXTL: IdMap.find tid vexts = Some vextl)
     (EU: lastn (S n) tr = eu2 :: eu1 :: tr')
     (AEU: lastn (S n) atr = aeu2 :: aeu1 :: atr')
     (WL: lastn (S n) wl = w2 :: w1 :: wl')
     (RL: lastn (S n) rl = r2 :: r1 :: rl')
+    (FL: lastn (S n) fl = f2 :: f1 :: fl')
     (COV: lastn (S n) covl = cov2 :: cov1 :: covl')
     (VEXT: lastn (S n) vextl = vext2 :: vext1 :: vextl')
     (SIM_TH': sim_th' tid m.(Machine.mem) ex (v_gen vexts) eu1 aeu1),
@@ -83,10 +85,10 @@ Proof.
 Qed.
 
 Lemma sim_traces_sim_th'
-      p trs atrs ws rs covs vexts
+      p trs atrs ws rs fs covs vexts
       m ex
       (STEP: Machine.pf_exec p m)
-      (SIM: sim_traces p m.(Machine.mem) trs atrs ws rs covs vexts)
+      (SIM: sim_traces p m.(Machine.mem) trs atrs ws rs fs covs vexts)
       (PRE: Valid.pre_ex p ex)
       (CO: ex.(Execution.co) = co_gen ws)
       (RF: ex.(Execution.rf) = rf_gen ws rs)
@@ -101,19 +103,21 @@ Lemma sim_traces_sim_th'
       (ATR: IdMap.Forall2
               (fun _ atr aeu => exists l, atr = aeu :: l)
               atrs (Valid.aeus PRE)):
-  forall tid tr atr wl rl covl vextl
-    n eu tr' aeu atr' w wl' r rl' cov covl' vext vextl'
+  forall tid tr atr wl rl fl covl vextl
+    n eu tr' aeu atr' w wl' r rl' f fl' cov covl' vext vextl'
     (N: n < length tr)
     (FIND_TR: IdMap.find tid trs = Some tr)
     (FIND_ATR: IdMap.find tid atrs = Some atr)
     (FIND_WL: IdMap.find tid ws = Some wl)
     (FIND_RL: IdMap.find tid rs = Some rl)
+    (FIND_FL: IdMap.find tid fs = Some fl)
     (FIND_COVL: IdMap.find tid covs = Some covl)
     (FIND_VEXTL: IdMap.find tid vexts = Some vextl)
     (EU: lastn (S n) tr = eu :: tr')
     (AEU: lastn (S n) atr = aeu :: atr')
     (WL: lastn (S n) wl = w :: wl')
     (RL: lastn (S n) rl = r :: rl')
+    (FL: lastn (S n) fl = f :: fl')
     (COV: lastn (S n) covl = cov :: covl')
     (VEXT: lastn (S n) vextl = vext :: vextl'),
     sim_th' tid m.(Machine.mem) ex (v_gen vexts) eu aeu.
@@ -158,12 +162,10 @@ Proof.
     all: try by ii; ss; lia.
     - econs; ss. econs. ii. unfold RMap.init. rewrite ? IdMap.gempty. ss.
     - econs; ss.
-      + ii. inv EID. inv REL. inv H1. inv H7. des. inv H7. ss. lia.
-      + ii. inv EID. inv REL. des_union.
-        * inv H1. des. inv H1. des. ss. lia.
-        * inv H1. des. inv H1. des. inv H1. des. inv H1. ss. lia.
+      + ii. inv EID. inv REL. obtac. inv H7. ss. lia.
+      + ii. inv EID. inv REL; obtac; inv H1; ss; lia.
       + exists Loc.default. split; ss.
-        ii. inv EID. inv REL. des. inv H6. ss. lia.
+        ii. inv EID. inv REL. obtac. inv H7. ss. lia.
       + i. destruct view; ss. exploit Promises.promises_from_mem_inv; eauto. i. des.
         hexploit sim_traces_ex; try exact SIM.
         all: try rewrite lastn_all; ss.
@@ -196,6 +198,7 @@ Proof.
   exploit lastn_S1; try exact AEU; [unguardH LEN; des; lia|i].
   exploit lastn_S1; try exact WL; [unguardH LEN; des; lia|i].
   exploit lastn_S1; try exact RL; [unguardH LEN; des; lia|i].
+  exploit lastn_S1; try exact FL; [unguardH LEN; des; lia|i].
   exploit lastn_S1; try exact COV; [unguardH LEN; des; lia|i].
   exploit lastn_S1; try exact VEXT; [unguardH LEN; des; lia|i].
   subst. exploit sim_trace_lastn; eauto. instantiate (1 := n). i.
@@ -206,15 +209,16 @@ Proof.
   - rewrite AEU, HDATR. ss.
   - rewrite WL, HDWL. ss.
   - rewrite RL, HDRL. ss.
+  - rewrite FL, HDFL. ss.
   - rewrite COV, HDCOVL. ss.
   - rewrite VEXT, HDVEXTL. ss.
 Qed.
 
 Lemma sim_traces_vext_valid
-      p trs atrs ws rs covs vexts
+      p trs atrs ws rs fs covs vexts
       m ex
       (STEP: Machine.pf_exec p m)
-      (SIM: sim_traces p m.(Machine.mem) trs atrs ws rs covs vexts)
+      (SIM: sim_traces p m.(Machine.mem) trs atrs ws rs fs covs vexts)
       (NOPROMISE: Machine.no_promise m)
       (PRE: Valid.pre_ex p ex)
       (CO: ex.(Execution.co) = co_gen ws)
@@ -346,10 +350,10 @@ Proof.
 Qed.
 
 Lemma sim_traces_valid_rf_refl
-      p trs atrs ws rs covs vexts
+      p trs atrs ws rs fs covs vexts
       m ex
       (STEP: Machine.pf_exec p m)
-      (SIM: sim_traces p m.(Machine.mem) trs atrs ws rs covs vexts)
+      (SIM: sim_traces p m.(Machine.mem) trs atrs ws rs fs covs vexts)
       (PRE: Valid.pre_ex p ex)
       (CO: ex.(Execution.co) = co_gen ws)
       (RF: ex.(Execution.rf) = rf_gen ws rs)
@@ -376,10 +380,10 @@ Proof.
 Qed.
 
 Lemma sim_traces_valid_porf
-      p trs atrs ws rs covs vexts
+      p trs atrs ws rs fs covs vexts
       m ex
       (STEP: Machine.pf_exec p m)
-      (SIM: sim_traces p m.(Machine.mem) trs atrs ws rs covs vexts)
+      (SIM: sim_traces p m.(Machine.mem) trs atrs ws rs fs covs vexts)
       (PRE: Valid.pre_ex p ex)
       (CO: ex.(Execution.co) = co_gen ws)
       (RF: ex.(Execution.rf) = rf_gen ws rs)
@@ -409,10 +413,10 @@ Proof.
 Qed.
 
 Lemma sim_traces_valid_cowr
-      p trs atrs ws rs covs vexts
+      p trs atrs ws rs fs covs vexts
       m ex
       (STEP: Machine.pf_exec p m)
-      (SIM: sim_traces p m.(Machine.mem) trs atrs ws rs covs vexts)
+      (SIM: sim_traces p m.(Machine.mem) trs atrs ws rs fs covs vexts)
       (PRE: Valid.pre_ex p ex)
       (CO: ex.(Execution.co) = co_gen ws)
       (RF: ex.(Execution.rf) = rf_gen ws rs)
@@ -455,10 +459,10 @@ Proof.
 Qed.
 
 Lemma sim_traces_valid_external_atomic
-      p trs atrs ws rs covs vexts
+      p trs atrs ws rs fs covs vexts
       m ex
       (STEP: Machine.pf_exec p m)
-      (SIM: sim_traces p m.(Machine.mem) trs atrs ws rs covs vexts)
+      (SIM: sim_traces p m.(Machine.mem) trs atrs ws rs fs covs vexts)
       (PRE: Valid.pre_ex p ex)
       (CO: ex.(Execution.co) = co_gen ws)
       (RF: ex.(Execution.rf) = rf_gen ws rs)
@@ -710,7 +714,7 @@ Proof.
       econs.
     + generalize (TR id). i. inv H; try congr.
       generalize (ATR id). i. inv H; try congr.
-      des. simplify. inv REL6; auto.
+      des. simplify. inv REL7; auto.
       { econs. unfold Machine.init_with_promises in *. ss.
         rewrite IdMap.mapi_spec in *. rewrite STMT in FIND. ss.
         symmetry in FIND. inv FIND. rewrite H0.

@@ -30,10 +30,10 @@ Set Implicit Arguments.
 
 
 Lemma sim_traces_sim_th'_ob_write
-      p trs atrs ws rs covs vexts
+      p trs atrs ws rs fs covs vexts
       m ex
       (STEP: Machine.pf_exec p m)
-      (SIM: sim_traces p m.(Machine.mem) trs atrs ws rs covs vexts)
+      (SIM: sim_traces p m.(Machine.mem) trs atrs ws rs fs covs vexts)
       (PRE: Valid.pre_ex p ex)
       (CO: ex.(Execution.co) = co_gen ws)
       (RF: ex.(Execution.rf) = rf_gen ws rs)
@@ -48,18 +48,20 @@ Lemma sim_traces_sim_th'_ob_write
       (ATR: IdMap.Forall2
               (fun _ atr aeu => exists l, atr = aeu :: l)
               atrs (Valid.aeus PRE)):
-  forall tid tr atr wl rl covl vextl
-    n eu1 eu2 tr' aeu1 aeu2 atr' w1 w2 wl' r1 r2 rl' cov1 cov2 covl' vext1 vext2 vextl'
+  forall tid tr atr wl rl fl covl vextl
+    n eu1 eu2 tr' aeu1 aeu2 atr' w1 w2 wl' r1 r2 rl' f1 f2 fl' cov1 cov2 covl' vext1 vext2 vextl'
     (FIND_TR: IdMap.find tid trs = Some tr)
     (FIND_ATR: IdMap.find tid atrs = Some atr)
     (FIND_WL: IdMap.find tid ws = Some wl)
     (FIND_RL: IdMap.find tid rs = Some rl)
+    (FIND_FL: IdMap.find tid fs = Some fl)
     (FIND_COVL: IdMap.find tid covs = Some covl)
     (FIND_VEXTL: IdMap.find tid vexts = Some vextl)
     (EU: lastn (S n) tr = eu2 :: eu1 :: tr')
     (AEU: lastn (S n) atr = aeu2 :: aeu1 :: atr')
     (WL: lastn (S n) wl = w2 :: w1 :: wl')
     (RL: lastn (S n) rl = r2 :: r1 :: rl')
+    (FL: lastn (S n) fl = f2 :: f1 :: fl')
     (COV: lastn (S n) covl = cov2 :: cov1 :: covl')
     (VEXT: lastn (S n) vextl = vext2 :: vext1 :: vextl')
     (SIM_TH': sim_th' tid m.(Machine.mem) ex (v_gen vexts) eu1 aeu1),
@@ -74,7 +76,7 @@ Proof.
   destruct b as [st_l lc_l]. destruct REL as [trt].
   rename H into PFSL. rename H1 into TRL.
   rewrite FIND_TR in H0. inversion H0. rewrite H1 in *. cleartriv. clear H1.
-  exploit sim_trace_rtc_step; try exact REL6; eauto. intro RTC_STEP.
+  exploit sim_trace_rtc_step; try exact REL7; eauto. intro RTC_STEP.
   hexploit sim_traces_ex; eauto. intro EX2.
   inversion SIMTR; subst; simplify; [congr|].
   repeat match goal with
@@ -99,7 +101,7 @@ Proof.
   all: try by clear; rewrite List.app_length; s; lia.
   all: destruct l0; ss.
   all: intro NTH; apply nth_error_snoc_inv_last in NTH; inv NTH.
-  all: rewrite EU, AEU, WL, RL, COV, VEXT in SIMTR.
+  all: rewrite EU, AEU, WL, RL, FL, COV, VEXT in SIMTR.
   { (* write *)
     exploit sim_trace_sim_th; try exact SIMTR; eauto. intro TH_tmp.
     exploit lastn_sub_S1; try exact EU; eauto. intro TRT. des.
@@ -204,7 +206,7 @@ Proof.
         { instantiate (1 := []). ss. }
         clear TH_tmp. intro L1.
         exploit L1.(WPROP3); eauto. i. des.
-        unfold v_gen. ss. rewrite <- H9. rewrite x3.
+        unfold v_gen. ss. rewrite <- H10. rewrite x3.
         clear - LC2. unguardH LC2. inv LC2. ss.
         rewrite fun_add_spec. destruct (equiv_dec (ValA.val vloc) (ValA.val vloc)); auto.
         exfalso. apply c. ss.
