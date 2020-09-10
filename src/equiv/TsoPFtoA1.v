@@ -785,10 +785,16 @@ Proof.
         unfold ALocal.next_eid in *. ss.
         assert (H: List.nth_error (ALocal.labels alc1) (length (ALocal.labels alc1)) <> None) by (ii; congr).
         apply List.nth_error_Some in H. lia.
-      - (* FPROP1 *)
-        admit.
-      - (* FPROP2 *)
-        admit.
+      - i. des. exploit IH.(FPROP1); eauto.
+        apply nth_error_snoc_inv in GET. des; eauto.
+        rewrite <- GET1 in GET0. ss.
+      - i. exploit IH.(FPROP2); eauto. s. i. des. esplits; eauto; cycle 1.
+        { eapply nth_error_app_mon in x1. eauto. }
+        des_ifs.
+        exfalso. apply Nat.eqb_eq in Heq. subst.
+        unfold ALocal.next_eid in *.
+        assert (H: List.nth_error (ALocal.labels alc1) (length (ALocal.labels alc1)) <> None) by (ii; congr).
+        apply List.nth_error_Some in H. lia.
       - unfold ALocal.next_eid in *. s. i. des_ifs.
         { apply Nat.eqb_eq in Heq. subst. econs; eauto.
           - rewrite List.nth_error_app2, Nat.sub_diag; [|refl]. ss.
@@ -886,10 +892,16 @@ Proof.
         unfold ALocal.next_eid in *. ss.
         assert (H: List.nth_error (ALocal.labels alc1) (length (ALocal.labels alc1)) <> None) by (ii; congr).
         apply List.nth_error_Some in H. lia.
-      - (* FPROP1 *)
-        admit.
-      - (* FPROP2 *)
-        admit.
+      - i. des. exploit IH.(FPROP1); eauto.
+        apply nth_error_snoc_inv in GET. des; eauto.
+        rewrite <- GET1 in GET0. ss.
+      - i. exploit IH.(FPROP2); eauto. s. i. des. esplits; eauto; cycle 1.
+        { eapply nth_error_app_mon in x1. eauto. }
+        des_ifs.
+        exfalso. apply Nat.eqb_eq in Heq. subst.
+        unfold ALocal.next_eid in *.
+        assert (H: List.nth_error (ALocal.labels alc1) (length (ALocal.labels alc1)) <> None) by (ii; congr).
+        apply List.nth_error_Some in H. lia.
       - unfold ALocal.next_eid in *. s. i. des_ifs.
         { apply Nat.eqb_eq in Heq. subst. econs; eauto.
           - rewrite List.nth_error_app2, Nat.sub_diag; [|refl]. ss.
@@ -1028,10 +1040,16 @@ Proof.
         apply List.nth_error_Some in H. lia.
       + assert (H: List.nth_error (ALocal.labels alc1) (length (ALocal.labels alc1)) <> None) by (ii; congr).
         apply List.nth_error_Some in H. lia.
-    - (* FPROP1 *)
-        admit.
-      - (* FPROP2 *)
-        admit.
+    - i. des. exploit IH.(FPROP1); eauto.
+        apply nth_error_snoc_inv in GET. des; eauto.
+        rewrite <- GET1 in GET0. ss.
+    - i. exploit IH.(FPROP2); eauto. s. i. des. esplits; eauto; cycle 1.
+        { eapply nth_error_app_mon in x1. eauto. }
+        des_ifs.
+        exfalso. apply Nat.eqb_eq in Heq. subst.
+        unfold ALocal.next_eid in *.
+        assert (H: List.nth_error (ALocal.labels alc1) (length (ALocal.labels alc1)) <> None) by (ii; congr).
+        apply List.nth_error_Some in H. lia.
     - unfold ALocal.next_eid in *. s. i. des_ifs.
       { apply Nat.eqb_eq in Heq. subst. econs; eauto.
         - rewrite List.nth_error_app2, Nat.sub_diag; [|refl]. ss.
@@ -1197,10 +1215,16 @@ Proof.
       { exploit IH.(UPROP); eauto. }
       rewrite fun_add_spec. condtac; ss; try congr.
       split; ss. eapply Memory.latest_ts_latest. ss.
-    - (* FPROP1 *)
-        admit.
-    - (* FPROP2 *)
-        admit.
+    - i. des. exploit IH.(FPROP1); eauto.
+        apply nth_error_snoc_inv in GET. des; eauto.
+        rewrite <- GET1 in GET0. ss.
+    - i. exploit IH.(FPROP2); eauto. s. i. des. esplits; eauto; cycle 1.
+        { eapply nth_error_app_mon in x1. eauto. }
+        des_ifs.
+        exfalso. apply Nat.eqb_eq in Heq. subst.
+        unfold ALocal.next_eid in *.
+        assert (H: List.nth_error (ALocal.labels alc1) (length (ALocal.labels alc1)) <> None) by (ii; congr).
+        apply List.nth_error_Some in H. lia.
     - unfold ALocal.next_eid in *. s. i. des_ifs.
       { apply Nat.eqb_eq in Heq. subst. econs; eauto.
         - rewrite List.nth_error_app2, Nat.sub_diag; [|refl]. ss.
@@ -1261,10 +1285,11 @@ Proof.
     - i. exploit IH.(RPROP2); eauto. s. i. des; [left|right]; esplits; eauto.
       all: eapply nth_error_app_mon; eauto.
     - i. eapply IH.(UPROP); eauto.
-    - (* FPROP1 *)
-        admit.
-    - (* FPROP2 *)
-        admit.
+    - i. des. exploit IH.(FPROP1); eauto.
+        apply nth_error_snoc_inv in GET. des; eauto.
+        rewrite <- GET1 in GET0. ss.
+    - i. exploit IH.(FPROP2); eauto. s. i. des; esplits; eauto.
+      eapply nth_error_app_mon; eauto.
     - i. apply AExecUnit.label_is_mon. eapply IH.(COVPROP); eauto.
     - i. apply AExecUnit.label_is_mon. eapply IH.(VEXTPROP); eauto.
     - i. apply nth_error_snoc_inv in LABEL1. des; cycle 1.
@@ -1292,10 +1317,11 @@ Proof.
     - i. exploit IH.(RPROP2); eauto. s. i. des; [left|right]; esplits; eauto.
       all: eapply nth_error_app_mon; eauto.
     - i. eapply IH.(UPROP); eauto.
-    - (* FPROP1 *)
-        admit.
-    - (* FPROP2 *)
-        admit.
+    - i. des. exploit IH.(FPROP1); eauto.
+        apply nth_error_snoc_inv in GET. des; eauto.
+        rewrite <- GET1 in GET0. ss.
+    - i. exploit IH.(FPROP2); eauto. s. i. des; esplits; eauto.
+      eapply nth_error_app_mon; eauto.
     - i. apply AExecUnit.label_is_mon. eapply IH.(COVPROP); eauto.
     - i. apply AExecUnit.label_is_mon. eapply IH.(VEXTPROP); eauto.
     - i. apply nth_error_snoc_inv in LABEL1. des; cycle 1.
