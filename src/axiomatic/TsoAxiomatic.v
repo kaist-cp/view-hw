@@ -934,7 +934,7 @@ Module Execution.
     destruct P1; eauto with tso.
   Qed.
 
-  (* let obs = rfe | fre | co *)
+  (* let obs = rfe | fre | co | fp *)
   (* let dob = ((W U U U R); po; (W U U U R)) \ (W × R) ~~~> ([R]; po; [W U U U R]) U ([W U U U R]; po; [W]) *)
   (* let bob = [W U U U R]; po; [MF]; po; [W U U U R] *)
   (* let fob =
@@ -942,7 +942,6 @@ Module Execution.
       | ([U U R] U ([W]; po; [MF U SF])); po; [FO]
       | [W]; (po; [FL])?; po_cl; [FO]
   *)
-  (* let fobs = pf | fp *)
   (* let ob = obs | dob | bob | fob | fobs *)
 
   (* irrefl po?; rf as corw *)
@@ -1061,7 +1060,8 @@ Module Execution.
     ((⦗ex.(label_is) Label.is_kinda_read⦘ ∪
       (⦗ex.(label_is) Label.is_write⦘ ⨾
        po ⨾
-       ⦗ex.(label_is) Label.is_persist_barrier⦘))⨾
+       (⦗ex.(label_is) (Label.is_barrier_c Barrier.is_mfence)⦘ ∪
+        ⦗ex.(label_is) (Label.is_barrier_c Barrier.is_sfence)⦘)))⨾
      po ⨾
      ⦗ex.(label_is) Label.is_flushopt⦘) ∪
     (⦗ex.(label_is) Label.is_write⦘ ⨾
@@ -1112,14 +1112,15 @@ Module Execution.
   Ltac simtac :=
   repeat match goal with
            | [H: _ |- (_⨾ _) _ _] => econs
-           | [H: _ |- ⦗Execution.label_is _ _⦘ _ _ /\ _] => econs; econs; eauto with tso
            | [H: _ |- ⦗Execution.label_is _ _⦘ _ _] => econs; eauto with tso
            | [H: _ |- Execution.label_is _ _ _] => eauto with tso
            | [H: _ |- Execution.label_rel _ _ _ _] => econs; eauto with tso
            | [H: _ |- rc _ _ /\ _] => econs; eauto
            | [H: _ |- Execution.po _ _ /\ _] => econs; eauto
+           | [H: _ |- _ /\ Execution.po _ _] => econs; eauto
            | [H: _ |- Execution.po_cl _ _ _ /\ _] => econs; eauto
            | [H: _ |- Execution.pf _ _ _ /\ _] => econs; eauto
+           | [H: _ |- ⦗Execution.label_is _ _⦘ _ _ /\ _] => econs; econs; eauto with tso
           end.
 
   Lemma fob_persist
@@ -1519,6 +1520,7 @@ Module Valid.
     inv EID1. destruct l; ss. unfold co2, rf2 in *.
     obtac; ss.
     all: try by destruct l; ss; congr.
+    all: try by destruct l0; ss; congr.
     - exploit RF2; eauto. i. des. inv WRITE. inv READ.
       destruct l; ss. destruct l0; ss. congr. congr.
       destruct l0; ss. congr. congr.
@@ -1619,6 +1621,7 @@ Module Valid.
     obtac.
     all: try by destruct l; destruct l2; ss; congr.
     all: try by destruct l; destruct l1; ss; congr.
+    all: try by destruct l0; destruct l2; ss; congr.
     - exploit RF2; eauto. i. des. obtac.
       destruct l0; destruct l; ss; congr.
     - exploit RF2; eauto. i. des. obtac.

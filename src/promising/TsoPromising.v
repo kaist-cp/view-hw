@@ -132,7 +132,9 @@ Section Local.
       (LC2: lc2 =
             mk
               (fun_add loc (View.mk ts bot) lc1.(coh))
+              (* TODO: vrn overwritten *)
               (join lc1.(vrn) (View.mk ts bot))
+              (* TODO: vpn overwritten *)
               (join lc1.(vpn) (View.mk ts bot))
               lc1.(lper)
               (fun_join lc1.(per) lc1.(lper))
@@ -229,7 +231,9 @@ Section Local.
       (LC2: lc2 =
             mk
               (fun_add loc view_post lc1.(coh))
+              (* TODO: vrn overwritten *)
               (join lc1.(vrn) view_post)
+              (* TODO: vpn overwritten *)
               (join lc1.(vpn) view_post)
               lc1.(lper)
               (fun_join lc1.(per) lc1.(lper))
@@ -249,7 +253,8 @@ Section Local.
               lc1.(coh)
               lc1.(vrn)
               lc1.(vpn)
-              (lc1.(lper))
+              (* CHECK: add lper *)
+              (fun_add loc (join (lc1.(lper) loc) view_post) lc1.(lper))
               (fun_add loc (join (lc1.(per) loc) view_post) lc1.(per))
               lc1.(promises))
   .
@@ -593,7 +598,8 @@ Section Local.
     le lc1 lc2.
   Proof.
     inv LC. econs; ss; try refl.
-    i. funtac. inversion e. apply join_l.
+    - i. funtac. inversion e. apply join_l.
+    - i. funtac. inversion e. apply join_l.
   Qed.
 
   Lemma flushopt_incr
@@ -824,6 +830,7 @@ Section Local.
         viewtac. inv COHMAX. specialize (COHMAX1 mloc0). lia.
     - econs; viewtac.
       + i. funtac. viewtac.
+      + i. funtac. viewtac.
       + inv COHMAX. inv COHMAX1. econs; [econs|]; ss.
     - econs; viewtac.
       + i. funtac. viewtac.
@@ -1005,6 +1012,7 @@ Section Local.
       + inv COHMAX0. econs; [econs|]; ss.
         viewtac. inv COHMAX. specialize (COHMAX1 mloc0). lia.
     - econs; viewtac.
+      + i. funtac. viewtac.
       + i. funtac. viewtac.
       + inv COHMAX. inv COHMAX1. econs; [econs|]; ss.
     - econs; viewtac.
