@@ -36,12 +36,11 @@ Lemma sim_traces_sim_th'_fp
       (SIM: sim_traces p m.(Machine.mem) trs atrs ws rs fs covs vexts)
       (PRE: Valid.pre_ex p ex)
       (CO: ex.(Execution.co) = co_gen ws)
-      (RF: ex.(Execution.rf) = rf_gen ws rs)
+      (PF: ex.(Execution.pf) = pf_gen ws fs)
       (CO1: Valid.co1 ex)
       (CO2: Valid.co2 ex)
-      (RF1: Valid.rf1 ex)
-      (RF2: Valid.rf2 ex)
-      (RF_WF: Valid.rf_wf ex)
+      (PF1: Valid.pf1 ex)
+      (PF2: Valid.pf2 ex)
       (TR: IdMap.Forall2
              (fun _ tr sl => exists l, tr = (ExecUnit.mk (fst sl) (snd sl) m.(Machine.mem)) :: l)
              trs m.(Machine.tpool))
@@ -67,5 +66,170 @@ Lemma sim_traces_sim_th'_fp
     (SIM_TH': sim_th' tid m.(Machine.mem) ex (v_gen vexts) eu1 aeu1),
     sim_fp tid ex (v_gen vexts) eu2 aeu2.
 Proof.
-  admit.
+  i. rename SIM_TH' into L.
+  generalize (SIM tid). intro X. inv X; simplify.
+  destruct n.
+  { generalize (lastn_length 1 tr). rewrite EU. destruct tr; ss. }
+  exploit sim_trace_lastn; eauto. instantiate (1 := S n). intro SIMTR.
+  exploit sim_trace_memory; eauto. intro MEM1.
+  hexploit sim_traces_ex; eauto. intro EX2.
+  inversion SIMTR; subst; simplify; [congr|].
+  repeat match goal with
+         | [H1: lastn ?a ?b = ?c, H2: ?d = lastn ?a ?b |- _] =>
+           rewrite H1 in H2; inv H2
+         end.
+  exploit sim_trace_sim_state_weak; eauto. intro STATE1.
+
+  ii.
+  destruct (le_lt_dec (length (ALocal.labels (AExecUnit.local aeu1))) eid1); cycle 1.
+  { inv L. eapply FP0; eauto. }
+  assert (exists loc,
+             <<LABEL1: Execution.label_is ex (fun label : Label.t => Label.is_persisting loc label) (tid, eid1)>> /\
+             <<LABEL2: Execution.label_is ex (fun label : Label.t => Label.is_kinda_writing loc label) eid2>>).
+  { inv FP; obtac.
+    - exploit PF2; eauto. i. des.
+      exploit CO2; eauto. i. des.
+      inv PERSIST. rename EID into PERSIST. rename LABEL2 into P_VAL.
+      inv WRITE. rename EID into WRITE. rename LABEL2 into W_VAL.
+      inv LABEL0. rename EID into LABEL0. rename LABEL2 into WRITING0.
+      inv LABEL1. rename EID into LABEL1. rename LABEL2 into WRITING1.
+      rewrite WRITE in LABEL0. inv LABEL0.
+      exploit Label.kinda_writing_same_loc. instantiate (1 := l2). eauto. instantiate (1 := loc). ss.
+      i. subst.
+      esplits; econs; eauto with tso.
+    - inv H. obtac.
+      rewrite EID1 in EID0. inv EID0. rewrite EID2 in EID. inv EID.
+      destruct l0; destruct l3; ss; eqvtac.
+      all: esplits; econs; eauto with tso.
+  }
+  i. des.
+  inv LABEL1.
+  inv LABEL2.
+  destruct eid2 as [tid2 eid2].
+  generalize (SIM tid2). intro SIMTR2. inv SIMTR2.
+  { generalize (ATR tid2). rewrite <- H. intro X. inv X.
+    unfold Execution.label in EID0. ss.
+    rewrite PRE.(Valid.LABELS), IdMap.map_spec, <- H1 in EID0. ss.
+  }
+  rename REL0 into SIMTR2, a into tr2, b into atr2, c into wl2, d into rl2, e0 into fl2, f into covl2, g into vextl2.
+  rename H0 into TR2, H into ATR2, H2 into WL2, H3 into RL2, H4 into FL2, H5 into COVL4, H6 into VEXTL5.
+  exploit sim_trace_last; eauto. i. des. subst.
+  destruct eu1 as [st1 lc1 mem1] eqn: EU1. guardH EU1.
+  destruct eu2 as [st2 lc2 mem2] eqn: EU2. guardH EU2.
+  destruct aeu1 as [ast1 alc1].
+  destruct aeu2 as [ast2 alc2].
+  inv ASTATE_STEP; inv EVENT; inv ALOCAL_STEP; inv EVENT; repeat (ss; subst).
+  all: try (clear - LABEL l; lia).
+  all: rewrite List.app_length in LABEL; ss.
+  all: assert (EID1: eid1 = length (ALocal.labels alc1)) by (clear - LABEL l; lia); subst.
+  all: exploit LABELS; eauto; ss.
+  all: try by clear; rewrite List.app_length; s; lia.
+  all: destruct l0; ss.
+  all: eqvtac.
+  all: intro NTH; apply nth_error_snoc_inv_last in NTH; inv NTH.
+  all: rewrite EU, AEU, WL, RL, FL, COV, VEXT in SIMTR.
+  all: rename l1 into wr_lab.
+  { (* flushopt -> kinda_write *)
+    exploit sim_trace_sim_th; try exact SIMTR; eauto. intro TH_tmp.
+    exploit lastn_sub_S1; try exact EU; eauto. i. des.
+    exploit TH_tmp; eauto.
+    clear TH_tmp. intro L2.
+    exploit sim_trace_sim_th; try exact TRACE; eauto. intro TH_tmp.
+    exploit TH_tmp; eauto.
+    { instantiate (1 := l1 ++ [eu2]). rewrite <- List.app_assoc. rewrite EU2. ss. }
+    clear TH_tmp. intro L1.
+    exploit L2.(FPROP1); ss.
+    { split; eauto with tso. apply nth_error_last. apply Nat.eqb_eq. ss. }
+    unfold ALocal.next_eid in *. condtac; cycle 1.
+    { apply Nat.eqb_neq in X. congr. }
+    i. des. inv x0. rewrite EX2.(XVEXT) in *; s; cycle 1.
+    { rewrite List.app_length. s. clear. lia. }
+    rewrite X.
+    inv STEP0. ss. subst. inv LOCAL; inv EVENT.
+    generalize L1.(EU_WF). intro WF. inv WF. ss.
+    exploit sim_traces_cov_fp; eauto.
+    { inv STEP. ss. }
+    rewrite EX2.(XCOV) in *; s; cycle 1.
+    { rewrite List.app_length. s. clear. lia. }
+    rewrite X. intro FP_COV. guardH FP_COV.
+    exploit sim_trace_sim_th; try exact SIMTR2; eauto. intro TH_tmp.
+    exploit lastn_sub_S1; try exact EU; eauto. i. des.
+    exploit TH_tmp; eauto.
+    { instantiate (1 := []). ss. }
+    clear TH_tmp. intro L1'.
+    exploit sim_trace_length; try exact SIMTR2; eauto. intro LEN. guardH LEN.
+    symmetry in ATR2. hexploit sim_traces_ex; try exact ATR2; eauto.
+    1: instantiate (3 := length atr'0).
+    all: try rewrite lastn_all; ss.
+    all: try by clear -LEN; unguardH LEN; des; lia.
+    intro EX2'.
+    revert EID0. unfold Execution.label. s. rewrite PRE.(Valid.LABELS), IdMap.map_spec.
+    generalize (ATR tid2). rewrite ATR2. intros Y Z; inv Y; ss.
+    rewrite <- H in Z. inv Z. des. simplify. rewrite H2 in *.
+    exploit Label.kinda_write_exists_loc_val; eauto with tso. i. des.
+    exploit L1'.(WPROP2); eauto with tso. i. des.
+    exploit L1'.(WPROP3); eauto. i. des. subst.
+    rewrite EX2'.(XVEXT) in *; eauto; cycle 1.
+    { apply List.nth_error_Some. congr. }
+    rewrite EX2'.(XCOV) in *; eauto; cycle 1.
+    { apply List.nth_error_Some. congr. }
+    rewrite x6 in *. rewrite x3 in x10. inv x10.
+    unguardH FP_COV.
+    eapply Memory.latest_lt; try exact FP_COV; eauto.
+    eapply Memory.latest_ts_latest; eauto.
+    destruct wr_lab; ss; eqvtac; ss.
+  }
+  { (* flush -> kinda_write *)
+    exploit sim_trace_sim_th; try exact SIMTR; eauto. intro TH_tmp.
+    exploit lastn_sub_S1; try exact EU; eauto. i. des.
+    exploit TH_tmp; eauto.
+    clear TH_tmp. intro L2.
+    exploit sim_trace_sim_th; try exact TRACE; eauto. intro TH_tmp.
+    exploit TH_tmp; eauto.
+    { instantiate (1 := l1 ++ [eu2]). rewrite <- List.app_assoc. rewrite EU2. ss. }
+    clear TH_tmp. intro L1.
+    exploit L2.(FPROP1); ss.
+    { split.
+      { apply nth_error_last. apply Nat.eqb_eq. ss. }
+      eauto with tso.
+    }
+    unfold ALocal.next_eid in *. condtac; cycle 1.
+    { apply Nat.eqb_neq in X. congr. }
+    i. des. inv x0. rewrite EX2.(XVEXT) in *; s; cycle 1.
+    { rewrite List.app_length. s. clear. lia. }
+    rewrite X.
+    inv STEP0. ss. subst. inv LOCAL; inv EVENT.
+    generalize L1.(EU_WF). intro WF. inv WF. ss.
+    exploit sim_traces_cov_fp; eauto.
+    { inv STEP. ss. }
+    rewrite EX2.(XCOV) in *; s; cycle 1.
+    { rewrite List.app_length. s. clear. lia. }
+    rewrite X. intro FP_COV. guardH FP_COV.
+    exploit sim_trace_sim_th; try exact SIMTR2; eauto. intro TH_tmp.
+    exploit lastn_sub_S1; try exact EU; eauto. i. des.
+    exploit TH_tmp; eauto.
+    { instantiate (1 := []). ss. }
+    clear TH_tmp. intro L1'.
+    exploit sim_trace_length; try exact SIMTR2; eauto. intro LEN. guardH LEN.
+    symmetry in ATR2. hexploit sim_traces_ex; try exact ATR2; eauto.
+    1: instantiate (3 := length atr'0).
+    all: try rewrite lastn_all; ss.
+    all: try by clear -LEN; unguardH LEN; des; lia.
+    intro EX2'.
+    revert EID0. unfold Execution.label. s. rewrite PRE.(Valid.LABELS), IdMap.map_spec.
+    generalize (ATR tid2). rewrite ATR2. intros Y Z; inv Y; ss.
+    rewrite <- H in Z. inv Z. des. simplify. rewrite H2 in *.
+    exploit Label.kinda_write_exists_loc_val; eauto with tso. i. des.
+    exploit L1'.(WPROP2); eauto with tso. i. des.
+    exploit L1'.(WPROP3); eauto. i. des. subst.
+    rewrite EX2'.(XVEXT) in *; eauto; cycle 1.
+    { apply List.nth_error_Some. congr. }
+    rewrite EX2'.(XCOV) in *; eauto; cycle 1.
+    { apply List.nth_error_Some. congr. }
+    rewrite x6 in *. rewrite x3 in x10. inv x10.
+    unguardH FP_COV.
+    eapply Memory.latest_lt; try exact FP_COV; eauto.
+    eapply Memory.latest_ts_latest; eauto.
+    destruct wr_lab; ss; eqvtac; ss.
+  }
 Qed.

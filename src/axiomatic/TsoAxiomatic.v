@@ -1219,7 +1219,7 @@ Module Valid.
   Definition pf2 (ex: Execution.t) :=
     forall eid1 eid2 (RF: ex.(Execution.pf) eid2 eid1),
     exists loc,
-      <<READ: ex.(Execution.label_is) (Label.is_persisting loc) eid1>> /\
+      <<PERSIST: ex.(Execution.label_is) (Label.is_persisting loc) eid1>> /\
       <<WRITE: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid2>>.
 
   Inductive persisted_event (ex:Execution.t) (loc:Loc.t) (eid:eidT) :=
