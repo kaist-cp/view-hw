@@ -784,6 +784,29 @@ Proof.
             instantiate (1 := PRE). unguardH PREDES. inv PREDES. ss.
 Qed.
 
+Lemma sim_traces_cov_fp
+      p trs atrs ws rs fs covs vexts
+      ex m
+      (STEP: Machine.pf_exec p m)
+      (SIM: sim_traces p m.(Machine.mem) trs atrs ws rs fs covs vexts)
+      (CO: ex.(Execution.co) = co_gen ws)
+      (PF: ex.(Execution.pf) = pf_gen ws fs)
+      (PRE: Valid.pre_ex p ex)
+      (NOPROMISE: Machine.no_promise m)
+      (TR: IdMap.Forall2
+             (fun tid tr sl => exists l, tr = (ExecUnit.mk (fst sl) (snd sl) m.(Machine.mem)) :: l)
+             trs m.(Machine.tpool))
+      (ATR: IdMap.Forall2
+              (fun tid atr aeu => exists l, atr = aeu :: l)
+              atrs PRE.(Valid.aeus)):
+  <<FR:
+    forall eid1 eid2
+      (FR: Execution.fp ex eid1 eid2),
+      Time.lt ((v_gen covs) eid1) ((v_gen covs) eid2)>>.
+Proof.
+  admit.
+Qed.
+
 Lemma sim_traces_cov_po_loc
       p m trs atrs ws rs fs covs vexts
       ex

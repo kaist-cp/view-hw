@@ -44,10 +44,13 @@ Lemma sim_traces_sim_th'_step
       (PRE: Valid.pre_ex p ex)
       (CO: ex.(Execution.co) = co_gen ws)
       (RF: ex.(Execution.rf) = rf_gen ws rs)
+      (PF: ex.(Execution.pf) = pf_gen ws fs)
       (CO1: Valid.co1 ex)
       (CO2: Valid.co2 ex)
       (RF1: Valid.rf1 ex)
       (RF2: Valid.rf2 ex)
+      (PF1: Valid.pf1 ex)
+      (PF2: Valid.pf2 ex)
       (RF_WF: Valid.rf_wf ex)
       (TR: IdMap.Forall2
              (fun _ tr sl => exists l, tr = (ExecUnit.mk (fst sl) (snd sl) m.(Machine.mem)) :: l)
@@ -92,11 +95,14 @@ Lemma sim_traces_sim_th'
       (PRE: Valid.pre_ex p ex)
       (CO: ex.(Execution.co) = co_gen ws)
       (RF: ex.(Execution.rf) = rf_gen ws rs)
+      (PF: ex.(Execution.pf) = pf_gen ws fs)
       (CO1: Valid.co1 ex)
       (CO2: Valid.co2 ex)
       (RF1: Valid.rf1 ex)
       (RF2: Valid.rf2 ex)
       (RF_WF: Valid.rf_wf ex)
+      (PF1: Valid.pf1 ex)
+      (PF2: Valid.pf2 ex)
       (TR: IdMap.Forall2
              (fun _ tr sl => exists l, tr = (ExecUnit.mk (fst sl) (snd sl) m.(Machine.mem)) :: l)
              trs m.(Machine.tpool))
@@ -225,6 +231,7 @@ Lemma sim_traces_vext_valid
       (PRE: Valid.pre_ex p ex)
       (CO: ex.(Execution.co) = co_gen ws)
       (RF: ex.(Execution.rf) = rf_gen ws rs)
+      (PF: ex.(Execution.pf) = pf_gen ws fs)
       (CO1: Valid.co1 ex)
       (CO2: Valid.co2 ex)
       (RF1: Valid.rf1 ex)
@@ -328,7 +335,7 @@ Proof.
   - destruct eid1 as [tid1 eid1].
     destruct eid2 as [tid2 eid2].
     dup FP. guardH FP. obtac.
-    + exploit PF2; eauto. i. des. inv READ.
+    + exploit PF2; eauto. i. des. inv PERSIST.
       revert EID. unfold Execution.label. s. rewrite PRE.(Valid.LABELS), IdMap.map_spec.
       generalize (ATR tid1). generalize (SIM tid1). intros X Y; inv X; inv Y; simplify; ss.
       i. des. subst.
@@ -359,11 +366,14 @@ Lemma sim_traces_valid_rf_refl
       (PRE: Valid.pre_ex p ex)
       (CO: ex.(Execution.co) = co_gen ws)
       (RF: ex.(Execution.rf) = rf_gen ws rs)
+      (PF: ex.(Execution.pf) = pf_gen ws fs)
       (CO1: Valid.co1 ex)
       (CO2: Valid.co2 ex)
       (RF1: Valid.rf1 ex)
       (RF2: Valid.rf2 ex)
       (RF_WF: Valid.rf_wf ex)
+      (PF1: Valid.pf1 ex)
+      (PF2: Valid.pf2 ex)
       (TR: IdMap.Forall2
              (fun _ tr sl => exists l, tr = (ExecUnit.mk (fst sl) (snd sl) m.(Machine.mem)) :: l)
              trs m.(Machine.tpool))
@@ -468,6 +478,7 @@ Lemma sim_traces_valid_external_atomic
       (PRE: Valid.pre_ex p ex)
       (CO: ex.(Execution.co) = co_gen ws)
       (RF: ex.(Execution.rf) = rf_gen ws rs)
+      (PF: ex.(Execution.pf) = pf_gen ws fs)
       (CO1: Valid.co1 ex)
       (CO2: Valid.co2 ex)
       (RF1: Valid.rf1 ex)
