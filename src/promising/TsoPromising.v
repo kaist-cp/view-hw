@@ -390,6 +390,7 @@ Section Local.
                 (TID: msg.(Msg.tid) <> tid)
                 (TS: (lc.(coh) msg.(Msg.loc)).(View.ts) = ts),
           ts <= lc.(vrn).(View.ts))
+      (VRNVPN: lc.(vrn).(View.ts) <= lc.(vpn).(View.ts))
   .
   Hint Constructors wf.
 
@@ -713,6 +714,8 @@ Section Local.
           intro TS. rewrite <- TS in *.
           eapply NFWD; eauto. inversion e. ss.
         * i. rewrite <- TS. viewtac; rewrite <- join_r; ss.
+      + rewrite VRNVPN. apply join_l.
+      + apply join_r.
     - inversion WRITABLE.
       econs; viewtac; rewrite <- ? TS0, <- ? TS1.
       + i. rewrite fun_add_spec. condtac; viewtac.
@@ -772,6 +775,8 @@ Section Local.
       + i. rewrite <- join_l. eapply NFWD; eauto.
         rewrite fun_add_spec in TS. eqvtac.
         rewrite MSG in MSG0. inv MSG0. ss.
+      + rewrite VRNVPN. apply join_l.
+      + apply join_r.
     - exploit FWDVIEW; eauto.
       { eapply Memory.read_wf. eauto. }
       i. econs; viewtac.
@@ -819,15 +824,20 @@ Section Local.
           intro TS. rewrite <- TS in *.
           eapply NFWD; eauto. inversion e. ss.
         * i. rewrite <- TS. viewtac; rewrite <- join_r; ss.
+      + rewrite VRNVPN. apply join_l.
+      + apply join_r.
     - econs; viewtac.
       + i. viewtac.
       + inv COHMAX0. econs; [econs|]; ss.
         viewtac. inv COHMAX. specialize (COHMAX1 mloc0). lia.
       + i. rewrite <- join_l. eapply NFWD; eauto.
+      + rewrite VRNVPN. apply join_l.
+      + apply join_r.
     - econs; viewtac.
       + i. viewtac.
       + inv COHMAX0. econs; [econs|]; ss.
         viewtac. inv COHMAX. specialize (COHMAX1 mloc0). lia.
+      + rewrite VRNVPN. apply join_l.
     - econs; viewtac.
       + i. funtac. viewtac.
       + i. funtac. viewtac.
@@ -899,6 +909,8 @@ Section Local.
           intro TS. rewrite <- TS in *.
           eapply NFWD; eauto. inversion e. ss.
         * i. rewrite <- TS. viewtac; rewrite <- join_r; ss.
+      + rewrite VRNVPN. apply join_l.
+      + apply join_r.
     - inversion MEM. subst. econs; try rewrite app_length; viewtac; ss.
       all: try by lia.
       + i. funtac; try rewrite COH; lia.
@@ -955,6 +967,8 @@ Section Local.
         eapply Memory.get_msg_snoc_inv in MSG. revert MSG. funtac.
         * i. des; [lia |]. inv MSG0. ss.
         * i. rewrite <- join_l. des; [eapply NFWD; eauto |]. inv MSG0. ss.
+      + rewrite VRNVPN. apply join_l.
+      + apply join_r.
     - exploit FWDVIEW; eauto.
       { eapply Memory.read_wf. eauto. }
       i. econs; viewtac.
@@ -1002,15 +1016,20 @@ Section Local.
           intro TS. rewrite <- TS in *.
           eapply NFWD; eauto. inversion e. ss.
         * i. rewrite <- TS. viewtac; rewrite <- join_r; ss.
+      + rewrite VRNVPN. apply join_l.
+      + apply join_r.
     - econs; viewtac.
       + i. viewtac.
       + inv COHMAX0. econs; [econs|]; ss.
         viewtac. inv COHMAX. specialize (COHMAX1 mloc0). lia.
       + i. rewrite <- join_l. eapply NFWD; eauto.
+      + rewrite VRNVPN. apply join_l.
+      + apply join_r.
     - econs; viewtac.
       + i. viewtac.
       + inv COHMAX0. econs; [econs|]; ss.
         viewtac. inv COHMAX. specialize (COHMAX1 mloc0). lia.
+      + rewrite VRNVPN. apply join_l.
     - econs; viewtac.
       + i. funtac. viewtac.
       + i. funtac. viewtac.
