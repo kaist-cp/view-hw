@@ -273,6 +273,13 @@ Proof.
       all: try by rewrite List.app_length; s; lia.
       all: try rewrite List.nth_error_app2, Nat.sub_diag; ss.
       all: destruct l; ss.
+    + i. rewrite sim_local_per_step. rewrite inverse_step.
+      rewrite inverse_union. ii. des; [apply PER|]; eauto.
+      inv EID. obtac.
+      all: exploit EX2.(LABELS); eauto; ss.
+      all: try by rewrite List.app_length; s; lia.
+      all: try rewrite List.nth_error_app2, Nat.sub_diag; ss.
+      all: destruct l; ss.
   - (* write *)
     exploit sim_trace_sim_th; try exact TRACE; eauto. intro TH_tmp.
     exploit lastn_sub_S1; try exact EU; eauto. intro TRT. des.
@@ -377,6 +384,13 @@ Proof.
       all: destruct l; ss.
     + i. rewrite sim_local_lper_step. rewrite inverse_step.
       rewrite inverse_union. ii. des; [apply LPER|]; eauto.
+      inv EID. obtac.
+      all: exploit EX2.(LABELS); eauto; ss.
+      all: try by rewrite List.app_length; s; lia.
+      all: try rewrite List.nth_error_app2, Nat.sub_diag; ss.
+      all: destruct l; ss.
+    + i. rewrite sim_local_per_step. rewrite inverse_step.
+      rewrite inverse_union. ii. des; [apply PER|]; eauto.
       inv EID. obtac.
       all: exploit EX2.(LABELS); eauto; ss.
       all: try by rewrite List.app_length; s; lia.
@@ -535,6 +549,18 @@ Proof.
       all: try by rewrite List.app_length; s; lia.
       all: try rewrite List.nth_error_app2, Nat.sub_diag; ss.
       all: destruct l; ss.
+    + i. rewrite sim_local_per_step. rewrite inverse_step.
+      rewrite ? inverse_union. ii. des.
+      * exploit PER; eauto. i. rewrite <- join_l. ss.
+      * inv EID. inv REL. obtac.
+        exploit EX2.(LABELS); eauto; ss.
+        { rewrite List.app_length. s. lia. }
+        rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x0. inv LABEL.
+      * inv EID. inv REL. obtac.
+        exploit EX2.(LABELS); eauto; ss.
+        { rewrite List.app_length. s. lia. }
+        rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x0.
+        rewrite <- join_r. apply L. econs; eauto.
   - (* rmw_failure *)
     exploit sim_trace_sim_th; try exact TRACE; eauto. intro TH_tmp.
     exploit lastn_sub_S1; try exact EU; eauto. intro TRT. des.
@@ -711,6 +737,13 @@ Proof.
       all: try by rewrite List.app_length; s; lia.
       all: try rewrite List.nth_error_app2, Nat.sub_diag; ss.
       all: destruct l; ss.
+    + i. rewrite sim_local_per_step. rewrite inverse_step.
+      rewrite inverse_union. ii. des; [apply PER|]; eauto.
+      inv EID. obtac.
+      all: exploit EX2.(LABELS); eauto; ss.
+      all: try by rewrite List.app_length; s; lia.
+      all: try rewrite List.nth_error_app2, Nat.sub_diag; ss.
+      all: destruct l; ss.
   - (* mfence *)
     inv STEP0. inv ASTATE_STEP; inv ALOCAL_STEP; ss; inv EVENT; ss. splits.
     econs; ss.
@@ -796,6 +829,19 @@ Proof.
       all: try by rewrite List.app_length; s; lia.
       all: try rewrite List.nth_error_app2, Nat.sub_diag; ss.
       all: destruct l; ss.
+    + rewrite List.app_length, Nat.add_1_r.
+      i. rewrite sim_local_per_step. rewrite inverse_step.
+      rewrite ? inverse_union. ii. des.
+      * exploit PER; eauto. i. rewrite <- join_l. ss.
+      * inv EID. inv REL. obtac.
+        exploit EX2.(LABELS); eauto; ss.
+        { rewrite List.app_length. s. lia. }
+        rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x0. inv LABEL.
+      * inv EID. inv REL. obtac.
+        exploit EX2.(LABELS); eauto; ss.
+        { rewrite List.app_length. s. lia. }
+        rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x0.
+        rewrite <- join_r. apply L. econs; eauto.
   - (* sfence *)
     inv STEP0. inv ASTATE_STEP; inv ALOCAL_STEP; ss; inv EVENT; ss. splits.
     econs; ss.
@@ -871,6 +917,19 @@ Proof.
       all: try by rewrite List.app_length; s; lia.
       all: try rewrite List.nth_error_app2, Nat.sub_diag; ss.
       all: destruct l; ss.
+    + rewrite List.app_length, Nat.add_1_r.
+      i. rewrite sim_local_per_step. rewrite inverse_step.
+      rewrite ? inverse_union. ii. des.
+      * exploit PER; eauto. i. rewrite <- join_l. ss.
+      * inv EID. inv REL. obtac.
+        exploit EX2.(LABELS); eauto; ss.
+        { rewrite List.app_length. s. lia. }
+        rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x0. inv LABEL.
+      * inv EID. inv REL. obtac.
+        exploit EX2.(LABELS); eauto; ss.
+        { rewrite List.app_length. s. lia. }
+        rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x0.
+        rewrite <- join_r. apply L. econs; eauto.
   - (* dowhile *)
     inv ASTATE_STEP; inv ALOCAL_STEP; ss; inv EVENT; ss. splits.
     + econs; ss; try by apply L.
@@ -946,6 +1005,13 @@ Proof.
       inversion e. subst. inv H0.
       * rewrite <- join_r, <- join_l. apply L. econs; eauto.
       * repeat rewrite <- join_r. apply L. econs; eauto.
+    + i. rewrite sim_local_per_step. rewrite inverse_step.
+      rewrite inverse_union. ii. des; [apply PER|]; eauto.
+      inv EID. obtac.
+      all: exploit EX2.(LABELS); eauto; ss.
+      all: try by rewrite List.app_length; s; lia.
+      all: try rewrite List.nth_error_app2, Nat.sub_diag; ss.
+      all: destruct l; ss.
   - (* flush *)
     inv STEP0. inv ASTATE_STEP; inv ALOCAL_STEP; ss; inv EVENT; ss. splits.
     econs; ss.
@@ -1002,6 +1068,25 @@ Proof.
     + i. rewrite sim_local_lper_step. rewrite inverse_step.
       rewrite inverse_union. ii. des.
       { exploit LPER; eauto. i. funtac. inversion e. subst. rewrite <- join_l. ss. }
+      inv EID. inv REL; cycle 1.
+      { inv H. des. inv H1. inv H2.
+        exploit EX2.(LABELS); eauto; ss.
+        { rewrite List.app_length. s. lia. }
+        rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x0. ss.
+      }
+      obtac.
+      exploit EX2.(LABELS); eauto; ss.
+      { rewrite List.app_length. s. lia. }
+      rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x0.
+      funtac; cycle 1.
+      { exfalso. eqvtac. apply c. inv VLOC. ss. }
+      inversion e. subst.
+      rewrite <- join_r.
+      inv COHMAX. specialize (COHMAX0 mloc0). rewrite <- COHMAX0.
+      apply VWN0. econs; eauto.
+    + i. rewrite sim_local_per_step. rewrite inverse_step.
+      rewrite inverse_union. ii. des.
+      { exploit PER; eauto. i. funtac. inversion e. subst. rewrite <- join_l. ss. }
       inv EID. inv REL; cycle 1.
       { inv H. des. inv H1. inv H2.
         exploit EX2.(LABELS); eauto; ss.
