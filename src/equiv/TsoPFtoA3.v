@@ -28,7 +28,6 @@ Require Import PromisingArch.equiv.TsoPFtoA2.
 Set Implicit Arguments.
 
 
-(* TODO: seperate persist ob *)
 Definition ob' (ex: Execution.t): relation eidT :=
   Execution.rfe ex ∪ Execution.dob ex ∪ Execution.bob ex.
 

@@ -191,6 +191,8 @@ Proof.
           { etrans; eauto. }
           { apply List.nth_error_Some. congr. }
         * clear. lia.
+      + ii. inv EID. inv REL; obtac; inv H1; ss; lia.
+      + ii. inv EID. inv REL; obtac; inv H1; ss; lia.
   }
   i. simplify.
   exploit sim_trace_length; eauto. intro LEN. guardH LEN.

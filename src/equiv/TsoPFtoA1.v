@@ -98,7 +98,7 @@ Inductive sim_trace (p: program) (mem: Memory.t) (tid: Id.t):
                    (fun eid => if Nat.eqb eid (ALocal.next_eid aeu1.(AExecUnit.local))
                                then Memory.latest_ts
                                       vloc.(ValA.val)
-                                      (eu2.(ExecUnit.local).(Local.per) vloc.(ValA.val)).(View.ts)
+                                      (eu2.(ExecUnit.local).(Local.lper) vloc.(ValA.val)).(View.ts)
                                       mem
                                else cov1 eid)
                  | Event.flushopt vloc =>
