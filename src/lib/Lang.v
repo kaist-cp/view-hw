@@ -173,7 +173,7 @@ Module Barrier.
 
   Definition is_sfence (b:t): bool :=
     match b with
-    | dmb rr rw wr ww => ww
+    | dmb rr rw wr ww => andb (negb wr) ww
     | _ => false
     end.
 End Barrier.
