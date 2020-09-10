@@ -67,5 +67,140 @@ Lemma sim_traces_sim_th'_fob
     (SIM_TH': sim_th' tid m.(Machine.mem) ex (v_gen vexts) eu1 aeu1),
     sim_fob tid ex (v_gen vexts) eu2 aeu2.
 Proof.
-  admit.
+  i. rename SIM_TH' into L.
+  generalize (SIM tid). intro X. inv X; simplify.
+  destruct n.
+  { generalize (lastn_length 1 tr). rewrite EU. destruct tr; ss. }
+  exploit sim_trace_lastn; eauto. instantiate (1 := S n). intro SIMTR.
+  generalize (TR tid). intro TR_TID. inv TR_TID; try congr.
+  destruct b as [st_l lc_l]. destruct REL as [trt].
+  rename H into PFSL. rename H1 into TRL.
+  rewrite FIND_TR in H0. inversion H0. rewrite H1 in *. cleartriv. clear H1.
+  exploit sim_trace_rtc_step; try exact REL7; eauto. intro RTC_STEP.
+  hexploit sim_traces_ex; eauto. intro EX2.
+  inversion SIMTR; subst; simplify; [congr|].
+  repeat match goal with
+         | [H1: lastn ?a ?b = ?c, H2: ?d = lastn ?a ?b |- _] =>
+           rewrite H1 in H2; inv H2
+         end.
+  exploit sim_trace_sim_state_weak; eauto. intro STATE1.
+
+  ii.
+  destruct (le_lt_dec (length (ALocal.labels (AExecUnit.local aeu1))) eid2); cycle 1.
+  { inv L. eapply FOB0; eauto. }
+  exploit Execution.fob_persist; eauto. intro X. inv X.
+  destruct eu1 as [st1 lc1 mem1] eqn: EU1. guardH EU1.
+  destruct eu2 as [st2 lc2 mem2] eqn: EU2. guardH EU2.
+  destruct aeu1 as [ast1 alc1].
+  destruct aeu2 as [ast2 alc2].
+  inv ASTATE_STEP; inv EVENT; inv ALOCAL_STEP; inv EVENT; repeat (ss; subst).
+  all: try (clear - LABEL l; lia).
+  all: rewrite List.app_length in LABEL; ss.
+  all: assert (EID2: eid2 = length (ALocal.labels alc1)) by (clear - LABEL l; lia); subst.
+  all: exploit LABELS; eauto; ss.
+  all: try by clear; rewrite List.app_length; s; lia.
+  all: destruct l0; ss.
+  all: intro NTH; apply nth_error_snoc_inv_last in NTH; inv NTH.
+  all: rewrite EU, AEU, WL, RL, FL, COV, VEXT in SIMTR.
+  { (* flushopt *)
+    exploit sim_trace_sim_th; try exact SIMTR; eauto. intro TH_tmp.
+    exploit lastn_sub_S1; try exact EU; eauto. intro TRT. des.
+    exploit TH_tmp; eauto.
+    clear TH_tmp. intro L'.
+    exploit L'.(FPROP1); ss.
+    { split; eauto with tso. apply nth_error_last. apply Nat.eqb_eq. ss. }
+    unfold ALocal.next_eid in *. condtac; cycle 1.
+    { apply Nat.eqb_neq in X. congr. }
+    i. des. inv x0.
+    exploit L'.(FPROP2); eauto.
+    { rewrite X. eauto. }
+    s. rewrite X. i. des.
+    apply nth_error_snoc_inv_last in x1. inv x1.
+    rewrite EX2.(XVEXT); s; cycle 1.
+    { rewrite List.app_length. s. clear. lia. }
+    rewrite X.
+    inv STEP0. ss. subst. inv LOCAL; inv EVENT.
+    exploit sim_trace_sim_th; try exact TRACE; eauto. intro TH_tmp.
+    exploit TH_tmp; eauto.
+    { instantiate (1 := l1 ++ [eu2]). rewrite <- List.app_assoc. rewrite EU2. ss. }
+    clear TH_tmp. intro SIM_TH.
+    destruct SIM_TH.(EU_WF).
+    inv STEP0. ss.
+    exploit EX2.(LABELS); eauto; ss.
+    { rewrite List.app_length. s. clear. lia. }
+    i. funtac.
+    move EID at bottom. move FOB at bottom. unfold Execution.fob in *. des_union.
+    - (* W U U U R; po; FL *)
+      obtac. destruct l2; ss; congr.
+    - inv H1. des. inv H.
+      + (* U U R; po; FO *)
+        obtac. rewrite L.(LC).(VPN); ss.
+        * repeat rewrite <- join_r. ss.
+        * econs; eauto. unfold sim_local_vpn. left. econs. econs; eauto. simtac.
+      + (* W; po; [MF U SF]; po; FO *)
+        rewrite L.(LC).(VPN); ss.
+        * repeat rewrite <- join_r. ss.
+        * econs; eauto. unfold sim_local_vpn. right. obtac; simtac; [left|right]; simtac.
+    - obtac. inv H.
+      + (* W; po_cl; FO *)
+        rewrite L.(LC).(COH); ss.
+        * rewrite <- join_r, <- join_l. ss.
+        * inv H3. obtac.
+          econs; eauto. unfold sim_local_coh. simtac.
+          rewrite EID in EID3. simplify. ss. eqvtac.
+          destruct l0; destruct l3; ss; try congr. eqvtac. simtac.
+      + (* W; po; FL; po_cl; FO *)
+        rewrite L.(LC).(LPER); ss.
+        * rewrite <- join_l. ss.
+        * inv H3. obtac.
+          econs; eauto. unfold sim_local_lper. left.
+          econs. split.
+          { econs. econs; simtac. eauto. }
+          simtac.
+          rewrite EID in EID4. simplify. ss. eqvtac.
+          destruct l3; destruct l4; ss; try congr. eqvtac. simtac.
+  }
+  { (* flush *)
+    exploit sim_trace_sim_th; try exact SIMTR; eauto. intro TH_tmp.
+    exploit lastn_sub_S1; try exact EU; eauto. intro TRT. des.
+    exploit TH_tmp; eauto.
+    clear TH_tmp. intro L'.
+    exploit L'.(FPROP1); ss.
+    { split.
+      { apply nth_error_last. apply Nat.eqb_eq. ss. }
+      eauto with tso.
+    }
+    unfold ALocal.next_eid in *. condtac; cycle 1.
+    { apply Nat.eqb_neq in X. congr. }
+    i. des. inv x0.
+    exploit L'.(FPROP2); eauto.
+    { rewrite X. eauto. }
+    s. rewrite X. i. des.
+    apply nth_error_snoc_inv_last in x1. inv x1.
+    rewrite EX2.(XVEXT); s; cycle 1.
+    { rewrite List.app_length. s. clear. lia. }
+    rewrite X.
+    inv STEP0. ss. subst. inv LOCAL; inv EVENT.
+    exploit sim_trace_sim_th; try exact TRACE; eauto. intro TH_tmp.
+    exploit TH_tmp; eauto.
+    { instantiate (1 := l1 ++ [eu2]). rewrite <- List.app_assoc. rewrite EU2. ss. }
+    clear TH_tmp. intro SIM_TH.
+    destruct SIM_TH.(EU_WF).
+    inv STEP0. ss.
+    exploit EX2.(LABELS); eauto; ss.
+    { rewrite List.app_length. s. clear. lia. }
+    i. funtac.
+    move EID at bottom. move FOB at bottom. unfold Execution.fob in *. des_union.
+    - (* W U U U R; po; FL *)
+      generalize L.(LC).(VWN). intro VWN. des; ss.
+      obtac. rewrite VWN0; ss.
+      + rewrite <- join_r.
+        inv COHMAX. specialize (COHMAX0 mloc0). rewrite COHMAX0. ss.
+      + econs; eauto. unfold sim_local_vwn. simtac.
+    - (* ((U U R) U (W; po; [MF U SF])); po; FO *)
+      obtac; try by destruct l3; ss; congr.
+      destruct l2; ss. congr.
+    - (* W; (po; FL)?; po_cl; FO *)
+      obtac. destruct l2; ss. congr.
+  }
 Qed.

@@ -73,7 +73,8 @@ Inductive sim_trace (p: program) (mem: Memory.t) (tid: Id.t):
                             then Some (vloc.(ValA.val),
                                        Memory.latest_ts
                                          vloc.(ValA.val)
-                                         (eu2.(ExecUnit.local).(Local.per) vloc.(ValA.val)).(View.ts)
+                                         (* CHECK: maybe lper is ok *)
+                                         (eu2.(ExecUnit.local).(Local.lper) vloc.(ValA.val)).(View.ts)
                                          mem)
                             else f1 eid)
                | Event.flushopt vloc =>
@@ -121,7 +122,8 @@ Inductive sim_trace (p: program) (mem: Memory.t) (tid: Id.t):
                                 else vext1 eid)
                    | Event.flush vloc =>
                      (fun eid => if Nat.eqb eid (ALocal.next_eid aeu1.(AExecUnit.local))
-                                 then (eu2.(ExecUnit.local).(Local.per) vloc.(ValA.val)).(View.ts)
+                                 (* CHECK: maybe lper is ok *)
+                                 then (eu2.(ExecUnit.local).(Local.lper) vloc.(ValA.val)).(View.ts)
                                  else vext1 eid)
                    | Event.flushopt vloc =>
                      (fun eid => if Nat.eqb eid (ALocal.next_eid aeu1.(AExecUnit.local))
