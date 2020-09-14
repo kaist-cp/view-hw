@@ -390,7 +390,7 @@ all: ss.
 4: { unfold IdMap.map. rewrite IdMap.mapi_mapi. f_equal. }
 1: { apply bot. (* it's ex's co. *) }
 1: { apply bot. (* it's ex's rf. *) }
-1: { apply bot. (* it's ex's fco. *) }
+1: { apply bot. (* it's ex's fp. *) }
 Qed.
 
 Inductive sim_th

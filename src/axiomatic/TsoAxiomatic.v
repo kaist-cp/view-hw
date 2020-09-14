@@ -1123,6 +1123,25 @@ Module Execution.
            | [H: _ |- ⦗Execution.label_is _ _⦘ _ _ /\ _] => econs; econs; eauto with tso
           end.
 
+  Ltac labtac :=
+    try by (repeat match goal with
+         | [H1: Execution.label ?eid ?ex = Some (_ _ _),
+            H2: Execution.label ?eid ?ex = Some (_ _ _) |- _] =>
+           congr
+         | [H1: Execution.label ?eid ?ex = Some (_ _ _ _),
+            H2: Execution.label ?eid ?ex = Some (_ _ _) |- _] =>
+           congr
+         | [H1: Execution.label ?eid ?ex = Some (_ _ _),
+            H2: Execution.label ?eid ?ex = Some ?l2 |- _] =>
+           rewrite H1 in H2; inv H2; ss
+         | [H1: Execution.label ?eid ?ex = Some (_ _ _ _),
+            H2: Execution.label ?eid ?ex = Some ?l2 |- _] =>
+           rewrite H1 in H2; inv H2; ss
+         | [H1: Execution.label ?eid ?ex = Some ?l1,
+            H2: Execution.label ?eid ?ex = Some ?l2 |- _] =>
+           rewrite H1 in H2; inv H2; destruct l2; ss
+    end).
+
   Lemma fob_persist
         ex
         eid1 eid2
@@ -1136,6 +1155,7 @@ End Execution.
 
 Ltac obtac := Execution.obtac.
 Ltac simtac := Execution.simtac.
+Ltac labtac := Execution.labtac.
 
 Inductive tid_lift (tid:Id.t) (rel:relation nat) (eid1 eid2:eidT): Prop :=
 | tid_lift_intro
@@ -1565,7 +1585,6 @@ Module Valid.
         (CYCLE: (Execution.ob exec)⁺ eid eid):
     exists eid_nb,
       (Execution.ob exec ∩ (Execution.label_is_rel exec Label.is_access_persist))⁺ eid_nb eid_nb.
-      (* TODO: check if this statement is right when prove PtoA *)
   Proof.
     exploit minimalize_cycle; eauto.
     { instantiate (1 := Execution.label_is exec Label.is_access_persist).
@@ -1597,16 +1616,16 @@ Module Valid.
   Proof.
     inv EID1. inv EID2.
     destruct l; ss. destruct l0; ss.
-    all: obtac; try congr.
-    all: try by etrans; eauto.
-    all: try by rewrite EID0 in EID1; inv EID1; ss.
-    all: try by rewrite EID in EID1; inv EID1; ss.
+    obtac; labtac.
     - exploit RF2; eauto. i. des.
-      inv WRITE. rewrite EID in EID1. destruct l; ss.
-    - exploit CO2; eauto. i. des; obtac; destruct l; ss; congr.
-    - exploit CO2; eauto. i. des; obtac; destruct l; ss; congr.
+      inv WRITE. labtac.
+    - exploit CO2; eauto. i. des.
+      obtac. labtac.
+    - exploit CO2; eauto. i. des.
+      obtac. labtac.
+    - etrans; eauto.
     - exploit PF2; eauto. i. des.
-      obtac. rewrite EID in EID2. inv EID2. ss.
+      obtac. labtac.
   Qed.
 
   Lemma persist_ob_write
@@ -1618,69 +1637,46 @@ Module Valid.
         (EID1: ex.(Execution.label_is) Label.is_persist eid1):
     ex.(Execution.label_is) Label.is_kinda_write eid2.
   Proof.
-    obtac.
-    all: try by destruct l; destruct l2; ss; congr.
-    all: try by destruct l; destruct l1; ss; congr.
-    all: try by destruct l0; destruct l2; ss; congr.
-    - exploit RF2; eauto. i. des. obtac.
-      destruct l0; destruct l; ss; congr.
-    - exploit RF2; eauto. i. des. obtac.
-      destruct l1; destruct l; ss; congr.
-    - rewrite EID1 in EID0. inv EID0. destruct l0; ss.
-    - exploit CO2; eauto. i. des. obtac.
-      destruct l1; destruct l; ss; congr.
-    - exploit CO2; eauto. i. des. obtac. simtac.
+    obtac; labtac.
+    - exploit RF2; eauto. i. des.
+      obtac. labtac.
+    - exploit RF2; eauto. i. des.
+      obtac. labtac.
+    - exploit CO2; eauto. i. des.
+      obtac. labtac.
+    - exploit CO2; eauto. i. des.
+      obtac. simtac.
     - simtac.
   Qed.
 
-  Lemma access_ob_persist
+  Lemma ob_persist_spec
         ex
         eid1 eid2
         (CO2: co2 ex)
         (RF2: rf2 ex)
+        (PF2: pf2 ex)
         (OB: Execution.ob ex eid1 eid2)
         (EID1: ex.(Execution.label_is) Label.is_persist eid2):
-    ex.(Execution.label_is) Label.is_access eid1.
+    <<FOB: Execution.fob ex eid1 eid2>> /\
+    <<ACCESS: ex.(Execution.label_is) Label.is_access eid1>> /\
+    <<PO: Execution.po eid1 eid2>>.
   Proof.
-    obtac.
-    all: try by destruct l0; destruct l2; ss; congr.
-    all: try by destruct l0; destruct l1; ss; congr.
-    all: try by destruct l0; destruct l; ss; congr.
-    all: try by destruct l1; destruct l2; ss; congr.
-    all: try simtac.
-    - exploit RF2; eauto. i. des. obtac.
-      destruct l; destruct l1; ss; congr.
-    - exploit CO2; eauto. i. des. obtac.
-      destruct l; destruct l0; ss; congr.
-    - exploit CO2; eauto. i. des. obtac.
-      destruct l; destruct l0; ss; congr.
-    - exploit CO2; eauto. i. des. obtac.
-      destruct l; destruct l0; ss; congr.
-  Qed.
-
-  Lemma ob_persist_po
-        ex
-        eid1 eid2
-        (CO2: co2 ex)
-        (RF2: rf2 ex)
-        (EID1: Execution.label_is ex Label.is_persist eid2)
-        (OB: Execution.ob ex eid1 eid2):
-    Execution.po eid1 eid2.
-  Proof.
-    inv EID1. unfold co2, rf2 in *.
-    obtac; ss.
-    all: try by etrans; eauto.
-    all: try by destruct l; destruct l0; ss; congr.
-    - exploit RF2; eauto. i. des. obtac.
-      destruct l; destruct l1; ss; congr.
-    - exploit CO2; eauto. i. des. obtac.
-      destruct l; destruct l0; ss; congr.
-    - exploit CO2; eauto. i. des. obtac.
-      destruct l; destruct l0; ss; congr.
-    - inv H; inv H2; ss.
-      obtac. eapply Execution.po_chain. econs. simtac.
-    - exploit CO2; eauto. i. des. obtac.
-      destruct l; destruct l0; ss; congr.
+    inv OB; cycle 1.
+    { obtac; [exploit CO2; eauto; i; des | clear EID2]; obtac; labtac. }
+    inv H; cycle 1.
+    { split; eauto. obtac.
+      all: splits; [simtac | eauto].
+      all: eapply Execution.po_chain; econs; simtac.
+      inv H; inv H2; ss. obtac.
+      eapply Execution.po_chain. econs. simtac.
+    }
+    obtac; labtac.
+    - exploit RF2; eauto. i. des.
+      obtac. labtac.
+    - exploit CO2; eauto. i. des.
+      obtac. labtac.
+    - exploit CO2; eauto. i. des.
+      obtac. labtac.
   Qed.
 End Valid.
 
