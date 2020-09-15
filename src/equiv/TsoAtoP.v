@@ -146,6 +146,27 @@ Proof.
   inv WRITE2. eauto with tso.
 Qed.
 
+Lemma view_of_eid_co
+      p ex ob eid1 eid2 view1 view2 loc
+      (EX: Valid.ex p ex)
+      (LINEARIZED: linearized (Execution.ob ex) ob)
+      (VIEW1: view_of_eid ex ob eid1 = Some view1)
+      (VIEW2: view_of_eid ex ob eid2 = Some view2)
+      (WRITE1: Execution.label_is ex (Label.is_kinda_writing loc) eid1)
+      (WRITE2: Execution.label_is ex (Label.is_kinda_writing loc) eid2)
+      (LT: view1 < view2):
+  Execution.co ex eid1 eid2.
+Proof.
+  exploit EX.(Valid.CO1).
+  { esplits; [exact WRITE1 | exact WRITE2]; eauto. }
+  i. des; ss.
+  { subst. rewrite VIEW1 in VIEW2. inv VIEW2. lia. }
+  cut (view2 < view1).
+  { i. lia. }
+  eapply view_of_eid_ob_write; eauto.
+  left. left. left. left. right. ss.
+Qed.
+
 Inductive sim_view (ex:Execution.t) (ob: list eidT) (eids:eidT -> Prop) (view:Time.t): Prop :=
 | sim_view_bot
     (VIEW: view = bot)
@@ -1801,12 +1822,22 @@ Proof.
                 <<PO: Execution.po feid beid>> /\
                 <<BARRIER: Execution.label_is ex (fun l => Label.is_persist_barrier l) beid>>)>>).
     { i. des. obtac.
-      exploit EX.(Valid.PF1); eauto with tso. i. des.
-      { cut (v < S ts).
+      cut (Execution.fp ex feid (tid0, n)).
+      { i.
+        cut (fview < S ts).
         { i. lia. }
-        eapply le_lt_trans; [exact SIM2FL|].
-        eapply view_of_eid_ob_write; try exact VIEW0; eauto with tso.
-        repeat right. repeat econs; eauto with tso.
+        eapply view_of_eid_ob_write; eauto with tso. right. ss.
+      }
+      exploit EX.(Valid.PF1); eauto with tso. i. des.
+      { right. econs; simtac.
+        { econs; simtac; eauto with tso. }
+        econs; eauto with tso. econs; eauto. simtac.
+      }
+      cut (view_of_eid ex ob eid2 = Some view).
+      { i.
+        assert (Execution.co ex eid2 (tid0, n)).
+        { eapply view_of_eid_co; eauto with tso. }
+        left. econs; eauto.
       }
       assert (DOM: dom_rel (Execution.per ex) eid2).
       { obtac. destruct l0; ss; eqvtac.
@@ -1815,26 +1846,14 @@ Proof.
         econs. econs. simtac. right. simtac.
       }
       inv PVIEW.
-      { eapply NPER. econs; eauto. }
-      destruct (eid0 == eid2); cycle 1.
-      { obtac. exploit EX.(Valid.CO1).
-        { esplits; econs; [try exact EID2 | | try exact EID3|]; eauto with tso. }
-        i. des; [congr|..]; cycle 1.
-        { eapply PER0; eauto. econs; eauto with tso. }
-        cut (fview <= view).
-        { i. lia. }
-        eapply view_of_eid_ob; eauto.
-        right. left. econs; eauto.
-      }
-      inv e. obtac. exploit EX.(Valid.CO1).
-      { esplits; econs; [try exact EID0 | | try exact EID2|]; eauto with tso. }
+      { exfalso. eapply NPER. econs; eauto. }
+      obtac. exploit label_read_mem_of_ex; try exact EID2; eauto. i. des.
+      exploit EX.(Valid.CO1).
+      { esplits; econs; [try exact EID3 | | try exact EID2|]; eauto with tso. }
       i. des.
-      * subst. rewrite VIEW0 in VIEW1. inv VIEW1. lia.
-      * cut (S ts <= view).
-        { i. lia. }
-        eapply view_of_eid_ob; eauto.
-        left. left. left. left. right. ss.
-      * cut (fview < S ts).
+      - subst. ss.
+      - exfalso. eapply PER0; eauto. econs; eauto with tso.
+      - cut (fview < view).
         { i. lia. }
         eapply view_of_eid_ob_write; eauto with tso.
         right. left. econs; eauto.
