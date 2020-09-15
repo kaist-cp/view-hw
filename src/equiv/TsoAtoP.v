@@ -1809,11 +1809,10 @@ Proof.
         repeat right. repeat econs; eauto with tso.
       }
       assert (DOM: dom_rel (Execution.per ex) eid2).
-      { obtac. exploit Valid.pf_is_t_ob_cl; eauto. i.
-        destruct l0; ss; eqvtac.
-        { econs. econs. simtac. econs; eauto. left. simtac. }
+      { obtac. destruct l0; ss; eqvtac.
+        { econs. econs. simtac. left. simtac. }
         exploit FLUSHOPT; eauto with tso. i. des.
-        econs. econs. simtac. econs; eauto. right. simtac.
+        econs. econs. simtac. right. simtac.
       }
       inv PVIEW.
       { eapply NPER. econs; eauto. }
