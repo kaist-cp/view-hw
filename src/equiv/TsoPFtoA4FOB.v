@@ -115,7 +115,7 @@ Proof.
     exploit L'.(FPROP2); eauto.
     { rewrite X. eauto. }
     s. rewrite X. i. des.
-    apply nth_error_snoc_inv_last in x1. inv x1.
+    apply nth_error_snoc_inv_last in x2. inv x2.
     rewrite EX2.(XVEXT); s; cycle 1.
     { rewrite List.app_length. s. clear. lia. }
     rewrite X.
@@ -176,7 +176,7 @@ Proof.
     exploit L'.(FPROP2); eauto.
     { rewrite X. eauto. }
     s. rewrite X. i. des.
-    apply nth_error_snoc_inv_last in x1. inv x1.
+    apply nth_error_snoc_inv_last in x2. inv x2.
     rewrite EX2.(XVEXT); s; cycle 1.
     { rewrite List.app_length. s. clear. lia. }
     rewrite X.

@@ -944,6 +944,40 @@ Proof.
   unfold v_gen. ss. subst. rewrite <- H6, <- H13, x2, x9. ss.
 Qed.
 
+Lemma sim_traces_vext_pf
+      p m trs atrs ws rs fs covs vexts
+      ex
+      (STEP: Machine.pf_exec p m)
+      (SIM: sim_traces p m.(Machine.mem) trs atrs ws rs fs covs vexts)
+      (PF: ex.(Execution.pf) = pf_gen ws fs)
+      (PRE: Valid.pre_ex p ex)
+      (TR: IdMap.Forall2
+             (fun tid tr sl => exists l, tr = (ExecUnit.mk (fst sl) (snd sl) m.(Machine.mem)) :: l)
+             trs m.(Machine.tpool))
+      (ATR: IdMap.Forall2
+              (fun tid atr aeu => exists l, atr = aeu :: l)
+              atrs PRE.(Valid.aeus)):
+  <<PF:
+    forall eid1 eid2
+      (PF: ex.(Execution.pf) eid1 eid2),
+      Time.le ((v_gen vexts) eid1) ((v_gen vexts) eid2)>>.
+Proof.
+  ii. rewrite PF in *. inv PF0.
+  destruct eid1 as [tid1 iid1], eid2 as [tid2 iid2]. ss.
+  generalize (SIM tid1). intro SIM1. inv SIM1; try congr.
+  generalize (SIM tid2). intro SIM2. inv SIM2; try congr. simplify.
+  generalize (ATR tid2). intro X. inv X; ss; try congr. rewrite <- H2 in *. inv H7.
+  exploit sim_trace_last; try exact REL7; eauto. i. des. simplify.
+  exploit sim_trace_sim_th; try exact REL7; eauto. intro TH1_tmp.
+  exploit TH1_tmp; eauto. { instantiate (1 := []). ss. } intro TH1.
+  exploit sim_trace_last; try exact REL0; eauto. i. des. simplify.
+  exploit sim_trace_sim_th; try exact REL0; eauto. intro TH2_tmp.
+  exploit TH2_tmp; eauto. { instantiate (1 := []). ss. } intro TH2.
+  exploit TH1.(WPROP3); eauto. i. des.
+  unfold v_gen. ss. subst. rewrite <- H6, <- H13, x2.
+  exploit TH2.(FPROP2); eauto. i. unguardH x1. des; ss.
+Qed.
+
 Inductive sim_ex tid ex (ws rs fs:IdMap.t (list (nat -> option (Loc.t * Time.t)))) covs vexts aeu w r (f:nat -> option (Loc.t * Time.t)) cov vext: Prop := {
   LABELS:
     forall eid label

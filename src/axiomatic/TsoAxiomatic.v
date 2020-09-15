@@ -934,7 +934,7 @@ Module Execution.
     destruct P1; eauto with tso.
   Qed.
 
-  (* let obs = rfe | fre | co | fp *)
+  (* let obs = rfe | fre | co *)
   (* let dob = ((W U U U R); po; (W U U U R)) \ (W × R) ~~~> ([R]; po; [W U U U R]) U ([W U U U R]; po; [W]) *)
   (* let bob = [W U U U R]; po; [MF]; po; [W U U U R] *)
   (* let fob =
@@ -942,7 +942,7 @@ Module Execution.
       | ([U U R] U ([W]; po; [MF U SF])); po; [FO]
       | [W]; (po; [FL])?; po_cl; [FO]
   *)
-  (* let ob = obs | dob | bob | fob | fobs *)
+  (* let ob = obs | dob | bob | fob | fp *)
 
   (* irrefl po?; rf as corw *)
   (* irrefl po; fr as cowr *)
@@ -1074,14 +1074,11 @@ Module Execution.
     (obs ex) ∪ (dob ex) ∪ (bob ex) ∪ (fob ex) ∪ (fp ex).
 
   Definition per (ex:t): relation eidT :=
-    ⦗ex.(label_is) Label.is_kinda_write⦘ ⨾
-    ((ob ex)⁺ ∩ ex.(label_rel) label_cl) ⨾
+    ex.(pf) ⨾
     (⦗ex.(label_is) Label.is_flush⦘ ∪
      (⦗ex.(label_is) Label.is_flushopt⦘ ⨾
       po ⨾
       ⦗ex.(label_is) Label.is_persist_barrier⦘)).
-
-  Definition pf_min (ex:t) := ex.(pf) ⊆ (ob ex)⁺.
 
   Ltac obtac :=
     repeat
@@ -1275,7 +1272,6 @@ Module Valid.
     COWR: irreflexive (Execution.cowr ex);
     CORW: irreflexive (Execution.corw ex);
     EXTERNAL: acyclic (Execution.ob ex);
-    PF_MIN: Execution.pf_min ex;
   }.
   Hint Constructors ex : tso.
   Coercion PRE: ex >-> pre_ex.
@@ -1512,18 +1508,6 @@ Module Valid.
     exploit EX.(RF1); eauto. i. des.
     - contradict NORF. econs. eauto.
     - exploit EX.(RF_WF); [exact RF3|exact RF|]. i. subst. eauto.
-  Qed.
-
-  Lemma pf_is_t_ob_cl
-        p exec
-        eid1 eid2
-        (EX: ex p exec)
-        (PF: Execution.pf exec eid1 eid2):
-    ((Execution.ob exec)⁺ ∩ exec.(Execution.label_rel) Execution.label_cl) eid1 eid2.
-  Proof.
-    econs.
-    - eapply EX.(PF_MIN); eauto.
-    - exploit EX.(PF2); eauto. i. des. obtac. simtac.
   Qed.
 
   Lemma barrier_ob
