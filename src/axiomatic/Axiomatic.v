@@ -124,6 +124,20 @@ Module Label.
     | _ => false
     end.
 
+  Definition is_flushopting (loc:Loc.t) (label:t): bool :=
+    match label with
+    | flushopt loc' => loc' == loc
+    | _ => false
+    end.
+
+  Definition is_access_persist (label:t): bool :=
+    match label with
+    | read _ _ _ _ => true
+    | write _ _ _ _ => true
+    | flushopt _ => true
+    | _ => false
+    end.
+
   Definition is_access_persisting (loc:Loc.t) (label:t): bool :=
     match label with
     | read _ _ loc' _ => loc' == loc
@@ -702,6 +716,7 @@ Module Execution.
     rmw: relation eidT;
     co: relation eidT;
     rf: relation eidT;
+    pf: relation eidT;
   }.
   Hint Constructors t.
 
@@ -827,20 +842,20 @@ Module Execution.
   (* 	| [W]; po; [dmb.st]; po; [W] *)
   (* 	| [R|W]; po; [L] *)
 
-  (* let pob = *)
+  (* let fob = *)
   (* 	| [R|W]; po; [dmb.full|dsb.full]; po; [FO] *)
   (* 	| [R|W]; (po_cl); [FO] *)
 
-  (* let ob = obs | dob | aob | bob | pob *)
+  (* let ob = obs | dob | aob | bob | fob | fp *)
 
   (* acyclic po-loc | fr | co | rf as internal *)
   (* acyclic ob as external *)
   (* empty rmw & (fre; coe) as atomic *)
 
-  (* let fl = [W & D]; (ob+ & CL); [FO]; po; [dsb.full] *)
+  (* let per = [D]; pf; [FO]; po; [dsb.full] *)
 
-  (* dom(fl) <= P <= W & D *)
-  (* dom(co?; [P]) <= P *)
+  (* P = dom(per) *)
+  (* forall l, exists w, M(l)=Val(w) /\ (P x {w})&Loc <= co? *)
 
   Inductive po (eid1 eid2:eidT): Prop :=
   | po_intro
@@ -901,8 +916,6 @@ Module Execution.
 
   Definition ctrl (ex: t): relation eidT := ex.(ctrl0) ⨾ po.
   Definition po_loc (ex:t): relation eidT := po ∩ ex.(label_rel) label_loc.
-
-  Definition po_cl (ex:t): relation eidT := po ∩ ex.(label_rel) label_cl.
 
   Definition fr (ex:t): relation eidT :=
     (ex.(rf)⁻¹ ⨾ ex.(co)) ∪
@@ -965,7 +978,14 @@ Module Execution.
 
     (ifc (arch == riscv) ex.(rmw)).
 
-  Definition pob (ex:t): relation eidT :=
+  Definition po_cl (ex:t): relation eidT := po ∩ ex.(label_rel) label_cl.
+
+  Definition fp (ex:t): relation eidT :=
+    (ex.(pf)⁻¹ ⨾ ex.(co)) ∪
+    ((ex.(label_rel) label_cl) ∩
+     ((ex.(label_is) Label.is_flushopt) \₁ codom_rel ex.(pf)) × (ex.(label_is) Label.is_write)).
+
+  Definition fob (ex:t): relation eidT :=
     (⦗ex.(label_is) Label.is_access⦘ ⨾
      (po_cl ex) ⨾
      ⦗ex.(label_is) Label.is_flushopt⦘) ∪
@@ -977,14 +997,73 @@ Module Execution.
      ⦗ex.(label_is) Label.is_flushopt⦘).
 
   Definition ob (ex:t): relation eidT :=
-    (obs ex) ∪ (dob ex) ∪ (aob ex) ∪ (bob ex) ∪ (pob ex).
+    (obs ex) ∪ (dob ex) ∪ (aob ex) ∪ (bob ex) ∪ (fob ex) ∪ (fp ex).
 
-  Definition fl (ex:t): relation eidT :=
-    (⦗ex.(label_is) Label.is_write⦘ ⨾
-     ((ob ex)⁺ ∩ ex.(label_rel) label_cl) ⨾
+  Definition per (ex:t): relation eidT :=
+    (ex.(pf) ⨾
      ⦗ex.(label_is) Label.is_flushopt⦘ ⨾
      po ⨾
      ⦗ex.(label_is) (Label.is_barrier_c Barrier.is_dsb_full)⦘).
+
+
+  Ltac obtac :=
+    repeat
+      (try match goal with
+           | [H: Execution.ob _ _ _ |- _] => inv H
+           | [H: Execution.obs _ _ _ |- _] => inv H
+           | [H: Execution.dob _ _ _ |- _] => inv H
+           | [H: Execution.aob _ _ _ |- _] => inv H
+           | [H: Execution.bob _ _ _ |- _] => inv H
+           | [H: Execution.fob _ _ _ |- _] => inv H
+           | [H: Execution.fp _ _ _ |- _] => inv H
+           | [H: Execution.fr _ _ _ |- _] => inv H
+           | [H: Execution.rfe _ _ _ |- _] => inv H
+           | [H: Execution.rfi _ _ _ |- _] => inv H
+           | [H: (_⨾ _) _ _ |- _] => inv H
+           | [H: ⦗_⦘ _ _ |- _] => inv H
+           | [H: (_ ∪ _) _ _ |- _] => inv H
+           | [H: (_ ∩ _) _ _ |- _] => inv H
+           | [H: (_ × _) _ _ |- _] => inv H
+           | [H: (minus_rel _ _) _ |- _] => inv H
+           | [H: Execution.label_is _ _ _ |- _] => inv H
+           | [H: Execution.label_rel _ _ _ _ |- _] => inv H
+           | [H: Execution.label_loc _ _ |- _] => inv H
+           | [H: Execution.label_cl _ _ |- _] => inv H
+           end;
+       des).
+
+  Ltac simtac :=
+  repeat match goal with
+           | [H: _ |- (_⨾ _) _ _] => econs
+           | [H: _ |- ⦗Execution.label_is _ _⦘ _ _] => econs; eauto
+           | [H: _ |- Execution.label_is _ _ _] => eauto
+           | [H: _ |- Execution.label_rel _ _ _ _] => econs; eauto
+           | [H: _ |- rc _ _ /\ _] => econs; eauto
+           | [H: _ |- Execution.po _ _ /\ _] => econs; eauto
+           | [H: _ |- _ /\ Execution.po _ _] => econs; eauto
+           | [H: _ |- Execution.po_cl _ _ _ /\ _] => econs; eauto
+           | [H: _ |- Execution.pf _ _ _ /\ _] => econs; eauto
+           | [H: _ |- ⦗Execution.label_is _ _⦘ _ _ /\ _] => econs; econs; eauto
+          end.
+
+  Ltac labtac :=
+    try by (repeat match goal with
+         | [H1: Execution.label ?eid ?ex = Some (_ _ _),
+            H2: Execution.label ?eid ?ex = Some (_ _ _) |- _] =>
+           congr
+         | [H1: Execution.label ?eid ?ex = Some (_ _ _ _),
+            H2: Execution.label ?eid ?ex = Some (_ _ _) |- _] =>
+           congr
+         | [H1: Execution.label ?eid ?ex = Some (_ _ _),
+            H2: Execution.label ?eid ?ex = Some ?l2 |- _] =>
+           rewrite H1 in H2; inv H2; ss
+         | [H1: Execution.label ?eid ?ex = Some (_ _ _ _),
+            H2: Execution.label ?eid ?ex = Some ?l2 |- _] =>
+           rewrite H1 in H2; inv H2; ss
+         | [H1: Execution.label ?eid ?ex = Some ?l1,
+            H2: Execution.label ?eid ?ex = Some ?l2 |- _] =>
+           rewrite H1 in H2; inv H2; destruct l2; ss
+    end).
 
   Lemma po_cl_chain ex: (po_cl ex)⨾ (po_cl ex)^? ⊆ (po_cl ex).
   Proof.
@@ -998,6 +1077,10 @@ Module Execution.
       destruct l0; ss; eqvtac; econs; eauto.
   Qed.
 End Execution.
+
+Ltac obtac := Execution.obtac.
+Ltac simtac := Execution.simtac.
+Ltac labtac := Execution.labtac.
 
 Inductive tid_lift (tid:Id.t) (rel:relation nat) (eid1 eid2:eidT): Prop :=
 | tid_lift_intro
@@ -1076,7 +1159,43 @@ Module Valid.
 
   Definition rf_wf (ex: Execution.t) := functional (ex.(Execution.rf))⁻¹.
 
-  (* TODO: add persistency *)
+  (* TODO: add real cacheline *)
+  Definition pf1 (ex: Execution.t) :=
+    forall eid1 loc
+       (LABEL: Execution.label eid1 ex = Some (Label.flushopt loc)),
+      (<<NOPF: ~ codom_rel ex.(Execution.pf) eid1>>) \/
+      (exists eid2 ex2 ord2 val,
+          <<LABEL: Execution.label eid2 ex = Some (Label.write ex2 ord2 loc val)>> /\
+          <<PF: ex.(Execution.pf) eid2 eid1>>).
+
+  (* TODO: add real cacheline *)
+  Definition pf2 (ex: Execution.t) :=
+    forall eid1 eid2 (RF: ex.(Execution.pf) eid2 eid1),
+    exists loc ex2 ord2 val,
+      <<PERSIST: Execution.label eid1 ex = Some (Label.flushopt loc)>> /\
+      <<WRITE: Execution.label eid2 ex = Some (Label.write ex2 ord2 loc val)>>.
+
+  Inductive persisted_event (ex:Execution.t) (loc:Loc.t) (eid:eidT) :=
+  | persisted_event_intro
+    (EID: ex.(Execution.label_is) (Label.is_writing loc) eid)
+    (DOM: dom_rel (Execution.per ex) eid)
+  .
+  Hint Constructors persisted_event.
+
+  Inductive persisted_loc (ex:Execution.t) (loc:Loc.t) (val:Val.t): Prop :=
+  | persisted_loc_uninit
+      (UNINIT: val = Val.default)
+      (NPER: forall eid (PEID: persisted_event ex loc eid), False)
+  | persisted_loc_init
+      eid1 ex1 ord1
+      (EID: Execution.label eid1 ex = Some (Label.write ex1 ord1 loc val))
+      (PER: forall eid2 (CO: ex.(Execution.co) eid1 eid2) (PEID: persisted_event ex loc eid2), False)
+  .
+  Hint Constructors persisted_loc.
+
+  Definition persisted ex smem :=
+    forall loc, persisted_loc ex loc (smem loc).
+
   Inductive ex (p:program) (ex:Execution.t) := mk_ex {
     PRE: pre_ex p ex;
     CO1: co1 ex;
@@ -1084,6 +1203,8 @@ Module Valid.
     RF1: rf1 ex;
     RF2: rf2 ex;
     RF_WF: rf_wf ex;
+    PF1: pf1 ex;
+    PF2: pf2 ex;
     INTERNAL: acyclic (Execution.internal ex);
     EXTERNAL: acyclic (Execution.ob ex);
     ATOMIC: le (ex.(Execution.rmw) ∩ ((Execution.fre ex) ⨾ (Execution.coe ex))) bot;
@@ -1379,31 +1500,6 @@ Module Valid.
     - exploit EX.(RF_WF); [exact RF3|exact RF|]. i. subst. eauto.
   Qed.
 
-  Ltac obtac :=
-    repeat
-      (try match goal with
-           | [H: Execution.ob _ _ _ |- _] => inv H
-           | [H: Execution.obs _ _ _ |- _] => inv H
-           | [H: Execution.dob _ _ _ |- _] => inv H
-           | [H: Execution.aob _ _ _ |- _] => inv H
-           | [H: Execution.bob _ _ _ |- _] => inv H
-           | [H: Execution.pob _ _ _ |- _] => inv H
-           | [H: Execution.fr _ _ _ |- _] => inv H
-           | [H: Execution.rfe _ _ _ |- _] => inv H
-           | [H: Execution.rfi _ _ _ |- _] => inv H
-           | [H: (_⨾ _) _ _ |- _] => inv H
-           | [H: ⦗_⦘ _ _ |- _] => inv H
-           | [H: (_ ∪ _) _ _ |- _] => inv H
-           | [H: (_ ∩ _) _ _ |- _] => inv H
-           | [H: (_ × _) _ _ |- _] => inv H
-           | [H: (minus_rel _ _) _ |- _] => inv H
-           | [H: Execution.label_is _ _ _ |- _] => inv H
-           | [H: Execution.label_rel _ _ _ _ |- _] => inv H
-           | [H: Execution.label_loc _ _ |- _] => inv H
-           end;
-       des).
-
-
   Lemma addr_label
         p exec
         eid1 eid2
@@ -1502,6 +1598,7 @@ Module Valid.
         (EX: pre_ex p exec)
         (CO2: co2 exec)
         (RF2: rf2 exec)
+        (PF2: pf2 exec)
         (EID1: Execution.label_is exec Label.is_barrier eid1)
         (OB: Execution.ob exec eid1 eid2):
     Execution.po eid1 eid2.
@@ -1513,16 +1610,18 @@ Module Valid.
     - exploit RF2; eauto. i. des. congr.
     - destruct l1; try congr; ss.
     - exploit CO2; eauto. i. des. congr.
-    - eapply addr_label in H; eauto. des. inv EID1. destruct l; ss; congr.
-    - eapply data_label in H; eauto. des. inv EID1. destruct l; ss; congr.
+    - eapply addr_label in H1; eauto. des. inv EID1. destruct l; ss; congr.
+    - eapply data_label in H1; eauto. des. inv EID1. destruct l; ss; congr.
     - eapply ctrl_is_po; eauto.
     - etrans; eauto. eapply addr_is_po; eauto.
     - etrans; eauto. eapply ctrl_is_po; eauto.
     - etrans; eauto. etrans; eauto. eapply addr_is_po; eauto.
     - exploit RF2; eauto. i. des. congr.
     - exploit RF2; eauto. i. des. congr.
-    - revert H. unfold ifc. condtac; ss. eapply rmw_spec. eauto.
-    - inv H1. ss.
+    - revert H0. unfold ifc. condtac; ss. eapply rmw_spec. eauto.
+    - inv H. ss.
+    - exploit PF2; eauto. i. des. obtac. congr.
+    - inv H0. obtac. destruct l0; ss. congr.
   Qed.
 
   Lemma ob_barrier_ob
@@ -1531,6 +1630,7 @@ Module Valid.
         (PRE: pre_ex p exec)
         (CO2: co2 exec)
         (RF2: rf2 exec)
+        (PF2: pf2 exec)
         (EID2: Execution.label_is exec Label.is_barrier eid2)
         (OB1: Execution.ob exec eid1 eid2)
         (OB2: Execution.ob exec eid2 eid3):
@@ -1545,16 +1645,16 @@ Module Valid.
     - exploit RF2; eauto. i. des. congr.
     - exploit CO2; eauto. i. des. congr.
     - exploit CO2; eauto. i. des. congr.
-    - inv H1.
-      + eapply addr_label in H; eauto. des. inv EID2. destruct l; ss; try congr.
-      + inv H0. exploit RF2; eauto. i. des. congr.
-    - inv H1.
-      + eapply data_label in H; eauto. des. inv EID2. destruct l; ss. congr.
-      + inv H0. exploit RF2; eauto. i. des. congr.
+    - inv H0.
+      + eapply addr_label in H1; eauto. des. inv EID2. destruct l; ss; try congr.
+      + inv H. exploit RF2; eauto. i. des. congr.
+    - inv H0.
+      + eapply data_label in H1; eauto. des. inv EID2. destruct l; ss. congr.
+      + inv H. exploit RF2; eauto. i. des. congr.
     - exploit RF2; eauto. i. des. congr.
-    (* - left. right. left. left. right. econs. splits; [by econs; eauto|]. etrans; eauto. *)
-    - revert H. unfold ifc. condtac; ss. i. exploit rmw_spec; eauto. i. des.
+    - revert H0. unfold ifc. condtac; ss. i. exploit rmw_spec; eauto. i. des.
       inv LABEL2. rewrite EID in EID0. inv EID0. des. ss.
+    - exploit CO2; eauto. i. des. congr.
   Qed.
 
   Lemma ctrl_ob_po
@@ -1563,6 +1663,7 @@ Module Valid.
         (EX: pre_ex p exec)
         (CO2: co2 exec)
         (RF2: rf2 exec)
+        (PF2: pf2 exec)
         (EID1: Execution.label_is exec Label.is_ctrl eid1)
         (OB: Execution.ob exec eid1 eid2):
     Execution.po eid1 eid2.
@@ -1574,16 +1675,18 @@ Module Valid.
     - exploit RF2; eauto. i. des. congr.
     - destruct l1; try congr; ss.
     - exploit CO2; eauto. i. des. congr.
-    - eapply addr_label in H; eauto. des. inv EID1. destruct l; ss; congr.
-    - eapply data_label in H; eauto. des. inv EID1. destruct l; ss; congr.
+    - eapply addr_label in H1; eauto. des. inv EID1. destruct l; ss; congr.
+    - eapply data_label in H1; eauto. des. inv EID1. destruct l; ss; congr.
     - eapply ctrl_is_po; eauto.
     - etrans; eauto. eapply addr_is_po; eauto.
     - etrans; eauto. eapply ctrl_is_po; eauto.
     - etrans; eauto. etrans; eauto. eapply addr_is_po; eauto.
     - exploit RF2; eauto. i. des. congr.
     - exploit RF2; eauto. i. des. congr.
-    - revert H. unfold ifc. condtac; ss. eapply rmw_spec. eauto.
-    - inv H1. ss.
+    - revert H0. unfold ifc. condtac; ss. eapply rmw_spec. eauto.
+    - inv H. ss.
+    - exploit PF2; eauto. i. des. obtac. congr.
+    - inv H0. obtac. destruct l0; ss. congr.
   Qed.
 
   Lemma ob_ctrl_ob
@@ -1592,6 +1695,7 @@ Module Valid.
         (PRE: pre_ex p exec)
         (CO2: co2 exec)
         (RF2: rf2 exec)
+        (PF2: pf2 exec)
         (EID2: Execution.label_is exec Label.is_ctrl eid2)
         (OB1: Execution.ob exec eid1 eid2)
         (OB2: Execution.ob exec eid2 eid3):
@@ -1606,132 +1710,17 @@ Module Valid.
     - exploit RF2; eauto. i. des. congr.
     - exploit CO2; eauto. i. des. congr.
     - exploit CO2; eauto. i. des. congr.
-    - inv H1.
-      + eapply addr_label in H; eauto. des. inv EID2. destruct l; ss; try congr.
-      + inv H0. exploit RF2; eauto. i. des. congr.
-    - inv H1.
-      + eapply data_label in H; eauto. des. inv EID2. destruct l; ss. congr.
-      + inv H0. exploit RF2; eauto. i. des. congr.
+    - inv H0.
+      + eapply addr_label in H1; eauto. des. inv EID2. destruct l; ss; try congr.
+      + inv H. exploit RF2; eauto. i. des. congr.
+    - inv H0.
+      + eapply data_label in H1; eauto. des. inv EID2. destruct l; ss. congr.
+      + inv H. exploit RF2; eauto. i. des. congr.
     - exploit RF2; eauto. i. des. congr.
-    (* - left. right. left. left. right. econs. splits; [by econs; eauto|]. etrans; eauto. *)
-    - revert H. unfold ifc. condtac; ss. i. exploit rmw_spec; eauto. i. des.
+    - revert H0. unfold ifc. condtac; ss. i. exploit rmw_spec; eauto. i. des.
       inv LABEL2. rewrite EID in EID0. inv EID0. des. ss.
-  Qed.
-
-  Lemma flushopt_ob_po
-        p exec
-        eid1 eid2
-        (EX: pre_ex p exec)
-        (CO2: co2 exec)
-        (RF2: rf2 exec)
-        (EID1: Execution.label_is exec Label.is_flushopt eid1)
-        (OB: Execution.ob exec eid1 eid2):
-    Execution.po eid1 eid2.
-  Proof.
-    inv EID1. destruct l; ss. unfold co2, rf2 in *.
-    obtac; ss.
-    all: try by etrans; eauto.
-    - exploit RF2; eauto. i. des. congr.
-    - exploit RF2; eauto. i. des. congr.
-    - destruct l1; try congr; ss.
     - exploit CO2; eauto. i. des. congr.
-    - eapply addr_label in H; eauto. des. inv EID1. destruct l; ss; congr.
-    - eapply data_label in H; eauto. des. inv EID1. destruct l; ss; congr.
-    - eapply ctrl_is_po; eauto.
-    - etrans; eauto. eapply addr_is_po; eauto.
-    - etrans; eauto. eapply ctrl_is_po; eauto.
-    - etrans; eauto. etrans; eauto. eapply addr_is_po; eauto.
-    - exploit RF2; eauto. i. des. congr.
-    - exploit RF2; eauto. i. des. congr.
-    - revert H. unfold ifc. condtac; ss. eapply rmw_spec. eauto.
-    - inv H1. ss.
   Qed.
-
-  Lemma flushopt_ob
-        p exec
-        eid1 eid2
-        (PRE: pre_ex p exec)
-        (CO2: co2 exec)
-        (RF2: rf2 exec)
-        (EID1: Execution.label_is exec Label.is_flushopt eid1)
-        (OB1: Execution.ob exec eid1 eid2):
-    False.
-  Proof.
-    inv EID1. destruct l; ss. obtac.
-    all: try by (rewrite EID0 in *; inv EID; ss).
-    all: try by (rewrite EID1 in *; inv EID; ss).
-    - exploit RF2; eauto. i. des. congr.
-    - exploit RF2; eauto. i. des. congr.
-    - exploit CO2; eauto. i. des. congr.
-    - exploit addr_label; eauto. i. des.
-      inv EID1. rewrite EID0 in *. inv EID. ss.
-    - exploit data_label; eauto. i. des.
-      inv EID1. rewrite EID0 in *. inv EID. ss.
-    - exploit ctrl_label; eauto. i. des.
-      inv x0. rewrite EID1 in *. inv EID. ss.
-    - exploit addr_label; eauto. i. des.
-      inv EID1. rewrite EID3 in *. inv EID. ss.
-    - exploit ctrl_label; eauto. i. des.
-      inv x1. rewrite EID2 in *. inv EID. ss.
-    - exploit addr_label; eauto. i. des.
-      inv EID2. rewrite EID4 in *. inv EID. ss.
-    - exploit RF2; eauto. i. des. congr.
-    - exploit RF2; eauto. i. des. congr.
-    - unfold ifc in *. des_ifs.
-      exploit rmw_spec; eauto. i. des.
-      inv LABEL1. inv LABEL2. des.
-      rewrite EID0 in *. inv EID. ss.
-  Qed.
-
-  (* Lemma ob_flushopt_ob *)
-  (*       p exec *)
-  (*       eid1 eid2 eid3 *)
-  (*       (PRE: pre_ex p exec) *)
-  (*       (CO2: co2 exec) *)
-  (*       (RF2: rf2 exec) *)
-  (*       (EID2: Execution.label_is exec Label.is_flushopt eid2) *)
-  (*       (OB1: Execution.ob exec eid1 eid2) *)
-  (*       (OB2: Execution.ob exec eid2 eid3): *)
-  (*   <<OB: Execution.ob exec eid1 eid3>>. *)
-  (* Proof. *)
-  (*   inv EID2. destruct l; ss. exploit flushopt_ob_po; eauto. i. *)
-  (*   unfold co2, rf2 in *. guardH OB2. *)
-  (*   obtac. *)
-  (*   all: try by rewrite EID in EID1; inv EID1; ss. *)
-  (*   all: try by rewrite EID in EID2; inv EID2; ss. *)
-  (*   all: try by destruct l; try congr; ss. *)
-  (*   - exploit RF2; eauto. i. des. congr. *)
-  (*   - exploit CO2; eauto. i. des. congr. *)
-  (*   - exploit CO2; eauto. i. des. congr. *)
-  (*   - inv H1. *)
-  (*     + eapply addr_label in H; eauto. des. inv EID2. destruct l; ss; try congr. *)
-  (*     + inv H0. exploit RF2; eauto. i. des. congr. *)
-  (*   - inv H1. *)
-  (*     + eapply data_label in H; eauto. des. inv EID2. destruct l; ss. congr. *)
-  (*     + inv H0. exploit RF2; eauto. i. des. congr. *)
-  (*   - exploit RF2; eauto. i. des. congr. *)
-  (*   - left. right. left. left. right. econs. splits; [by econs; eauto|]. etrans; eauto. *)
-  (*   - revert H. unfold ifc. condtac; ss. i. exploit rmw_spec; eauto. i. des. *)
-  (*     inv LABEL2. rewrite EID in EID0. inv EID0. des. ss. *)
-  (*   - inversion H1. unguardH OB2. obtac. *)
-  (*     all: try by rewrite EID in EID1; inv EID1; ss. *)
-  (*     all: try by rewrite EID in EID2; inv EID2; ss. *)
-  (*     all: try by destruct l2; try congr; ss. *)
-  (*     all: try by destruct l3; try congr; ss. *)
-  (*     exploit Execution.po_cl_chain. *)
-  (*     { econs. econs; try exact H1. econs 2. eauto. } *)
-  (*     intro PO_CL. *)
-  (*     right. left. econs. econs; econs; eauto. econs; eauto. econs; eauto. *)
-  (*   - inversion H1. unguardH OB2. obtac. *)
-  (*     all: try by rewrite EID in EID1; inv EID1; ss. *)
-  (*     all: try by rewrite EID in EID2; inv EID2; ss. *)
-  (*     all: try by destruct l2; try congr; ss. *)
-  (*     all: try by destruct l3; try congr; ss. *)
-  (*     exploit Execution.po_cl_chain. *)
-  (*     { econs. econs; try exact H1. econs 2. eauto. } *)
-  (*     intro PO_CL. *)
-  (*     right. right. econs. econs; econs; eauto. econs; eauto. econs; eauto. *)
-  (* Qed. *)
 
   Lemma ob_label
         p exec
@@ -1739,6 +1728,7 @@ Module Valid.
         (PRE: pre_ex p exec)
         (CO2: co2 exec)
         (RF2: rf2 exec)
+        (PF2: pf2 exec)
         (OB: Execution.ob exec eid1 eid2)
         (EID1: Execution.label eid1 exec = None):
     False.
@@ -1748,14 +1738,14 @@ Module Valid.
     all: try congr.
     all: try by exploit RF2; eauto; i; des; congr.
     all: try by exploit CO2; eauto; i; des; congr.
+    all: try by exploit PF2; eauto; i; des; congr.
     - exploit addr_label; eauto. i. des. inv EID0. congr.
     - exploit data_label; eauto. i. des. inv EID0. congr.
     - exploit ctrl_label; eauto. i. des. inv x0. congr.
     - exploit addr_label; eauto. i. des. inv EID0. congr.
     - exploit ctrl_label; eauto. i. des. inv x1. congr.
     - exploit addr_label; eauto. i. des. inv EID2. congr.
-    (* - exploit po_label_pre; try exact EID; eauto. i. des. congr. *)
-    - revert H. unfold ifc. condtac; ss. i. exploit rmw_spec; eauto. i. des. inv LABEL1. congr.
+    - revert H0. unfold ifc. condtac; ss. i. exploit rmw_spec; eauto. i. des. inv LABEL1. congr.
   Qed.
 
   Lemma ob_cycle
@@ -1763,17 +1753,17 @@ Module Valid.
         (PRE: pre_ex p exec)
         (CO2: co2 exec)
         (RF2: rf2 exec)
+        (PF2: pf2 exec)
         (CYCLE: (Execution.ob exec)⁺ eid eid):
     exists eid_nb,
-      (Execution.ob exec ∩ (Execution.label_is_rel exec Label.is_access))⁺ eid_nb eid_nb.
+      (Execution.ob exec ∩ (Execution.label_is_rel exec Label.is_access_persist))⁺ eid_nb eid_nb.
   Proof.
     exploit minimalize_cycle; eauto.
-    { instantiate (1 := Execution.label_is exec Label.is_access).
+    { instantiate (1 := Execution.label_is exec Label.is_access_persist).
       i. destruct (Execution.label b exec) eqn:LABEL.
       - destruct t; try by contradict H1; econs; eauto.
         + eapply ob_barrier_ob; eauto.
         + eapply ob_ctrl_ob; eauto.
-        + exfalso. eapply flushopt_ob; eauto.
       - exfalso. eapply ob_label; eauto.
     }
     i. des.
@@ -1783,7 +1773,6 @@ Module Valid.
       + destruct t; try by contradict x0; econs; eauto.
         * exploit barrier_ob_po; eauto. i. inv x2. lia.
         * exploit ctrl_ob_po; eauto. i. inv x2. lia.
-        * exfalso. eapply flushopt_ob; eauto.
       + exfalso. eapply ob_label; eauto.
   Qed.
 
@@ -1844,6 +1833,7 @@ Module Valid.
         (RF1: rf1 ex)
         (RF2: rf2 ex)
         (RF_WF: rf_wf ex)
+        (PF2: pf2 ex)
         (INTERNAL: acyclic (Execution.internal ex))
         (OB: Execution.ob ex eid1 eid2)
         (EID1: ex.(Execution.label_is) Label.is_read eid1)
@@ -1855,10 +1845,10 @@ Module Valid.
     all: try by etrans; eauto.
     all: try by exploit RF2; eauto; i; des; congr.
     all: try by exploit CO2; eauto; i; des; congr.
-    - inv H. rewrite EID0 in EID1. inv EID1. inv LABEL1.
-    - exploit addr_is_po; eauto. i. inv H1; ss. etrans; eauto.
+    - inv H0. rewrite EID0 in EID1. inv EID1. inv LABEL1.
+    - exploit addr_is_po; eauto. i. inv H0; ss. etrans; eauto.
       cut (Execution.po x eid2 \/ Execution.po eid2 x).
-      { i. inv H0. des; auto.
+      { i. inv H. des; auto.
         exfalso. eapply INTERNAL. econs 2.
         - econs. right. eauto.
         - exploit RF2; eauto. i. des.
@@ -1868,14 +1858,14 @@ Module Valid.
             des_ifs; ss.
           + unfold equiv_dec. unfold Z_eqdec. unfold proj_sumbool.
             des_ifs; ss. }
-      inv H0. inv H2. destruct x as [t1 e1], eid2 as [t2 e2]. ss.
+      inv H. inv H2. destruct x as [t1 e1], eid2 as [t2 e2]. ss.
       exploit RF2; eauto. i. des.
       generalize (Nat.lt_trichotomy e1 e2). i. des; try congr.
       + left. econs; eauto.
       + right. econs; eauto.
-    - exploit data_is_po; eauto. i. inv H1; ss. etrans; eauto.
+    - exploit data_is_po; eauto. i. inv H0; ss. etrans; eauto.
       cut (Execution.po x eid2 \/ Execution.po eid2 x).
-      { i. inv H0. des; auto.
+      { i. inv H. des; auto.
         exfalso. eapply INTERNAL. econs 2.
         - econs. right. eauto.
         - exploit RF2; eauto. i. des.
@@ -1885,17 +1875,18 @@ Module Valid.
             des_ifs; ss.
           + unfold equiv_dec. unfold Z_eqdec. unfold proj_sumbool.
             des_ifs; ss. }
-      inv H0. inv H2. destruct x as [t1 e1], eid2 as [t2 e2]. ss.
+      inv H. inv H2. destruct x as [t1 e1], eid2 as [t2 e2]. ss.
       exploit RF2; eauto. i. des.
       generalize (Nat.lt_trichotomy e1 e2). i. des; try congr.
       + left. econs; eauto.
       + right. econs; eauto.
     - eapply ctrl_is_po; eauto.
     - etrans; eauto. eapply addr_is_po; eauto.
-    - rewrite <- H. eapply ctrl_is_po; eauto.
-    - rewrite <- H, <- H1. eapply addr_is_po; eauto.
-    - revert H. unfold ifc. condtac; ss. eapply rmw_spec. eauto.
-    - inv H1. ss.
+    - rewrite <- H2. eapply ctrl_is_po; eauto.
+    - rewrite <- H2, <- H0. eapply addr_is_po; eauto.
+    - revert H0. unfold ifc. condtac; ss. eapply rmw_spec. eauto.
+    - inv H. ss.
+    - inv H0. obtac. destruct l0; ss. congr.
   Qed.
 
   Lemma rfi_is_po
@@ -1947,6 +1938,81 @@ Module Valid.
           destruct (equiv_dec loc loc); ss.
         * destruct (equiv_dec loc loc); ss.
       + econs 1. left. right. eauto.
+  Qed.
+
+  Lemma persist_ob_write
+        p ex
+        eid1 eid2
+        (PRE: pre_ex p ex)
+        (CO2: co2 ex)
+        (RF2: rf2 ex)
+        (OB: Execution.ob ex eid1 eid2)
+        (EID1: ex.(Execution.label_is) Label.is_flushopt eid1):
+    ex.(Execution.label_is) Label.is_write eid2.
+  Proof.
+    obtac; labtac.
+    - exploit RF2; eauto. i. des.
+      obtac. labtac.
+    - exploit RF2; eauto. i. des.
+      obtac. labtac.
+    - exploit CO2; eauto. i. des.
+      obtac. labtac.
+    - exploit addr_label; eauto. i. des. inv EID1. labtac.
+    - exploit data_label; eauto. i. des. inv EID1. labtac.
+    - exploit ctrl_label; eauto.
+    - exploit addr_label; eauto.
+    - exploit ctrl_label; eauto. i. des. inv x1. labtac.
+    - exploit addr_label; eauto. i. des. inv EID1. labtac.
+    - exploit RF2; eauto. i. des.
+      obtac. labtac.
+    - exploit RF2; eauto. i. des.
+      obtac. labtac.
+    - revert H0. unfold ifc. condtac; ss. i.
+      exploit rmw_spec; eauto. i. des.
+      obtac. labtac.
+    - exploit CO2; eauto. i. des. simtac.
+    - simtac.
+  Qed.
+
+  Lemma ob_persist_spec
+        p ex
+        eid1 eid2
+        (PRE: pre_ex p ex)
+        (CO2: co2 ex)
+        (RF2: rf2 ex)
+        (PF2: pf2 ex)
+        (OB: Execution.ob ex eid1 eid2)
+        (EID1: ex.(Execution.label_is) Label.is_flushopt eid2):
+    <<FOB: Execution.fob ex eid1 eid2>> /\
+    <<ACCESS: ex.(Execution.label_is) Label.is_access eid1>> /\
+    <<PO: Execution.po eid1 eid2>>.
+  Proof.
+    inv OB; cycle 1.
+    { obtac; [exploit CO2; eauto; i; des | clear EID2]; obtac; labtac. }
+    inv H; cycle 1.
+    { split; eauto. obtac.
+      all: splits; [simtac | eauto].
+      - inv H. ss.
+      - rewrite <- H3. ss.
+    }
+    obtac; labtac.
+    - exploit RF2; eauto. i. des.
+      obtac. labtac.
+    - exploit CO2; eauto. i. des.
+      obtac. labtac.
+    - exploit CO2; eauto. i. des.
+      obtac. labtac.
+    - inv H0.
+      + exploit addr_label; eauto. i. des. inv EID2. labtac.
+      + obtac. exploit RF2; eauto. i. des. obtac. labtac.
+    - inv H0.
+      + exploit data_label; eauto. i. des. inv EID2. labtac.
+      + obtac. exploit RF2; eauto. i. des. obtac. labtac.
+    - exploit RF2; eauto. i. des.
+      obtac. labtac.
+    - revert H0. unfold ifc. condtac; ss. i.
+      exploit rmw_spec; eauto. i. des.
+      obtac. labtac.
   Qed.
 End Valid.
 

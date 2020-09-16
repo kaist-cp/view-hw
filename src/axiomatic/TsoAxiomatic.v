@@ -954,8 +954,8 @@ Module Execution.
 
   (* let per = [D]; pf; ([FL] U ([FO]; po; [MF U SF U U])) *)
 
-  (* dom(per) <= P *)
-  (* dom(co; [P]) <= P *)
+  (* P = dom(per) *)
+  (* forall l, exists w, M(l)=Val(w) /\ (P x {w})&Loc <= co? *)
 
   Inductive po (eid1 eid2:eidT): Prop :=
   | po_intro
