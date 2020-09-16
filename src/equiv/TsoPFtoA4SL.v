@@ -774,8 +774,9 @@ Proof.
       * destruct l; ss.
       * destruct l0; ss.
   - (* mfence *)
-    inv STEP0. inv ASTATE_STEP; inv ALOCAL_STEP; ss; inv EVENT; ss. splits.
-    econs; ss.
+    inv STEP0. inv ASTATE_STEP; inv ALOCAL_STEP; ss; inv EVENT; ss; cycle 1.
+    { destruct b; ss. destruct wr; ss. }
+    splits. econs; ss.
     { econs; ss. apply L. }
     destruct L.(LC). ss. econs; ss.
     + rewrite List.app_length, Nat.add_1_r.
@@ -844,6 +845,7 @@ Proof.
         all: exploit EX2.(LABELS); eauto; ss.
         all: try by rewrite List.app_length; s; lia.
         all: rewrite List.nth_error_app2, Nat.sub_diag; ss; i; simplify; ss.
+        { destruct b; ss. destruct wr; ss. }
         destruct (Label.is_kinda_read l0) eqn:READ.
         { rewrite <- join_l. apply L. econs; eauto. left. econs. simtac. }
         destruct l0; ss.
@@ -878,8 +880,9 @@ Proof.
         rewrite <- join_r. inv L. inv LC. ss. apply LPER_END0.
         econs; eauto. econs. simtac.
   - (* sfence *)
-    inv STEP0. inv ASTATE_STEP; inv ALOCAL_STEP; ss; inv EVENT; ss. splits.
-    econs; ss.
+    inv STEP0. inv ASTATE_STEP; inv ALOCAL_STEP; ss; inv EVENT; ss.
+    { destruct b; ss. destruct wr; ss. }
+    splits. econs; ss.
     { econs; ss. apply L. }
     destruct L.(LC). ss. econs; ss.
     + rewrite List.app_length, Nat.add_1_r.
@@ -909,7 +912,7 @@ Proof.
         exploit EX2.(LABELS); eauto; ss.
         { rewrite List.app_length. s. lia. }
         rewrite List.nth_error_app2, Nat.sub_diag; ss. i. simplify.
-        destruct l; ss.
+        destruct b; ss. destruct wr; ss.
     + move VWN at bottom. des.
       eexists mloc0. split; ss.
       rewrite List.app_length, Nat.add_1_r.
@@ -938,6 +941,7 @@ Proof.
         all: exploit EX2.(LABELS); eauto; ss.
         all: try by rewrite List.app_length; s; lia.
         all: rewrite List.nth_error_app2, Nat.sub_diag; ss; i; simplify; ss.
+        { destruct b; ss. destruct wr; ss. }
         destruct (Label.is_kinda_read l0) eqn:READ.
         { rewrite <- join_l. apply L. econs; eauto. left. simtac. }
         destruct l0; ss.

@@ -298,10 +298,14 @@ Section Local.
       (EVENT: event = Event.read false true ord vloc res)
       (STEP: rmw_failure vloc vold res old_ts lc1 mem lc2)
   | step_mfence
-      (EVENT: event = Event.barrier (Barrier.dmb false false true true))
+      b
+      (EVENT: event = Event.barrier b)
+      (BARRIER: Barrier.is_mfence b)
       (STEP: mfence lc1 lc2)
   | step_sfence
-      (EVENT: event = Event.barrier (Barrier.dmb false false false true))
+      b
+      (EVENT: event = Event.barrier b)
+      (BARRIER: Barrier.is_sfence b)
       (STEP: sfence lc1 lc2)
   | step_flush
       vloc
@@ -338,11 +342,15 @@ Section Local.
       (STEP: rmw_failure vloc vold res old_ts lc1 mem1 lc2)
       (MEM: mem2 = mem1)
   | view_step_mfence
-      (EVENT: event = Event.barrier (Barrier.dmb false false true true))
+      b
+      (EVENT: event = Event.barrier b)
+      (BARRIER: Barrier.is_mfence b)
       (STEP: mfence lc1 lc2)
       (MEM: mem2 = mem1)
   | view_step_sfence
-      (EVENT: event = Event.barrier (Barrier.dmb false false false true))
+      b
+      (EVENT: event = Event.barrier b)
+      (BARRIER: Barrier.is_sfence b)
       (STEP: sfence lc1 lc2)
       (MEM: mem2 = mem1)
   | view_step_flush

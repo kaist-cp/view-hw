@@ -894,15 +894,13 @@ Proof.
       eapply sim_last; eauto.
       inv EXEC_PF0. rewrite MEM in *. ss.
     }
-    esplits.
-    - econs. etrans; eauto.
-    - ss.
-    - ii. specialize (PMEM loc). inv PMEM.
-      inv EQUIV. econs.
-      + rewrite <- MEM. eauto.
-      + intros tid sl. i.
-        specialize (LATEST tid sl). rewrite <- TPOOL in FIND. eapply LATEST in FIND.
-        rewrite <- MEM. ss.
+    esplits; [econs; etrans; eauto | ss |].
+    ii. specialize (PMEM loc). inv PMEM.
+    inv EQUIV. econs.
+    { rewrite <- MEM. eauto. }
+    intros tid sl. i.
+    specialize (LATEST tid sl). rewrite <- TPOOL in FIND. eapply LATEST in FIND.
+    rewrite <- MEM. ss.
   }
 
   inv EXEC_PF. specialize (init_sim p). i. des.
