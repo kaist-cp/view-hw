@@ -624,15 +624,19 @@ Module ALocal.
                mk
                  (alocal1.(labels) ++ [Label.update vloc.(ValA.val) voldv.(ValA.val) vnewv.(ValA.val)]))
   | step_mfence
-      (EVENT: event = Event.barrier (Barrier.dmb false false true true))
+      b
+      (EVENT: event = Event.barrier b)
+      (BARRIER: Barrier.is_mfence b)
       (ALOCAL: alocal2 =
                mk
-                 (alocal1.(labels) ++ [Label.barrier (Barrier.dmb false false true true)]))
+                 (alocal1.(labels) ++ [Label.barrier b]))
   | step_sfence
-      (EVENT: event = Event.barrier (Barrier.dmb false false false true))
+      b
+      (EVENT: event = Event.barrier b)
+      (BARRIER: Barrier.is_sfence b)
       (ALOCAL: alocal2 =
                mk
-                 (alocal1.(labels) ++ [Label.barrier (Barrier.dmb false false false true)]))
+                 (alocal1.(labels) ++ [Label.barrier b]))
   | step_flush
       vloc
       (EVENT: event = Event.flush vloc)

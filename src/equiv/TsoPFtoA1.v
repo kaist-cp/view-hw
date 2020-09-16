@@ -1261,7 +1261,8 @@ Proof.
         all: try apply Nat.eqb_eq in X; ss; try lia.
   }
   { (* mfence *)
-    inv LOCAL; ss.
+    inv LOCAL; ss; cycle 1.
+    { destruct b; destruct b0; ss. inv EVENT. destruct wr0; destruct ww0; ss. }
     inv STEP. inv ASTATE_STEP. ss. inv EVENT. econs; ss.
     - i. exploit IH.(WPROP1); eauto. s. i. des; [left|right]; esplits; eauto.
       eapply nth_error_app_mon. eauto.
@@ -1294,6 +1295,7 @@ Proof.
   }
   { (* sfence *)
     inv LOCAL; ss.
+    { destruct b; destruct b0; ss. inv EVENT. destruct wr0; destruct ww0; ss. }
     inv STEP. inv ASTATE_STEP. ss. inv EVENT. econs; ss.
     - i. exploit IH.(WPROP1); eauto. s. i. des; [left|right]; esplits; eauto.
       eapply nth_error_app_mon. eauto.
