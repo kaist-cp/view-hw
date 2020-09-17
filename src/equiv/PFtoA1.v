@@ -978,15 +978,49 @@ Proof.
         assert (H: List.nth_error (ALocal.labels alc1) (length (ALocal.labels alc1)) <> None) by (ii; congr).
         apply List.nth_error_Some in H. lia.
       + eapply nth_error_app_mon. eauto.
-    - admit.
-    - admit.
-    - i. apply AExecUnit.label_is_mon. eapply IH.(COVPROP); eauto.
-    - i. apply AExecUnit.label_is_mon. eapply IH.(VEXTPROP); eauto.
-    - i. apply nth_error_snoc_inv in LABEL1. des; cycle 1.
-      { subst. inv REL. inv X. }
-      apply nth_error_snoc_inv in LABEL2. des; cycle 1.
-      { subst. inv REL. inv Y. }
-      eapply IH.(PO); eauto.
+    - i. des. apply nth_error_snoc_inv in GET. des.
+      + exploit IH.(FPROP1); eauto. i. des. esplits; eauto.
+        des_ifs. apply Nat.eqb_eq in Heq. subst. unfold ALocal.next_eid in *. lia.
+      + des_ifs; cycle 1.
+        { apply Nat.eqb_neq in Heq. unfold ALocal.next_eid in *. congr. }
+        ss. eqvtac. rewrite fun_add_spec in *. condtac; [|congr].
+        inv VLOC. inv VAL.
+        exploit Memory.latest_ts_spec. i. des.
+        exploit Memory.read_get_msg; eauto. i. des; esplits; eauto; [left|right]; eauto.
+    - i. des_ifs.
+      + split; ss.
+        apply Nat.eqb_eq in Heq. subst.
+        rewrite fun_add_spec in *. des_ifs; [|congr].
+        inv VLOC. inv VAL. ss.
+        exploit Memory.latest_ts_spec. i. des.
+        exploit Memory.read_get_msg; eauto. i. des; esplits; ss.
+        all: try by rewrite List.nth_error_app2, Nat.sub_diag; [|refl]; ss; eauto with tso.
+        all: eauto with axm.
+        * left. eauto.
+        * right. eauto.
+      + exploit IH.(FPROP2); eauto. s. i. des; esplits; eauto with axm.
+        eapply nth_error_app_mon; eauto.
+    - unfold ALocal.next_eid in *. s. i. des_ifs.
+      { apply Nat.eqb_eq in Heq. subst. econs; eauto.
+        - rewrite List.nth_error_app2, Nat.sub_diag; [|refl]. ss.
+        - econs; ss.
+      }
+      apply AExecUnit.label_is_mon. eapply IH.(COVPROP); eauto.
+    - unfold ALocal.next_eid in *. s. i. des_ifs.
+      { apply Nat.eqb_eq in Heq. subst. econs; eauto.
+        - rewrite List.nth_error_app2, Nat.sub_diag; [|refl]. ss.
+        - econs; ss.
+      }
+      apply AExecUnit.label_is_mon. eapply IH.(VEXTPROP); eauto.
+    - unfold ALocal.next_eid in *.
+      i. apply nth_error_snoc_inv in LABEL1. apply nth_error_snoc_inv in LABEL2. des.
+      + repeat condtac; ss.
+        all: try apply Nat.eqb_eq in X; ss; subst; try lia.
+        all: try apply Nat.eqb_eq in X0; ss; subst; try lia.
+        eapply IH.(PO); eauto.
+      + lia.
+      + subst. repeat condtac; ss.
+      + subst. repeat condtac; ss.
   }
   Grab Existential Variables.
   all: auto. (* tid *)
