@@ -20,6 +20,7 @@ Require Import PromisingArch.lib.Lang.
 
 Set Implicit Arguments.
 
+Create HintDb axm discriminated.
 
 Module Label.
   Inductive t :=
@@ -146,6 +147,22 @@ Module Label.
     | _ => false
     end.
 
+  Lemma read_is_access
+        l
+        (RD: is_read l):
+    is_access l.
+  Proof.
+    destruct l; ss.
+  Qed.
+
+  Lemma write_is_access
+        l
+        (WR: is_write l):
+    is_access l.
+  Proof.
+    destruct l; ss.
+  Qed.
+
   Lemma read_is_reading ex ord loc val:
     is_reading loc (read ex ord loc val).
   Proof.
@@ -170,6 +187,84 @@ Module Label.
     s. destruct (equiv_dec loc loc); ss. exfalso. apply c. ss.
   Qed.
 
+  Lemma reading_is_read
+        loc l
+        (LABEL: is_reading loc l):
+    is_read l.
+  Proof.
+    destruct l; ss.
+  Qed.
+
+  Lemma writing_is_write
+        loc l
+        (LABEL: is_writing loc l):
+    is_write l.
+  Proof.
+    destruct l; ss.
+  Qed.
+
+  Lemma reading_is_accessing
+        loc l
+        (LABEL: is_reading loc l):
+    is_accessing loc l.
+  Proof.
+    destruct l; ss.
+  Qed.
+
+  Lemma writing_is_accessing
+        loc l
+        (LABEL: is_writing loc l):
+    is_accessing loc l.
+  Proof.
+    destruct l; ss.
+  Qed.
+
+  Lemma flushopting_is_flushopt
+        loc l
+        (LABEL: is_flushopting loc l):
+    is_flushopt l.
+  Proof.
+    destruct l; ss.
+  Qed.
+
+  Lemma access_is_access_persist
+        l
+        (LABEL: is_access l):
+    is_access_persist l.
+  Proof.
+    destruct l; ss.
+  Qed.
+
+  Lemma flushopt_is_access_persist
+        l
+        (LABEL: is_flushopt l):
+    is_access_persist l.
+  Proof.
+    destruct l; ss.
+  Qed.
+
+  Lemma flushopt_is_flushopting loc:
+    is_flushopting loc (flushopt loc).
+  Proof.
+    s. destruct (equiv_dec loc loc); ss. exfalso. apply c. ss.
+  Qed.
+
+  Lemma flushopting_is_access_persisting
+        loc l
+        (LABEL: is_flushopting loc l):
+    is_access_persisting loc l.
+  Proof.
+    destruct l; ss.
+  Qed.
+
+  Lemma accessing_is_access_persisting
+        loc l
+        (LABEL: is_accessing loc l):
+    is_access_persisting loc l.
+  Proof.
+    destruct l; ss.
+  Qed.
+
   Lemma is_writing_inv
         loc l
         (WRITING: is_writing loc l):
@@ -187,6 +282,14 @@ Module Label.
   Proof.
     destruct l; ss. destruct (equiv_dec loc0 loc); ss. inv e. eauto.
   Qed.
+
+  Hint Resolve
+    read_is_access read_is_reading read_is_accessing reading_is_read reading_is_accessing
+    write_is_access write_is_writing write_is_accessing writing_is_write writing_is_accessing
+    access_is_access_persist accessing_is_access_persisting
+    flushopting_is_flushopt flushopt_is_flushopting
+    flushopt_is_access_persist flushopting_is_access_persisting
+    : axm.
 End Label.
 
 Module ALocal.
@@ -1035,15 +1138,15 @@ Module Execution.
   Ltac simtac :=
   repeat match goal with
            | [H: _ |- (_⨾ _) _ _] => econs
-           | [H: _ |- ⦗Execution.label_is _ _⦘ _ _] => econs; eauto
-           | [H: _ |- Execution.label_is _ _ _] => eauto
-           | [H: _ |- Execution.label_rel _ _ _ _] => econs; eauto
+           | [H: _ |- ⦗Execution.label_is _ _⦘ _ _] => econs; eauto with axm
+           | [H: _ |- Execution.label_is _ _ _] => eauto with axm
+           | [H: _ |- Execution.label_rel _ _ _ _] => econs; eauto with axm
            | [H: _ |- rc _ _ /\ _] => econs; eauto
            | [H: _ |- Execution.po _ _ /\ _] => econs; eauto
            | [H: _ |- _ /\ Execution.po _ _] => econs; eauto
            | [H: _ |- Execution.po_cl _ _ _ /\ _] => econs; eauto
            | [H: _ |- Execution.pf _ _ _ /\ _] => econs; eauto
-           | [H: _ |- ⦗Execution.label_is _ _⦘ _ _ /\ _] => econs; econs; eauto
+           | [H: _ |- ⦗Execution.label_is _ _⦘ _ _ /\ _] => econs; econs; eauto with axm
           end.
 
   Ltac labtac :=
