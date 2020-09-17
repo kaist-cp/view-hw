@@ -544,14 +544,14 @@ Qed.
 
 Definition sim_local_per ex loc :=
   (sim_local_lper ex loc ⨾
-   ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_full)⦘ ⨾
+   ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dsb_full)⦘ ⨾
    Execution.po).
 
 Lemma sim_local_per_step ex loc:
   sim_local_per ex loc =
   (sim_local_per ex loc ∪
    (sim_local_lper ex loc ⨾
-    ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_full)⦘)) ⨾
+    ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dsb_full)⦘)) ⨾
   Execution.po_adj.
 Proof.
   unfold sim_local_per.
@@ -591,7 +591,7 @@ Qed.
 Definition sim_local_per_end ex loc :=
   (⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘ ⨾
    Execution.po ⨾
-   ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_full)⦘ ⨾
+   ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dsb_full)⦘ ⨾
    Execution.po).
 
 Lemma sim_local_per_end_step ex loc:
@@ -599,7 +599,7 @@ Lemma sim_local_per_end_step ex loc:
   (sim_local_per_end ex loc ∪
    ((⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘ ⨾
      Execution.po ⨾
-     ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_full)⦘))) ⨾
+     ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dsb_full)⦘))) ⨾
   Execution.po_adj.
 Proof.
   unfold sim_local_per_end.
