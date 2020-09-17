@@ -308,7 +308,7 @@ Inductive persisted_event_view (ex:Execution.t) (ob: list eidT) (loc:Loc.t) (vie
 .
 Hint Constructors persisted_event_view.
 
-Lemma label_read_mem_of_ex
+Lemma label_mem_of_ex
       eid ex ob l
       (OB: Permutation ob (Execution.eids ex))
       (LABEL: Execution.label eid ex = Some l):
@@ -390,7 +390,7 @@ Lemma read_msg_exist_ts
                         (Local.read_view (Local.coh local loc) ts).(View.ts)>>.
 Proof.
   exploit EX.(Valid.RF1); eauto.
-  inv READ. exploit label_read_mem_of_ex; eauto. i. des.
+  inv READ. exploit label_mem_of_ex; eauto. i. des.
   { (* read from uninit *)
     subst. exists 0.
     assert (FWD: Local.coh local loc = View.mk bot bot).
@@ -595,7 +595,7 @@ Proof.
     exploit LABEL.
     { rewrite List.nth_error_app2; [|refl]. rewrite Nat.sub_diag. ss. }
     intro LABEL_LEN.
-    exploit label_read_mem_of_ex; eauto. i. des.
+    exploit label_mem_of_ex; eauto. i. des.
 
     assert (SIM_VRN: sim_view ex ob
                               (eq (tid, ALocal.next_eid alocal1))
@@ -1091,7 +1091,7 @@ Proof.
     exploit LABEL.
     { rewrite List.nth_error_app2; [|refl]. rewrite Nat.sub_diag. ss. }
     intro LABEL_LEN.
-    exploit label_read_mem_of_ex; eauto. i. des.
+    exploit label_mem_of_ex; eauto. i. des.
     exploit read_msg_exist_ts; eauto with tso. intro X. destruct X as [n]. des.
 
     assert (SIM_VRN: sim_view ex ob
@@ -1847,7 +1847,7 @@ Proof.
       }
       inv PVIEW.
       { exfalso. eapply NPER. econs; eauto. }
-      obtac. exploit label_read_mem_of_ex; try exact EID2; eauto. i. des.
+      obtac. exploit label_mem_of_ex; try exact EID2; eauto. i. des.
       exploit EX.(Valid.CO1).
       { esplits; econs; [try exact EID3 | | try exact EID2|]; eauto with tso. }
       i. des.
@@ -1868,29 +1868,29 @@ Proof.
       | [H: sim_local_coh _ _ _ _ |- _] => inv H
       | [H: rc _ _ |- _] => inv H
       end; obtac).
-    + exploit label_read_mem_of_ex; try exact EID; eauto. i. des.
+    + exploit label_mem_of_ex; try exact EID; eauto. i. des.
       esplits; eauto with tso; cycle 1.
       { i. obtac. rewrite EID in EID2. inv EID2. destruct l2; ss. }
       eapply view_of_eid_ob; eauto.
       left. right. repeat left. simtac.
-    + exploit label_read_mem_of_ex; try exact EID1; eauto. i. des.
+    + exploit label_mem_of_ex; try exact EID1; eauto. i. des.
       esplits; eauto with tso.
       eapply view_of_eid_ob; eauto.
       left. right. repeat left. simtac.
-    + exploit label_read_mem_of_ex; try exact EID1; eauto. i. des.
+    + exploit label_mem_of_ex; try exact EID1; eauto. i. des.
       esplits; eauto with tso.
       eapply view_of_eid_ob; eauto. destruct l2; ss.
       * left. right. right. simtac. econs; eauto with tso.
       * left. right. left. right. econs. econs; [left|]; simtac.
-    + exploit label_read_mem_of_ex; try exact EID1; eauto. i. des.
+    + exploit label_mem_of_ex; try exact EID1; eauto. i. des.
       esplits; eauto with tso.
       exploit EX.(Valid.RF2); eauto. i. des. obtac.
-      exploit label_read_mem_of_ex; try exact EID4; eauto. i. des.
+      exploit label_mem_of_ex; try exact EID4; eauto. i. des.
       etrans.
       { eapply view_of_eid_ob; eauto. repeat left. econs; eauto. }
       eapply view_of_eid_ob; eauto.
       left. right. left. right. econs. econs; [left|]; simtac.
-    + exploit label_read_mem_of_ex; try exact EID1; eauto. i. des.
+    + exploit label_mem_of_ex; try exact EID1; eauto. i. des.
       esplits; eauto with tso.
       eapply view_of_eid_ob; eauto. inv H.
       { obtac. left. right. left. right. econs. econs; [left|]; simtac. }
