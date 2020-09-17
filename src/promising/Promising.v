@@ -386,7 +386,6 @@ Section Local.
   | flushopt_intro
       loc view_post
       (LOC: loc = vloc.(ValA.val))
-      (* (VIEW_POST: view_post = View.mk (lc1.(coh) loc).(View.ts) bot) *)
       (VIEW_POST: view_post = join (lc1.(coh) loc) lc1.(vpn))
       (LC2: lc2 =
             mk
