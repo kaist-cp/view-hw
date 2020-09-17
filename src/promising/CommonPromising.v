@@ -300,6 +300,15 @@ Module Memory.
       exploit latest_ts_spec. i. des. rewrite LE. lia.
   Qed.
 
+  Lemma latest_ts_join
+        loc ts1 ts2 mem:
+    latest_ts loc (join ts1 ts2) mem = join (latest_ts loc ts1 mem) (latest_ts loc ts2 mem).
+  Proof.
+    destruct (le_dec ts1 ts2).
+    - repeat rewrite max_r; ss. eapply latest_ts_mon; eauto.
+    - repeat rewrite max_l; try lia. eapply latest_ts_mon. lia.
+  Qed.
+
   Lemma latest_ts_latest
         loc from to mem
         (LATEST: latest_ts loc to mem = from):
