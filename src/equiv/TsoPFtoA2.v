@@ -53,8 +53,8 @@ Inductive pf_gen (ws: IdMap.t (list (nat -> option (Loc.t * Time.t)))) (fs: IdMa
     w wl ts1 loc1 f fl loc2 ts2
     (WS: IdMap.find (fst eid1) ws = Some (w::wl))
     (W: w (snd eid1) = Some (loc1, ts1))
-    (RS: IdMap.find (fst eid2) fs = Some (f::fl))
-    (R: f (snd eid2) = Some (loc2, ts2))
+    (FS: IdMap.find (fst eid2) fs = Some (f::fl))
+    (F: f (snd eid2) = Some (loc2, ts2))
     (LOC: loc1 = loc2)
     (TS: ts1 = ts2)
 .
@@ -375,7 +375,7 @@ Proof.
   - left. esplits; subst; eauto.
     ii. inv H. inv H2.
     destruct x as [tid2 eid2]. ss. simplify.
-    rewrite R in x0. inv x0.
+    rewrite F in x0. inv x0.
     generalize (SIM tid2). intro SIM1. inv SIM1; try congr.
     simplify.
     exploit sim_trace_last; try exact REL0; eauto. i. des. simplify.
@@ -440,7 +440,7 @@ Lemma sim_traces_pf2
               atrs PRE.(Valid.aeus)):
   forall eid1 eid2 (PF: (pf_gen ws fs) eid2 eid1),
   exists loc,
-    <<READ: ex.(Execution.label_is) (Label.is_persisting loc) eid1>> /\
+    <<PERSIST: ex.(Execution.label_is) (Label.is_persisting loc) eid1>> /\
     <<WRITE: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid2>>.
 Proof.
   i. inv PF. destruct eid1 as [tid1 eid1], eid2 as [tid2 eid2]. ss.
