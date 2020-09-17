@@ -755,6 +755,7 @@ Lemma sim_traces_sim_ex_step
     (FIND_ATR: IdMap.find tid atrs = Some atr)
     (FIND_WL: IdMap.find tid ws = Some wl)
     (FIND_RL: IdMap.find tid rs = Some rl)
+    (FIND_FL: IdMap.find tid fs = Some fl)
     (FIND_COVL: IdMap.find tid covs = Some covl)
     (FIND_VEXTL: IdMap.find tid vexts = Some vextl)
     (AEU: lastn (S n) atr = aeu2 :: aeu1 :: atr')

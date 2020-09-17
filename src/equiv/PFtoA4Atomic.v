@@ -31,10 +31,10 @@ Set Implicit Arguments.
 
 
 Lemma sim_traces_sim_th'_atomic
-      p trs atrs ws rs covs vexts
+      p trs atrs ws rs fs covs vexts
       m ex
       (STEP: Machine.pf_exec p m)
-      (SIM: sim_traces p m.(Machine.mem) trs atrs ws rs covs vexts)
+      (SIM: sim_traces p m.(Machine.mem) trs atrs ws rs fs covs vexts)
       (PRE: Valid.pre_ex p ex)
       (CO: ex.(Execution.co) = co_gen ws)
       (RF: ex.(Execution.rf) = rf_gen ws rs)
@@ -49,18 +49,20 @@ Lemma sim_traces_sim_th'_atomic
       (ATR: IdMap.Forall2
               (fun _ atr aeu => exists l, atr = aeu :: l)
               atrs (Valid.aeus PRE)):
-  forall tid tr atr wl rl covl vextl
-    n eu1 eu2 tr' aeu1 aeu2 atr' w1 w2 wl' r1 r2 rl' cov1 cov2 covl' vext1 vext2 vextl'
+  forall tid tr atr wl rl fl covl vextl
+    n eu1 eu2 tr' aeu1 aeu2 atr' w1 w2 wl' r1 r2 rl' f1 f2 fl' cov1 cov2 covl' vext1 vext2 vextl'
     (FIND_TR: IdMap.find tid trs = Some tr)
     (FIND_ATR: IdMap.find tid atrs = Some atr)
     (FIND_WL: IdMap.find tid ws = Some wl)
     (FIND_RL: IdMap.find tid rs = Some rl)
+    (FIND_FL: IdMap.find tid fs = Some fl)
     (FIND_COVL: IdMap.find tid covs = Some covl)
     (FIND_VEXTL: IdMap.find tid vexts = Some vextl)
     (EU: lastn (S n) tr = eu2 :: eu1 :: tr')
     (AEU: lastn (S n) atr = aeu2 :: aeu1 :: atr')
     (WL: lastn (S n) wl = w2 :: w1 :: wl')
     (RL: lastn (S n) rl = r2 :: r1 :: rl')
+    (FL: lastn (S n) fl = f2 :: f1 :: fl')
     (COV: lastn (S n) covl = cov2 :: cov1 :: covl')
     (VEXT: lastn (S n) vextl = vext2 :: vext1 :: vextl')
     (SIM_TH': sim_th' tid m.(Machine.mem) ex (v_gen vexts) eu1 aeu1),
@@ -121,8 +123,8 @@ Proof.
     destruct L1.(AEU_WF). ss. exploit RMW2; eauto. i. des.
     assert (List.nth_error (ALocal.labels alc1) (length (ALocal.labels alc1)) <> None).
     { ii. congr. }
-    rewrite List.nth_error_Some in H9. clear - H9. lia. }
-  inv H1. rewrite <- H5 in H9. inv H9.
+    rewrite List.nth_error_Some in H10. clear - H10. lia. }
+  inv H1. rewrite <- H5 in H10. inv H10.
   assert (LOC: Exbank.loc eb = ValA.val vloc).
   { assert (SLW: sim_local_weak lc1 alc1).
     { clear - TRACE. inv TRACE; ss.
@@ -185,16 +187,16 @@ Proof.
   unfold Memory.get_msg in x5. ss.
   exploit EX1; try exact x5; eauto.
   { inv H.
-    - inv H1. des. inv REL1. inv H11.
+    - inv H1. des. inv REL1. inv H12.
       { rewrite VIEW. ss. }
       inv EID0. exploit RF_WF; [exact H|exact REL1|]. i. subst.
       exploit sim_traces_vext_co; try exact H1; eauto. i.
       unfold v_gen in x1. ss.
-      rewrite <- H8 in x1. rewrite x2 in x1.
+      rewrite <- H9 in x1. rewrite x2 in x1.
       eapply le_lt_trans; eauto.
-    - inv H1. inv H9. inv H1. inv REL1. inv H13.
+    - inv H1. inv H10. inv H1. inv REL1. inv H14.
       { rewrite VIEW. ss. }
-      exfalso. apply H12. unfold codom_rel.
+      exfalso. apply H13. unfold codom_rel.
       inv EID0. esplits; eauto. }
   { move Y at bottom. rewrite EX2.(XVEXT) in Y; cycle 1.
     { ss. rewrite List.app_length. ss. }
@@ -203,7 +205,7 @@ Proof.
     rewrite fun_add_spec in Y.
     destruct (equiv_dec (ValA.val vloc) (ValA.val vloc)) eqn:Heq1; cycle 1.
     { exfalso. apply c. ss. }
-    unfold v_gen in Y. ss. rewrite <- H8 in Y. rewrite <- x2.
+    unfold v_gen in Y. ss. rewrite <- H9 in Y. rewrite <- x2.
     apply Nat.lt_le_incl. auto. }
   { ss. split.
     - exploit EX2.(XW); eauto.

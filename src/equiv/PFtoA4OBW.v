@@ -30,10 +30,10 @@ Set Implicit Arguments.
 
 
 Lemma sim_traces_sim_th'_ob_write
-      p trs atrs ws rs covs vexts
+      p trs atrs ws rs fs covs vexts
       m ex
       (STEP: Machine.pf_exec p m)
-      (SIM: sim_traces p m.(Machine.mem) trs atrs ws rs covs vexts)
+      (SIM: sim_traces p m.(Machine.mem) trs atrs ws rs fs covs vexts)
       (PRE: Valid.pre_ex p ex)
       (CO: ex.(Execution.co) = co_gen ws)
       (RF: ex.(Execution.rf) = rf_gen ws rs)
@@ -48,18 +48,20 @@ Lemma sim_traces_sim_th'_ob_write
       (ATR: IdMap.Forall2
               (fun _ atr aeu => exists l, atr = aeu :: l)
               atrs (Valid.aeus PRE)):
-  forall tid tr atr wl rl covl vextl
-    n eu1 eu2 tr' aeu1 aeu2 atr' w1 w2 wl' r1 r2 rl' cov1 cov2 covl' vext1 vext2 vextl'
+  forall tid tr atr wl rl fl covl vextl
+    n eu1 eu2 tr' aeu1 aeu2 atr' w1 w2 wl' r1 r2 rl' f1 f2 fl' cov1 cov2 covl' vext1 vext2 vextl'
     (FIND_TR: IdMap.find tid trs = Some tr)
     (FIND_ATR: IdMap.find tid atrs = Some atr)
     (FIND_WL: IdMap.find tid ws = Some wl)
     (FIND_RL: IdMap.find tid rs = Some rl)
+    (FIND_FL: IdMap.find tid fs = Some fl)
     (FIND_COVL: IdMap.find tid covs = Some covl)
     (FIND_VEXTL: IdMap.find tid vexts = Some vextl)
     (EU: lastn (S n) tr = eu2 :: eu1 :: tr')
     (AEU: lastn (S n) atr = aeu2 :: aeu1 :: atr')
     (WL: lastn (S n) wl = w2 :: w1 :: wl')
     (RL: lastn (S n) rl = r2 :: r1 :: rl')
+    (FL: lastn (S n) fl = f2 :: f1 :: fl')
     (COV: lastn (S n) covl = cov2 :: cov1 :: covl')
     (VEXT: lastn (S n) vextl = vext2 :: vext1 :: vextl')
     (SIM_TH': sim_th' tid m.(Machine.mem) ex (v_gen vexts) eu1 aeu1),
@@ -93,7 +95,7 @@ Proof.
   all: exploit LABELS; eauto; ss.
   all: try by clear; rewrite List.app_length; s; lia.
   all: intro NTH; apply nth_error_snoc_inv_last in NTH; inv NTH.
-  rewrite EU, AEU, WL, RL, COV, VEXT in SIMTR.
+  rewrite EU, AEU, WL, RL, FL, COV, VEXT in SIMTR.
   exploit sim_trace_sim_th; try exact SIMTR; eauto. intro L'.
   inv RES. destruct res1. ss. subst.
   exploit L'.(WPROP2); ss.
@@ -112,9 +114,8 @@ Proof.
   inv STEP0. ss. subst. inv LOCAL0; inv EVENT; inv STEP0; ss.
   move OB at bottom. unfold ob' in OB. des_union.
   - (* rfe *)
-    inv H1. exploit RF2; eauto. i. des. congr.
+    inv H. exploit RF2; eauto. i. des. congr.
   - (* dob *)
-    rename H1 into H.
     unfold Execution.dob in H. rewrite ? seq_assoc in *. des_union.
     + inv H1. des. inv H1; cycle 1.
       { inv H2. exploit RF2; eauto. i. des.  congr. }
@@ -168,12 +169,10 @@ Proof.
       inv WRITABLE. ss. eapply Nat.le_lt_trans; [|exact EXT].
       s. rewrite <- join_r, <- join_r, <- join_l. ss.
   - (* aob *)
-    rename H into H1.
     unfold Execution.aob in H1. rewrite ? seq_assoc in *.
     inv H1. des. inv H. des. inv H2. inv H1. guardH H2.
     inv H4. exploit RF2; eauto. i. des. congr.
   - (* bob *)
-    rename H1 into H.
     unfold Execution.bob in H. rewrite ? seq_assoc in *. des_union.
     + inv H1. des. inv H1. inv H4. destruct l0; ss. congr.
     + eapply Nat.le_lt_trans; [apply L.(LC).(VWN)|]; ss; cycle 1.
@@ -245,18 +244,7 @@ Proof.
         exploit LABELS_REV; eauto; ss.
         { apply nth_error_app_mon. eauto. }
         rewrite LABEL2. intro Y. inv Y. ss.
-      * eapply Nat.le_lt_trans; cycle 1.
-        { eapply Nat.lt_le_trans; try eapply x0. apply Memory.latest_ts_spec. }
-        rewrite EX2.(XVEXT); ss; cycle 1.
-        { rewrite List.app_length. s. clear -N. lia. }
-        condtac.
-        { apply Nat.eqb_eq in X0. clear -N X0. lia. }
-        destruct (le_lt_dec (vext1 eid1) 0); ss.
-        exploit sim_trace_sim_th; try exact TRACE; eauto. intro L1.
-        exploit L1.(VEXTPROP); eauto. s. i. inv x3.
-        exploit LABELS_REV; eauto; ss.
-        { apply nth_error_app_mon. eauto. }
-        rewrite LABEL2. intro Y. inv Y. ss.
+      * obtac. destruct l0; ss; congr.
     + destruct (equiv_dec arch riscv) eqn:Z; ss.
       rewrite fun_add_spec. condtac; [|congr].
       exploit Valid.rmw_is_po; eauto. destruct eid1. intro Y. inv Y. ss. subst.
@@ -275,11 +263,4 @@ Proof.
       inv WRITABLE. eapply Nat.le_lt_trans; [|apply EXT]. s.
       rewrite <- join_r, <- join_r, <- join_r, <- join_r, <- join_r, <- join_r, <- join_l.
       rewrite Z, <- H. s. apply REL1. ss.
-  - (* pob *)
-    unfold Execution.pob in H. rewrite ? seq_assoc in *.
-    inv H.
-    + inv H1. des. inv H1. inv H4.
-      destruct l0; ss. congr.
-    + inv H1. des. inv H1. inv H4.
-      destruct l0; ss. congr.
 Qed.

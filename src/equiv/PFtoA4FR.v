@@ -30,10 +30,10 @@ Set Implicit Arguments.
 
 
 Lemma sim_traces_sim_th'_fr
-      p trs atrs ws rs covs vexts
+      p trs atrs ws rs fs covs vexts
       m ex
       (STEP: Machine.pf_exec p m)
-      (SIM: sim_traces p m.(Machine.mem) trs atrs ws rs covs vexts)
+      (SIM: sim_traces p m.(Machine.mem) trs atrs ws rs fs covs vexts)
       (PRE: Valid.pre_ex p ex)
       (CO: ex.(Execution.co) = co_gen ws)
       (RF: ex.(Execution.rf) = rf_gen ws rs)
@@ -48,18 +48,20 @@ Lemma sim_traces_sim_th'_fr
       (ATR: IdMap.Forall2
               (fun _ atr aeu => exists l, atr = aeu :: l)
               atrs (Valid.aeus PRE)):
-  forall tid tr atr wl rl covl vextl
-    n eu1 eu2 tr' aeu1 aeu2 atr' w1 w2 wl' r1 r2 rl' cov1 cov2 covl' vext1 vext2 vextl'
+  forall tid tr atr wl rl fl covl vextl
+    n eu1 eu2 tr' aeu1 aeu2 atr' w1 w2 wl' r1 r2 rl' f1 f2 fl' cov1 cov2 covl' vext1 vext2 vextl'
     (FIND_TR: IdMap.find tid trs = Some tr)
     (FIND_ATR: IdMap.find tid atrs = Some atr)
     (FIND_WL: IdMap.find tid ws = Some wl)
     (FIND_RL: IdMap.find tid rs = Some rl)
+    (FIND_FL: IdMap.find tid fs = Some fl)
     (FIND_COVL: IdMap.find tid covs = Some covl)
     (FIND_VEXTL: IdMap.find tid vexts = Some vextl)
     (EU: lastn (S n) tr = eu2 :: eu1 :: tr')
     (AEU: lastn (S n) atr = aeu2 :: aeu1 :: atr')
     (WL: lastn (S n) wl = w2 :: w1 :: wl')
     (RL: lastn (S n) rl = r2 :: r1 :: rl')
+    (FL: lastn (S n) fl = f2 :: f1 :: fl')
     (COV: lastn (S n) covl = cov2 :: cov1 :: covl')
     (VEXT: lastn (S n) vextl = vext2 :: vext1 :: vextl')
     (SIM_TH': sim_th' tid m.(Machine.mem) ex (v_gen vexts) eu1 aeu1),

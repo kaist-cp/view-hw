@@ -29,7 +29,7 @@ Set Implicit Arguments.
 
 
 Definition ob' (ex: Execution.t): relation eidT :=
-  Execution.rfe ex ∪ Execution.dob ex ∪ Execution.aob ex ∪ Execution.bob ex ∪ Execution.pob ex.
+  Execution.rfe ex ∪ Execution.dob ex ∪ Execution.aob ex ∪ Execution.bob ex.
 
 Ltac des_union :=
   repeat
@@ -43,25 +43,27 @@ Ltac des_union :=
 Lemma ob_ob'
       ex eid1 eid2:
   Execution.ob ex eid1 eid2 <->
-  (Execution.fr ex ∪ ex.(Execution.co) ∪ ob' ex) eid1 eid2.
+  (Execution.fr ex ∪ ex.(Execution.co) ∪ Execution.fob ex ∪ Execution.fp ex ∪ ob' ex) eid1 eid2.
 Proof.
   split; i.
   - des_union.
-    + right. left. left. left. left. auto.
-    + left. left. auto.
-    + left. right. auto.
-    + right. left. left. left. right. auto.
+    + right. repeat left. auto.
+    + left. left. left. left. auto.
+    + left. left. left. right. auto.
     + right. left. left. right. auto.
     + right. left. right. auto.
     + right. right. auto.
-  - unfold ob' in *. des_union.
-    + left. left. left. left. left. right. auto.
-    + left. left. left. left. right. auto.
-    + left. left. left. left. left. left. auto.
-    + left. left. left. right. auto.
     + left. left. right. auto.
     + left. right. auto.
+  - unfold ob' in *. des_union.
+    + left. left. left. left. left. left. right. auto.
+    + left. left. left. left. left. right. auto.
+    + left. right. auto.
     + right. auto.
+    + repeat left. auto.
+    + left. left. left. left. right. auto.
+    + left. left. left. right. auto.
+    + left. left. right. auto.
 Qed.
 
 Lemma nth_error_last A (l: list A) a n
@@ -207,6 +209,25 @@ Inductive sim_local (tid:Id.t) (mem: Memory.t) (ex: Execution.t) (vext: eidT -> 
         <<N: (length alocal.(ALocal.labels)) <= n>> /\
         <<WRITE: ex.(Execution.label_is) Label.is_write (tid, n)>> /\
         <<VIEW: vext (tid, n) = view>>;
+  VPN: sim_view
+         vext
+         local.(Local.vpn).(View.ts)
+         (inverse (sim_local_vpn ex) (eq (tid, List.length (alocal.(ALocal.labels)))));
+  LPER: forall loc,
+        sim_view
+          vext
+          (local.(Local.lper) loc).(View.ts)
+          (inverse (sim_local_lper ex loc) (eq (tid, List.length (alocal.(ALocal.labels)))));
+  LPER_END: forall loc,
+        sim_view
+          vext
+          (local.(Local.lper) loc).(View.ts)
+          (inverse (sim_local_lper_end ex loc) (eq (tid, List.length (alocal.(ALocal.labels)))));
+  PER_END: forall loc,
+        sim_view
+          vext
+          (local.(Local.per) loc).(View.ts)
+          (inverse (sim_local_per_end ex loc) (eq (tid, List.length (alocal.(ALocal.labels)))));
 }.
 Hint Constructors sim_local.
 
@@ -245,6 +266,22 @@ Definition sim_atomic
     (FRE: Execution.fre ex eid1 eid)
     (COE: Execution.coe ex eid (tid, eid2)),
     False.
+
+Definition sim_fob
+           (tid:Id.t) (ex:Execution.t) (vext: eidT -> Time.t)
+           (eu:ExecUnit.t (A:=unit)) (aeu:AExecUnit.t): Prop :=
+  forall eid1 eid2
+    (LABEL: eid2 < List.length aeu.(AExecUnit.local).(ALocal.labels))
+    (FOB: Execution.fob ex eid1 (tid, eid2)),
+    Time.le (vext eid1) (vext (tid, eid2)).
+
+Definition sim_fp
+           (tid:Id.t) (ex:Execution.t) (vext: eidT -> Time.t)
+           (eu:ExecUnit.t (A:=unit)) (aeu:AExecUnit.t): Prop :=
+  forall eid1 eid2
+    (LABEL: eid1 < List.length aeu.(AExecUnit.local).(ALocal.labels))
+    (FP: Execution.fp ex (tid, eid1) eid2),
+    Time.lt (vext (tid, eid1)) (vext eid2).
 
 Inductive sim_th'
           (tid:Id.t) (mem:Memory.t) (ex:Execution.t) (vext: eidT -> Time.t)

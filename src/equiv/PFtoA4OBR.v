@@ -29,10 +29,10 @@ Set Implicit Arguments.
 
 
 Lemma sim_traces_sim_th'_ob_read
-      p trs atrs ws rs covs vexts
+      p trs atrs ws rs fs covs vexts
       m ex
       (STEP: Machine.pf_exec p m)
-      (SIM: sim_traces p m.(Machine.mem) trs atrs ws rs covs vexts)
+      (SIM: sim_traces p m.(Machine.mem) trs atrs ws rs fs covs vexts)
       (PRE: Valid.pre_ex p ex)
       (CO: ex.(Execution.co) = co_gen ws)
       (RF: ex.(Execution.rf) = rf_gen ws rs)
@@ -48,18 +48,20 @@ Lemma sim_traces_sim_th'_ob_read
       (ATR: IdMap.Forall2
               (fun _ atr aeu => exists l, atr = aeu :: l)
               atrs (Valid.aeus PRE)):
-  forall tid tr atr wl rl covl vextl
-    n eu1 eu2 tr' aeu1 aeu2 atr' w1 w2 wl' r1 r2 rl' cov1 cov2 covl' vext1 vext2 vextl'
+  forall tid tr atr wl rl fl covl vextl
+    n eu1 eu2 tr' aeu1 aeu2 atr' w1 w2 wl' r1 r2 rl' f1 f2 fl' cov1 cov2 covl' vext1 vext2 vextl'
     (FIND_TR: IdMap.find tid trs = Some tr)
     (FIND_ATR: IdMap.find tid atrs = Some atr)
     (FIND_WL: IdMap.find tid ws = Some wl)
     (FIND_RL: IdMap.find tid rs = Some rl)
+    (FIND_FL: IdMap.find tid fs = Some fl)
     (FIND_COVL: IdMap.find tid covs = Some covl)
     (FIND_VEXTL: IdMap.find tid vexts = Some vextl)
     (EU: lastn (S n) tr = eu2 :: eu1 :: tr')
     (AEU: lastn (S n) atr = aeu2 :: aeu1 :: atr')
     (WL: lastn (S n) wl = w2 :: w1 :: wl')
     (RL: lastn (S n) rl = r2 :: r1 :: rl')
+    (FL: lastn (S n) fl = f2 :: f1 :: fl')
     (COV: lastn (S n) covl = cov2 :: cov1 :: covl')
     (VEXT: lastn (S n) vextl = vext2 :: vext1 :: vextl')
     (SIM_TH': sim_th' tid m.(Machine.mem) ex (v_gen vexts) eu1 aeu1),
@@ -118,7 +120,6 @@ Proof.
   i.
   move AOB at bottom. unfold ob' in AOB. des_union.
   - (* rfe *)
-    rename H1 into H.
     assert (v_gen vexts eid1 = ts).
     { inv H. destruct eid1 as [tid1 eid1]. inv H2. ss.
       generalize H1. intro Y. rewrite RF in Y. inv Y. ss.
@@ -134,7 +135,7 @@ Proof.
       exploit sim_trace_last; try exact REL0. i. des. simplify.
       exploit sim_trace_sim_th; try exact REL0; eauto. intro L1.
       exploit L1.(WPROP3); eauto. i. des.
-      unfold v_gen. ss. rewrite <- H7. auto.
+      unfold v_gen. ss. rewrite <- H8. auto.
     }
     subst.
     rewrite <- join_r. unfold FwdItem.read_view. condtac; ss.
@@ -163,7 +164,7 @@ Proof.
         exploit sim_trace_sim_th; try exact REL1; eauto. intro L2.
         move H2 at bottom.
         unfold v_gen in H2. ss.
-        rewrite <- H10, <- H16 in H2.
+        rewrite <- H11, <- H18 in H2.
         exploit L1.(WPROP2); eauto. i. des.
         exploit L2.(WPROP2); eauto. i. des.
         exploit L1.(WPROP3); eauto. i. des.
@@ -174,7 +175,6 @@ Proof.
       inv WRITE. inv PO. ss. subst. inv H. inv H3. ss.
     + rewrite H1. refl.
   - (* dob *)
-    rename H1 into H.
     unfold Execution.dob in H. rewrite ? seq_assoc in *. des_union.
     + inv H1. des. inv H1; cycle 1.
       { generalize L.(LC).(FWDBANK). intro SIM_FWD. ss.
@@ -244,7 +244,6 @@ Proof.
       * econs; eauto. unfold sim_local_vrn. left. right.
         rewrite ? seq_assoc in H1. econs; eauto.
   - (* aob *)
-    rename H into H1.
     unfold Execution.aob in H1. rewrite ? seq_assoc in *.
     inv H1. des. inv H.  des. inv H2. inv H1. guardH H2.
     assert (v_gen vexts x2 = ts).
@@ -307,7 +306,6 @@ Proof.
         }
     + rewrite H. refl.
   - (* bob *)
-    rename H1 into H.
     unfold Execution.bob in H. rewrite ? seq_assoc in *. des_union.
     + rewrite L.(LC).(VRN); ss.
       * rewrite <- join_l, <- join_r, <- join_l. ss.
@@ -332,11 +330,4 @@ Proof.
     + destruct (equiv_dec arch riscv); ss. exploit Valid.rmw_spec; eauto. i. des.
       exploit EX2.(LABELS_REV); eauto. i.
       inv LABEL2. des. destruct l0; ss. rewrite x2 in EID0. inv EID0.
-  - (* pob *)
-    unfold Execution.pob in H. rewrite ? seq_assoc in *.
-    inv H.
-    + inv H1. des. inv H1. inv H3.
-      destruct l0; ss. congr.
-    + inv H1. des. inv H1. inv H3.
-      destruct l0; ss. congr.
 Qed.
