@@ -230,18 +230,18 @@ Proof.
   repeat match goal with
          | [H: (_ ∪ _) _ _ |- _] => inv H
          end.
-  - left. right. left. left. left. left. left. left. left.
+  - left. left. right. left. left. left. left. left. left. left.
     inv H. des. econs. splits; eauto.
     rewrite ? seq_assoc. econs. splits; [|by econs; eauto].
     rewrite <- ? seq_assoc. ss.
-  - left. right. left. left. left. left. left. right.
+  - left. left. right. left. left. left. left. left. right.
     inv H. des. econs. splits; eauto.
     rewrite ? seq_assoc. econs. splits; [|by econs; eauto].
     rewrite <- ? seq_assoc. ss.
-  - left. left. left. right. right.
+  - left. left. left. left. right. right.
     inv H0. des. rewrite seq_assoc. econs. splits; eauto.
     right. econs. splits; eauto. econs; ss. econs; eauto.
-  - left. right. left. left. right.
+  - left. left. right. left. left. right.
     inv H. des. repeat (econs; splits; eauto).
 Qed.
 
@@ -299,15 +299,15 @@ Proof.
   repeat match goal with
          | [H: (_ ∪ _) _ _ |- _] => inv H
          end.
-  - left. right. left. left. left. left. left. left. right.
+  - left. left. right. left. left. left. left. left. left. right.
     inv H0. des. econs. splits; eauto.
     rewrite ? seq_assoc. econs. splits; [|by econs; eauto].
     rewrite <- ? seq_assoc. ss.
-  - left. right. left. left. left. left. right.
+  - left. left. right. left. left. left. left. right.
     inv H0. des. econs. splits; eauto.
     rewrite ? seq_assoc. econs. splits; [|by econs; eauto].
     rewrite <- ? seq_assoc. ss.
-  - left. right. left. left. right.
+  - left. left. right. left. left. right.
     inv H. des. repeat (econs; splits; eauto).
 Qed.
 
@@ -381,7 +381,7 @@ Lemma sim_local_vrel_spec
   <<OB: Execution.ob ex eid1 eid2>>.
 Proof.
   inv EID2. destruct l; inv LABEL. unfold sim_local_vrel in VREL.
-  left. right. left. left. left. right.
+  left. left. right. left. left. left. right.
   rewrite seq_assoc. econs. splits; eauto. econs; eauto.
 Qed.
 
@@ -494,6 +494,122 @@ Proof.
   unfold sim_local_fwd_none. rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
   rewrite Execution.po_po_adj at 1.
   rewrite (clos_refl_union Execution.po), union_seq, eq_seq.
+  rewrite ? (seq_union' (Execution.po ⨾ Execution.po_adj) Execution.po_adj), ? seq_assoc, ? union_assoc.
+  refl.
+Qed.
+
+Definition sim_local_vpn ex :=
+  (⦗ex.(Execution.label_is) Label.is_access⦘ ⨾
+   Execution.po ⨾
+   ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_full)⦘ ⨾
+   Execution.po).
+
+Lemma sim_local_vpn_step ex:
+  sim_local_vpn ex =
+  (sim_local_vpn ex ∪
+   (⦗ex.(Execution.label_is) Label.is_access⦘ ⨾
+    Execution.po ⨾
+    ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_full)⦘)) ⨾
+  Execution.po_adj.
+Proof.
+  unfold sim_local_vpn. rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
+  rewrite Execution.po_po_adj at 2.
+  rewrite (clos_refl_union Execution.po), union_seq, eq_seq.
+  rewrite ? (seq_union' (Execution.po ⨾ Execution.po_adj) Execution.po_adj), ? seq_assoc, ? union_assoc.
+  refl.
+Qed.
+
+Definition sim_local_lper ex loc :=
+  ((sim_local_coh ex loc ∪ sim_local_vpn ex) ⨾
+   ⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘ ⨾
+   Execution.po).
+
+Lemma sim_local_lper_step ex loc:
+  sim_local_lper ex loc =
+  (sim_local_lper ex loc ∪
+   ((sim_local_coh ex loc ∪ sim_local_vpn ex) ⨾
+    ⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘)) ⨾
+  Execution.po_adj.
+Proof.
+  unfold sim_local_lper. rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
+  rewrite Execution.po_po_adj at 1.
+  rewrite (clos_refl_union Execution.po).
+  replace ((Execution.po ∪ eq) ⨾ Execution.po_adj)
+    with (Execution.po ⨾ Execution.po_adj ∪ eq ⨾ Execution.po_adj); cycle 1.
+  { rewrite union_seq. ss. }
+  rewrite eq_seq.
+  rewrite ? (seq_union' (Execution.po ⨾ Execution.po_adj) Execution.po_adj), ? seq_assoc, ? union_assoc.
+  refl.
+Qed.
+
+Definition sim_local_per ex loc :=
+  (sim_local_lper ex loc ⨾
+   ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_full)⦘ ⨾
+   Execution.po).
+
+Lemma sim_local_per_step ex loc:
+  sim_local_per ex loc =
+  (sim_local_per ex loc ∪
+   (sim_local_lper ex loc ⨾
+    ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_full)⦘)) ⨾
+  Execution.po_adj.
+Proof.
+  unfold sim_local_per.
+  rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
+  rewrite Execution.po_po_adj at 1.
+  rewrite (clos_refl_union Execution.po).
+  replace ((Execution.po ∪ eq) ⨾ Execution.po_adj)
+    with (Execution.po ⨾ Execution.po_adj ∪ eq ⨾ Execution.po_adj); cycle 1.
+  { rewrite union_seq. ss. }
+  rewrite eq_seq.
+  rewrite ? (seq_union' (Execution.po ⨾ Execution.po_adj) Execution.po_adj), ? seq_assoc, ? union_assoc.
+  refl.
+Qed.
+
+Definition sim_local_lper_end ex loc :=
+  (⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘ ⨾
+   Execution.po).
+
+Lemma sim_local_lper_end_step ex loc:
+  sim_local_lper_end ex loc =
+  (sim_local_lper_end ex loc ∪
+   (⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘)) ⨾
+  Execution.po_adj.
+Proof.
+  unfold sim_local_lper_end.
+  rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
+  rewrite Execution.po_po_adj at 1.
+  rewrite (clos_refl_union Execution.po).
+  replace ((Execution.po ∪ eq) ⨾ Execution.po_adj)
+    with (Execution.po ⨾ Execution.po_adj ∪ eq ⨾ Execution.po_adj); cycle 1.
+  { rewrite union_seq. ss. }
+  rewrite eq_seq.
+  rewrite ? (seq_union' (Execution.po ⨾ Execution.po_adj) Execution.po_adj), ? seq_assoc, ? union_assoc.
+  refl.
+Qed.
+
+Definition sim_local_per_end ex loc :=
+  (⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘ ⨾
+   Execution.po ⨾
+   ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_full)⦘ ⨾
+   Execution.po).
+
+Lemma sim_local_per_end_step ex loc:
+  sim_local_per_end ex loc =
+  (sim_local_per_end ex loc ∪
+   ((⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘ ⨾
+     Execution.po ⨾
+     ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_full)⦘))) ⨾
+  Execution.po_adj.
+Proof.
+  unfold sim_local_per_end.
+  rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
+  rewrite Execution.po_po_adj at 2.
+  rewrite (clos_refl_union Execution.po).
+  replace ((Execution.po ∪ eq) ⨾ Execution.po_adj)
+    with (Execution.po ⨾ Execution.po_adj ∪ eq ⨾ Execution.po_adj); cycle 1.
+  { rewrite union_seq. ss. }
+  rewrite eq_seq.
   rewrite ? (seq_union' (Execution.po ⨾ Execution.po_adj) Execution.po_adj), ? seq_assoc, ? union_assoc.
   refl.
 Qed.
