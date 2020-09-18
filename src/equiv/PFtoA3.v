@@ -156,6 +156,11 @@ Inductive sim_local (tid:Id.t) (mem: Memory.t) (ex: Execution.t) (vext: eidT -> 
           vext
           (Memory.latest_ts loc (local.(Local.coh) loc).(View.ts) mem)
           (inverse (sim_local_coh ex loc) (eq (tid, List.length (alocal.(ALocal.labels)))));
+  COH2: forall loc,
+        sim_view
+          vext
+          (local.(Local.coh) loc).(View.ts)
+          (inverse (sim_local_coh2 ex loc) (eq (tid, List.length (alocal.(ALocal.labels)))));
   VRN: sim_view
          vext
          local.(Local.vrn).(View.ts)
@@ -292,5 +297,7 @@ Inductive sim_th'
   OBR: sim_ob_read tid ex vext eu aeu;
   FR: sim_fr tid ex vext eu aeu;
   ATOMIC: sim_atomic tid ex vext eu aeu;
+  FOB: sim_fob tid ex vext eu aeu;
+  FP: sim_fp tid ex vext eu aeu;
 }.
 Hint Constructors sim_th'.

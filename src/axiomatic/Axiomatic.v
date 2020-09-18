@@ -1179,6 +1179,15 @@ Module Execution.
       inv LABEL. inv LABEL0. rewrite EID2 in EID0. inv EID0.
       destruct l0; ss; eqvtac; econs; eauto.
   Qed.
+
+  Lemma fob_flushopt
+        ex
+        eid1 eid2
+        (FOB: (fob ex) eid1 eid2):
+    ex.(label_is) Label.is_flushopt eid2.
+  Proof.
+    obtac; simtac.
+  Qed.
 End Execution.
 
 Ltac obtac := Execution.obtac.
