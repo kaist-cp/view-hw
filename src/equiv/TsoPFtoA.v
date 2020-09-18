@@ -972,13 +972,13 @@ Qed.
 Theorem promising_to_axiomatic
         p m smem
         (STEP: Machine.exec p m)
-        (PER: Machine.persisted m smem):
+        (PMEM: Machine.persisted m smem):
   exists ex (EX: Valid.ex p ex),
     <<TERMINAL: Machine.is_terminal m -> Valid.is_terminal EX>> /\
     <<STATE: IdMap.Forall2
                (fun tid sl aeu => sim_state_weak (fst sl) aeu.(AExecUnit.state))
                m.(Machine.tpool) EX.(Valid.aeus)>> /\
-    <<PER: Valid.persisted ex smem>>.
+    <<PMEM: Valid.persisted ex smem>>.
 Proof.
   apply promising_to_promising_pf in STEP.
   apply promising_pf_to_axiomatic; auto.

@@ -66,6 +66,28 @@ Proof.
     + left. left. right. auto.
 Qed.
 
+Lemma ob'_flushopt
+      p ex eid1 eid2 loc
+      (PRE: Valid.pre_ex p ex)
+      (CO2: Valid.co2 ex)
+      (RF2: Valid.rf2 ex)
+      (PF2: Valid.pf2 ex)
+      (OB': ob' ex eid1 eid2)
+      (EID2: Execution.label eid2 ex = Some (Label.flushopt loc)):
+  False.
+Proof.
+  inv OB'; obtac; labtac.
+  all: try by exploit RF2; eauto; i; des; congr.
+  - inv H0.
+    + exploit Valid.addr_label; eauto. i. des. inv EID0. labtac.
+    + obtac. exploit RF2; eauto; i; des; congr.
+  - inv H0.
+    + exploit Valid.data_label; eauto. i. des. inv EID0. labtac.
+    + obtac. exploit RF2; eauto; i; des; congr.
+  - revert H0. unfold ifc. condtac; ss. i. exploit Valid.rmw_spec; eauto. i. des.
+    inv LABEL2. des. labtac.
+Qed.
+
 Lemma nth_error_last A (l: list A) a n
       (N: Nat.eqb n (List.length l) = true):
   List.nth_error (l ++ [a]) n = Some a.

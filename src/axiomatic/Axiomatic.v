@@ -1118,10 +1118,11 @@ Module Execution.
            | [H: Execution.aob _ _ _ |- _] => inv H
            | [H: Execution.bob _ _ _ |- _] => inv H
            | [H: Execution.fob _ _ _ |- _] => inv H
-           | [H: Execution.fp _ _ _ |- _] => inv H
            | [H: Execution.fr _ _ _ |- _] => inv H
            | [H: Execution.rfe _ _ _ |- _] => inv H
            | [H: Execution.rfi _ _ _ |- _] => inv H
+           | [H: Execution.fp _ _ _ |- _] => inv H
+           | [H: Execution.per _ _ _ |- _] => inv H
            | [H: (_⨾ _) _ _ |- _] => inv H
            | [H: ⦗_⦘ _ _ |- _] => inv H
            | [H: (_ ∪ _) _ _ |- _] => inv H
@@ -1157,6 +1158,9 @@ Module Execution.
          | [H1: Execution.label ?eid ?ex = Some (_ _ _ _),
             H2: Execution.label ?eid ?ex = Some (_ _ _) |- _] =>
            congr
+         | [H1: Execution.label ?eid ?ex = Some (_ _),
+            H2: Execution.label ?eid ?ex = Some ?l2 |- _] =>
+           rewrite H1 in H2; inv H2; ss
          | [H1: Execution.label ?eid ?ex = Some (_ _ _),
             H2: Execution.label ?eid ?ex = Some ?l2 |- _] =>
            rewrite H1 in H2; inv H2; ss
@@ -1282,8 +1286,8 @@ Module Valid.
 
   (* TODO: add real cacheline *)
   Definition pf2 (ex: Execution.t) :=
-    forall eid1 eid2 (RF: ex.(Execution.pf) eid2 eid1),
-    exists loc ex2 ord2 val,
+    forall eid1 eid2 (PF: ex.(Execution.pf) eid2 eid1),
+    exists ex2 ord2 loc val,
       <<PERSIST: Execution.label eid1 ex = Some (Label.flushopt loc)>> /\
       <<WRITE: Execution.label eid2 ex = Some (Label.write ex2 ord2 loc val)>>.
 

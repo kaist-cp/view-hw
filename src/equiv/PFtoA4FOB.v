@@ -119,7 +119,7 @@ Proof.
   move EID at bottom. move FOB at bottom. unfold Execution.fob in *. des_union.
   - (* W U R; po_cl; FO *)
     rewrite L.(LC).(COH2); ss.
-    + rewrite <- join_r, <- join_l. eapply Memory.latest_ts_spec.
+    + rewrite <- join_r, <- join_l. eauto.
     + obtac.
       econs; eauto. unfold sim_local_coh2.
       inv H. obtac. simtac.
