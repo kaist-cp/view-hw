@@ -161,7 +161,7 @@ Proof.
   - (* flush *)
     inv STEP.
     econs; eauto. econs; ss; eauto.
-    econs 1; ss. econs. econs; ss; [econs | econs 8]; ss. econs; eauto.
+    econs 1; ss. econs. econs; ss; [econs | econs 8]; ss. econs; eauto; ss.
 Qed.
 
 Lemma sim_machine_rtc_step

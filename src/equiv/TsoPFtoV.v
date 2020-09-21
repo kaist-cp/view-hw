@@ -509,12 +509,12 @@ Proof.
     + ss.
   - (* flush *)
     left. inv STEP. inv COHMAX. ss. esplits.
-    + econs 8; eauto. econs; eauto. econs. ss.
+    + econs 8; eauto. econs; eauto; econs; ss.
     + eauto.
     + ss.
   - (* flushopt *)
     left. inv STEP. ss. esplits.
-    + econs 9; eauto. econs; eauto.
+    + econs 9; eauto. econs; eauto. econs.
     + eauto.
     + ss.
 Qed.

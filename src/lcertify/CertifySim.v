@@ -1174,7 +1174,7 @@ Proof.
     - (* flushopt *)
       inv STEP. eexists (ExecUnit.mk _ _ _). esplits.
       + econs 1. econs. econs; ss; cycle 1.
-        * econs 9; eauto. econs; eauto.
+        * econs 9; eauto. econs; eauto; ss.
         * econs 10; ss.
       + econs; ss. inv LOCAL. econs; eauto 10 using sim_view_join, sim_view_ifc, sim_view_bot.
   }

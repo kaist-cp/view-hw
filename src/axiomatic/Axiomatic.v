@@ -1,4 +1,3 @@
-
 Require Import Relations.
 Require Import NArith.
 Require Import PArith.
@@ -920,12 +919,12 @@ Module Execution.
   .
   Hint Constructors label_loc.
 
-  (* TODO: add real cacheline *)
   Inductive label_cl (x y:Label.t): Prop :=
   | label_cl_intro
-      loc
+      loc loc'
       (X: Label.is_access_persisting loc x)
-      (Y: Label.is_access_persisting loc y)
+      (Y: Label.is_access_persisting loc' y)
+      (CL: Loc.cl loc loc')
   .
   Hint Constructors label_cl.
 
@@ -1172,18 +1171,6 @@ Module Execution.
            rewrite H1 in H2; inv H2; destruct l2; ss
     end).
 
-  Lemma po_cl_chain ex: (po_cl ex)⨾ (po_cl ex)^? ⊆ (po_cl ex).
-  Proof.
-    ii. inv H. des. inv H0.
-    econs.
-    - inv H. destruct x, x0, y. ss. subst.
-      inv H1; inv H; ss. inv H0. ss. subst. econs; ss. lia.
-    - inv H2. inv H1; [econs; eauto |].
-      inv H0. inv H2.
-      inv LABEL. inv LABEL0. rewrite EID2 in EID0. inv EID0.
-      destruct l0; ss; eqvtac; econs; eauto.
-  Qed.
-
   Lemma fob_flushopt
         ex
         eid1 eid2
@@ -1275,21 +1262,20 @@ Module Valid.
 
   Definition rf_wf (ex: Execution.t) := functional (ex.(Execution.rf))⁻¹.
 
-  (* TODO: add real cacheline *)
   Definition pf1 (ex: Execution.t) :=
-    forall eid1 loc
-       (LABEL: Execution.label eid1 ex = Some (Label.flushopt loc)),
-      (<<NOPF: ~ codom_rel ex.(Execution.pf) eid1>>) \/
-      (exists eid2 ex2 ord2 val,
-          <<LABEL: Execution.label eid2 ex = Some (Label.write ex2 ord2 loc val)>> /\
+    forall eid1 loc1 loc2
+           (LABEL: Execution.label eid1 ex = Some (Label.flushopt loc1))
+           (CL: Loc.cl loc1 loc2),
+      <<NOPF: ~ codom_rel ex.(Execution.pf) eid1>> \/
+      (exists eid2,
+          <<LABEL: ex.(Execution.label_is) (Label.is_writing loc2) eid2>> /\
           <<PF: ex.(Execution.pf) eid2 eid1>>).
 
-  (* TODO: add real cacheline *)
   Definition pf2 (ex: Execution.t) :=
     forall eid1 eid2 (PF: ex.(Execution.pf) eid2 eid1),
-    exists ex2 ord2 loc val,
-      <<PERSIST: Execution.label eid1 ex = Some (Label.flushopt loc)>> /\
-      <<WRITE: Execution.label eid2 ex = Some (Label.write ex2 ord2 loc val)>>.
+      <<PERSIST: ex.(Execution.label_is) Label.is_flushopt eid1>> /\
+      <<WRITE: ex.(Execution.label_is) Label.is_write eid2>> /\
+      <<CL: ex.(Execution.label_rel) Execution.label_cl eid1 eid2>>.
 
   Inductive persisted_event (ex:Execution.t) (loc:Loc.t) (eid:eidT) :=
   | persisted_event_intro
@@ -1736,7 +1722,7 @@ Module Valid.
     - exploit RF2; eauto. i. des. congr.
     - revert H0. unfold ifc. condtac; ss. eapply rmw_spec. eauto.
     - inv H. ss.
-    - exploit PF2; eauto. i. des. obtac. congr.
+    - exploit PF2; eauto. i. des. obtac. labtac.
     - inv H0. obtac. destruct l0; ss. congr.
   Qed.
 
@@ -1801,7 +1787,7 @@ Module Valid.
     - exploit RF2; eauto. i. des. congr.
     - revert H0. unfold ifc. condtac; ss. eapply rmw_spec. eauto.
     - inv H. ss.
-    - exploit PF2; eauto. i. des. obtac. congr.
+    - exploit PF2; eauto. i. des. obtac. labtac.
     - inv H0. obtac. destruct l0; ss. congr.
   Qed.
 
@@ -1854,7 +1840,6 @@ Module Valid.
     all: try congr.
     all: try by exploit RF2; eauto; i; des; congr.
     all: try by exploit CO2; eauto; i; des; congr.
-    all: try by exploit PF2; eauto; i; des; congr.
     - exploit addr_label; eauto. i. des. inv EID0. congr.
     - exploit data_label; eauto. i. des. inv EID0. congr.
     - exploit ctrl_label; eauto. i. des. inv x0. congr.
@@ -1862,6 +1847,7 @@ Module Valid.
     - exploit ctrl_label; eauto. i. des. inv x1. congr.
     - exploit addr_label; eauto. i. des. inv EID2. congr.
     - revert H0. unfold ifc. condtac; ss. i. exploit rmw_spec; eauto. i. des. inv LABEL1. congr.
+    - exploit PF2; eauto. i. des. obtac. congr.
   Qed.
 
   Lemma ob_cycle

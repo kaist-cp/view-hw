@@ -381,12 +381,11 @@ Section Local.
   .
   Hint Constructors dsb.
 
-  (* TODO: + same cacheline *)
   Inductive flushopt (vloc:ValA.t (A:=View.t (A:=A))) (lc1:t) (lc2:t): Prop :=
   | flushopt_intro
       loc view_post
       (LOC: loc = vloc.(ValA.val))
-      (VIEW_POST: view_post = join (lc1.(coh) loc) lc1.(vpn))
+      (VIEW_POST: view_post = fun loc' => ifc (Loc.cl loc loc') (join (lc1.(coh) loc') lc1.(vpn)))
       (LC2: lc2 =
             mk
               lc1.(coh)
@@ -397,7 +396,7 @@ Section Local.
               lc1.(vcap)
               lc1.(vrel)
               lc1.(vpn)
-              (fun_add loc (join (lc1.(lper) loc) view_post) lc1.(lper))
+              (fun_join lc1.(lper) view_post)
               lc1.(per)
               lc1.(fwdbank)
               lc1.(exbank)
@@ -687,8 +686,7 @@ Section Local.
     le lc1 lc2.
   Proof.
     inv LC. econs; ss; try refl; try apply join_l.
-    i. rewrite fun_add_spec. condtac; try refl.
-    clear X. inv e. s. apply join_l.
+    i. apply join_l.
   Qed.
 
   Lemma step_incr
@@ -865,7 +863,7 @@ Section ExecUnit.
     - inv LC. econs; ss. econs; viewtac.
       inv CTRL. rewrite <- TS. eauto using expr_wf.
     - inv STEP. econs; ss. econs; viewtac.
-      i. rewrite fun_add_spec. condtac; viewtac.
+      i. viewtac.
   Qed.
 
   Lemma state_step_wf tid eu1 eu2

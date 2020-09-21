@@ -1369,14 +1369,13 @@ Proof.
         des_ifs. apply Nat.eqb_eq in Heq. subst. unfold ALocal.next_eid in *. lia.
       + des_ifs; cycle 1.
         { apply Nat.eqb_neq in Heq. unfold ALocal.next_eid in *. congr. }
-        ss. eqvtac. rewrite fun_add_spec in *. condtac; [|congr].
+        ss. eqvtac.
         inv VLOC. inv VAL.
         exploit Memory.latest_ts_spec. i. des.
         exploit Memory.read_get_msg; eauto. i. des; esplits; eauto; [left|right]; eauto.
     - i. des_ifs.
       + split; ss.
         apply Nat.eqb_eq in Heq. subst.
-        rewrite fun_add_spec in *. des_ifs; [|congr].
         inv VLOC. inv VAL. ss.
         exploit Memory.latest_ts_spec. i. des.
         exploit Memory.read_get_msg; eauto. i. des; esplits; ss.
@@ -1451,14 +1450,13 @@ Proof.
         des_ifs. apply Nat.eqb_eq in Heq. subst. unfold ALocal.next_eid in *. lia.
       + des_ifs; cycle 1.
         { apply Nat.eqb_neq in Heq. unfold ALocal.next_eid in *. congr. }
-        ss. eqvtac. rewrite fun_add_spec in *. condtac; [|congr].
+        ss. eqvtac.
         inv VLOC. inv VAL.
         exploit Memory.latest_ts_spec. i. des.
         exploit Memory.read_get_msg; eauto. i. des; esplits; eauto; [left|right]; eauto.
     - i. des_ifs.
       + split; ss.
         apply Nat.eqb_eq in Heq. subst.
-        rewrite fun_add_spec in *. des_ifs; [|congr].
         inv VLOC. inv VAL. ss.
         exploit Memory.latest_ts_spec. i. des.
         exploit Memory.read_get_msg; eauto. i. des; esplits; ss.

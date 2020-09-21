@@ -96,7 +96,7 @@ Proof.
         { econs 6; eauto. inv STEP. econs; eauto. }
         { econs 7; eauto. inv STEP. econs; eauto. }
         { econs 8; eauto. inv LC. econs; eauto. }
-        { econs 9; eauto. inv STEP. econs; eauto. }
+        { econs 9; eauto. inv STEP. econs; eauto; ss. }
       * rewrite ? IdMap.add_add. eauto.
   - (* diff thread *)
     inv STEP. inv STEP1. inv STEP0. inv LOCAL0. inv MEM2. ss. subst.
