@@ -115,20 +115,18 @@ Proof.
   clear STATE2 LOCAL0. inv STEP0. ss.
   exploit EX2.(LABELS); eauto; ss.
   { rewrite List.app_length. s. clear. lia. }
-  i. funtac.
+  i. rewrite <- join_r. unfold ifc. rewrite Loc.cl_same_loc. s.
   move EID at bottom. move FOB at bottom. unfold Execution.fob in *. des_union.
   - (* W U R; po_cl; FO *)
-    rewrite L.(LC).(COH2); ss.
-    + rewrite <- join_r, <- join_l. eauto.
-    + obtac.
-      econs; eauto. unfold sim_local_coh2.
-      inv H. obtac. simtac.
-      rewrite EID in EID3. simplify. ss. eqvtac. rewrite <- H1.
-      destruct l0; destruct l2; ss; try congr; eqvtac; simtac.
+    rewrite L.(LC).(COH2); [apply join_l|].
+    obtac.
+    econs; eauto. unfold sim_local_coh2.
+    inv H. obtac. simtac.
+    rewrite EID in EID3. simplify. ss. eqvtac. rewrite <- H1.
+    destruct l0; destruct l2; ss; try congr; eqvtac; simtac.
   - (* W U R; po; [dmb.sy U dsb.sy]; po; FO *)
-    rewrite L.(LC).(VPN); ss.
-    + rewrite <- join_r, <- join_r. ss.
-    + obtac.
-      econs; eauto. unfold sim_local_vpn.
-      inv H. obtac. simtac.
+    rewrite L.(LC).(VPN); [apply join_r|].
+    obtac.
+    econs; eauto. unfold sim_local_vpn.
+    inv H. obtac. simtac.
 Qed.

@@ -1541,32 +1541,22 @@ Proof.
         rewrite List.nth_error_app2, Nat.sub_diag; ss.
     + rewrite List.app_length, Nat.add_1_r.
       i. rewrite sim_local_lper_step. rewrite inverse_step.
-      rewrite ? inverse_union. ii. funtac; cycle 1.
-      { ii. des; [apply LPER|]; eauto.
-        inv EID. inv REL. des. inv H0. inv H2. destruct l; ss. eqvtac.
-        exploit EX2.(LABELS); eauto; ss.
-        { rewrite List.app_length. s. lia. }
-        rewrite List.nth_error_app2, Nat.sub_diag; ss. intro Z. inv Z.
-        ss. eqvtac. inv VLOC. congr.
-      }
-      inversion e. rewrite <- H in *. des.
-      { inv EID. etrans; try eapply LPER; eauto.
-        unfold join. ss. apply join_l.
-      }
+      rewrite ? inverse_union. ii. des.
+      { exploit LPER; eauto. i. rewrite <- join_l. ss. }
       inv EID. inv REL. des. inv H0. inv H2. destruct l; ss. eqvtac.
       exploit EX2.(LABELS); eauto; ss.
       { rewrite List.app_length. s. lia. }
       rewrite List.nth_error_app2, Nat.sub_diag; ss. intro Z. inv Z.
+      rewrite <- join_r. unfold ifc. inv VLOC. rewrite VAL. rewrite Loc.cl_same_loc. s.
       obtac.
-      * rewrite <- join_r, <- join_l. etrans; try eapply COH; eauto; ss.
-        inv VLOC. rewrite VAL. eapply Memory.latest_ts_spec.
-      * rewrite <- join_r, <- join_r. etrans; try eapply VPN; eauto; ss.
+      * rewrite <- join_l. etrans; try eapply COH; eauto; ss.
+        eapply Memory.latest_ts_spec.
+      * rewrite <- join_r. etrans; try eapply VPN; eauto; ss.
     + rewrite List.app_length, Nat.add_1_r.
       i. rewrite sim_local_lper_end_step. rewrite inverse_step.
       rewrite inverse_union. ii. des.
-      * inv EID. inv REL. obtac. funtac; cycle 1.
-        { inv L. inv LC. ss. apply LPER_END0. econs; eauto. econs. simtac. }
-        inversion e. subst. rewrite <- join_l.
+      * inv EID. inv REL. obtac.
+        rewrite <- join_l.
         inv L. inv LC. ss. apply LPER_END0. econs; eauto. econs. simtac.
       * inv EID. obtac.
         exploit EX2.(LABELS); eauto; ss.

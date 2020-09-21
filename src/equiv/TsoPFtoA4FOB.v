@@ -135,16 +135,16 @@ Proof.
     - inv H1. des. inv H.
       + (* U U R; po; FO *)
         obtac. rewrite L.(LC).(VPN); ss.
-        * repeat rewrite <- join_r. ss.
+        * rewrite <- join_r. unfold ifc. rewrite Loc.cl_same_loc. s. apply join_r.
         * econs; eauto. unfold sim_local_vpn. left. econs. econs; eauto. simtac.
       + (* W; po; [MF U SF]; po; FO *)
         rewrite L.(LC).(VPN); ss.
-        * repeat rewrite <- join_r. ss.
+        * rewrite <- join_r. unfold ifc. rewrite Loc.cl_same_loc. s. apply join_r.
         * econs; eauto. unfold sim_local_vpn. right. obtac; simtac; [left|right]; simtac.
     - obtac. inv H.
       + (* W; po_cl; FO *)
         rewrite L.(LC).(COH); ss.
-        * rewrite <- join_r, <- join_l. ss.
+        * rewrite <- join_r. unfold ifc. rewrite Loc.cl_same_loc. s. apply join_l.
         * inv H3. obtac.
           econs; eauto. unfold sim_local_coh. simtac.
           rewrite EID in EID3. simplify. ss. eqvtac.
@@ -196,6 +196,7 @@ Proof.
       obtac. rewrite VWN0; ss.
       + rewrite <- join_r.
         inv COHMAX. specialize (COHMAX0 mloc0). rewrite COHMAX0. ss.
+        unfold ifc. rewrite Loc.cl_same_loc. ss.
       + econs; eauto. unfold sim_local_vwn. simtac.
     - (* ((U U R) U (W; po; [MF U SF])); po; FO *)
       obtac; try by destruct l3; ss; congr.
