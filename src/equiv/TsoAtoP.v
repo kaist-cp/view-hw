@@ -1477,12 +1477,12 @@ Proof.
       rewrite ? inverse_union. eapply sim_view_le; [|exact SIM_LOCAL.(VPN)]. eauto.
     + i. rewrite List.app_length, Nat.add_1_r.
       rewrite sim_local_lper_step. rewrite inverse_step.
-      rewrite inverse_union. funtac; cycle 1; clear X.
+      rewrite inverse_union.
+      apply sim_view_join.
       { eapply sim_view_le; [|exact (SIM_LOCAL.(LPER) loc)]. eauto. }
-      inv e.
-      repeat apply sim_view_join.
-      * eapply sim_view_le; [|exact (SIM_LOCAL.(LPER) (sem_expr armap2 eloc).(ValA.val))]. eauto.
-      * eapply sim_view_le; [|exact (SIM_LOCAL.(COH) (sem_expr armap2 eloc).(ValA.val))]. i.
+      unfold ifc. condtac; [|econs]; ss.
+      apply sim_view_join.
+      * eapply sim_view_le; [|exact (SIM_LOCAL.(COH) loc)]. i.
         right. econs; eauto. right.
         inv PR. econs. econs; [left|]; eauto.
         inv REL. obtac. simtac.
@@ -1533,24 +1533,21 @@ Proof.
       rewrite ? inverse_union. eapply sim_view_le; [|exact SIM_LOCAL.(VPN)]. eauto.
     + i. rewrite List.app_length, Nat.add_1_r.
       rewrite sim_local_lper_step. rewrite inverse_step.
-      rewrite inverse_union. funtac; cycle 1; clear X.
+      rewrite inverse_union. apply sim_view_join.
       { eapply sim_view_le; [|exact (SIM_LOCAL.(LPER) loc)]. eauto. }
-      inv e. apply sim_view_join.
-      { eapply sim_view_le; [|exact (SIM_LOCAL.(LPER) (sem_expr armap2 eloc).(ValA.val))]. eauto. }
+      unfold ifc. condtac; [|econs]; ss.
       eapply sim_view_le; [|exact VWN0]. i.
       right. econs; eauto. left.
       inv PR. econs. econs; eauto. simtac.
     + i. rewrite List.app_length, Nat.add_1_r.
       rewrite sim_local_per_step. rewrite inverse_step.
-      rewrite inverse_union. funtac; cycle 1; clear X.
+      rewrite inverse_union. apply sim_view_join.
       { eapply sim_view_le; [|exact (SIM_LOCAL.(PER) loc)]. eauto. }
-      inv e.
-      repeat apply sim_view_join.
-      * eapply sim_view_le; [|exact (SIM_LOCAL.(PER) (sem_expr armap2 eloc).(ValA.val))]. eauto.
-      * eapply sim_view_le; [|exact VWN0]. i.
-        right. econs; eauto.
-        inv PR. left. econs. econs; eauto.
-        simtac.
+      unfold ifc. condtac; [|econs]; ss.
+      eapply sim_view_le; [|exact VWN0]. i.
+      right. econs; eauto.
+      inv PR. left. econs. econs; eauto.
+      simtac.
 Qed.
 
 Lemma sim_eu_rtc_step

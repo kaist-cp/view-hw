@@ -241,37 +241,35 @@ Section Local.
   .
   Hint Constructors rmw.
 
-  (* TODO: + same cacheline *)
   Inductive flush (vloc:ValA.t (A:=unit)) (lc1:t) (lc2:t): Prop :=
   | flush_intro
       loc mloc view_post
       (LOC: loc = vloc.(ValA.val))
       (COHMAX: cohmax mloc lc1)
-      (VIEW_POST: view_post = lc1.(coh) mloc)
+      (VIEW_POST: view_post = fun loc' => ifc (Loc.cl loc loc') (lc1.(coh) mloc))
       (LC2: lc2 =
             mk
               lc1.(coh)
               lc1.(vrn)
               lc1.(vpn)
-              (* CHECK: add lper *)
-              (fun_add loc (join (lc1.(lper) loc) view_post) lc1.(lper))
-              (fun_add loc (join (lc1.(per) loc) view_post) lc1.(per))
+              (* CHECK: also join lper *)
+              (fun_join lc1.(lper) view_post)
+              (fun_join lc1.(per) view_post)
               lc1.(promises))
   .
   Hint Constructors flush.
 
-  (* TODO: + same cacheline *)
   Inductive flushopt (vloc:ValA.t (A:=unit)) (lc1:t) (lc2:t): Prop :=
   | flushopt_intro
       loc view_post
       (LOC: loc = vloc.(ValA.val))
-      (VIEW_POST: view_post = join (lc1.(coh) loc) lc1.(vpn))
+      (VIEW_POST: view_post = fun loc' => ifc (Loc.cl loc loc') (join (lc1.(coh) loc') lc1.(vpn)))
       (LC2: lc2 =
             mk
               lc1.(coh)
               lc1.(vrn)
               lc1.(vpn)
-              (fun_add loc (join (lc1.(lper) loc) view_post) lc1.(lper))
+              (fun_join lc1.(lper) view_post)
               lc1.(per)
               lc1.(promises))
   .
@@ -607,8 +605,8 @@ Section Local.
     le lc1 lc2.
   Proof.
     inv LC. econs; ss; try refl.
-    - i. funtac. inversion e. apply join_l.
-    - i. funtac. inversion e. apply join_l.
+    - i. apply join_l.
+    - i. apply join_l.
   Qed.
 
   Lemma flushopt_incr
@@ -617,7 +615,7 @@ Section Local.
     le lc1 lc2.
   Proof.
     inv LC. econs; ss; try refl.
-    i. funtac. inversion e. apply join_l.
+    i. apply join_l.
   Qed.
 
   Lemma step_incr

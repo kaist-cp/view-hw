@@ -32,7 +32,12 @@ Module Val.
   Definition default: t := 0.
 End Val.
 
-Module Loc := Val.
+Module Loc.
+  Include Val.
+
+  (* TODO: give relation *)
+  Definition cl (loc loc':t): bool := loc == loc'.
+End Loc.
 
 Inductive opT1 :=
 | op_not

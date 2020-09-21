@@ -920,12 +920,12 @@ Module Execution.
   .
   Hint Constructors label_loc : tso.
 
-  (* TODO: add real cacheline *)
   Inductive label_cl (x y:Label.t): Prop :=
   | label_cl_intro
-      loc
+      loc loc'
       (X: Label.is_access_persisting loc x)
-      (Y: Label.is_access_persisting loc y)
+      (Y: Label.is_access_persisting loc' y)
+      (CL: Loc.cl loc loc')
   .
   Hint Constructors label_cl : tso.
 
@@ -1227,21 +1227,20 @@ Module Valid.
 
   Definition rf_wf (ex: Execution.t) := functional (ex.(Execution.rf))⁻¹.
 
-  (* TODO: add real cacheline *)
-  Definition pf1 (ex: Execution.t) :=
-    forall eid1 loc
-       (LABEL: ex.(Execution.label_is) (Label.is_persisting loc) eid1),
-      (<<NOPF: ~ codom_rel ex.(Execution.pf) eid1>>) \/
+  Definition pf1 (ex: Execution.t):=
+    forall eid1 loc1 loc2
+           (LABEL: ex.(Execution.label_is) (Label.is_persisting loc1) eid1)
+           (CL: Loc.cl loc1 loc2),
+      <<NOPF: ~ codom_rel ex.(Execution.pf) eid1>> \/
       (exists eid2,
-          <<LABEL: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid2>> /\
+          <<LABEL: ex.(Execution.label_is) (Label.is_kinda_writing loc2) eid2>> /\
           <<PF: ex.(Execution.pf) eid2 eid1>>).
 
-  (* TODO: add real cacheline *)
   Definition pf2 (ex: Execution.t) :=
     forall eid1 eid2 (PF: ex.(Execution.pf) eid2 eid1),
-    exists loc,
-      <<PERSIST: ex.(Execution.label_is) (Label.is_persisting loc) eid1>> /\
-      <<WRITE: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid2>>.
+      <<PERSIST: ex.(Execution.label_is) Label.is_persist eid1>> /\
+      <<WRITE: ex.(Execution.label_is) Label.is_kinda_write eid2>> /\
+      <<CL: ex.(Execution.label_rel) Execution.label_cl eid1 eid2>>.
 
   Inductive persisted_event (ex:Execution.t) (loc:Loc.t) (eid:eidT) :=
   | persisted_event_intro

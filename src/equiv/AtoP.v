@@ -1555,13 +1555,13 @@ Proof.
       apply SIM_LOCAL.
     + i. rewrite List.app_length, Nat.add_1_r.
       rewrite sim_local_lper_step. rewrite inverse_step.
-      rewrite inverse_union. funtac; cycle 1; clear X.
+      rewrite inverse_union.
+      rewrite Memory.latest_ts_join. apply sim_view_join.
       { eapply sim_view_le; [|exact (SIM_LOCAL.(LPER) loc)]. eauto. }
-      inv e.
       exploit sim_rmap_expr; eauto. intro X. inv X. rewrite <- VAL in *.
-      repeat rewrite Memory.latest_ts_join. repeat apply sim_view_join.
-      * eapply sim_view_le; [|exact (SIM_LOCAL.(LPER) (sem_expr armap2 eloc).(ValA.val))]. eauto.
-      * eapply sim_view_le; [|exact (SIM_LOCAL.(COH) (sem_expr armap2 eloc).(ValA.val))]. i.
+      unfold ifc. condtac; [| econs 1]; ss.
+      rewrite Memory.latest_ts_join. apply sim_view_join.
+      * eapply sim_view_le; [|exact (SIM_LOCAL.(COH) loc)]. i.
         right. econs; eauto.
         inv PR. econs. econs; simtac. left. ss.
       * eapply sim_view_le2; cycle 1.
@@ -1871,7 +1871,7 @@ Proof.
         eapply view_of_eid_ob_write; eauto with axm. right. ss.
       }
       destruct l2; ss. eqvtac.
-      exploit EX.(Valid.PF1); eauto. i. des.
+      exploit EX.(Valid.PF1); eauto with axm. i. des.
       { right. econs; simtac.
         econs; simtac. econs; simtac. ss.
       }
@@ -1886,8 +1886,8 @@ Proof.
       inv PVIEW.
       { exfalso. eapply NPER. econs; eauto with axm. }
       obtac. exploit label_write_mem_of_ex_msg; try exact LABEL1; eauto. i. des.
-      exploit EX.(Valid.CO1).
-      { esplits; [try exact EID2 | try exact LABEL2]; eauto. }
+      destruct l2; ss. eqvtac. exploit EX.(Valid.CO1).
+      { esplits; [try exact EID2 | try exact EID3]; eauto. }
       i. des.
       - subst. ss.
       - exfalso. eapply PER0; eauto. econs; eauto with axm.
