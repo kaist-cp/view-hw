@@ -37,6 +37,13 @@ Module Loc.
 
   (* TODO: give relation *)
   Definition cl (loc loc':t): bool := loc == loc'.
+
+  Lemma cl_same_loc loc:
+    cl loc loc.
+  Proof.
+    (* TODO: change proof after fixing cl *)
+    unfold cl. destruct (equiv_dec loc loc); ss. exfalso. apply c. ss.
+  Qed.
 End Loc.
 
 Inductive opT1 :=
