@@ -1046,7 +1046,7 @@ Proof.
       { rewrite List.app_length. s. lia. }
       rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x0. ss. eqvtac.
       rewrite <- join_r.
-      unfold ifc. inv VLOC. rewrite VAL. rewrite Loc.cl_same_loc. s.
+      unfold ifc. inv VLOC. rewrite VAL. rewrite Loc.cl_refl. s.
       inv H0; [rewrite <- join_l | rewrite <- join_r]; apply L; econs; eauto.
     + i. rewrite sim_local_lper_end_step. rewrite inverse_step.
       rewrite inverse_union. ii. des.
@@ -1136,7 +1136,7 @@ Proof.
       exploit EX2.(LABELS); eauto; ss.
       { rewrite List.app_length. s. lia. }
       rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x0. ss. eqvtac.
-      unfold ifc. inv VLOC. rewrite VAL. rewrite Loc.cl_same_loc.
+      unfold ifc. inv VLOC. rewrite VAL. rewrite Loc.cl_refl.
       rewrite <- join_r.
       inv COHMAX. specialize (COHMAX0 mloc0). rewrite <- COHMAX0.
       apply VWN0. econs; eauto.

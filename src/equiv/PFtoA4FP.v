@@ -83,25 +83,30 @@ Proof.
   ii.
   destruct (le_lt_dec (length (ALocal.labels (AExecUnit.local aeu1))) eid1); cycle 1.
   { inv L. eapply FP0; eauto. }
-  assert (exists loc,
-             <<LABEL1: Execution.label_is ex (fun label : Label.t => Label.is_flushopting loc label) (tid, eid1)>> /\
-             <<LABEL2: Execution.label_is ex (fun label : Label.t => Label.is_writing loc label) eid2>>).
+  assert (exists loc1 loc2,
+             <<LABEL1: Execution.label_is ex (fun label : Label.t => Label.is_flushopting loc1 label) (tid, eid1)>> /\
+             <<LABEL2: Execution.label_is ex (fun label : Label.t => Label.is_writing loc2 label) eid2>> /\
+             <<CL: Loc.cl loc1 loc2>>).
   { inv FP.
     - inv H. des.
       exploit PF2; eauto. i. des.
       exploit CO2; eauto. i. des.
-      rewrite WRITE in LABEL0. inv LABEL0.
-      esplits; econs; eauto with axm.
+      inv WRITE. rewrite EID in LABEL0. simplify.
+      inv PERSIST. destruct l0; ss.
+      inv CL. inv LABEL3.
+      admit.
+      (* esplits; eauto with axm. econs; eauto with axm. *)
     - inv H. inv H1. inv H. inv H0. inv H2. inv H1. rewrite EID1 in EID0. inv EID0. rewrite EID2 in EID. inv EID.
       destruct l0; ss. destruct l3; ss. inv LABEL0. ss.
       destruct (equiv_dec loc0 loc1); ss. destruct (equiv_dec loc loc1); ss. inv e0. inv e1.
-      esplits; econs; eauto with axm.
+      admit. admit.
+      (* esplits; econs; eauto with axm. *)
   }
   i. des.
   inv LABEL1. destruct l0; ss.
   inv LABEL2. destruct l0; ss.
-  destruct (equiv_dec loc0 loc); ss. inv e0.
-  destruct (equiv_dec loc1 loc); ss. inv e0.
+  destruct (equiv_dec loc loc1); ss. inv e0.
+  destruct (equiv_dec loc0 loc2); ss. inv e0.
   destruct eid2 as [tid2 eid2].
   generalize (SIM tid2). intro SIMTR2. inv SIMTR2.
   { generalize (ATR tid2). rewrite <- H. intro X. inv X.
@@ -157,7 +162,7 @@ Proof.
   { apply List.nth_error_Some. congr. }
   rewrite x4 in *. rewrite x1 in x7. inv x7.
   unguardH FP_COV.
-  eapply Memory.latest_lt; try exact FP_COV; eauto.
+  eapply Memory.latest_lt; try exact FP_COV; eauto. ss.
   eapply Memory.latest_ts_latest; eauto.
   rewrite H0. ss.
 Qed.

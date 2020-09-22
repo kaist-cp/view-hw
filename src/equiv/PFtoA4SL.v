@@ -1547,7 +1547,7 @@ Proof.
       exploit EX2.(LABELS); eauto; ss.
       { rewrite List.app_length. s. lia. }
       rewrite List.nth_error_app2, Nat.sub_diag; ss. intro Z. inv Z.
-      rewrite <- join_r. unfold ifc. inv VLOC. rewrite VAL. rewrite Loc.cl_same_loc. s.
+      rewrite <- join_r. unfold ifc. inv VLOC. rewrite VAL. rewrite Loc.cl_refl. s.
       obtac.
       * rewrite <- join_l. etrans; try eapply COH; eauto; ss.
         eapply Memory.latest_ts_spec.

@@ -1826,9 +1826,8 @@ Proof.
         eapply view_of_eid_ob_write; eauto with tso. right. ss.
       }
       exploit EX.(Valid.PF1); eauto with tso. i. des.
-      { right. econs; simtac.
-        { econs; simtac; eauto with tso. }
-        econs; eauto with tso. econs; eauto. simtac.
+      { right. econs.
+        esplits; eauto with tso. simtac. econs; eauto with tso.
       }
       cut (view_of_eid ex ob eid2 = Some view).
       { i.

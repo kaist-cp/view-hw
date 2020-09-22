@@ -38,11 +38,19 @@ Module Loc.
   (* TODO: give relation *)
   Definition cl (loc loc':t): bool := loc == loc'.
 
-  Lemma cl_same_loc loc:
+  Lemma cl_refl loc:
     cl loc loc.
   Proof.
     (* TODO: change proof after fixing cl *)
     unfold cl. destruct (equiv_dec loc loc); ss. exfalso. apply c. ss.
+  Qed.
+
+  Lemma cl_sym loc1 loc2
+        (CL: cl loc1 loc2):
+    cl loc2 loc1.
+  Proof.
+    (* TODO: change proof after fixing cl *)
+    unfold cl in *. eqvtac. destruct (equiv_dec loc2 loc2); ss. exfalso. apply c. ss.
   Qed.
 End Loc.
 

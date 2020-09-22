@@ -71,18 +71,12 @@ Inductive sim_trace (p: program) (mem: Memory.t) (tid: Id.t):
                | Event.flush vloc =>
                  (fun eid => if Nat.eqb eid (ALocal.next_eid aeu1.(AExecUnit.local))
                             then Some (vloc.(ValA.val),
-                                       Memory.latest_ts
-                                         vloc.(ValA.val)
-                                         (eu2.(ExecUnit.local).(Local.per) vloc.(ValA.val)).(View.ts)
-                                         mem)
+                                       (eu2.(ExecUnit.local).(Local.per) vloc.(ValA.val)).(View.ts))
                             else f1 eid)
                | Event.flushopt vloc =>
                  (fun eid => if Nat.eqb eid (ALocal.next_eid aeu1.(AExecUnit.local))
                             then Some (vloc.(ValA.val),
-                                       Memory.latest_ts
-                                         vloc.(ValA.val)
-                                         (eu2.(ExecUnit.local).(Local.lper) vloc.(ValA.val)).(View.ts)
-                                         mem)
+                                       (eu2.(ExecUnit.local).(Local.lper) vloc.(ValA.val)).(View.ts))
                             else f1 eid)
                | _ => f1
                end)
@@ -95,17 +89,11 @@ Inductive sim_trace (p: program) (mem: Memory.t) (tid: Id.t):
                               else cov1 eid)
                  | Event.flush vloc =>
                    (fun eid => if Nat.eqb eid (ALocal.next_eid aeu1.(AExecUnit.local))
-                               then Memory.latest_ts
-                                      vloc.(ValA.val)
-                                      (eu2.(ExecUnit.local).(Local.per) vloc.(ValA.val)).(View.ts)
-                                      mem
+                               then (eu2.(ExecUnit.local).(Local.per) vloc.(ValA.val)).(View.ts)
                                else cov1 eid)
                  | Event.flushopt vloc =>
                    (fun eid => if Nat.eqb eid (ALocal.next_eid aeu1.(AExecUnit.local))
-                               then Memory.latest_ts
-                                      vloc.(ValA.val)
-                                      (eu2.(ExecUnit.local).(Local.lper) vloc.(ValA.val)).(View.ts)
-                                      mem
+                               then (eu2.(ExecUnit.local).(Local.lper) vloc.(ValA.val)).(View.ts)
                                else cov1 eid)
                  | _ => cov1
                  end)
@@ -472,24 +460,33 @@ Inductive sim_th
       old_ts < ts /\
       Memory.latest loc old_ts (pred ts) mem;
   FPROP1:
-    forall eid loc l
-      (GET: List.nth_error aeu.(AExecUnit.local).(ALocal.labels) eid = Some l /\
-            Label.is_persisting loc l),
-    exists ts tid' val,
-      f eid = Some (loc, ts) /\
-      <<FLUSH_TS_SPEC:
-          __guard__ ((ts = Time.bot /\ val = Val.default) \/
-          Memory.get_msg ts mem = Some (Msg.mk loc val tid')) >>;
+    forall eid loc1 l
+           (GET: List.nth_error aeu.(AExecUnit.local).(ALocal.labels) eid = Some l /\
+                 Label.is_persisting loc1 l),
+    exists perv,
+      <<FEID: f eid = Some (loc1, perv)>> /\
+      <<CL_REL:
+        forall loc2 (CL: Loc.cl loc1 loc2),
+          exists ts tid' val,
+          ts = Memory.latest_ts loc2 perv mem /\
+          <<FLUSH_TS_SPEC:
+              __guard__ ((ts = Time.bot /\ val = Val.default) \/
+              Memory.get_msg ts mem = Some (Msg.mk loc2 val tid'))>>>>;
   FPROP2:
-    forall eid loc ts (GET: f eid = Some (loc, ts)),
-    cov eid = ts /\
-    Time.le ts (vext eid) /\
-    exists l val tid',
+    forall eid loc1 perv
+           (GET: f eid = Some (loc1, perv)),
+    <<COV_EQ: cov eid = perv>> /\
+    <<VEXT_EQ: vext eid = perv>> /\
+    exists l,
       List.nth_error aeu.(AExecUnit.local).(ALocal.labels) eid = Some l /\
-      Label.is_persisting loc l /\
-      <<FLUSH_TS_SPEC:
-          __guard__ ((ts = Time.bot /\ val = Val.default) \/
-          Memory.get_msg ts mem = Some (Msg.mk loc val tid'))>>;
+      Label.is_persisting loc1 l /\
+      <<CL_REL:
+          forall loc2 (CL: Loc.cl loc1 loc2),
+            exists ts tid' val,
+            ts = Memory.latest_ts loc2 perv mem /\
+            <<FLUSH_TS_SPEC:
+                __guard__ ((ts = Time.bot /\ val = Val.default) \/
+                Memory.get_msg ts mem = Some (Msg.mk loc2 val tid'))>>>>;
   COVPROP:
     forall eid (COV: cov eid > 0),
       AExecUnit.label_is aeu.(AExecUnit.local).(ALocal.labels) Label.is_access_persist eid;
