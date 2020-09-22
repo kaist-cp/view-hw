@@ -420,20 +420,20 @@ Qed.
 (* CHECK: add flush *)
 Definition sim_local_lper ex loc :=
   (sim_local_vwn ex ⨾
-   ⦗ex.(Execution.label_is) (Label.is_flushing loc)⦘ ⨾
+   ⦗ex.(Execution.label_is) (Label.is_flushing_cl loc)⦘ ⨾
    Execution.po) ∪
 
   ((sim_local_coh ex loc ∪ sim_local_vpn ex) ⨾
-   ⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘ ⨾
+   ⦗ex.(Execution.label_is) (Label.is_flushopting_cl loc)⦘ ⨾
    Execution.po).
 
 Lemma sim_local_lper_step ex loc:
   sim_local_lper ex loc =
   (sim_local_lper ex loc ∪
    ((sim_local_vwn ex ⨾
-     ⦗ex.(Execution.label_is) (Label.is_flushing loc)⦘) ∪
+     ⦗ex.(Execution.label_is) (Label.is_flushing_cl loc)⦘) ∪
     ((sim_local_coh ex loc ∪ sim_local_vpn ex) ⨾
-     ⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘))) ⨾
+     ⦗ex.(Execution.label_is) (Label.is_flushopting_cl loc)⦘))) ⨾
   Execution.po_adj.
 Proof.
   unfold sim_local_lper. rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
@@ -457,7 +457,7 @@ Qed.
 
 Definition sim_local_per ex loc :=
   (sim_local_vwn ex ⨾
-   ⦗ex.(Execution.label_is) (Label.is_flushing loc)⦘ ⨾
+   ⦗ex.(Execution.label_is) (Label.is_flushing_cl loc)⦘ ⨾
    Execution.po) ∪
 
   (sim_local_lper ex loc ⨾
@@ -468,7 +468,7 @@ Lemma sim_local_per_step ex loc:
   sim_local_per ex loc =
   (sim_local_per ex loc ∪
    ((sim_local_vwn ex ⨾
-     ⦗ex.(Execution.label_is) (Label.is_flushing loc)⦘) ∪
+     ⦗ex.(Execution.label_is) (Label.is_flushing_cl loc)⦘) ∪
 
     (sim_local_lper ex loc ⨾
      ⦗ex.(Execution.label_is) (Label.is_persist_barrier)⦘))) ⨾
@@ -495,13 +495,13 @@ Proof.
 Qed.
 
 Definition sim_local_lper_end ex loc :=
-  (⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘ ⨾
+  (⦗ex.(Execution.label_is) (Label.is_flushopting_cl loc)⦘ ⨾
    Execution.po).
 
 Lemma sim_local_lper_end_step ex loc:
   sim_local_lper_end ex loc =
   (sim_local_lper_end ex loc ∪
-   (⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘)) ⨾
+   (⦗ex.(Execution.label_is) (Label.is_flushopting_cl loc)⦘)) ⨾
   Execution.po_adj.
 Proof.
   unfold sim_local_lper_end.
@@ -525,10 +525,10 @@ Proof.
 Qed.
 
 Definition sim_local_per_end ex loc :=
-  (⦗ex.(Execution.label_is) (Label.is_flushing loc)⦘ ⨾
+  (⦗ex.(Execution.label_is) (Label.is_flushing_cl loc)⦘ ⨾
    Execution.po) ∪
 
-  (⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘ ⨾
+  (⦗ex.(Execution.label_is) (Label.is_flushopting_cl loc)⦘ ⨾
    Execution.po ⨾
    ⦗ex.(Execution.label_is) (Label.is_persist_barrier)⦘ ⨾
    Execution.po).
@@ -536,9 +536,9 @@ Definition sim_local_per_end ex loc :=
 Lemma sim_local_per_end_step ex loc:
   sim_local_per_end ex loc =
   (sim_local_per_end ex loc ∪
-   ((⦗ex.(Execution.label_is) (Label.is_flushing loc)⦘) ∪
+   ((⦗ex.(Execution.label_is) (Label.is_flushing_cl loc)⦘) ∪
 
-    (⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘ ⨾
+    (⦗ex.(Execution.label_is) (Label.is_flushopting_cl loc)⦘ ⨾
      Execution.po ⨾
      ⦗ex.(Execution.label_is) (Label.is_persist_barrier)⦘))) ⨾
   Execution.po_adj.

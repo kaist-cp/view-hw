@@ -1485,11 +1485,11 @@ Proof.
       * eapply sim_view_le; [|exact (SIM_LOCAL.(COH) loc)]. i.
         right. econs; eauto. right.
         inv PR. econs. econs; [left|]; eauto.
-        inv REL. obtac. simtac.
+        inv REL. obtac. simtac. econs; eauto. ss. apply Loc.cl_sym. ss.
       * eapply sim_view_le; [|exact SIM_LOCAL.(VPN)]. i.
         right. econs; eauto. right.
         inv PR. econs. econs; [right|]; eauto.
-        inv REL; obtac; simtac.
+        inv REL; obtac; simtac; econs; eauto; ss; apply Loc.cl_sym; ss.
     + i. rewrite List.app_length, Nat.add_1_r.
       rewrite sim_local_per_step. rewrite inverse_step.
       rewrite inverse_union.
@@ -1538,7 +1538,8 @@ Proof.
       unfold ifc. condtac; [|econs]; ss.
       eapply sim_view_le; [|exact VWN0]. i.
       right. econs; eauto. left.
-      inv PR. econs. econs; eauto. simtac.
+      inv PR. econs. econs; eauto.
+      simtac. econs; eauto. ss. apply Loc.cl_sym. ss.
     + i. rewrite List.app_length, Nat.add_1_r.
       rewrite sim_local_per_step. rewrite inverse_step.
       rewrite inverse_union. apply sim_view_join.
@@ -1547,7 +1548,7 @@ Proof.
       eapply sim_view_le; [|exact VWN0]. i.
       right. econs; eauto.
       inv PR. left. econs. econs; eauto.
-      simtac.
+      simtac. econs; eauto. ss. apply Loc.cl_sym. ss.
 Qed.
 
 Lemma sim_eu_rtc_step
@@ -1810,11 +1811,11 @@ Proof.
     i. des. inv WRITING. destruct msg as [loc val tid0]; ss.
 
     cut (exists feid fview,
-          <<FEID: Execution.label_is ex (fun l => Label.is_persisting loc l) feid>> /\
+          <<FEID: Execution.label_is ex (fun l => Label.is_persisting_cl loc l) feid>> /\
           <<FVIEW: view_of_eid ex ob feid = Some fview>> /\
           <<SIM2FL: v <= fview>> /\
           <<FLUSHOPT:
-              Execution.label_is ex (fun l => Label.is_flushopting loc l) feid ->
+              Execution.label_is ex (fun l => Label.is_flushopting_cl loc l) feid ->
               (exists beid,
                 <<PO: Execution.po feid beid>> /\
                 <<BARRIER: Execution.label_is ex (fun l => Label.is_persist_barrier l) beid>>)>>).
@@ -1826,9 +1827,7 @@ Proof.
         eapply view_of_eid_ob_write; eauto with tso. right. ss.
       }
       exploit EX.(Valid.PF1); eauto with tso. i. des.
-      { right. econs.
-        esplits; eauto with tso. simtac. econs; eauto with tso.
-      }
+      { right. econs. esplits; eauto with tso. }
       cut (view_of_eid ex ob eid2 = Some view).
       { i.
         assert (Execution.co ex eid2 (tid0, n)).
@@ -1875,8 +1874,10 @@ Proof.
       left. right. repeat left. simtac.
     + exploit label_mem_of_ex; try exact EID1; eauto. i. des.
       esplits; eauto with tso.
-      eapply view_of_eid_ob; eauto. destruct l2; ss.
-      * left. right. right. simtac. econs; eauto with tso.
+      eapply view_of_eid_ob; eauto. destruct l2; ss; eqvtac.
+      * left. right. right. simtac.
+        econs; eauto with tso. simtac.
+        destruct l1; ss. econs; eauto with tso.
       * left. right. left. right. econs. econs; [left|]; simtac.
     + exploit label_mem_of_ex; try exact EID1; eauto. i. des.
       esplits; eauto with tso.
