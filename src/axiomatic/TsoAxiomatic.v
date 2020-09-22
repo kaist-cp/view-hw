@@ -1135,23 +1135,23 @@ Module Execution.
           end.
 
   Ltac labtac :=
-    try by (repeat match goal with
-         | [H1: Execution.label ?eid ?ex = Some (_ _ _),
-            H2: Execution.label ?eid ?ex = Some (_ _ _) |- _] =>
-           congr
-         | [H1: Execution.label ?eid ?ex = Some (_ _ _ _),
-            H2: Execution.label ?eid ?ex = Some (_ _ _) |- _] =>
-           congr
-         | [H1: Execution.label ?eid ?ex = Some (_ _ _),
-            H2: Execution.label ?eid ?ex = Some ?l2 |- _] =>
-           rewrite H1 in H2; inv H2; ss
-         | [H1: Execution.label ?eid ?ex = Some (_ _ _ _),
-            H2: Execution.label ?eid ?ex = Some ?l2 |- _] =>
-           rewrite H1 in H2; inv H2; ss
-         | [H1: Execution.label ?eid ?ex = Some ?l1,
-            H2: Execution.label ?eid ?ex = Some ?l2 |- _] =>
-           rewrite H1 in H2; inv H2; destruct l2; ss
-    end).
+    repeat match goal with
+            | [H1: Execution.label ?eid ?ex = Some (_ _ _),
+              H2: Execution.label ?eid ?ex = Some (_ _ _) |- _] =>
+              rewrite H1 in H2; inv H2
+            | [H1: Execution.label ?eid ?ex = Some (_ _ _ _),
+              H2: Execution.label ?eid ?ex = Some (_ _ _) |- _] =>
+              rewrite H1 in H2; inv H2
+            | [H1: Execution.label ?eid ?ex = Some (_ _ _),
+              H2: Execution.label ?eid ?ex = Some ?l2 |- _] =>
+              rewrite H1 in H2; inv H2
+            | [H1: Execution.label ?eid ?ex = Some (_ _ _ _),
+              H2: Execution.label ?eid ?ex = Some ?l2 |- _] =>
+              rewrite H1 in H2; inv H2
+            | [H1: Execution.label ?eid ?ex = Some ?l1,
+              H2: Execution.label ?eid ?ex = Some ?l2 |- _] =>
+              rewrite H1 in H2; inv H2
+            end; ss.
 
   Lemma fob_persist
         ex
@@ -1634,12 +1634,14 @@ Module Valid.
     ex.(Execution.label_is) Label.is_kinda_write eid2.
   Proof.
     obtac; labtac.
+    all: try by destruct l1; ss.
+    all: try by destruct l2; ss.
     - exploit RF2; eauto. i. des.
-      obtac. labtac.
+      obtac. labtac. destruct l0; ss.
     - exploit RF2; eauto. i. des.
-      obtac. labtac.
+      obtac. labtac. destruct l1; ss.
     - exploit CO2; eauto. i. des.
-      obtac. labtac.
+      obtac. labtac. destruct l1; ss.
     - exploit CO2; eauto. i. des.
       obtac. simtac.
     - simtac.
@@ -1660,7 +1662,7 @@ Module Valid.
     inv OB; cycle 1.
     { obtac.
       - exploit CO2; eauto. i. des.
-        obtac. labtac.
+        obtac. labtac. destruct l0; ss; congr.
       - destruct l; destruct l1; ss; congr.
     }
     inv H; cycle 1.
@@ -1671,12 +1673,14 @@ Module Valid.
       eapply Execution.po_chain. econs. simtac.
     }
     obtac; labtac.
+    all: try by destruct l1; ss.
+    all: try by destruct l2; ss.
     - exploit RF2; eauto. i. des.
-      obtac. labtac.
+      obtac. labtac. destruct l1; ss.
     - exploit CO2; eauto. i. des.
-      obtac. labtac.
+      obtac. labtac. destruct l0; ss.
     - exploit CO2; eauto. i. des.
-      obtac. labtac.
+      obtac. labtac. destruct l0; ss.
   Qed.
 End Valid.
 
