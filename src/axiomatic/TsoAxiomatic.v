@@ -74,6 +74,12 @@ Module Label.
     | _ => false
     end.
 
+  Definition is_flushing_cl (loc:Loc.t) (label:t): bool :=
+    match label with
+    | flush loc' => Loc.cl loc loc'
+    | _ => false
+    end.
+
   Definition is_flushopt (label:t): bool :=
     match label with
     | flushopt _ => true
@@ -83,6 +89,12 @@ Module Label.
   Definition is_flushopting (loc:Loc.t) (label:t): bool :=
     match label with
     | flushopt loc' => loc' == loc
+    | _ => false
+    end.
+
+  Definition is_flushopting_cl (loc:Loc.t) (label:t): bool :=
+    match label with
+    | flushopt loc' => Loc.cl loc loc'
     | _ => false
     end.
 
@@ -175,6 +187,13 @@ Module Label.
     match label with
     | flush loc' => loc' == loc
     | flushopt loc' => loc' == loc
+    | _ => false
+    end.
+
+  Definition is_persisting_cl (loc:Loc.t) (label:t): bool :=
+    match label with
+    | flush loc' => Loc.cl loc loc'
+    | flushopt loc' => Loc.cl loc loc'
     | _ => false
     end.
 
@@ -572,6 +591,48 @@ Module Label.
     destruct l; ss. unfold orb. condtac; ss.
   Qed.
 
+  Lemma flushing_cl_is_flush
+        loc l
+        (LABEL: is_flushing_cl loc l):
+    is_flush l.
+  Proof.
+    destruct l; ss.
+  Qed.
+
+  Lemma flushopting_cl_is_flushopt
+        loc l
+        (LABEL: is_flushopting_cl loc l):
+    is_flushopt l.
+  Proof.
+    destruct l; ss.
+  Qed.
+
+  Lemma flushing_cl_is_persisting_cl
+        loc l
+        (LABEL: is_flushing_cl loc l):
+    is_persisting_cl loc l.
+  Proof.
+    destruct l; ss.
+  Qed.
+
+  Lemma flushopting_cl_is_persisting_cl
+        loc l
+        (LABEL: is_flushopting_cl loc l):
+    is_persisting_cl loc l.
+  Proof.
+    destruct l; ss.
+  Qed.
+
+  Lemma persisting_cl_inv
+        loc l
+        (LABEL: Label.is_persisting_cl loc l):
+    exists loc0,
+      <<PERSISTING: Label.is_persisting loc0 l>> /\
+      <<CL: Loc.cl loc loc0>>.
+  Proof.
+    destruct l; ss; esplits; eauto; destruct (equiv_dec loc0 loc0); ss; exfalso; apply c; ss.
+  Qed.
+
   Hint Resolve
        read_is_reading_val reading_val_is_reading reading_is_read
        kinda_reading_is_kinda_read read_is_kinda_read kinda_read_is_access kinda_reading_is_accessing read_is_kinda_reading read_is_kinda_reading_val kinda_read_exists_loc_val kinda_reading_exists_val kinda_reading_val_is_kinda_reading
@@ -585,6 +646,8 @@ Module Label.
        kinda_write_flush_is_kinda_write_persist kinda_write_persist_is_access_persist
        flushing_is_persisting flushopting_is_persisting persisting_is_access_persisting accessing_is_access_persisting
        mfence_is_persist_barrier sfence_is_persist_barrier
+       flushing_cl_is_flush flushing_cl_is_persisting_cl
+       flushopting_cl_is_flushopt flushopting_cl_is_persisting_cl
     : tso.
 End Label.
 
@@ -1057,11 +1120,10 @@ Module Execution.
       ex.(Execution.pf) eid2 eid -> False.
 
   Definition fp_uninit (ex:t) (eid1 eid2:eidT): Prop :=
-    exists loc1 loc2,
-      <<PERSIST: ex.(Execution.label_is) (Label.is_persisting loc1) eid1>> /\
-      <<WRITE: ex.(Execution.label_is) (Label.is_kinda_writing loc2) eid2>> /\
-      <<CL: ex.(Execution.label_rel) Execution.label_cl eid1 eid2>> /\
-      <<NOPF: no_pf ex loc2 eid1>>.
+    exists loc,
+      <<PERSIST: ex.(Execution.label_is) (Label.is_persisting_cl loc) eid1>> /\
+      <<WRITE: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid2>> /\
+      <<NOPF: no_pf ex loc eid1>>.
 
   Definition fp (ex:t): relation eidT :=
     (ex.(pf)⁻¹ ⨾ ex.(co)) ∪ (fp_uninit ex).
@@ -1238,19 +1300,18 @@ Module Valid.
   Definition rf_wf (ex: Execution.t) := functional (ex.(Execution.rf))⁻¹.
 
   Definition pf1 (ex: Execution.t):=
-    forall eid1 loc1 loc2
-           (LABEL: ex.(Execution.label_is) (Label.is_persisting loc1) eid1)
-           (CL: Loc.cl loc1 loc2),
-      <<NOPF: Execution.no_pf ex loc2 eid1>> \/
+    forall eid1 loc
+           (LABEL: ex.(Execution.label_is) (Label.is_persisting_cl loc) eid1),
+      <<NOPF: Execution.no_pf ex loc eid1>> \/
       (exists eid2,
-          <<LABEL: ex.(Execution.label_is) (Label.is_kinda_writing loc2) eid2>> /\
+          <<LABEL: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid2>> /\
           <<PF: ex.(Execution.pf) eid2 eid1>>).
 
   Definition pf2 (ex: Execution.t) :=
     forall eid1 eid2 (PF: ex.(Execution.pf) eid2 eid1),
-      <<PERSIST: ex.(Execution.label_is) Label.is_persist eid1>> /\
-      <<WRITE: ex.(Execution.label_is) Label.is_kinda_write eid2>> /\
-      <<CL: ex.(Execution.label_rel) Execution.label_cl eid1 eid2>>.
+      exists loc,
+      <<PERSIST: ex.(Execution.label_is) (Label.is_persisting_cl loc) eid1>> /\
+      <<WRITE: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid2>>.
 
   Inductive persisted_event (ex:Execution.t) (loc:Loc.t) (eid:eidT) :=
   | persisted_event_intro
@@ -1681,6 +1742,27 @@ Module Valid.
       obtac. labtac. destruct l0; ss.
     - exploit CO2; eauto. i. des.
       obtac. labtac. destruct l0; ss.
+  Qed.
+
+  Lemma fp_is_cl
+        ex eid1 eid2
+        (CO2: co2 ex)
+        (PF2: pf2 ex)
+        (FP: Execution.fp ex eid1 eid2):
+    ex.(Execution.label_rel) Execution.label_cl eid1 eid2.
+  Proof.
+    obtac; cycle 1.
+    { simtac. exploit Label.persisting_cl_inv; eauto. i. des.
+      econs; eauto with tso. apply Loc.cl_sym. ss.
+    }
+    exploit PF2; eauto. i. des.
+    exploit CO2; eauto. i. des.
+    obtac. labtac.
+    exploit Label.persisting_cl_inv; eauto. i. des.
+    simtac. econs; eauto with tso.
+    assert (loc = loc0).
+    { destruct l1; ss; eqvtac. }
+    subst. apply Loc.cl_sym. ss.
   Qed.
 End Valid.
 

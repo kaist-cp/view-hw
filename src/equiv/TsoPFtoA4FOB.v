@@ -111,11 +111,11 @@ Proof.
     { split; eauto with tso. apply nth_error_last. apply Nat.eqb_eq. ss. }
     unfold ALocal.next_eid in *. condtac; cycle 1.
     { apply Nat.eqb_neq in X. congr. }
-    i. des. inv x0.
+    i. des. inv FEID.
     exploit L'.(FPROP2); eauto.
     { rewrite X. eauto. }
     s. rewrite X. i. des.
-    apply nth_error_snoc_inv_last in x2. inv x2.
+    apply nth_error_snoc_inv_last in x0. inv x0.
     rewrite EX2.(XVEXT); s; cycle 1.
     { rewrite List.app_length. s. clear. lia. }
     rewrite X.
@@ -152,13 +152,12 @@ Proof.
       + (* W; po; FL; po_cl; FO *)
         rewrite L.(LC).(LPER); ss.
         * rewrite <- join_l. ss.
-        * inv H3. obtac.
+        * inv H3. obtac. labtac. eqvtac.
           econs; eauto. unfold sim_local_lper. left.
           econs. split.
           { econs. econs; simtac. eauto. }
-          simtac.
-          rewrite EID in EID4. simplify. ss. eqvtac.
-          destruct l3; destruct l4; ss; try congr. eqvtac. simtac.
+          simtac. econs; eauto. destruct l4; ss; eqvtac.
+          apply Loc.cl_sym. ss.
   }
   { (* flush *)
     exploit sim_trace_sim_th; try exact SIMTR; eauto. intro TH_tmp.
@@ -172,11 +171,11 @@ Proof.
     }
     unfold ALocal.next_eid in *. condtac; cycle 1.
     { apply Nat.eqb_neq in X. congr. }
-    i. des. inv x0.
+    i. des. inv FEID.
     exploit L'.(FPROP2); eauto.
     { rewrite X. eauto. }
     s. rewrite X. i. des.
-    apply nth_error_snoc_inv_last in x2. inv x2.
+    apply nth_error_snoc_inv_last in x0. inv x0.
     rewrite EX2.(XVEXT); s; cycle 1.
     { rewrite List.app_length. s. clear. lia. }
     rewrite X.

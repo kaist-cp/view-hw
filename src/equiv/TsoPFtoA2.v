@@ -351,19 +351,18 @@ Lemma sim_traces_pf1_aux
       (ATR: IdMap.Forall2
               (fun tid atr aeu => exists l, atr = aeu :: l)
               atrs PRE.(Valid.aeus)):
-  forall eid1 loc1 loc2
-         (LABEL: ex.(Execution.label_is) (Label.is_persisting loc1) eid1)
-         (CL: Loc.cl loc1 loc2),
+  forall eid1 loc
+         (LABEL: ex.(Execution.label_is) (Label.is_persisting_cl loc) eid1),
     (<<NOPF:
-        forall eid2 (LABEL: ex.(Execution.label_is) (Label.is_kinda_writing loc2) eid2),
+        forall eid2 (LABEL: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid2),
           ~ (pf_gen ws fs m.(Machine.mem)) eid2 eid1>> /\
      <<F: exists f fl loc1' perv,
             IdMap.find (fst eid1) fs = Some (f::fl) /\
             f (snd eid1) = Some (loc1', perv) /\
-            Loc.cl loc1' loc2 /\
-            Memory.latest_ts loc2 perv m.(Machine.mem) = Time.bot>>) \/
+            Loc.cl loc1' loc /\
+            Memory.latest_ts loc perv m.(Machine.mem) = Time.bot>>) \/
     (exists eid2,
-        <<LABEL: ex.(Execution.label_is) (Label.is_kinda_writing loc2) eid2>> /\
+        <<LABEL: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid2>> /\
         <<PF: (pf_gen ws fs m.(Machine.mem)) eid2 eid1>>).
 Proof.
   i. destruct eid1 as [tid1 eid1].
@@ -378,7 +377,8 @@ Proof.
   exploit sim_trace_last; eauto. i. des. simplify.
   exploit sim_trace_sim_th; try exact REL7; eauto. intro TH_tmp.
   exploit TH_tmp; eauto. { instantiate (1 := []). ss. } clear TH_tmp. intro TH.
-  exploit TH.(FPROP1); eauto with tso. i. des.
+  exploit Label.persisting_cl_inv; eauto. i. des.
+  exploit TH.(FPROP1); eauto with tso. i. des. apply Loc.cl_sym in CL.
   exploit CL_REL; eauto. i. des. unguardH FLUSH_TS_SPEC. des.
   - left. esplits; subst; eauto.
     ii. inv H.
@@ -390,7 +390,7 @@ Proof.
     exploit sim_trace_sim_th; try exact REL0; eauto. intro TH'_tmp.
     exploit TH'_tmp; eauto. { instantiate (1 := []). ss. } intro TH'.
     exploit TH'.(WPROP3); eauto. i. des.
-    cut (loc0 = loc2).
+    cut (loc1 = loc).
     { i. subst. unfold Memory.get_msg in x6. ss. rewrite FLUSH_TS_SPEC in x6. ss. }
     generalize (ATR tid2). intro ATR2. inv ATR2; try congr.
     inv LABEL1. unfold Execution.label in EID0. des_ifs. ss.
@@ -429,14 +429,13 @@ Lemma sim_traces_pf1
       (ATR: IdMap.Forall2
               (fun tid atr aeu => exists l, atr = aeu :: l)
               atrs PRE.(Valid.aeus)):
-  forall eid1 loc1 loc2
-         (LABEL: ex.(Execution.label_is) (Label.is_persisting loc1) eid1)
-         (CL: Loc.cl loc1 loc2),
+  forall eid1 loc
+         (LABEL: ex.(Execution.label_is) (Label.is_persisting_cl loc) eid1),
     <<NOPF:
-      forall eid2 (LABEL: ex.(Execution.label_is) (Label.is_kinda_writing loc2) eid2),
+      forall eid2 (LABEL: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid2),
         ~ (pf_gen ws fs m.(Machine.mem)) eid2 eid1>> \/
     (exists eid2,
-      <<LABEL: ex.(Execution.label_is) (Label.is_kinda_writing loc2) eid2>> /\
+      <<LABEL: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid2>> /\
       <<PF: (pf_gen ws fs m.(Machine.mem)) eid2 eid1>>).
 Proof.
   ii. exploit sim_traces_pf1_aux; eauto. i. des.
@@ -456,9 +455,9 @@ Lemma sim_traces_pf2
               (fun tid atr aeu => exists l, atr = aeu :: l)
               atrs PRE.(Valid.aeus)):
   forall eid1 eid2 (PF: (pf_gen ws fs m.(Machine.mem)) eid2 eid1),
-    <<PERSIST: ex.(Execution.label_is) Label.is_persist eid1>> /\
-    <<WRITE: ex.(Execution.label_is) Label.is_kinda_write eid2>> /\
-    <<CL: ex.(Execution.label_rel) Execution.label_cl eid1 eid2>>.
+    exists loc,
+      <<PERSIST: ex.(Execution.label_is) (Label.is_persisting_cl loc) eid1>> /\
+      <<WRITE: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid2>>.
 Proof.
   i. inv PF. destruct eid1 as [tid1 eid1], eid2 as [tid2 eid2]. ss.
   generalize (SIM tid1). intro SIM1. inv SIM1; try congr.
@@ -478,11 +477,7 @@ Proof.
   generalize (ATR tid1). intro ATR1. inv ATR1; try congr.
   generalize (ATR tid2). intro ATR2. inv ATR2; try congr.
   des. simplify. destruct PRE, ex. ss. rewrite LABELS.
-  esplits.
-  + econs.
-    * unfold Execution.label in *. ss.
-      repeat rewrite IdMap.map_spec. rewrite <- H9. eauto.
-    * eauto with tso.
+  esplits; cycle 1.
   + econs; cycle 1.
     { instantiate (1 := l). eauto with tso. }
     unfold Execution.label in *. ss.
@@ -490,9 +485,8 @@ Proof.
   + econs.
     * unfold Execution.label in *. ss.
       repeat rewrite IdMap.map_spec. rewrite <- H9. eauto.
-    * unfold Execution.label in *. ss.
-      repeat rewrite IdMap.map_spec. rewrite <- H15. eauto.
-    * econs; eauto with tso.
+    * move CL at bottom. apply Loc.cl_sym in CL.
+      destruct l0; ss; eqvtac; ss.
 Qed.
 
 Lemma sim_traces_cov_co
@@ -885,8 +879,8 @@ Proof.
     subst. exploit sim_traces_cov_pf; eauto. i. des. subst.
     esplits; eauto.
   - obtac. labtac.
-    assert (loc' = loc2 /\ loc2 = loc /\ x = loc0).
-    { destruct l2; destruct l3; ss; eqvtac. }
+    assert (x = loc).
+    { destruct l1; ss; eqvtac. }
     des. subst.
     exploit sim_traces_pf1_aux; eauto with tso. i. des; cycle 1.
     { exfalso. rewrite <- PF in *. exploit NOPF; eauto. }

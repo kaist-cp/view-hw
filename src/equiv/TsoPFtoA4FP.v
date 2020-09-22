@@ -36,7 +36,7 @@ Lemma sim_traces_sim_th'_fp
       (SIM: sim_traces p m.(Machine.mem) trs atrs ws rs fs covs vexts)
       (PRE: Valid.pre_ex p ex)
       (CO: ex.(Execution.co) = co_gen ws)
-      (PF: ex.(Execution.pf) = pf_gen ws fs)
+      (PF: ex.(Execution.pf) = pf_gen ws fs m.(Machine.mem))
       (CO1: Valid.co1 ex)
       (CO2: Valid.co2 ex)
       (PF1: Valid.pf1 ex)
@@ -84,23 +84,19 @@ Proof.
   destruct (le_lt_dec (length (ALocal.labels (AExecUnit.local aeu1))) eid1); cycle 1.
   { inv L. eapply FP0; eauto. }
   assert (exists loc,
-             <<LABEL1: Execution.label_is ex (fun label : Label.t => Label.is_persisting loc label) (tid, eid1)>> /\
+             <<LABEL1: Execution.label_is ex (fun label : Label.t => Label.is_persisting_cl loc label) (tid, eid1)>> /\
              <<LABEL2: Execution.label_is ex (fun label : Label.t => Label.is_kinda_writing loc label) eid2>>).
-  { inv FP; obtac.
-    - exploit PF2; eauto. i. des.
-      exploit CO2; eauto. i. des.
-      inv PERSIST. rename EID into PERSIST. rename LABEL2 into P_VAL.
-      inv WRITE. rename EID into WRITE. rename LABEL2 into W_VAL.
-      inv LABEL0. rename EID into LABEL0. rename LABEL2 into WRITING0.
-      inv LABEL1. rename EID into LABEL1. rename LABEL2 into WRITING1.
-      rewrite WRITE in LABEL0. inv LABEL0.
-      exploit Label.kinda_writing_same_loc. instantiate (1 := l2). eauto. instantiate (1 := loc). ss.
-      i. subst.
-      esplits; econs; eauto with tso.
-    - inv H. obtac.
-      rewrite EID1 in EID0. inv EID0. rewrite EID2 in EID. inv EID.
-      destruct l0; destruct l3; ss; eqvtac.
-      all: esplits; econs; eauto with tso.
+  { inv FP; obtac; cycle 1.
+    { labtac. esplits; econs; eauto with tso. }
+    exploit PF2; eauto. i. des.
+    exploit CO2; eauto. i. des.
+    assert (loc = loc0).
+    { obtac. labtac. destruct l2; destruct l3; ss; eqvtac. }
+    inv PERSIST. rename EID into PERSIST. rename LABEL2 into P_VAL.
+    inv WRITE. rename EID into WRITE. rename LABEL2 into W_VAL.
+    inv LABEL0. rename EID into LABEL0. rename LABEL2 into WRITING0.
+    inv LABEL1. rename EID into LABEL1. rename LABEL2 into WRITING1.
+    esplits; eauto with tso.
   }
   i. des.
   inv LABEL1.
@@ -147,7 +143,7 @@ Proof.
     rewrite X.
     inv STEP0. ss. subst. inv LOCAL; inv EVENT.
     generalize L1.(EU_WF). intro WF. inv WF. ss.
-    exploit sim_traces_cov_fp; eauto.
+    exploit sim_traces_cov_fp; eauto with tso.
     { inv STEP. ss. }
     rewrite EX2.(XCOV) in *; s; cycle 1.
     { rewrite List.app_length. s. clear. lia. }
@@ -174,8 +170,8 @@ Proof.
     rewrite EX2'.(XCOV) in *; eauto; cycle 1.
     { apply List.nth_error_Some. congr. }
     rewrite x6 in *. rewrite x3 in x10. inv x10.
-    unguardH FP_COV.
-    eapply Memory.latest_lt; try exact FP_COV; eauto.
+    unguardH FP_COV. des. subst.
+    eapply Memory.latest_lt; try exact FP_COV0; eauto.
     eapply Memory.latest_ts_latest; eauto.
     destruct wr_lab; ss; eqvtac; ss.
   }
@@ -200,7 +196,7 @@ Proof.
     rewrite X.
     inv STEP0. ss. subst. inv LOCAL; inv EVENT.
     generalize L1.(EU_WF). intro WF. inv WF. ss.
-    exploit sim_traces_cov_fp; eauto.
+    exploit sim_traces_cov_fp; eauto with tso.
     { inv STEP. ss. }
     rewrite EX2.(XCOV) in *; s; cycle 1.
     { rewrite List.app_length. s. clear. lia. }
@@ -227,8 +223,8 @@ Proof.
     rewrite EX2'.(XCOV) in *; eauto; cycle 1.
     { apply List.nth_error_Some. congr. }
     rewrite x6 in *. rewrite x3 in x10. inv x10.
-    unguardH FP_COV.
-    eapply Memory.latest_lt; try exact FP_COV; eauto.
+    unguardH FP_COV. des. subst.
+    eapply Memory.latest_lt; try exact FP_COV0; eauto.
     eapply Memory.latest_ts_latest; eauto.
     destruct wr_lab; ss; eqvtac; ss.
   }

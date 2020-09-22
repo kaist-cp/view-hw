@@ -1046,7 +1046,7 @@ Proof.
       { rewrite List.app_length. s. lia. }
       rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x0. ss. eqvtac.
       rewrite <- join_r.
-      unfold ifc. inv VLOC. rewrite VAL. rewrite Loc.cl_refl. s.
+      unfold ifc. inv VLOC. rewrite VAL. rewrite Loc.cl_sym; ss.
       inv H0; [rewrite <- join_l | rewrite <- join_r]; apply L; econs; eauto.
     + i. rewrite sim_local_lper_end_step. rewrite inverse_step.
       rewrite inverse_union. ii. des.
@@ -1062,6 +1062,7 @@ Proof.
         condtac; cycle 1.
         { rewrite Nat.eqb_neq in *. ss. }
         ss. eqvtac. inv VLOC. rewrite VAL. ss.
+        unfold ifc. rewrite Loc.cl_refl. rewrite Loc.cl_sym; ss.
     + i. rewrite sim_local_per_end_step. rewrite inverse_step.
       rewrite inverse_union. ii. des; [apply PER_END|]; eauto.
       inv EID. obtac.
