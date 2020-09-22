@@ -115,7 +115,7 @@ Proof.
   clear STATE2 LOCAL0. inv STEP0. ss.
   exploit EX2.(LABELS); eauto; ss.
   { rewrite List.app_length. s. clear. lia. }
-  i. rewrite <- join_r. unfold ifc. rewrite Loc.cl_same_loc. s.
+  i. rewrite <- join_r. unfold ifc. rewrite Loc.cl_refl. s.
   move EID at bottom. move FOB at bottom. unfold Execution.fob in *. des_union.
   - (* W U R; po_cl; FO *)
     rewrite L.(LC).(COH2); [apply join_l|].

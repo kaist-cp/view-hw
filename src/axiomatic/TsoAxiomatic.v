@@ -1052,10 +1052,19 @@ Module Execution.
 
   Definition po_cl (ex:t): relation eidT := po ∩ ex.(label_rel) label_cl.
 
+  Definition no_pf (ex:t) (loc:Loc.t) (eid:eidT): Prop :=
+    forall eid2 (LABEL: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid2),
+      ex.(Execution.pf) eid2 eid -> False.
+
+  Definition fp_uninit (ex:t) (eid1 eid2:eidT): Prop :=
+    exists loc1 loc2,
+      <<PERSIST: ex.(Execution.label_is) (Label.is_persisting loc1) eid1>> /\
+      <<WRITE: ex.(Execution.label_is) (Label.is_kinda_writing loc2) eid2>> /\
+      <<CL: ex.(Execution.label_rel) Execution.label_cl eid1 eid2>> /\
+      <<NOPF: no_pf ex loc2 eid1>>.
+
   Definition fp (ex:t): relation eidT :=
-    (ex.(pf)⁻¹ ⨾ ex.(co)) ∪
-    ((ex.(label_rel) label_cl) ∩
-     ((ex.(label_is) Label.is_persist) \₁ codom_rel ex.(pf)) × (ex.(label_is) Label.is_kinda_write)).
+    (ex.(pf)⁻¹ ⨾ ex.(co)) ∪ (fp_uninit ex).
 
   Definition fob (ex:t): relation eidT :=
     (⦗ex.(label_is) Label.is_access⦘ ⨾
@@ -1096,6 +1105,7 @@ Module Execution.
            | [H: Execution.fre _ _ _ |- _] => inv H
            | [H: Execution.rfe _ _ _ |- _] => inv H
            | [H: Execution.fp _ _ _ |- _] => inv H
+           | [H: Execution.fp_uninit _ _ _ |- _] => inv H
            | [H: Execution.per _ _ _ |- _] => inv H
            | [H: (_⨾ _) _ _ |- _] => inv H
            | [H: ⦗_⦘ _ _ |- _] => inv H
@@ -1231,7 +1241,7 @@ Module Valid.
     forall eid1 loc1 loc2
            (LABEL: ex.(Execution.label_is) (Label.is_persisting loc1) eid1)
            (CL: Loc.cl loc1 loc2),
-      <<NOPF: ~ codom_rel ex.(Execution.pf) eid1>> \/
+      <<NOPF: Execution.no_pf ex loc2 eid1>> \/
       (exists eid2,
           <<LABEL: ex.(Execution.label_is) (Label.is_kinda_writing loc2) eid2>> /\
           <<PF: ex.(Execution.pf) eid2 eid1>>).
@@ -1536,7 +1546,6 @@ Module Valid.
     - inv H0. destruct l1; ss; try congr.
     - exploit CO2; eauto. i. des; obtac; destruct l; destruct l0; ss; congr.
     - exploit PF2; eauto. i. des; obtac; destruct l; destruct l0; ss; congr.
-    - inv H0. destruct l1; ss; try congr.
   Qed.
 
   Lemma ob_label
@@ -1649,7 +1658,11 @@ Module Valid.
     <<PO: Execution.po eid1 eid2>>.
   Proof.
     inv OB; cycle 1.
-    { obtac; [exploit CO2; eauto; i; des | clear EID2]; obtac; labtac. }
+    { obtac.
+      - exploit CO2; eauto. i. des.
+        obtac. labtac.
+      - destruct l; destruct l1; ss; congr.
+    }
     inv H; cycle 1.
     { split; eauto. obtac.
       all: splits; [simtac | eauto].
