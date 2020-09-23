@@ -533,14 +533,14 @@ Qed.
 
 Definition sim_local_lper ex loc :=
   (sim_local_vpn ex loc ⨾
-   ⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘ ⨾
+   ⦗ex.(Execution.label_is) (Label.is_flushopting_cl loc)⦘ ⨾
    Execution.po).
 
 Lemma sim_local_lper_step ex loc:
   sim_local_lper ex loc =
   (sim_local_lper ex loc ∪
    (sim_local_vpn ex loc ⨾
-    ⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘)) ⨾
+    ⦗ex.(Execution.label_is) (Label.is_flushopting_cl loc)⦘)) ⨾
   Execution.po_adj.
 Proof.
   unfold sim_local_lper. rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
@@ -579,13 +579,13 @@ Proof.
 Qed.
 
 Definition sim_local_lper_end ex loc :=
-  (⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘ ⨾
+  (⦗ex.(Execution.label_is) (Label.is_flushopting_cl loc)⦘ ⨾
    Execution.po).
 
 Lemma sim_local_lper_end_step ex loc:
   sim_local_lper_end ex loc =
   (sim_local_lper_end ex loc ∪
-   (⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘)) ⨾
+   (⦗ex.(Execution.label_is) (Label.is_flushopting_cl loc)⦘)) ⨾
   Execution.po_adj.
 Proof.
   unfold sim_local_lper_end.
@@ -601,7 +601,7 @@ Proof.
 Qed.
 
 Definition sim_local_per_end ex loc :=
-  (⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘ ⨾
+  (⦗ex.(Execution.label_is) (Label.is_flushopting_cl loc)⦘ ⨾
    Execution.po ⨾
    ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dsb_full)⦘ ⨾
    Execution.po).
@@ -609,7 +609,7 @@ Definition sim_local_per_end ex loc :=
 Lemma sim_local_per_end_step ex loc:
   sim_local_per_end ex loc =
   (sim_local_per_end ex loc ∪
-   ((⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘ ⨾
+   ((⦗ex.(Execution.label_is) (Label.is_flushopting_cl loc)⦘ ⨾
      Execution.po ⨾
      ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dsb_full)⦘))) ⨾
   Execution.po_adj.

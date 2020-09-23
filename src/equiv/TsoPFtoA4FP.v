@@ -173,7 +173,7 @@ Proof.
     unguardH FP_COV. des. subst.
     eapply Memory.latest_lt; try exact FP_COV0; eauto.
     eapply Memory.latest_ts_latest; eauto. s.
-    destruct wr_lab; ss. eqvtac. ss.
+    destruct wr_lab; ss; eqvtac; ss.
   }
   { (* flush -> kinda_write *)
     exploit sim_trace_sim_th; try exact SIMTR; eauto. intro TH_tmp.
