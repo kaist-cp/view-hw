@@ -1572,7 +1572,7 @@ Proof.
       unfold ifc. condtac; [| econs 1]; ss.
       eapply sim_view_le; [|exact (SIM_LOCAL.(VPN) loc)]. i.
       right. econs; eauto.
-      inv PR. econs. econs; simtac. ss.
+      inv PR. econs. econs; eauto. simtac. econs; eauto. ss. rewrite Loc.cl_sym; ss.
     + i. rewrite List.app_length, Nat.add_1_r.
       rewrite sim_local_per_step. rewrite inverse_step.
       rewrite inverse_union. eapply sim_view_le; [by left; eauto|].
@@ -1843,7 +1843,7 @@ Proof.
     i. des. destruct msg; ss. subst.
 
     cut (exists feid fview beid,
-          <<FEID: Execution.label_is ex (fun l => Label.is_flushopting loc l) feid>> /\
+          <<FEID: Execution.label_is ex (fun l => Label.is_flushopting_cl loc l) feid>> /\
           <<FVIEW: view_of_eid ex ob feid = Some fview>> /\
           <<SIM2FL: v <= fview>> /\
           <<PO: Execution.po feid beid>> /\
@@ -1892,7 +1892,8 @@ Proof.
       esplits; eauto with axm.
       eapply view_of_eid_ob; eauto.
       left. right. left. simtac. econs; eauto. simtac.
-      destruct l1; ss; econs; eauto with axm; rewrite Loc.cl_sym; ss.
+      destruct l0; destruct l1; ss; econs; eauto with axm;
+      apply Loc.cl_sym in LABEL2; eapply Loc.cl_trans; eauto.
     + exploit label_mem_of_ex; try exact EID0; eauto. i. des.
       esplits; eauto with axm.
       eapply view_of_eid_ob; eauto.

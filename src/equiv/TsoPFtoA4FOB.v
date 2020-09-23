@@ -148,6 +148,7 @@ Proof.
         inv LOCAL. exploit VPNCL; eauto. intro Z. rewrite <- Z.
         inv L. inv LC; ss. rewrite VPN0; [apply join_r|].
         econs; eauto. unfold sim_local_vpn. left. right. simtac.
+        econs; eauto. ss. apply Loc.cl_refl.
       + (* W; po; FL; po_cl; FO *)
         rewrite L.(LC).(LPER); ss.
         * rewrite <- join_l. ss.

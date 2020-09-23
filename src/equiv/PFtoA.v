@@ -45,7 +45,7 @@ Lemma sim_traces_sim_th'_step
       (PRE: Valid.pre_ex p ex)
       (CO: ex.(Execution.co) = co_gen ws)
       (RF: ex.(Execution.rf) = rf_gen ws rs)
-      (PF: ex.(Execution.pf) = pf_gen ws fs)
+      (PF: ex.(Execution.pf) = pf_gen ws fs m.(Machine.mem))
       (INTERNAL: acyclic (Execution.internal ex))
       (CO1: Valid.co1 ex)
       (CO2: Valid.co2 ex)
@@ -98,7 +98,7 @@ Lemma sim_traces_sim_th'
       (PRE: Valid.pre_ex p ex)
       (CO: ex.(Execution.co) = co_gen ws)
       (RF: ex.(Execution.rf) = rf_gen ws rs)
-      (PF: ex.(Execution.pf) = pf_gen ws fs)
+      (PF: ex.(Execution.pf) = pf_gen ws fs m.(Machine.mem))
       (INTERNAL: acyclic (Execution.internal ex))
       (CO1: Valid.co1 ex)
       (CO2: Valid.co2 ex)
@@ -175,7 +175,6 @@ Proof.
     - econs; ss. econs. ii. unfold RMap.init. rewrite ? IdMap.gempty. ss.
     - econs; ss.
       + ii. inv EID. inv REL. obtac. inv_po.
-      + ii. inv EID. inv REL. obtac. inv_po.
       + ii. inv EID. inv REL. des_union; obtac; inv_po.
         obtac. inv_po.
       + ii. inv EID. inv REL. des_union; obtac; inv_po.
@@ -207,7 +206,7 @@ Proof.
           { etrans; eauto. }
           { apply List.nth_error_Some. congr. }
         * clear. lia.
-      + ii. inv EID. inv REL. obtac. inv_po.
+      + ii. inv EID. inv REL; obtac; inv_po.
       + ii. inv EID. inv REL. obtac; inv_po.
       + ii. inv EID. inv REL. obtac. inv_po.
       + ii. inv EID. inv REL. obtac. inv_po.
@@ -249,7 +248,7 @@ Lemma sim_traces_vext_valid
       (PRE: Valid.pre_ex p ex)
       (CO: ex.(Execution.co) = co_gen ws)
       (RF: ex.(Execution.rf) = rf_gen ws rs)
-      (PF: ex.(Execution.pf) = pf_gen ws fs)
+      (PF: ex.(Execution.pf) = pf_gen ws fs m.(Machine.mem))
       (INTERNAL: acyclic (Execution.internal ex))
       (CO1: Valid.co1 ex)
       (CO2: Valid.co2 ex)
@@ -375,8 +374,8 @@ Proof.
   - destruct eid1 as [tid1 eid1].
     destruct eid2 as [tid2 eid2].
     dup FP. guardH FP. obtac.
-    + exploit PF2; eauto. i. des. inv PERSIST.
-      revert H2. unfold Execution.label. s. rewrite PRE.(Valid.LABELS), IdMap.map_spec.
+    + exploit PF2; eauto. i. des. inv PERSIST. destruct l; ss.
+      revert EID. unfold Execution.label. s. rewrite PRE.(Valid.LABELS), IdMap.map_spec.
       generalize (ATR tid1). generalize (SIM tid1). intros X Y; inv X; inv Y; simplify; ss.
       i. des. subst.
       exploit sim_trace_last; eauto. i. des. simplify.
@@ -386,7 +385,7 @@ Proof.
       all: try rewrite lastn_all; s; eauto; try lia.
       intro TH'. eapply TH'.(PFtoA3.FP); eauto.
       apply List.nth_error_Some. congr.
-    + revert EID1. unfold Execution.label. s. rewrite PRE.(Valid.LABELS), IdMap.map_spec.
+    + revert EID0. unfold Execution.label. s. rewrite PRE.(Valid.LABELS), IdMap.map_spec.
       generalize (ATR tid1). generalize (SIM tid1). intros Z W. inv Z; inv W; simplify; ss.
       i. des. subst.
       exploit sim_trace_last; eauto. i. des. simplify.
@@ -451,7 +450,7 @@ Lemma sim_traces_valid_external_atomic
       (PRE: Valid.pre_ex p ex)
       (CO: ex.(Execution.co) = co_gen ws)
       (RF: ex.(Execution.rf) = rf_gen ws rs)
-      (PF: ex.(Execution.pf) = pf_gen ws fs)
+      (PF: ex.(Execution.pf) = pf_gen ws fs m.(Machine.mem))
       (INTERNAL: acyclic (Execution.internal ex))
       (CO1: Valid.co1 ex)
       (CO2: Valid.co2 ex)
@@ -514,7 +513,7 @@ Lemma sim_traces_valid_per
       (PRE: Valid.pre_ex p ex)
       (CO: ex.(Execution.co) = co_gen ws)
       (RF: ex.(Execution.rf) = rf_gen ws rs)
-      (PF: ex.(Execution.pf) = pf_gen ws fs)
+      (PF: ex.(Execution.pf) = pf_gen ws fs m.(Machine.mem))
       (INTERNAL: acyclic (Execution.internal ex))
       (CO1: Valid.co1 ex)
       (CO2: Valid.co2 ex)
@@ -551,8 +550,7 @@ Proof.
   exploit L.(WPROP3); eauto. i. des. subst.
   move DOM at bottom. inv DOM. obtac.
 
-  exploit PF2; eauto. i. des. obtac.
-  rewrite PERSIST in EID. rewrite WRITE in EID0. simplify.
+  exploit PF2; eauto. i. des. obtac. labtac. eqvtac.
   destruct x8 as [ftid0 fiid]. destruct x as [ftid fiid1].
   generalize H11. intro Z. inv Z. ss. subst.
   generalize EID2. unfold Execution.label. s. rewrite PRE.(Valid.LABELS), IdMap.map_spec.
@@ -572,7 +570,7 @@ Proof.
   intro TH'.
   eapply TH'.(LC).(PER_END). econs; eauto.
   econs. simtac.
-  econs; eauto. apply List.nth_error_Some. ss. rewrite EID0. ss.
+  econs; eauto. apply List.nth_error_Some. ss. rewrite EID3. ss.
 Qed.
 
 Lemma sim_traces_persisted
@@ -585,7 +583,7 @@ Lemma sim_traces_persisted
       (PRE: Valid.pre_ex p ex)
       (CO: ex.(Execution.co) = co_gen ws)
       (RF: ex.(Execution.rf) = rf_gen ws rs)
-      (PF: ex.(Execution.pf) = pf_gen ws fs)
+      (PF: ex.(Execution.pf) = pf_gen ws fs m.(Machine.mem))
       (INTERNAL: acyclic (Execution.internal ex))
       (CO1: Valid.co1 ex)
       (CO2: Valid.co2 ex)
@@ -695,7 +693,7 @@ Lemma promising_pf_valid
 Proof.
   exploit promising_pf_sim_traces; eauto. i. des.
   destruct PRE, ex. ss.
-  remember (Execution.mk labels addr data ctrl0 rmw (co_gen ws) (rf_gen ws rs) (pf_gen ws fs)) as ex'.
+  remember (Execution.mk labels addr data ctrl0 rmw (co_gen ws) (rf_gen ws rs) (pf_gen ws fs m.(Machine.mem))) as ex'.
   replace labels with ex'.(Execution.labels) in LABELS; [|subst; ss].
   replace addr with ex'.(Execution.addr) in ADDR; [|subst; ss].
   replace data with ex'.(Execution.data) in DATA; [|subst; ss].
@@ -714,7 +712,7 @@ Proof.
   generalize (sim_traces_pf2 STEP PRE' SIM TR ATR). intro PF2.
   replace (co_gen ws) with (ex'.(Execution.co)) in CO1, CO2;[|subst; ss].
   replace (rf_gen ws rs) with (ex'.(Execution.rf)) in RF1, RF2, RF_WF; [|subst; ss].
-  replace (pf_gen ws fs) with (ex'.(Execution.pf)) in PF1, PF2; [|subst; ss].
+  replace (pf_gen ws fs m.(Machine.mem)) with (ex'.(Execution.pf)) in PF1, PF2; [|subst; ss].
   hexploit sim_traces_valid_internal; eauto; try by (subst; ss). intro INTERNAL.
   assert (INTERNAL': forall eid1 eid2 (INTERNAL: (Execution.internal ex')⁺ eid1 eid2),
              Time.lt (v_gen covs eid1) (v_gen covs eid2) \/

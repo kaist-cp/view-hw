@@ -1347,6 +1347,8 @@ Proof.
     + econs; ss; try by apply L.
     + econs; ss; try by apply L.
   - (* flushopt *)
+    exploit sim_trace_sim_th; try exact TRACE; eauto. intro SIM_TH.
+    destruct SIM_TH.(EU_WF). ss.
     inv STEP0. inv ASTATE_STEP; inv ALOCAL_STEP; ss; inv EVENT; ss. splits.
     econs; ss.
     { econs; ss. apply L. }
@@ -1496,7 +1498,9 @@ Proof.
       exploit EX2.(LABELS); eauto; ss.
       { rewrite List.app_length. s. lia. }
       rewrite List.nth_error_app2, Nat.sub_diag; ss. intro Z. inv Z.
-      rewrite <- join_r. unfold ifc. inv VLOC. rewrite VAL. rewrite Loc.cl_refl. s.
+      rewrite <- join_r.
+      inv VLOC. rewrite VAL in *.
+      unfold ifc. rewrite Loc.cl_sym; ss.
       obtac. etrans; try eapply VPN; eauto; ss.
     + rewrite List.app_length, Nat.add_1_r.
       i. rewrite sim_local_lper_end_step. rewrite inverse_step.
@@ -1512,7 +1516,9 @@ Proof.
         { ss. rewrite List.app_length. ss. unfold ALocal.next_eid. clear. lia. }
         condtac; cycle 1.
         { rewrite Nat.eqb_neq in *. ss. }
-        ss. eqvtac. inv VLOC. rewrite VAL. ss.
+        ss. inv VLOC. rewrite VAL in *.
+        unfold ifc. rewrite Loc.cl_refl. rewrite Loc.cl_sym; ss.
+        inv LOCAL0. exploit VPNCL; eauto. exploit LPERCL; eauto. intros Z W. rewrite Z, W. ss.
     + rewrite List.app_length, Nat.add_1_r.
       i. rewrite sim_local_per_end_step. rewrite inverse_step.
       rewrite ? inverse_union. ii. des.
