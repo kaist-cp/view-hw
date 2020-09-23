@@ -311,6 +311,16 @@ Module Label.
     destruct l; ss.
   Qed.
 
+  Lemma flushopting_cl_inv
+        loc l
+        (LABEL: Label.is_flushopting_cl loc l):
+    exists loc0,
+      <<PERSISTING: Label.is_flushopting loc0 l>> /\
+      <<CL: Loc.cl loc loc0>>.
+  Proof.
+    destruct l; ss; esplits; eauto; destruct (equiv_dec loc0 loc0); ss; exfalso; apply c; ss.
+  Qed.
+
   Hint Resolve
     read_is_access read_is_reading read_is_accessing reading_is_read reading_is_accessing
     write_is_access write_is_writing write_is_accessing writing_is_write writing_is_accessing
