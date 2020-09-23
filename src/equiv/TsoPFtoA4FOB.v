@@ -135,20 +135,19 @@ Proof.
     - inv H1. des. inv H.
       + (* U U R; po; FO *)
         obtac. rewrite L.(LC).(VPN); ss.
-        * rewrite <- join_r. unfold ifc. rewrite Loc.cl_refl. s. apply join_r.
+        * rewrite <- join_r. unfold ifc. rewrite Loc.cl_refl. ss.
         * econs; eauto. unfold sim_local_vpn. left. econs. econs; eauto. simtac.
       + (* W; po; [MF U SF]; po; FO *)
         rewrite L.(LC).(VPN); ss.
-        * rewrite <- join_r. unfold ifc. rewrite Loc.cl_refl. s. apply join_r.
+        * rewrite <- join_r. unfold ifc. rewrite Loc.cl_refl. ss.
         * econs; eauto. unfold sim_local_vpn. right. obtac; simtac; [left|right]; simtac.
     - obtac. inv H.
       + (* W; po_cl; FO *)
-        rewrite L.(LC).(COH); ss.
-        * rewrite <- join_r. unfold ifc. rewrite Loc.cl_refl. s. apply join_l.
-        * inv H3. obtac.
-          econs; eauto. unfold sim_local_coh. simtac.
-          rewrite EID in EID3. simplify. ss. eqvtac.
-          destruct l0; destruct l3; ss; try congr. eqvtac. simtac.
+        destruct l0; ss. inv H3. obtac. labtac. eqvtac.
+        unfold ifc. rewrite Loc.cl_refl.
+        inv LOCAL. exploit VPNCL; eauto. intro Z. rewrite <- Z.
+        inv L. inv LC; ss. rewrite VPN0; [apply join_r|].
+        econs; eauto. unfold sim_local_vpn. left. right. simtac.
       + (* W; po; FL; po_cl; FO *)
         rewrite L.(LC).(LPER); ss.
         * rewrite <- join_l. ss.

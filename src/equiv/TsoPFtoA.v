@@ -197,7 +197,7 @@ Proof.
           { etrans; eauto. }
           { apply List.nth_error_Some. congr. }
         * clear. lia.
-      + ii. inv EID. inv REL; obtac; inv H1; ss; lia.
+      + ii. inv EID. inv REL; obtac; try inv H1; try inv H7; ss; lia.
       + ii. inv EID. inv REL; obtac; inv H1; ss; lia.
       + ii. inv EID. inv REL. obtac. inv H7. ss. lia.
       + ii. inv EID. inv REL; obtac; inv H1; ss; lia.
@@ -348,7 +348,7 @@ Proof.
       all: try rewrite lastn_all; s; eauto; try lia.
       intro TH'. eapply TH'.(TsoPFtoA3.FP); eauto.
       apply List.nth_error_Some. congr.
-    + revert EID1. unfold Execution.label. s. rewrite PRE.(Valid.LABELS), IdMap.map_spec.
+    + revert EID0. unfold Execution.label. s. rewrite PRE.(Valid.LABELS), IdMap.map_spec.
       generalize (ATR tid1). generalize (SIM tid1). intros Z W. inv Z; inv W; simplify; ss.
       i. des. subst.
       exploit sim_trace_last; eauto. i. des. simplify.
