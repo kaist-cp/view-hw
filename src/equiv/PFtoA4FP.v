@@ -36,7 +36,7 @@ Lemma sim_traces_sim_th'_fp
       (SIM: sim_traces p m.(Machine.mem) trs atrs ws rs fs covs vexts)
       (PRE: Valid.pre_ex p ex)
       (CO: ex.(Execution.co) = co_gen ws)
-      (PF: ex.(Execution.pf) = pf_gen ws fs)
+      (PF: ex.(Execution.pf) = pf_gen ws fs m.(Machine.mem))
       (CO1: Valid.co1 ex)
       (CO2: Valid.co2 ex)
       (PF1: Valid.pf1 ex)
@@ -83,30 +83,20 @@ Proof.
   ii.
   destruct (le_lt_dec (length (ALocal.labels (AExecUnit.local aeu1))) eid1); cycle 1.
   { inv L. eapply FP0; eauto. }
-  assert (exists loc1 loc2,
-             <<LABEL1: Execution.label_is ex (fun label : Label.t => Label.is_flushopting loc1 label) (tid, eid1)>> /\
-             <<LABEL2: Execution.label_is ex (fun label : Label.t => Label.is_writing loc2 label) eid2>> /\
-             <<CL: Loc.cl loc1 loc2>>).
-  { inv FP.
-    - inv H. des.
-      exploit PF2; eauto. i. des.
-      exploit CO2; eauto. i. des.
-      inv WRITE. rewrite EID in LABEL0. simplify.
-      inv PERSIST. destruct l0; ss.
-      inv CL. inv LABEL3.
-      admit.
-      (* esplits; eauto with axm. econs; eauto with axm. *)
-    - inv H. inv H1. inv H. inv H0. inv H2. inv H1. rewrite EID1 in EID0. inv EID0. rewrite EID2 in EID. inv EID.
-      destruct l0; ss. destruct l3; ss. inv LABEL0. ss.
-      destruct (equiv_dec loc0 loc1); ss. destruct (equiv_dec loc loc1); ss. inv e0. inv e1.
-      admit. admit.
-      (* esplits; econs; eauto with axm. *)
+  assert (exists loc,
+             <<LABEL1: Execution.label_is ex (fun label : Label.t => Label.is_flushopting_cl loc label) (tid, eid1)>> /\
+             <<LABEL2: Execution.label_is ex (fun label : Label.t => Label.is_writing loc label) eid2>>).
+  { inv FP; obtac; cycle 1.
+    { labtac. esplits; econs; eauto with axm. }
+    exploit PF2; eauto. i. des.
+    exploit CO2; eauto. i. des.
+    assert (loc = loc0).
+    { obtac. labtac. ss. eqvtac. }
+    subst. esplits; eauto with axm.
   }
   i. des.
   inv LABEL1. destruct l0; ss.
-  inv LABEL2. destruct l0; ss.
-  destruct (equiv_dec loc loc1); ss. inv e0.
-  destruct (equiv_dec loc0 loc2); ss. inv e0.
+  inv LABEL2. destruct l0; ss. eqvtac.
   destruct eid2 as [tid2 eid2].
   generalize (SIM tid2). intro SIMTR2. inv SIMTR2.
   { generalize (ATR tid2). rewrite <- H. intro X. inv X.
@@ -134,12 +124,14 @@ Proof.
   { apply nth_error_last. apply Nat.eqb_eq. ss. }
   unfold ALocal.next_eid in *. condtac; cycle 1.
   { apply Nat.eqb_neq in X. congr. }
-  i. des. inv x0. rewrite EX2.(XVEXT) in *; s; cycle 1.
+  i. des. rewrite EX2.(XVEXT) in *; s; cycle 1.
   { rewrite List.app_length. s. clear. lia. }
   rewrite X.
   inv STEP0. ss. subst. inv LOCAL0; inv EVENT.
   generalize L1.(EU_WF). intro WF. inv WF. ss.
-  exploit sim_traces_cov_fp; eauto.
+  exploit sim_traces_cov_fp; cycle 8.
+  { instantiate (2 := loc). simtac. }
+  all: eauto; cycle 1.
   { inv STEP. ss. }
   rewrite EX2.(XCOV) in *; s; cycle 1.
   { rewrite List.app_length. s. clear. lia. }
@@ -153,7 +145,7 @@ Proof.
   intro EX2'.
   revert EID0. unfold Execution.label. s. rewrite PRE.(Valid.LABELS), IdMap.map_spec.
   generalize (ATR tid2). rewrite ATR2. intros Y Z; inv Y; ss.
-  rewrite <- H in Z. inv Z. des. simplify.
+  rewrite <- H in Z. inv Z. des. simplify. rewrite H2 in *.
   exploit L1'.(WPROP2); eauto. i. des.
   exploit L1'.(WPROP3); eauto. i. des. subst.
   rewrite EX2'.(XVEXT) in *; eauto; cycle 1.
@@ -161,8 +153,7 @@ Proof.
   rewrite EX2'.(XCOV) in *; eauto; cycle 1.
   { apply List.nth_error_Some. congr. }
   rewrite x4 in *. rewrite x1 in x7. inv x7.
-  unguardH FP_COV.
-  eapply Memory.latest_lt; try exact FP_COV; eauto. ss.
+  unguardH FP_COV. des. subst.
+  eapply Memory.latest_lt; try exact FP_COV0; eauto.
   eapply Memory.latest_ts_latest; eauto.
-  rewrite H0. ss.
 Qed.

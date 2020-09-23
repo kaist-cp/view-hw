@@ -69,10 +69,7 @@ Inductive sim_trace (p: program) (mem: Memory.t) (tid: Id.t):
                | Event.flushopt vloc =>
                  (fun eid => if Nat.eqb eid (ALocal.next_eid aeu1.(AExecUnit.local))
                             then Some (vloc.(ValA.val),
-                                       Memory.latest_ts
-                                         vloc.(ValA.val)
-                                         (eu2.(ExecUnit.local).(Local.lper) vloc.(ValA.val)).(View.ts)
-                                         mem)
+                                       (eu2.(ExecUnit.local).(Local.lper) vloc.(ValA.val)).(View.ts))
                             else f1 eid)
                | _ => f1
                end)
@@ -87,10 +84,7 @@ Inductive sim_trace (p: program) (mem: Memory.t) (tid: Id.t):
                               else cov1 eid)
                  | Event.flushopt vloc =>
                    (fun eid => if Nat.eqb eid (ALocal.next_eid aeu1.(AExecUnit.local))
-                               then Memory.latest_ts
-                                      vloc.(ValA.val)
-                                      (eu2.(ExecUnit.local).(Local.lper) vloc.(ValA.val)).(View.ts)
-                                      mem
+                               then (eu2.(ExecUnit.local).(Local.lper) vloc.(ValA.val)).(View.ts)
                                else cov1 eid)
                  | _ => cov1
                  end)
@@ -486,22 +480,30 @@ Inductive sim_th
       __guard__ ((ts = Time.bot /\ val = Val.default) \/
                  Memory.get_msg ts mem = Some (Msg.mk loc val tid'));
   FPROP1:
-    forall eid loc
-      (GET: List.nth_error aeu.(AExecUnit.local).(ALocal.labels) eid = Some (Label.flushopt loc)),
-    exists ts tid' val,
-      f eid = Some (loc, ts) /\
-      <<FLUSH_TS_SPEC:
-          __guard__ ((ts = Time.bot /\ val = Val.default) \/
-          Memory.get_msg ts mem = Some (Msg.mk loc val tid')) >>;
+    forall eid loc1
+      (GET: List.nth_error aeu.(AExecUnit.local).(ALocal.labels) eid = Some (Label.flushopt loc1)),
+    exists perv,
+      <<FEID: f eid = Some (loc1, perv)>> /\
+      <<CL_REL:
+        forall loc2 (CL: Loc.cl loc1 loc2),
+          exists ts tid' val,
+          ts = Memory.latest_ts loc2 perv mem /\
+          <<FLUSH_TS_SPEC:
+              __guard__ ((ts = Time.bot /\ val = Val.default) \/
+              Memory.get_msg ts mem = Some (Msg.mk loc2 val tid'))>>>>;
   FPROP2:
-    forall eid loc ts (GET: f eid = Some (loc, ts)),
-    cov eid = ts /\
-    Time.le ts (vext eid) /\
-    exists val tid',
-      List.nth_error aeu.(AExecUnit.local).(ALocal.labels) eid = Some (Label.flushopt loc) /\
-      <<FLUSH_TS_SPEC:
-          __guard__ ((ts = Time.bot /\ val = Val.default) \/
-          Memory.get_msg ts mem = Some (Msg.mk loc val tid'))>>;
+    forall eid loc1 perv
+           (GET: f eid = Some (loc1, perv)),
+    <<COV_EQ: cov eid = perv>> /\
+    <<VEXT_EQ: vext eid = perv>> /\
+    List.nth_error aeu.(AExecUnit.local).(ALocal.labels) eid = Some (Label.flushopt loc1) /\
+    <<CL_REL:
+        forall loc2 (CL: Loc.cl loc1 loc2),
+          exists ts tid' val,
+          ts = Memory.latest_ts loc2 perv mem /\
+          <<FLUSH_TS_SPEC:
+              __guard__ ((ts = Time.bot /\ val = Val.default) \/
+              Memory.get_msg ts mem = Some (Msg.mk loc2 val tid'))>>>>;
   COVPROP:
     forall eid (COV: cov eid > 0),
       AExecUnit.label_is aeu.(AExecUnit.local).(ALocal.labels) Label.is_access_persist eid;
@@ -670,7 +672,7 @@ Proof.
     - i. des. exploit IH.(FPROP1); eauto.
       apply nth_error_snoc_inv in GET. des; ss.
     - i. exploit IH.(FPROP2); eauto. s. i. des. des_ifs; cycle 1.
-      { esplits; eauto. eapply nth_error_app_mon in x2. eauto. }
+      { esplits; eauto. eapply nth_error_app_mon in x0. eauto. }
       exfalso. apply Nat.eqb_eq in Heq. subst.
       unfold ALocal.next_eid in *.
       assert (H: List.nth_error (ALocal.labels alc1) (length (ALocal.labels alc1)) <> None) by (ii; congr).
@@ -801,7 +803,7 @@ Proof.
     - i. des. exploit IH.(FPROP1); eauto.
       apply nth_error_snoc_inv in GET. des; ss.
     - i. exploit IH.(FPROP2); eauto. s. i. des. des_ifs; cycle 1.
-      { esplits; eauto. eapply nth_error_app_mon in x2. eauto. }
+      { esplits; eauto. eapply nth_error_app_mon in x0. eauto. }
       exfalso. apply Nat.eqb_eq in Heq. subst.
       unfold ALocal.next_eid in *.
       assert (H: List.nth_error (ALocal.labels alc1) (length (ALocal.labels alc1)) <> None) by (ii; congr).
@@ -983,20 +985,20 @@ Proof.
         des_ifs. apply Nat.eqb_eq in Heq. subst. unfold ALocal.next_eid in *. lia.
       + des_ifs; cycle 1.
         { apply Nat.eqb_neq in Heq. unfold ALocal.next_eid in *. congr. }
-        ss. eqvtac.
-        inv VLOC. inv VAL.
+        ss. eqvtac. inv VLOC. inv VAL.
+        esplits; eauto. i.
         exploit Memory.latest_ts_spec. i. des.
         exploit Memory.read_get_msg; eauto. i. des; esplits; eauto; [left|right]; eauto.
     - i. des_ifs.
       + split; ss.
         apply Nat.eqb_eq in Heq. subst.
         inv VLOC. inv VAL. ss.
-        exploit Memory.latest_ts_spec. i. des.
-        exploit Memory.read_get_msg; eauto. i. des; esplits; ss.
-        all: try by rewrite List.nth_error_app2, Nat.sub_diag; [|refl]; ss; eauto with tso.
+        esplits; cycle 1.
+        { rewrite List.nth_error_app2, Nat.sub_diag; [|refl]; ss; eauto with axm. }
         all: eauto with axm.
-        * left. eauto.
-        * right. eauto.
+        i.
+        exploit Memory.latest_ts_spec. i. des.
+        exploit Memory.read_get_msg; eauto. i. des; esplits; ss; [left | right]; eauto.
       + exploit IH.(FPROP2); eauto. s. i. des; esplits; eauto with axm.
         eapply nth_error_app_mon; eauto.
     - unfold ALocal.next_eid in *. s. i. des_ifs.

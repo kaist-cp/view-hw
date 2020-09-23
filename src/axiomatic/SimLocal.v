@@ -169,22 +169,6 @@ Proof.
     + destruct (equiv_dec loc0 loc); ss. inv e. econs; eauto. apply Label.write_is_writing.
 Qed.
 
-Definition sim_local_coh2 ex loc :=
-  ⦗ex.(Execution.label_is) (Label.is_accessing loc)⦘ ⨾
-  Execution.po.
-
-Lemma sim_local_coh2_step ex loc:
-  sim_local_coh2 ex loc =
-  (sim_local_coh2 ex loc ∪
-   ⦗ex.(Execution.label_is) (Label.is_accessing loc)⦘) ⨾
-  Execution.po_adj.
-Proof.
-  unfold sim_local_coh2. rewrite Execution.po_po_adj at 1.
-  rewrite (clos_refl_union Execution.po), union_seq, eq_seq.
-  rewrite ? seq_union, ? union_seq, ? seq_assoc.
-  refl.
-Qed.
-
 Definition sim_local_vrn ex :=
   (⦗ex.(Execution.label_is) Label.is_read⦘ ⨾
    Execution.po ⨾

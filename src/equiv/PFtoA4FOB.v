@@ -101,11 +101,11 @@ Proof.
   { apply nth_error_last. apply Nat.eqb_eq. ss. }
   unfold ALocal.next_eid in *. condtac; cycle 1.
   { apply Nat.eqb_neq in X. congr. }
-  i. des. inv x0.
+  i. des.
   exploit L'.(FPROP2); eauto.
   { rewrite X. eauto. }
   s. rewrite X. i. des.
-  apply nth_error_snoc_inv_last in x2. inv x2.
+  apply nth_error_snoc_inv_last in x0. inv x0.
   rewrite EX2.(XVEXT); s; cycle 1.
   { rewrite List.app_length. s. clear. lia. }
   rewrite X.
@@ -116,17 +116,16 @@ Proof.
   exploit EX2.(LABELS); eauto; ss.
   { rewrite List.app_length. s. clear. lia. }
   i. rewrite <- join_r. unfold ifc. rewrite Loc.cl_refl. s.
+    inv VLOC. rewrite <- VAL in *.
   move EID at bottom. move FOB at bottom. unfold Execution.fob in *. des_union.
   - (* W U R; po_cl; FO *)
-    rewrite L.(LC).(COH2); [apply join_l|].
-    obtac.
-    econs; eauto. unfold sim_local_coh2.
+    obtac. rewrite L.(LC).(VPN); ss.
+    econs; eauto. unfold sim_local_vpn. left.
     inv H. obtac. simtac.
-    rewrite EID in EID3. simplify. ss. eqvtac. rewrite <- H1.
-    destruct l0; destruct l2; ss; try congr; eqvtac; simtac.
+    labtac. eqvtac. econs; eauto.
+    apply Loc.cl_sym in CL. destruct l2; ss; eqvtac; ss.
   - (* W U R; po; [dmb.sy U dsb.sy]; po; FO *)
-    rewrite L.(LC).(VPN); [apply join_r|].
-    obtac.
-    econs; eauto. unfold sim_local_vpn.
-    inv H. obtac. simtac.
+    obtac. rewrite L.(LC).(VPN); ss.
+    econs; eauto. unfold sim_local_vpn. right.
+    simtac.
 Qed.
