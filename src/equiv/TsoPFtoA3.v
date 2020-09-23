@@ -179,10 +179,11 @@ Inductive sim_local (tid:Id.t) (mem: Memory.t) (ex: Execution.t) (vext: eidT -> 
         <<N: (length alocal.(ALocal.labels)) <= n>> /\
         <<WRITE: ex.(Execution.label_is) Label.is_kinda_write (tid, n)>> /\
         <<VIEW: vext (tid, n) = view>>;
-  VPN: sim_view
+  VPN: forall loc,
+        sim_view
          vext
-         local.(Local.vpn).(View.ts)
-         (inverse (sim_local_vpn ex) (eq (tid, List.length (alocal.(ALocal.labels)))));
+         (local.(Local.vpn) loc).(View.ts)
+         (inverse (sim_local_vpn ex loc) (eq (tid, List.length (alocal.(ALocal.labels)))));
   LPER: forall loc,
         sim_view
           vext
