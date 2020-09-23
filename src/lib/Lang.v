@@ -52,6 +52,15 @@ Module Loc.
     (* TODO: change proof after fixing cl *)
     unfold cl in *. eqvtac. destruct (equiv_dec loc2 loc2); ss. exfalso. apply c. ss.
   Qed.
+
+  Lemma cl_trans loc1 loc2 loc3
+        (CL1: cl loc1 loc2)
+        (CL2: cl loc2 loc3):
+    cl loc1 loc3.
+  Proof.
+    (* TODO: change proof after fixing cl *)
+    unfold cl in *. eqvtac.
+  Qed.
 End Loc.
 
 Inductive opT1 :=
