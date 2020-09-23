@@ -1758,27 +1758,6 @@ Module Valid.
     - exploit CO2; eauto. i. des.
       obtac. labtac. destruct l0; ss.
   Qed.
-
-  Lemma fp_is_cl
-        ex eid1 eid2
-        (CO2: co2 ex)
-        (PF2: pf2 ex)
-        (FP: Execution.fp ex eid1 eid2):
-    ex.(Execution.label_rel) Execution.label_cl eid1 eid2.
-  Proof.
-    obtac; cycle 1.
-    { simtac. exploit Label.persisting_cl_inv; eauto. i. des.
-      econs; eauto with tso. apply Loc.cl_sym. ss.
-    }
-    exploit PF2; eauto. i. des.
-    exploit CO2; eauto. i. des.
-    obtac. labtac.
-    exploit Label.persisting_cl_inv; eauto. i. des.
-    simtac. econs; eauto with tso.
-    assert (loc = loc0).
-    { destruct l1; ss; eqvtac. }
-    subst. apply Loc.cl_sym. ss.
-  Qed.
 End Valid.
 
 Coercion Valid.PRE: Valid.ex >-> Valid.pre_ex.
