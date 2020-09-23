@@ -56,6 +56,12 @@ Module Label.
     | _ => false
     end.
 
+  Definition is_writing_cl (loc:Loc.t) (label:t): bool :=
+    match label with
+    | write loc' _ => Loc.cl loc loc'
+    | _ => false
+    end.
+
   Definition is_update (label:t): bool :=
     match label with
     | update _ _ _ => true
@@ -591,6 +597,14 @@ Module Label.
     destruct l; ss. unfold orb. condtac; ss.
   Qed.
 
+  Lemma writing_cl_is_write
+        loc l
+        (LABEL: is_writing_cl loc l):
+    is_write l.
+  Proof.
+    destruct l; ss.
+  Qed.
+
   Lemma flushing_cl_is_flush
         loc l
         (LABEL: is_flushing_cl loc l):
@@ -646,6 +660,7 @@ Module Label.
        kinda_write_flush_is_kinda_write_persist kinda_write_persist_is_access_persist
        flushing_is_persisting flushopting_is_persisting persisting_is_access_persisting accessing_is_access_persisting
        mfence_is_persist_barrier sfence_is_persist_barrier
+       writing_cl_is_write
        flushing_cl_is_flush flushing_cl_is_persisting_cl
        flushopting_cl_is_flushopt flushopting_cl_is_persisting_cl
     : tso.
