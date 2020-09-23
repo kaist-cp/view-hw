@@ -514,36 +514,48 @@ Proof.
   refl.
 Qed.
 
-Definition sim_local_vpn ex :=
+Definition sim_local_vpn ex loc :=
+  (⦗ex.(Execution.label_is) (Label.is_accessing_cl loc)⦘ ⨾
+   Execution.po) ∪
+
   (⦗ex.(Execution.label_is) Label.is_access⦘ ⨾
    Execution.po ⨾
    ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_full)⦘ ⨾
    Execution.po).
 
-Lemma sim_local_vpn_step ex:
-  sim_local_vpn ex =
-  (sim_local_vpn ex ∪
-   (⦗ex.(Execution.label_is) Label.is_access⦘ ⨾
-    Execution.po ⨾
-    ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_full)⦘)) ⨾
+Lemma sim_local_vpn_step ex loc:
+  sim_local_vpn ex loc =
+  (sim_local_vpn ex loc ∪
+   ((⦗ex.(Execution.label_is) (Label.is_accessing_cl loc)⦘) ∪
+    (⦗ex.(Execution.label_is) Label.is_access⦘ ⨾
+     Execution.po ⨾
+     ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dmb_dsb_full)⦘))) ⨾
   Execution.po_adj.
 Proof.
   unfold sim_local_vpn. rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
-  rewrite Execution.po_po_adj at 2.
+  rewrite Execution.po_po_adj at 1 3.
   rewrite (clos_refl_union Execution.po), union_seq, eq_seq.
   rewrite ? (seq_union' (Execution.po ⨾ Execution.po_adj) Execution.po_adj), ? seq_assoc, ? union_assoc.
-  refl.
+  funext. i. funext. i. propext. econs; i.
+  - repeat match goal with
+           | [H: (_ ∪ _) _ _ |- _] => inv H
+           end;
+      eauto 10 using union_l, union_r.
+  - repeat match goal with
+           | [H: (_ ∪ _) _ _ |- _] => inv H
+           end;
+      eauto 10 using union_l, union_r.
 Qed.
 
 Definition sim_local_lper ex loc :=
-  ((sim_local_coh ex loc ∪ sim_local_vpn ex) ⨾
+  (sim_local_vpn ex loc ⨾
    ⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘ ⨾
    Execution.po).
 
 Lemma sim_local_lper_step ex loc:
   sim_local_lper ex loc =
   (sim_local_lper ex loc ∪
-   ((sim_local_coh ex loc ∪ sim_local_vpn ex) ⨾
+   (sim_local_vpn ex loc ⨾
     ⦗ex.(Execution.label_is) (Label.is_flushopting loc)⦘)) ⨾
   Execution.po_adj.
 Proof.
