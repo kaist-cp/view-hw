@@ -35,29 +35,11 @@ End Val.
 Module Loc.
   Include Val.
 
-  (* TODO: give relation *)
-  Definition cl (loc loc':t): bool := loc <> loc'.
-
-  Lemma cl_refl loc:
-    cl loc loc.
-  Proof.
-    admit.
-  Qed.
-
-  Lemma cl_sym loc1 loc2
-        (CL: cl loc1 loc2):
-    cl loc2 loc1.
-  Proof.
-    admit.
-  Qed.
-
-  Lemma cl_trans loc1 loc2 loc3
-        (CL1: cl loc1 loc2)
-        (CL2: cl loc2 loc3):
-    cl loc1 loc3.
-  Proof.
-    admit.
-  Qed.
+  (* relation about whether two locations are in the same cache line. *)
+  Parameter cl: forall (loc loc':t), bool.
+  Parameter cl_refl: Reflexive cl.
+  Parameter cl_sym: Symmetric cl.
+  Parameter cl_trans: Transitive cl.
 End Loc.
 
 Inductive opT1 :=

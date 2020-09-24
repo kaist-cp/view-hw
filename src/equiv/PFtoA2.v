@@ -594,7 +594,7 @@ Proof.
     subst. exploit sim_traces_cov_pf; eauto with axm. i. des. subst.
     esplits; eauto.
   - obtac. labtac.
-    assert (x = loc).
+    assert (loc0 = loc).
     { destruct l1; ss; eqvtac. }
     des. subst.
     exploit sim_traces_pf1_aux; eauto with axm. i. des; cycle 1.

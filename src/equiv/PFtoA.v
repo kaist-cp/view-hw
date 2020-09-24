@@ -620,15 +620,21 @@ Proof.
       rewrite H7 in x2. rewrite Promises.lookup_bot in x2. ss.
     }
     exploit L.(WPROP3); eauto. i. des. subst.
-    econs 2.
-    { instantiate (3 := (tid, eid)). unfold Execution.label. s.
-      rewrite PRE.(Valid.LABELS), IdMap.map_spec, <- H8. ss. eauto.
-    }
-    i. exploit sim_traces_vext_co; eauto; try by (subst; ss). i.
-    inv PEID. exploit sim_traces_valid_per; eauto. i. des.
+    assert (SMEID: Execution.label (tid, eid) ex = Some (Label.write ex0 ord loc (smem loc))).
+    { unfold Execution.label. s.  rewrite PRE.(Valid.LABELS), IdMap.map_spec, <- H8. ss. }
+    econs 2; eauto.
+    i. inv PEID. obtac. destruct l; ss. eqvtac. exploit CO1.
+    { esplits; [try exact EID0 | try exact SMEID]; eauto. }
+    i. des.
+    { subst. econs. ss. }
+    { econs 2. ss. }
+    exfalso.
+    exploit sim_traces_vext_co; eauto; try by (subst; ss). i.
+    exploit sim_traces_valid_per; eauto with axm. i. des.
     move LATEST at bottom. eapply LATEST in SL.
-    unfold Memory.get_msg in MSG. destruct (v_gen vexts eid2); ss. eapply SL; try exact MSG; eauto.
-    unfold v_gen in *. ss. rewrite <- H6 in *. rewrite x7 in x6. unfold Time.lt in *. ss.
+    unfold Memory.get_msg in MSG. destruct (v_gen vexts eid0); ss.
+    eapply SL; try exact MSG; eauto.
+    unfold v_gen in *. ss. rewrite <- H6 in *. rewrite <- x7. unfold Time.lt in *. ss.
 Qed.
 
 Lemma internal_acyclic

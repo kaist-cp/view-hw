@@ -1131,14 +1131,19 @@ Module Execution.
   Definition po_cl (ex:t): relation eidT := po ∩ ex.(label_rel) label_cl.
 
   Definition no_pf (ex:t) (loc:Loc.t) (eid:eidT): Prop :=
-    forall eid2 (LABEL: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid2),
-      ex.(Execution.pf) eid2 eid -> False.
+    forall eid2
+           (LABEL: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid2)
+           (PF: ex.(Execution.pf) eid2 eid),
+      False.
 
-  Definition fp_uninit (ex:t) (eid1 eid2:eidT): Prop :=
-    exists loc,
-      <<PERSIST: ex.(Execution.label_is) (Label.is_persisting_cl loc) eid1>> /\
-      <<WRITE: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid2>> /\
-      <<NOPF: no_pf ex loc eid1>>.
+  Inductive fp_uninit (ex:t) (eid1 eid2:eidT): Prop :=
+  | fp_uninit_intro
+      loc
+      (PERSIST: ex.(Execution.label_is) (Label.is_persisting_cl loc) eid1)
+      (WRITE: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid2)
+      (NOPF: no_pf ex loc eid1)
+  .
+  Hint Constructors fp_uninit.
 
   Definition fp (ex:t): relation eidT :=
     (ex.(pf)⁻¹ ⨾ ex.(co)) ∪ (fp_uninit ex).
@@ -1209,6 +1214,7 @@ Module Execution.
            | [H: _ |- Execution.po_cl _ _ _ /\ _] => econs; eauto
            | [H: _ |- Execution.pf _ _ _ /\ _] => econs; eauto
            | [H: _ |- ⦗Execution.label_is _ _⦘ _ _ /\ _] => econs; econs; eauto with tso
+           | [H: _ |- Execution.fp_uninit _ _ _] => econs; eauto with tso
           end.
 
   Ltac labtac :=
@@ -1342,7 +1348,7 @@ Module Valid.
   | persisted_loc_init
       eid
       (EID: ex.(Execution.label_is) (Label.is_kinda_writing_val loc val) eid)
-      (PER: forall eid2 (CO: ex.(Execution.co) eid eid2) (PEID: persisted_event ex loc eid2), False)
+      (PER: forall eid0 (PEID: persisted_event ex loc eid0), ex.(Execution.co)^? eid0 eid)
   .
   Hint Constructors persisted_loc : tso.
 
