@@ -747,15 +747,21 @@ Proof.
       rewrite H7 in x2. rewrite Promises.lookup_bot in x2. ss.
     }
     exploit L.(WPROP3); eauto. i. des. subst.
-    econs 2.
-    { econs; eauto. instantiate (1 := (tid, eid)). unfold Execution.label. s.
-      rewrite PRE.(Valid.LABELS), IdMap.map_spec, <- H8. ss.
-    }
-    i. exploit sim_traces_vext_co; eauto; try by (subst; ss). i.
-    inv PEID. exploit sim_traces_valid_per; eauto. i. des.
+    assert (SMEID: Execution.label_is ex (fun l : Label.t => Label.is_kinda_writing_val loc (smem loc) l) (tid, eid)).
+    { econs; eauto.  unfold Execution.label. s. rewrite PRE.(Valid.LABELS), IdMap.map_spec, <- H8. ss. }
+    econs 2; eauto.
+    i. inv PEID. obtac. exploit CO1.
+    { esplits; econs; [try exact EID0 | | try exact EID|]; eauto with tso. }
+    i. des.
+    { subst. econs. ss. }
+    { econs 2. ss. }
+    exfalso.
+    exploit sim_traces_vext_co; eauto; try by (subst; ss). i.
+    exploit sim_traces_valid_per; eauto with tso. i. des.
     move LATEST at bottom. eapply LATEST in SL.
-    unfold Memory.get_msg in MSG. destruct (v_gen vexts eid2); ss. eapply SL; try exact MSG; eauto.
-    unfold v_gen in *. ss. rewrite <- H6 in *. rewrite x8 in x7. unfold Time.lt in *. ss.
+    unfold Memory.get_msg in MSG. destruct (v_gen vexts eid0); ss.
+    eapply SL; try exact MSG; eauto.
+    unfold v_gen in *. ss. rewrite <- H6 in *. rewrite <- x8. unfold Time.lt in *. ss.
 Qed.
 
 Lemma corw_irrefl

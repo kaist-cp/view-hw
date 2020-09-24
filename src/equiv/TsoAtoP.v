@@ -305,7 +305,7 @@ Inductive persisted_event_view (ex:Execution.t) (ob: list eidT) (loc:Loc.t) (vie
   eid
   (VIEW: view_of_eid ex ob eid = Some view)
   (EID: ex.(Execution.label_is) (Label.is_kinda_writing loc) eid)
-  (PER: forall eid2 (CO: ex.(Execution.co) eid eid2) (PEID: Valid.persisted_event ex loc eid2), False)
+  (PER: forall eid0 (PEID: Valid.persisted_event ex loc eid0), ex.(Execution.co)^? eid0 eid)
 .
 Hint Constructors persisted_event_view.
 
@@ -1829,27 +1829,29 @@ Proof.
         eapply view_of_eid_ob_write; eauto with tso. right. ss.
       }
       exploit EX.(Valid.PF1); eauto with tso. i. des.
-      { right. econs. esplits; eauto with tso. }
+      { right. simtac. }
       cut (view_of_eid ex ob eid2 = Some view).
       { i.
         assert (Execution.co ex eid2 (tid0, n)).
         { eapply view_of_eid_co; eauto with tso. }
         left. econs; eauto.
       }
-      assert (DOM: dom_rel (Execution.per ex) eid2).
-      { obtac. destruct l0; ss; eqvtac.
+      assert (PERSISTED: Valid.persisted_event ex loc eid2).
+      { econs; eauto. obtac. destruct l0; ss; eqvtac.
         { econs. econs. simtac. left. simtac. }
         exploit FLUSHOPT; eauto with tso. i. des.
         econs. econs. simtac. right. simtac.
       }
       inv PVIEW.
-      { exfalso. eapply NPER. econs; eauto. }
+      { exfalso. eapply NPER. eauto. }
       obtac. exploit label_mem_of_ex; try exact EID2; eauto. i. des.
       exploit EX.(Valid.CO1).
       { esplits; econs; [try exact EID3 | | try exact EID2|]; eauto with tso. }
       i. des.
       - subst. ss.
-      - exfalso. eapply PER0; eauto. econs; eauto with tso.
+      - hexploit PER0; eauto. intro Z. inv Z; ss.
+        exfalso. eapply EX.(Valid.EXTERNAL).
+        econs 2; econs; left; left; left; left; right; eauto.
       - cut (fview < view).
         { i. lia. }
         eapply view_of_eid_ob_write; eauto with tso.

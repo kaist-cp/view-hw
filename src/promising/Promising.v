@@ -342,6 +342,8 @@ Section Local.
 
   Inductive dmb (rr rw wr ww:bool) (lc1 lc2:t): Prop :=
   | dmb_intro
+      persist
+      (PERSIST: persist = rr && rw && wr && ww)
       (LC2: lc2 =
             mk
               lc1.(coh)
@@ -351,7 +353,7 @@ Section Local.
               lc1.(vwo)
               lc1.(vcap)
               lc1.(vrel)
-              (if andb rr (andb rw (andb wr ww))
+              (if persist
                then fun_join lc1.(vpn) (fun _ => join lc1.(vro) lc1.(vwo))
                else lc1.(vpn))
               lc1.(lper)
@@ -364,6 +366,8 @@ Section Local.
 
   Inductive dsb (rr rw wr ww:bool) (lc1: t) (lc2:t): Prop :=
   | dsb_intro
+      persist
+      (PERSIST: persist = rr && rw && wr && ww)
       (LC2: lc2 =
             mk
               lc1.(coh)
@@ -373,11 +377,11 @@ Section Local.
               lc1.(vwo)
               lc1.(vcap)
               lc1.(vrel)
-              (if andb rr (andb rw (andb wr ww))
+              (if persist
                then fun_join lc1.(vpn) (fun _ => join lc1.(vro) lc1.(vwo))
                else lc1.(vpn))
               lc1.(lper)
-              (if andb rr (andb rw (andb wr ww))
+              (if persist
                then fun_join lc1.(per) lc1.(lper)
                else lc1.(per))
               lc1.(fwdbank)

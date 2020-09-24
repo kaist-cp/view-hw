@@ -957,7 +957,7 @@ Proof.
         exploit EX2.(LABELS); eauto; ss.
         { rewrite List.app_length. s. lia. }
         rewrite List.nth_error_app2, Nat.sub_diag; ss. intro Z. inv Z. ss.
-        condtac; ss.
+        destruct rr; destruct rw; destruct wr; destruct ww; ss. cleartriv.
         destruct l; ss.
         { rewrite <- join_r, <- join_l. etrans; try eapply VRO; eauto; ss.
           econs; eauto. econs. simtac.
@@ -1140,7 +1140,7 @@ Proof.
         exploit EX2.(LABELS); eauto; ss.
         { rewrite List.app_length. s. lia. }
         rewrite List.nth_error_app2, Nat.sub_diag; ss. intro Z. inv Z. ss.
-        condtac; ss.
+        destruct rr; destruct rw; destruct wr; destruct ww; ss. cleartriv.
         destruct l; ss.
         { rewrite <- join_r, <- join_l. etrans; try eapply VRO; eauto; ss.
           econs; eauto. econs. simtac.
@@ -1173,7 +1173,7 @@ Proof.
         exploit EX2.(LABELS); eauto; ss.
         { rewrite List.app_length. s. lia. }
         rewrite List.nth_error_app2, Nat.sub_diag; ss. intro Z. inv Z. ss.
-        condtac; ss.
+        destruct rr; destruct rw; destruct wr; destruct ww; ss. cleartriv.
         rewrite <- join_r. etrans; try eapply LPER_END; eauto; ss.
         econs; eauto. econs. simtac.
   - (* if *)

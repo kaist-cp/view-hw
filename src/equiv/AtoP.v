@@ -363,7 +363,7 @@ Inductive persisted_event_view (ex:Execution.t) (ob: list eidT) (loc:Loc.t) (vie
   eid1 ex1 ord1 val1
   (VIEW: view_of_eid ex ob eid1 = Some view)
   (EID: Execution.label eid1 ex = Some (Label.write ex1 ord1 loc val1))
-  (PER: forall eid2 (CO: ex.(Execution.co) eid1 eid2) (PEID: Valid.persisted_event ex loc eid2), False)
+  (PER: forall eid0 (PEID: Valid.persisted_event ex loc eid0), ex.(Execution.co)^? eid0 eid1)
 .
 Hint Constructors persisted_event_view.
 
@@ -1233,7 +1233,7 @@ Proof.
       esplits.
       { econs. econs; ss.
         - econs; ss.
-        - econs 6; ss.
+        - econs 6; ss. econs; ss.
       }
       econs; ss.
       econs; ss.
@@ -1308,6 +1308,7 @@ Proof.
         rewrite inverse_union.
         unfold ifc. condtac; cycle 1.
         { eapply sim_view_le; [by left; eauto|]. apply SIM_LOCAL. }
+        destruct rr; destruct rw; destruct wr; destruct ww; ss. cleartriv.
         eapply sim_view_join.
         { eapply sim_view_le; [|exact (SIM_LOCAL.(VPN) loc)]. eauto. }
         eapply sim_view_join.
@@ -1331,7 +1332,7 @@ Proof.
       esplits.
       { econs. econs; ss.
         - econs; ss.
-        - econs 7; ss.
+        - econs 7; ss. econs; ss.
       }
       econs; ss.
       econs; ss.
@@ -1406,6 +1407,7 @@ Proof.
         rewrite inverse_union.
         unfold ifc. condtac; cycle 1.
         { eapply sim_view_le; [by left; eauto|]. apply SIM_LOCAL. }
+        destruct rr; destruct rw; destruct wr; destruct ww; ss. cleartriv.
         eapply sim_view_join.
         { eapply sim_view_le; [|exact (SIM_LOCAL.(VPN) loc)]. eauto. }
         eapply sim_view_join.
@@ -1426,6 +1428,7 @@ Proof.
         rewrite inverse_union.
         unfold ifc. condtac; cycle 1.
         { eapply sim_view_le; [by left; eauto|]. apply SIM_LOCAL. }
+        destruct rr; destruct rw; destruct wr; destruct ww; ss. cleartriv.
         ss. apply sim_view_join.
         { eapply sim_view_le; [by left; eauto|]. apply SIM_LOCAL. }
         eapply sim_view_le; [|exact (SIM_LOCAL.(LPER) loc)]. i.
@@ -1857,23 +1860,25 @@ Proof.
       }
       destruct l0; ss. eqvtac.
       exploit EX.(Valid.PF1); eauto with axm. i. des.
-      { right. econs. esplits; eauto with axm. }
+      { right. simtac. }
       cut (view_of_eid ex ob eid2 = Some view).
       { i.
         assert (Execution.co ex eid2 (tid0, n)).
         { eapply view_of_eid_co; eauto with axm. }
         left. econs; eauto.
       }
-      assert (DOM: dom_rel (Execution.per ex) eid2).
-      { obtac. econs. econs. simtac. }
+      assert (PERSISTED: Valid.persisted_event ex loc eid2).
+      { econs; eauto. obtac. econs. econs. simtac. }
       inv PVIEW.
-      { exfalso. eapply NPER. econs; eauto with axm. }
+      { exfalso. eapply NPER. eauto. }
       obtac. exploit label_write_mem_of_ex_msg; try exact LABEL1; eauto. i. des.
       destruct l0; ss. eqvtac. exploit EX.(Valid.CO1).
       { esplits; [try exact EID2 | try exact EID3]; eauto. }
       i. des.
       - subst. ss.
-      - exfalso. eapply PER0; eauto. econs; eauto with axm.
+      - hexploit PER0; eauto. intro Z. inv Z; ss.
+        exfalso. eapply EX.(Valid.EXTERNAL).
+        econs 2; econs; left; left; left; left; left; right; eauto.
       - cut (fview < view).
         { i. lia. }
         eapply view_of_eid_ob_write; eauto with axm.
