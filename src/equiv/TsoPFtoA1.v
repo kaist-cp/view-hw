@@ -501,7 +501,7 @@ Inductive sim_th
      (REL: Execution.label_loc label1 label2),
       <<PO_LOC_WRITE:
         Label.is_kinda_write label2 ->
-        cov iid1 <= cov iid2>> /\
+        cov iid1 < cov iid2>> /\
       <<PO_LOC_READ:
         Label.is_read label2 ->
         cov iid1 <= cov iid2>>;

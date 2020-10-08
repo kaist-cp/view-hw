@@ -135,21 +135,25 @@ Proof.
     - inv H1. des. inv H.
       + (* U U R; po; FO *)
         obtac. rewrite L.(LC).(VPN); ss.
-        * rewrite <- join_r. unfold ifc. rewrite Loc.cl_refl. ss.
+        * rewrite <- join_r. unfold ifc. rewrite Loc.cl_refl. s. apply join_r.
         * econs; eauto. unfold sim_local_vpn. left. econs. econs; eauto. simtac.
       + (* W; po; [MF U SF]; po; FO *)
         rewrite L.(LC).(VPN); ss.
-        * rewrite <- join_r. unfold ifc. rewrite Loc.cl_refl. ss.
+        * rewrite <- join_r. unfold ifc. rewrite Loc.cl_refl. s. apply join_r.
         * econs; eauto. unfold sim_local_vpn. right. obtac; simtac; [left|right]; simtac.
     - obtac. inv H.
       + (* W; po_cl; FO *)
-        destruct l0; ss. inv H3. obtac. labtac. eqvtac.
-        unfold ifc. rewrite Loc.cl_refl.
-        inv LOCAL. exploit VPNCL; eauto. intro Z. rewrite <- Z.
-        inv L. inv LC; ss. rewrite VPN0; [apply join_r|].
-        econs; eauto. unfold sim_local_vpn. left. right. simtac.
-        econs; eauto. ss. apply Loc.cl_refl.
+        destruct l0; ss. inv H3. obtac. labtac. eqvtac. rewrite H2 in *.
+        unfold ifc. rewrite Loc.cl_refl. s.
+        generalize L.(LC).(COH_CL). intro Z. specialize (Z (ValA.val vloc)). des; ss.
+        rewrite COH_CL.
+        { rewrite <- join_r, <- join_l. inv COHMAX_CL.
+          specialize (MAX mloc_cl). inv MAX. unfold le in *.
+          rewrite CL0 in TS. ss.
+        }
+        econs; ss. econs. simtac. econs; eauto. ss. apply Loc.cl_sym. ss.
       + (* W; po; FL; po_cl; FO *)
+        (* TODO: remove *)
         rewrite L.(LC).(LPER); ss.
         * rewrite <- join_l. ss.
         * inv H3. obtac. labtac. eqvtac.
@@ -194,7 +198,7 @@ Proof.
       generalize L.(LC).(VWN). intro VWN. des; ss.
       obtac. rewrite VWN0; ss.
       + rewrite <- join_r.
-        inv COHMAX. specialize (COHMAX0 mloc0). rewrite COHMAX0. ss.
+        inv COHMAX. specialize (MAX mloc). inv MAX. rewrite TS.
         unfold ifc. rewrite Loc.cl_refl. ss.
       + econs; eauto. unfold sim_local_vwn. simtac.
     - (* ((U U R) U (W; po; [MF U SF])); po; FO *)
