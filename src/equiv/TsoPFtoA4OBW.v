@@ -135,13 +135,15 @@ Proof.
       + eapply Nat.le_lt_trans.
         { apply VWN0; ss. econs; ss. econs. econs; eauto. econs; eauto with tso. }
         s. rewrite fun_add_spec. condtac; [|congr]; ss.
-        inv WRITABLE. inv COHMAX. specialize (COHMAX0 mloc). lia.
+        inv WRITABLE. inv COHMAX. specialize (MAX mloc).
+        inv MAX. unfold le in *. lia.
       + eapply Nat.le_lt_trans.
         { apply VWN0; ss.
           econs; ss. econs. econs; eauto. econs; eauto with tso.
         }
         s. rewrite fun_add_spec. condtac; [|congr]; ss.
-        inv WRITABLE. inv COHMAX. specialize (COHMAX0 mloc). lia.
+        inv WRITABLE. inv COHMAX. specialize (MAX mloc).
+        inv MAX. unfold le in *. lia.
     - (* bob *)
       generalize L.(LC).(VWN). intro VWN. des; ss.
       funtac. obtac.
@@ -151,7 +153,8 @@ Proof.
         { econs. split; try exact H. econs 2. eauto. }
         i. econs. split; eauto. econs; eauto with tso.
       }
-      inv WRITABLE. inv COHMAX. specialize (COHMAX0 mloc). lia.
+      inv WRITABLE. inv COHMAX. specialize (MAX mloc).
+      inv MAX. unfold le in *. lia.
   }
   { (* update *)
     exploit sim_trace_sim_th; try exact SIMTR; eauto. intro TH_tmp.
@@ -222,13 +225,15 @@ Proof.
       + eapply Nat.le_lt_trans.
         { apply VWN0; ss. econs; ss. econs. econs; eauto. econs; eauto with tso. }
         s. rewrite fun_add_spec. condtac; [|congr]; ss.
-        inv WRITABLE. inv COHMAX. specialize (COHMAX0 mloc). lia.
+        inv WRITABLE. inv COHMAX. specialize (MAX mloc).
+        inv MAX. unfold le in *. lia.
       + eapply Nat.le_lt_trans.
         { apply VWN0; ss.
           econs; ss. econs; eauto. econs; eauto. econs; eauto with tso.
         }
         s. rewrite fun_add_spec. condtac; [|congr]; ss.
-        inv WRITABLE. inv COHMAX. specialize (COHMAX0 mloc). lia.
+        inv WRITABLE. inv COHMAX. specialize (MAX mloc).
+        inv MAX. unfold le in *. lia.
     - (* bob *)
       unguardH LC2. inv LC2; ss.
       generalize L.(LC).(VWN). intro VWN. des; ss.
@@ -239,6 +244,7 @@ Proof.
         { econs. split; try exact H. econs 2. eauto. }
         i. econs. split; eauto. econs; eauto with tso.
       }
-      inv WRITABLE. inv COHMAX. specialize (COHMAX0 mloc). lia.
+      inv WRITABLE. inv COHMAX. specialize (MAX mloc).
+      inv MAX. unfold le in *. lia.
   }
 Qed.

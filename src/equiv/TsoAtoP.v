@@ -279,7 +279,7 @@ Inductive sim_local (tid:Id.t) (ex:Execution.t) (ob: list eidT) (alocal:ALocal.t
           <<COH_CL:
               sim_view
                 ex ob
-                (inverse (sim_local_coh_cl ex mloc_cl) (eq (tid, List.length (alocal.(ALocal.labels)))))
+                (inverse (sim_local_coh_cl ex loc) (eq (tid, List.length (alocal.(ALocal.labels)))))
                 (local.(Local.coh) mloc_cl).(View.ts)>>;
   VPN: sim_view
          ex ob
@@ -855,13 +855,10 @@ Proof.
                 rewrite COH_MAX_CL. rewrite VIEW0; ss.
                 rewrite H_CL. ss.
               }
-              econs 2; try exact VIEW0; eauto; cycle 1.
-              { rewrite COH_MAX_CL; ss. }
-              inv EID. inv REL. obtac.
-              left. econs; ss. econs; ss. simtac. econs; eauto with tso.
-              destruct l0; ss; eapply Loc.cl_trans; try exact H_CL; ss.
+              econs 2; try exact VIEW0; eauto. rewrite COH_MAX_CL; ss.
             + eapply sim_view_le; [|exact SIM_FWD].
-              i. subst. right. econs; eauto. simtac. econs; eauto. ss. apply Loc.cl_refl.
+              i. subst. right. econs; eauto. simtac. econs; eauto. ss.
+              eapply Loc.cl_trans; eauto. eapply Loc.cl_sym. ss.
         }
       * (* sim_local vpn *)
         i. rewrite List.app_length, Nat.add_1_r.
@@ -980,7 +977,8 @@ Proof.
         rewrite ? inverse_union, fun_add_spec. condtac; ss; cycle 1.
         { exfalso. apply c. ss. }
         eapply sim_view_le; [by right; eauto|]. econs 2; eauto; ss.
-        econs; eauto. simtac. econs; eauto. ss. apply Loc.cl_refl.
+        econs; eauto. simtac. econs; eauto. ss.
+        eapply Loc.cl_trans; eauto. eapply Loc.cl_sym. ss.
       * (* sim_local vpn *)
         i. rewrite List.app_length, Nat.add_1_r.
         rewrite sim_local_vpn_step. rewrite inverse_step.
@@ -1188,7 +1186,8 @@ Proof.
         rewrite ? inverse_union, fun_add_spec. condtac; ss; cycle 1.
         { exfalso. apply c. ss. }
         eapply sim_view_le; [by right; eauto|]. econs 2; eauto; ss.
-        econs; eauto. simtac. econs; eauto. ss. apply Loc.cl_refl.
+        econs; eauto. simtac. econs; eauto. ss.
+        eapply Loc.cl_trans; eauto. eapply Loc.cl_sym. ss.
       * i. rewrite List.app_length, Nat.add_1_r.
         rewrite sim_local_vpn_step. rewrite inverse_step.
         rewrite ? inverse_union. apply sim_view_join.
@@ -1466,13 +1465,10 @@ Proof.
                 rewrite COH_MAX_CL. rewrite VIEW0; ss.
                 rewrite H_CL. ss.
               }
-              econs 2; try exact VIEW0; eauto; cycle 1.
-              { rewrite COH_MAX_CL; ss. }
-              inv EID. inv REL. obtac.
-              left. econs; ss. econs; ss. simtac. econs; eauto with tso.
-              destruct l0; ss; eapply Loc.cl_trans; try exact H_CL; ss.
+              econs 2; try exact VIEW0; eauto. rewrite COH_MAX_CL; ss.
             + eapply sim_view_le; [|exact SIM_FWD].
-              i. subst. right. econs; eauto. simtac. econs; eauto. ss. apply Loc.cl_refl.
+              i. subst. right. econs; eauto. simtac. econs; eauto. ss.
+              eapply Loc.cl_trans; eauto. eapply Loc.cl_sym. ss.
         }
       * (* sim_local vpn *)
         i. rewrite List.app_length, Nat.add_1_r.
@@ -1671,12 +1667,12 @@ Proof.
       * eapply sim_view_le; [|exact COH_CL0]. i. inv PR.
         right. econs; ss. right. simtac. split.
         { left. eapply sim_local_coh_cl_spec; eauto.
-          eapply Loc.cl_trans; eauto. eapply Loc.cl_sym; ss.
+          eapply Loc.cl_sym. ss.
         }
-        simtac. econs; eauto. ss. eapply Loc.cl_sym; ss.
+        simtac. econs; eauto. ss. eapply Loc.cl_sym. ss.
       * eapply sim_view_le; [|exact SIM_LOCAL.(VPN)]. i. inv PR.
         right. econs; ss. right. simtac. split; [right|]; eauto.
-        simtac. econs; eauto. ss. eapply Loc.cl_sym; ss.
+        simtac. econs; eauto. ss. eapply Loc.cl_sym. ss.
     + i. rewrite List.app_length, Nat.add_1_r.
       rewrite sim_local_per_step. rewrite inverse_step.
       rewrite inverse_union.
@@ -2076,7 +2072,7 @@ Proof.
         left. simtac.
       * left. right. right. destruct l2; ss. simtac.
         econs; ss. simtac. destruct l1; ss. econs; eauto with tso.
-        eapply Loc.cl_trans; eauto. eapply Loc.cl_sym; ss.
+        eapply Loc.cl_trans; eauto. eapply Loc.cl_sym. ss.
     + exploit label_mem_of_ex; try exact EID1; eauto. i. des.
       esplits; eauto with tso.
       eapply view_of_eid_ob; eauto. inv H.

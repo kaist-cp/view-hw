@@ -412,6 +412,23 @@ Proof.
     destruct l; ss; eapply Loc.cl_trans; eauto; eapply Loc.cl_sym; ss.
 Qed.
 
+Definition sim_local_coh_cl2 ex loc :=
+  (⦗ex.(Execution.label_is) (Label.is_writing_cl loc)⦘ ⨾
+   Execution.po).
+
+Lemma sim_local_coh_cl2_step ex loc:
+  sim_local_coh_cl2 ex loc =
+  (sim_local_coh_cl2 ex loc ∪
+   (⦗ex.(Execution.label_is) (Label.is_writing_cl loc)⦘)) ⨾
+  Execution.po_adj.
+Proof.
+  unfold sim_local_coh_cl2. rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
+  rewrite Execution.po_po_adj at 1.
+  rewrite (clos_refl_union Execution.po), union_seq, eq_seq.
+  rewrite ? (seq_union' (Execution.po ⨾ Execution.po_adj) Execution.po_adj), ? seq_assoc, ? union_assoc.
+  refl.
+Qed.
+
 Definition sim_local_vpn ex :=
   (⦗ex.(Execution.label_is) Label.is_kinda_read⦘ ⨾
    Execution.po) ∪

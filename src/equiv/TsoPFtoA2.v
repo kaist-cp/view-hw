@@ -940,10 +940,10 @@ Proof.
   splits; i.
   - inv H1. unfold Execution.label in *. ss.
     rewrite PRE.(Valid.LABELS), IdMap.map_spec, <- H in *.
-    inv EID. rewrite EID2 in H2. inv H2. eauto.
+    inv EID. rewrite EID2 in H2. inv H2. unfold Time.lt. eauto.
   - inv H1. unfold Execution.label in *. ss.
     rewrite PRE.(Valid.LABELS), IdMap.map_spec, <- H in *.
-    inv EID. rewrite EID2 in H2. inv H2. eauto.
+    inv EID. rewrite EID2 in H2. inv H2. unfold Time.le. eauto.
 Qed.
 
 Lemma sim_traces_vext_co
