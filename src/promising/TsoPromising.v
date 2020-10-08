@@ -250,7 +250,7 @@ Section Local.
       loc cohmax_cl view_post
       (LOC: loc = vloc.(ValA.val))
       (COHMAX_CL: fun_max (fun loc' => ifc (Loc.cl loc loc') (lc1.(coh) loc')) cohmax_cl)
-      (VIEW_POST: view_post = fun loc' => ifc (Loc.cl loc loc') cohmax_cl)
+      (VIEW_POST: view_post = fun loc' => ifc (Loc.cl loc loc') (join cohmax_cl lc1.(vpn)))
       (LC2: lc2 =
             mk
               lc1.(coh)
@@ -633,6 +633,28 @@ Section Local.
     inv WF. inv COHMAX. viewtac.
     - specialize (GT loc). lia.
     - rewrite NOFWD. ss.
+  Qed.
+
+  Lemma high_ts_spec_cl
+        tid mem lc ts loc0
+        (WF: wf tid mem lc)
+        (GT: forall loc (CL: Loc.cl loc loc0), (lc.(coh) loc).(View.ts) < ts):
+      <<NOFWD: forall loc (CL: Loc.cl loc loc0), read_view (lc.(coh) loc) ts = View.mk ts bot >> /\
+      <<JOINS: forall loc (CL: Loc.cl loc loc0),
+                  ts = join (lc.(coh) loc).(View.ts)
+                            (read_view (lc.(coh) loc) ts).(View.ts)>>.
+  Proof.
+    assert (NOFWD: forall loc (CL: Loc.cl loc loc0), read_view (lc.(coh) loc) ts = View.mk ts bot).
+    { i. unfold read_view. condtac; ss.
+      inversion e. inv H. inv WF.
+      specialize (FWDBANK loc). inv FWDBANK.
+      apply GT in CL. lia.
+    }
+    splits; ss. i. apply le_antisym.
+    { repeat rewrite <- join_r. rewrite NOFWD; ss. }
+    inv WF. inv COHMAX. viewtac.
+    - apply GT in CL. lia.
+    - rewrite NOFWD; ss.
   Qed.
 
   Lemma step_wf

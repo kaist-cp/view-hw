@@ -381,11 +381,39 @@ Proof.
   - inv H1. ss. subst. eapply FWDN. econs; eauto. econs; eauto with tso.
 Qed.
 
-Definition sim_local_vpn ex loc :=
-  (⦗ex.(Execution.label_is) Label.is_kinda_read⦘ ⨾
-   Execution.po) ∪
+Definition sim_local_coh_cl ex loc :=
+  (⦗ex.(Execution.label_is) (Label.is_accessing_cl loc)⦘ ⨾
+   Execution.po).
 
-  (⦗ex.(Execution.label_is) (Label.is_writing_cl loc)⦘ ⨾
+Lemma sim_local_coh_cl_step ex loc:
+  sim_local_coh_cl ex loc =
+  (sim_local_coh_cl ex loc ∪
+   (⦗ex.(Execution.label_is) (Label.is_accessing_cl loc)⦘)) ⨾
+  Execution.po_adj.
+Proof.
+  unfold sim_local_coh_cl. rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
+  rewrite Execution.po_po_adj at 1.
+  rewrite (clos_refl_union Execution.po), union_seq, eq_seq.
+  rewrite ? (seq_union' (Execution.po ⨾ Execution.po_adj) Execution.po_adj), ? seq_assoc, ? union_assoc.
+  refl.
+Qed.
+
+Lemma sim_local_coh_cl_spec
+      ex loc1 loc2 eid1 eid2
+      (CL: Loc.cl loc1 loc2):
+  sim_local_coh_cl ex loc1 eid1 eid2 <-> sim_local_coh_cl ex loc2 eid1 eid2.
+Proof.
+  split.
+  - i. inv H. obtac.
+    econs. simtac. econs; eauto.
+    destruct l; ss; eapply Loc.cl_trans; eauto; eapply Loc.cl_sym; ss.
+  - i. inv H. obtac.
+    econs. simtac. econs; eauto.
+    destruct l; ss; eapply Loc.cl_trans; eauto; eapply Loc.cl_sym; ss.
+Qed.
+
+Definition sim_local_vpn ex :=
+  (⦗ex.(Execution.label_is) Label.is_kinda_read⦘ ⨾
    Execution.po) ∪
 
   (⦗ex.(Execution.label_is) (Label.is_access)⦘ ⨾
@@ -394,12 +422,10 @@ Definition sim_local_vpn ex loc :=
     ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_sfence)⦘) ⨾
    Execution.po).
 
-Lemma sim_local_vpn_step ex loc:
-  sim_local_vpn ex loc =
-  (sim_local_vpn ex loc ∪
+Lemma sim_local_vpn_step ex:
+  sim_local_vpn ex =
+  (sim_local_vpn ex ∪
    ((⦗ex.(Execution.label_is) Label.is_kinda_read⦘) ∪
-
-    (⦗ex.(Execution.label_is) (Label.is_writing_cl loc)⦘) ∪
 
     (⦗ex.(Execution.label_is) (Label.is_access)⦘ ⨾
      Execution.po ⨾
@@ -408,7 +434,7 @@ Lemma sim_local_vpn_step ex loc:
   Execution.po_adj.
 Proof.
   unfold sim_local_vpn. rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
-  rewrite Execution.po_po_adj at 1 2 4.
+  rewrite Execution.po_po_adj at 1 3.
   rewrite (clos_refl_union Execution.po), union_seq, eq_seq.
   rewrite ? (seq_union' (Execution.po ⨾ Execution.po_adj) Execution.po_adj), ? seq_assoc, ? union_assoc.
   funext. i. funext. i. propext. econs; i.
@@ -422,13 +448,13 @@ Proof.
       eauto 10 using union_l, union_r.
 Qed.
 
-(* CHECK: add flush *)
+(* TODO: remove flush *)
 Definition sim_local_lper ex loc :=
   (sim_local_vwn ex ⨾
    ⦗ex.(Execution.label_is) (Label.is_flushing_cl loc)⦘ ⨾
    Execution.po) ∪
 
-  (sim_local_vpn ex loc ⨾
+  ((sim_local_coh_cl ex loc ∪ sim_local_vpn ex) ⨾
    ⦗ex.(Execution.label_is) (Label.is_flushopting_cl loc)⦘ ⨾
    Execution.po).
 
@@ -437,7 +463,7 @@ Lemma sim_local_lper_step ex loc:
   (sim_local_lper ex loc ∪
    ((sim_local_vwn ex ⨾
      ⦗ex.(Execution.label_is) (Label.is_flushing_cl loc)⦘) ∪
-    (sim_local_vpn ex loc ⨾
+    ((sim_local_coh_cl ex loc ∪ sim_local_vpn ex) ⨾
      ⦗ex.(Execution.label_is) (Label.is_flushopting_cl loc)⦘))) ⨾
   Execution.po_adj.
 Proof.
