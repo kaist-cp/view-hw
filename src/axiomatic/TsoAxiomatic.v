@@ -1081,6 +1081,7 @@ Module Execution.
     econs 2. ss.
   Qed.
 
+  (* TODO: remove this lemma*)
   Lemma po_chain: Execution.po ⨾ Execution.po^? ⊆ Execution.po.
   Proof.
     ii. inv H. des. inv H0. destruct x, x0, y. ss. subst.
