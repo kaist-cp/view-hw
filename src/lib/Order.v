@@ -131,6 +131,14 @@ Hint Unfold fun_join.
 Definition fun_bot A B `{_: orderC B} := fun (_:A) => bot.
 Hint Unfold fun_bot.
 
+Inductive fun_max A B `{_: orderC B} (f: A -> B) (max: B): Prop :=
+| fun_max_intro
+  x
+  (X: EQ (f x) max)
+  (MAX: forall y, LE (f y) max)
+.
+Hint Constructors fun_max.
+
 Program Instance fun_equiv A B `{_: Equivalence B}: Equivalence (fun_eq (A:=A) (B:=B)).
 Next Obligation. ii. refl. Qed.
 Next Obligation. ii. symmetry. ss. Qed.
