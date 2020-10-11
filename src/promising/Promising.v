@@ -155,8 +155,8 @@ Section Local.
     vwo: View.t (A:=A);
     vcap: View.t (A:=A);
     vrel: View.t (A:=A);
-    (* TODO: change name? (per-location view convention) *)
-    vpn: Loc.t -> View.t (A:=A);
+    (* TODO: change name? *)
+    vpn: View.t (A:=A);
     lper: Loc.t -> View.t (A:=A);
     per: Loc.t -> View.t (A:=A);
     fwdbank: Loc.t -> (FwdItem.t (A:=A));
@@ -233,7 +233,7 @@ Section Local.
               lc1.(vwo)
               (join lc1.(vcap) view)
               lc1.(vrel)
-              (fun_join lc1.(vpn) (fun loc' => ifc (Loc.cl loc loc') view_post))
+              lc1.(vpn)
               lc1.(lper)
               lc1.(per)
               lc1.(fwdbank)
@@ -289,7 +289,7 @@ Section Local.
               (join lc1.(vwo) (View.mk ts bot))
               (join lc1.(vcap) view_loc)
               (join lc1.(vrel) (View.mk (ifc (OrdW.ge ord OrdW.release) ts) bot))
-              (fun_join lc1.(vpn) (fun loc' => ifc (Loc.cl loc loc') (View.mk ts bot)))
+              lc1.(vpn)
               lc1.(lper)
               lc1.(per)
               (fun_add loc (FwdItem.mk ts (join view_loc view_val) ex) lc1.(fwdbank))
@@ -353,9 +353,7 @@ Section Local.
               lc1.(vwo)
               lc1.(vcap)
               lc1.(vrel)
-              (if persist
-               then fun_join lc1.(vpn) (fun _ => join lc1.(vro) lc1.(vwo))
-               else lc1.(vpn))
+              (join lc1.(vpn) (ifc persist (join lc1.(vro) lc1.(vwo))))
               lc1.(lper)
               lc1.(per)
               lc1.(fwdbank)
@@ -377,9 +375,7 @@ Section Local.
               lc1.(vwo)
               lc1.(vcap)
               lc1.(vrel)
-              (if persist
-               then fun_join lc1.(vpn) (fun _ => join lc1.(vro) lc1.(vwo))
-               else lc1.(vpn))
+              (join lc1.(vpn) (ifc persist (join lc1.(vro) lc1.(vwo))))
               lc1.(lper)
               (if persist
                then fun_join lc1.(per) lc1.(lper)
@@ -392,9 +388,10 @@ Section Local.
 
   Inductive flushopt (vloc:ValA.t (A:=View.t (A:=A))) (lc1:t) (lc2:t): Prop :=
   | flushopt_intro
-      loc view_post
+      loc cohmax_cl view_post
       (LOC: loc = vloc.(ValA.val))
-      (VIEW_POST: view_post = fun loc' => ifc (Loc.cl loc loc') (lc1.(vpn) loc'))
+      (COHMAX_CL: fun_max (fun loc' => ifc (Loc.cl loc loc') (lc1.(coh) loc')) cohmax_cl)
+      (VIEW_POST: view_post = fun loc' => ifc (Loc.cl loc loc') (join cohmax_cl lc1.(vpn)))
       (LC2: lc2 =
             mk
               lc1.(coh)
@@ -474,7 +471,7 @@ Section Local.
       (VWO: lc.(vwo).(View.ts) <= List.length mem)
       (VCAP: lc.(vcap).(View.ts) <= List.length mem)
       (VREL: lc.(vrel).(View.ts) <= List.length mem)
-      (VPN: forall loc, (lc.(vpn) loc).(View.ts) <= List.length mem)
+      (VPN: lc.(vpn).(View.ts) <= List.length mem)
       (LPER: forall loc, (lc.(lper) loc).(View.ts) <= List.length mem)
       (PER: forall loc, (lc.(per) loc).(View.ts) <= List.length mem)
       (FWDBANK: forall loc, wf_fwdbank loc mem (lc.(coh) loc).(View.ts) (lc.(fwdbank) loc))
@@ -485,7 +482,6 @@ Section Local.
                    (TID: msg.(Msg.tid) = tid)
                    (TS: (lc.(coh) msg.(Msg.loc)).(View.ts) < ts),
           Promises.lookup ts lc.(promises))
-      (VPNCL: forall loc1 loc2 (CL: Loc.cl loc1 loc2), (lc.(vpn) loc1).(View.ts) = (lc.(vpn) loc2).(View.ts))
       (LPERCL: forall loc1 loc2 (CL: Loc.cl loc1 loc2), (lc.(lper) loc1).(View.ts) = (lc.(lper) loc2).(View.ts))
       (PERCL: forall loc1 loc2 (CL: Loc.cl loc1 loc2), (lc.(per) loc1).(View.ts) = (lc.(per) loc2).(View.ts))
   .
@@ -581,7 +577,6 @@ Section Local.
     all: try lia.
     all: try apply WF; ss.
     - rewrite COH. lia.
-    - rewrite VPN. lia.
     - rewrite LPER. lia.
     - rewrite PER. lia.
     - destruct (FWDBANK loc). des. econs; esplits; eauto.
@@ -616,7 +611,7 @@ Section Local.
       (VWO: Order.le lhs.(vwo).(View.ts) rhs.(vwo).(View.ts))
       (VCAP: Order.le lhs.(vcap).(View.ts) rhs.(vcap).(View.ts))
       (VREL: Order.le lhs.(vrel).(View.ts) rhs.(vrel).(View.ts))
-      (VPN: forall loc, Order.le (lhs.(vpn) loc).(View.ts) (rhs.(vpn) loc).(View.ts))
+      (VPN: Order.le lhs.(vpn).(View.ts) rhs.(vpn).(View.ts))
       (LPER: forall loc, Order.le (lhs.(lper) loc).(View.ts) (rhs.(lper) loc).(View.ts))
       (PER: forall loc, Order.le (lhs.(per) loc).(View.ts) (rhs.(per) loc).(View.ts))
   .
@@ -685,7 +680,6 @@ Section Local.
     le lc1 lc2.
   Proof.
     inv LC. econs; ss; try refl; try apply join_l.
-    i. condtac; ss. apply join_l.
   Qed.
 
   Lemma dsb_incr
@@ -694,8 +688,7 @@ Section Local.
     le lc1 lc2.
   Proof.
     inv LC. econs; ss; try refl; try apply join_l.
-    - i. condtac; ss. apply join_l.
-    - i. condtac; ss. apply join_l.
+    i. condtac; ss. apply join_l.
   Qed.
 
   Lemma flushopt_incr
@@ -828,7 +821,6 @@ Section ExecUnit.
         all: try by rewrite <- TS0; eauto using expr_wf.
         * i. rewrite fun_add_spec. condtac; viewtac.
           rewrite <- TS0. eauto using expr_wf.
-        * i. viewtac. rewrite <- TS0. eauto using expr_wf.
         * i. exploit FWDBANK; eauto. intro Y. inv Y. des.
           econs; eauto. rewrite TS1, fun_add_spec. condtac; ss. inversion e. subst.
           apply Memory.latest_ts_mon. apply join_l.
@@ -844,20 +836,12 @@ Section ExecUnit.
           }
         * i. eapply PROMISES0; eauto. eapply Time.le_lt_trans; [|by eauto].
           rewrite fun_add_spec. condtac; ss. inversion e. rewrite H2. apply join_l.
-        * i. rewrite VPNCL at 1; eauto. unfold ifc. repeat condtac; ss.
-          -- exploit Loc.cl_trans; eauto. rewrite X1. ss.
-          -- exploit Loc.cl_trans; eauto. rewrite X1. ss.
-          -- apply Loc.cl_sym in X0. exploit Loc.cl_trans; try exact CL; eauto.
-             intro Z. apply Loc.cl_sym in Z. rewrite X in Z. ss.
-          -- apply Loc.cl_sym in X0. exploit Loc.cl_trans; try exact CL; eauto.
-             intro Z. apply Loc.cl_sym in Z. rewrite X in Z. ss.
     - inv RES. inv VIEW. inv VVAL. inv VIEW. inv VLOC. inv VIEW.
       inv STEP. inv WRITABLE. econs; ss.
       + apply rmap_add_wf; viewtac.
         rewrite TS. unfold ifc. condtac; [|by apply bot_spec]. eapply Memory.get_msg_wf. eauto.
       + econs; viewtac; rewrite <- ? TS0, <- ? TS1; eauto using Memory.get_msg_wf, expr_wf.
         * i. rewrite fun_add_spec. condtac; viewtac.
-        * i. viewtac.
         * i. rewrite ? fun_add_spec. condtac; viewtac.
           inversion e. subst.
           econs; viewtac; rewrite <- TS0, <- TS1 in *.
@@ -880,10 +864,6 @@ Section ExecUnit.
           { eapply PROMISES0; eauto. revert TS2. condtac; ss. i.
             inversion e. rewrite H2. rewrite COH0. ss.
           }
-        * i. rewrite VPNCL at 1; eauto. unfold ifc. repeat condtac; ss.
-          -- exploit Loc.cl_trans; eauto. rewrite X0. ss.
-          -- apply Loc.cl_sym in X0. exploit Loc.cl_trans; try exact CL; eauto.
-             intro Z. apply Loc.cl_sym in Z. rewrite X in Z. ss.
     - inv STEP. econs; ss. apply rmap_add_wf; viewtac.
       inv RES. inv VIEW. rewrite TS. s. apply bot_spec.
     - inv STEP. econs; ss. econs; viewtac.
@@ -892,10 +872,11 @@ Section ExecUnit.
     - inv LC. econs; ss. econs; viewtac.
       inv CTRL. rewrite <- TS. eauto using expr_wf.
     - inv STEP. econs; ss. econs; i; viewtac.
-      rewrite LPERCL at 1; eauto. rewrite VPNCL at 1; eauto. unfold ifc. repeat condtac; ss.
-      + exploit Loc.cl_trans; eauto. rewrite X0. ss.
-      + apply Loc.cl_sym in X0. exploit Loc.cl_trans; try exact CL; eauto.
-        intro Z. apply Loc.cl_sym in Z. rewrite X in Z. ss.
+      + inv COHMAX_CL. unfold ifc. condtac; ss. apply bot_spec.
+      + rewrite LPERCL at 1; eauto. unfold ifc. repeat condtac; ss.
+        * exploit Loc.cl_trans; eauto. rewrite X0. ss.
+        * apply Loc.cl_sym in X0. exploit Loc.cl_trans; try exact CL; eauto.
+          intro Z. apply Loc.cl_sym in Z. rewrite X in Z. ss.
   Qed.
 
   Lemma state_step_wf tid eu1 eu2
@@ -936,7 +917,6 @@ Section ExecUnit.
     - econs; eauto.
       all: try rewrite List.app_length; s; try lia.
       + i. rewrite COH. lia.
-      + i. rewrite VPN. lia.
       + i. rewrite LPER. lia.
       + i. rewrite PER. lia.
       + i. destruct (FWDBANK loc0). des. econs; esplits; ss.
@@ -1144,7 +1124,6 @@ Module Machine.
       + inv LOCAL. econs; eauto.
         all: try rewrite List.app_length; s; try lia.
         * i. rewrite COH. lia.
-        * i. rewrite VPN. lia.
         * i. rewrite LPER. lia.
         * i. rewrite PER. lia.
         * i. destruct (FWDBANK loc0). des. econs; esplits; ss.
