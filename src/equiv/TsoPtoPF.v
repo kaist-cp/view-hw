@@ -68,7 +68,7 @@ Proof.
           inv STEP. inv WRITABLE. ss.
           exploit Memory.get_msg_wf; try exact MSG. i.
           econs; eauto; ss.
-          - inv COHMAX. econs; eauto. econs; eauto.
+          - inv COHMAX. econs; eauto.
           - rewrite <- MSG. unfold Memory.get_msg. destruct ts; ss.
             rewrite nth_error_app1; [|lia]. ss.
           - rewrite Promises.set_o. condtac; ss. inversion e0. subst. ss.
@@ -85,7 +85,7 @@ Proof.
             rewrite nth_error_app1 in MSG0; ss.
             eapply lt_le_trans; eauto.
           - apply Memory.read_mon. ss.
-          - inv COHMAX. econs; eauto. econs; eauto.
+          - inv COHMAX. econs; eauto.
           - rewrite <- MSG. unfold Memory.get_msg. destruct ts; ss.
             rewrite nth_error_app1; [|lia]. ss.
           - rewrite Promises.set_o. condtac; ss. inversion e0. subst. ss.
@@ -105,7 +105,7 @@ Proof.
         { econs 6; eauto. inv STEP. inv COHMAX. econs; ss. econs; eauto. }
         { econs 7; eauto. inv STEP. inv COHMAX. econs; ss. econs; eauto. }
         { econs 8; eauto. inv STEP. inv COHMAX. econs; ss. econs; eauto. }
-        { econs 9; eauto. inv STEP. econs; ss. }
+        { econs 9; eauto. inv STEP. inv COHMAX_CL. econs; ss. econs; ss. }
       * rewrite ? IdMap.add_add. eauto.
   - (* diff thread *)
     inv STEP. inv STEP1. inv STEP0. inv LOCAL0. inv MEM2. ss. subst.

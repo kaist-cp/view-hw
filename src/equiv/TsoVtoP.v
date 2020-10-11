@@ -64,8 +64,7 @@ Proof.
       inv PROMISE. inv MEM2.
       esplits. econs; eauto; ss.
       - econs; eauto; ss.
-        + econs; ss.
-        + specialize (COH mloc). lia.
+        specialize (COH x). lia.
       - eapply Memory.append_spec; eauto. ss.
       - rewrite Promises.set_o. condtac; [|congr]. ss.
       - unguardH Heqt. subst.
@@ -110,8 +109,7 @@ Proof.
       - rewrite <- H1 in *. ss.
       - eapply Memory.read_mon. ss.
       - econs; eauto; ss.
-        + econs; ss.
-        + specialize (COH0 mloc). lia.
+        specialize (COH0 x). lia.
       - eapply Memory.append_spec; eauto. ss.
       - ss. rewrite Promises.set_o. condtac; [|congr]. ss.
       - unguardH Heqt. subst.
@@ -158,6 +156,7 @@ Proof.
     inv STEP.
     econs; eauto. econs; ss; eauto.
     econs 1; ss. econs. econs; ss; [econs | econs 9]; ss. econs; ss.
+    inv COHMAX_CL. econs; ss.
   - (* flush *)
     inv STEP.
     econs; eauto. econs; ss; eauto.
