@@ -243,12 +243,14 @@ Proof.
         + rewrite VWN0; ss.
           * rewrite fun_add_spec. condtac; ss; cycle 1.
             { exfalso. apply c. ss. }
-            inv WRITABLE. unfold Time.le. inv COHMAX. specialize (COHMAX0 mloc). lia.
+            inv WRITABLE. unfold Time.le. inv COHMAX. specialize (MAX mloc).
+            inv MAX. unfold le in *. lia.
           * econs; eauto. unfold sim_local_vwn. econs. econs; eauto. econs; eauto with tso.
         + rewrite VWN0; ss.
           * rewrite fun_add_spec. condtac; ss; cycle 1.
             { exfalso. apply c. ss. }
-            inv WRITABLE. unfold Time.le. inv COHMAX. specialize (COHMAX0 mloc). lia.
+            inv WRITABLE. unfold Time.le. inv COHMAX. specialize (MAX mloc).
+            inv MAX. unfold le in *. lia.
           * econs; eauto. unfold sim_local_vwn.
             econs. econs; eauto. econs; eauto with tso.
       - (* bob *)
@@ -256,7 +258,9 @@ Proof.
         generalize L.(LC).(VWN). intro VWN. des.
         funtac. obtac.
         rewrite VWN0; ss.
-        { inv WRITABLE. unfold Time.le. inv COHMAX. specialize (COHMAX0 mloc). lia. }
+        { inv WRITABLE. unfold Time.le. inv COHMAX. specialize (MAX mloc).
+          inv MAX. unfold le in *. lia.
+        }
         econs; eauto. unfold sim_local_vwn.
         exploit Execution.po_chain.
         { econs. split; try exact H. econs 2. eauto. }
