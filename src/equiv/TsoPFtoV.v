@@ -289,10 +289,10 @@ Proof.
   - inv LOCAL; try inv STEP; ss.
     + rewrite Promises.unset_o. condtac; ss. rewrite e in *.
       inv WRITABLE. inv COHMAX.
-      exploit le_lt_trans; [eapply (COHMAX0 loc)|eapply EXT|]. i. nia.
+      exploit le_lt_trans; [eapply (MAX loc)|eapply EXT|]. i. nia.
     + rewrite Promises.unset_o. condtac; ss. rewrite e in *.
       inv WRITABLE. inv COHMAX.
-      exploit le_lt_trans; [eapply (COHMAX0 loc)|eapply EXT|]. i. nia.
+      exploit le_lt_trans; [eapply (MAX loc)|eapply EXT|]. i. nia.
   - inv x0. inv LC. ss. etrans; eauto. apply COH0.
 Qed.
 
@@ -469,11 +469,7 @@ Proof.
       * eauto.
       * ss.
     + inv STEP. ss. right. exists vloc.(ValA.val).
-      rewrite fun_add_spec_eq. ss.
-      unfold Local.read_view. condtac; s.
-      { rewrite <- e in *.
-        eapply le_gt_trans; [eapply join_l|]. nia. }
-      eapply le_gt_trans; [eapply join_r|]. nia.
+      funtac. apply not_le. ss.
   - (* fulfill *)
     inv STEP. ss. exploit PROMISES_PF; eauto. i.
     right. exists vloc.(ValA.val).
@@ -492,19 +488,15 @@ Proof.
       * eauto.
       * ss.
     + inv STEP. ss. right. exists vloc.(ValA.val).
-      rewrite fun_add_spec_eq. ss.
-      unfold Local.read_view. condtac; s.
-      { rewrite <- e in *.
-        eapply le_gt_trans; [eapply join_l|]. nia. }
-      eapply le_gt_trans; [eapply join_r|]. nia.
+      funtac. apply not_le. ss.
   - (* mfence *)
     left. inv STEP. inv COHMAX. ss. esplits.
-    + econs 6; eauto. econs; eauto. econs. ss.
+    + econs 6; eauto. econs; eauto.
     + eauto.
     + ss.
   - (* sfence *)
     left. inv STEP. inv COHMAX. ss. esplits.
-    + econs 7; eauto. econs; eauto. econs. ss.
+    + econs 7; eauto. econs; eauto.
     + eauto.
     + ss.
   - (* flush *)
@@ -648,8 +640,9 @@ Proof.
   - exfalso.
     exploit ExecUnit.rtc_state_step_incr; try exact STEPS. i.
     inv STEP_LC. inv WRITABLE. inv COHMAX. inv x0. inv LC. ss.
-    specialize (COH0 loc). specialize (COHMAX0 loc).
-    rewrite COHMAX0 in COH0.
+    specialize (COH0 loc). specialize (MAX loc).
+    inv MAX. unfold le in *.
+    rewrite TS in COH0.
     exploit le_lt_trans; [exact COH0|exact EXT|]. i. nia.
 Qed.
 
@@ -698,8 +691,9 @@ Proof.
   - exfalso.
     exploit ExecUnit.rtc_state_step_incr; try exact STEPS. i.
     inv STEP_LC. inv WRITABLE. inv COHMAX. inv x0. inv LC. ss.
-    specialize (COH1 loc). specialize (COHMAX0 loc).
-    rewrite COHMAX0 in COH1.
+    specialize (COH1 loc). specialize (MAX loc).
+    inv MAX. unfold le in *.
+    rewrite TS in COH1.
     exploit le_lt_trans; [exact COH1|exact EXT|]. i. nia.
 Qed.
 
