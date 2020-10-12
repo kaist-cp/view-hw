@@ -188,7 +188,7 @@ Inductive sim_local (tid:Id.t) (mem: Memory.t) (ex: Execution.t) (vext: eidT -> 
               sim_view
                 vext
                 (local.(Local.coh) mloc_cl).(View.ts)
-                (inverse (sim_local_coh_cl2 ex loc) (eq (tid, List.length (alocal.(ALocal.labels)))))>>;
+                (inverse (sim_local_coh_cl ex loc) (eq (tid, List.length (alocal.(ALocal.labels)))))>>;
   VPN: sim_view
          vext
          (local.(Local.vpn)).(View.ts)

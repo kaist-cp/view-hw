@@ -251,14 +251,23 @@ Proof.
             rewrite H_CL. ss.
           + inversion e. subst.
             rewrite H_CL in CL. ss.
-        - rewrite sim_local_coh_cl2_step. rewrite inverse_step.
+        - rewrite sim_local_coh_cl_step. rewrite inverse_step.
           rewrite ? inverse_union. ii. des.
-          * exploit COH_CL; eauto. intro X. rewrite X.
+          { exploit COH_CL; eauto. intro X. rewrite X.
             funtac. inversion e. subst. rewrite H_CL in CL. ss.
-          * inv EID. inv REL. inv H0.
-            exploit EX2.(LABELS); eauto; ss.
+          }
+          inv EID. obtac. inv H0.
+          { exploit EX2.(LABELS); eauto; ss.
             { rewrite List.app_length. s. lia. }
             rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x0. ss.
+          }
+          inv H. exploit RF2; eauto. i. des. obtac. labtac.
+          exploit EX2.(LABELS); eauto; ss.
+          { rewrite List.app_length. s. lia. }
+          rewrite List.nth_error_app2, Nat.sub_diag; ss. i.
+          inv x1. inv VLOC. rewrite VAL0 in *.
+          inv LABEL1. eqvtac.
+          destruct l0; ss; eqvtac; rewrite H_CL in *; ss.
       }
       destruct (lt_eq_lt_dec ts (View.ts (Local.coh lc1 mloc_cl))).
       { (* <= *)
@@ -267,15 +276,43 @@ Proof.
           + viewtac. inv s; ss; lia.
           + apply COH_MAX_CL in CL0.
             inversion e. subst. unfold le in *. inv s; lia.
-        - rewrite sim_local_coh_cl2_step. rewrite inverse_step.
+        - rewrite sim_local_coh_cl_step. rewrite inverse_step.
           rewrite ? inverse_union.
           ii. des; ss.
           + etrans; try eapply COH_CL; eauto.
             funtac. inversion e. ss.
-          + inv EID. inv REL. inv H0.
-            exploit EX2.(LABELS); eauto; ss.
-            { rewrite List.app_length. s. lia. }
-            rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x0. ss.
+          + inv EID. obtac. inv H0.
+            { exploit EX2.(LABELS); eauto; ss.
+              { rewrite List.app_length. s. lia. }
+              rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x0. ss.
+            }
+            inv H. exploit RF2; eauto. i. des. obtac. labtac.
+            destruct x as [tid1 eid1]. rename EID into WRITE.
+            unfold Execution.label in WRITE. ss.
+            rewrite PRE.(Valid.LABELS) in WRITE.
+            rewrite IdMap.map_spec in WRITE.
+            destruct (IdMap.find tid1 (Valid.aeus PRE)) eqn:FIND1; ss.
+            generalize (ATR tid1). intro ATR1. inv ATR1; try congr. des. simplify.
+            generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
+            exploit sim_trace_last; try exact REL0. i. des. simplify.
+            exploit sim_trace_sim_th; try exact REL0; eauto. intro TH_tmp.
+            exploit TH_tmp; eauto.
+            { instantiate (1 := []). ss. }
+            clear TH_tmp. intro L1.
+            rewrite RF in H0. inv H0. ss. simplify.
+            exploit WPROP3; eauto. i. des. simplify.
+            rewrite WRITE in x4. simplify.
+            unfold v_gen. ss. rewrite <- H9. rewrite x2.
+            exploit EX2.(XR); eauto.
+            { instantiate (1 := ALocal.next_eid alc1).
+              ss. rewrite List.app_length. ss. unfold ALocal.next_eid. clear. lia.
+            }
+            condtac; cycle 1.
+            { rewrite Nat.eqb_neq in X. ss. }
+            funtac.
+            { unfold ALocal.next_eid. intro Z. rewrite R in Z. simplify. ss. }
+            unfold ALocal.next_eid. intro Z. rewrite R in Z. simplify.
+            unfold le. inv s; lia.
       }
       { (* > *)
         exploit Local.high_ts_spec_cl; eauto.
@@ -284,15 +321,41 @@ Proof.
         eexists (ValA.val (sem_expr rmap1 eloc)). splits; ss.
         - i. funtac. rewrite COH_MAX_CL; try lia.
           eapply Loc.cl_trans; eauto. eapply Loc.cl_trans; eauto. eapply Loc.cl_sym. ss.
-        - rewrite sim_local_coh_cl2_step. rewrite inverse_step.
+        - rewrite sim_local_coh_cl_step. rewrite inverse_step.
           rewrite ? inverse_union.
           ii. des; ss.
           + etrans; try eapply COH_CL; eauto.
             funtac. unfold le. lia.
-          + inv EID. inv REL. inv H0.
-            exploit EX2.(LABELS); eauto; ss.
-            { rewrite List.app_length. s. lia. }
-            rewrite List.nth_error_app2, Nat.sub_diag; ss. intro X. inv X. ss.
+          + inv EID. obtac. inv H0.
+            { exploit EX2.(LABELS); eauto; ss.
+              { rewrite List.app_length. s. lia. }
+              rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x0. ss.
+            }
+            inv H. exploit RF2; eauto. i. des. obtac. labtac.
+            destruct x as [tid1 eid1]. rename EID into WRITE.
+            unfold Execution.label in WRITE. ss.
+            rewrite PRE.(Valid.LABELS) in WRITE.
+            rewrite IdMap.map_spec in WRITE.
+            destruct (IdMap.find tid1 (Valid.aeus PRE)) eqn:FIND1; ss.
+            generalize (ATR tid1). intro ATR1. inv ATR1; try congr. des. simplify.
+            generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
+            exploit sim_trace_last; try exact REL0. i. des. simplify.
+            exploit sim_trace_sim_th; try exact REL0; eauto. intro TH_tmp.
+            exploit TH_tmp; eauto.
+            { instantiate (1 := []). ss. }
+            clear TH_tmp. intro L1.
+            rewrite RF in H0. inv H0. ss. simplify.
+            exploit WPROP3; eauto. i. des. simplify.
+            rewrite WRITE in x4. simplify.
+            unfold v_gen. ss. rewrite <- H9. rewrite x2.
+            exploit EX2.(XR); eauto.
+            { instantiate (1 := ALocal.next_eid alc1).
+              ss. rewrite List.app_length. ss. unfold ALocal.next_eid. clear. lia.
+            }
+            condtac; cycle 1.
+            { rewrite Nat.eqb_neq in X. ss. }
+            funtac.
+            unfold ALocal.next_eid. intro Z. rewrite R in Z. simplify. ss.
       }
     + i. rewrite sim_local_vpn_step. rewrite inverse_step.
       rewrite ? inverse_union. ii. des.
@@ -433,34 +496,46 @@ Proof.
             rewrite H_CL. ss.
           + inversion e. subst.
             rewrite H_CL in CL. ss.
-        - rewrite sim_local_coh_cl2_step. rewrite inverse_step.
+        - rewrite sim_local_coh_cl_step. rewrite inverse_step.
           rewrite ? inverse_union. ii. des.
-          * exploit COH_CL; eauto. intro X. rewrite X.
+          { exploit COH_CL; eauto. intro X. rewrite X.
             funtac. inversion e. subst. rewrite H_CL in CL. ss.
-          * inv EID. inv REL. inv H0.
+          }
+          inv EID. obtac. inv H0; cycle 1.
+          { inv H. exploit RF2; eauto. i. des. obtac. labtac.
             exploit EX2.(LABELS); eauto; ss.
             { rewrite List.app_length. s. lia. }
             rewrite List.nth_error_app2, Nat.sub_diag; ss. i. simplify. ss.
-            inv VLOC. rewrite VAL0 in *.
-            rewrite H_CL in *. ss.
+          }
+          exploit EX2.(LABELS); eauto; ss.
+          { rewrite List.app_length. s. lia. }
+          rewrite List.nth_error_app2, Nat.sub_diag; ss. i. simplify. ss.
+          inv VLOC. rewrite VAL0 in *.
+          rewrite H_CL in *. ss.
       }
       inv WRITABLE. inv COHMAX.
       exists (ValA.val (sem_expr rmap1 eloc)). splits; ss.
       { i. funtac. specialize (MAX loc0). inv MAX. unfold le in *. lia. }
       funtac.
-      rewrite sim_local_coh_cl2_step. rewrite inverse_step.
+      rewrite sim_local_coh_cl_step. rewrite inverse_step.
       rewrite ? inverse_union. ii. des.
-      * exploit COH_CL; eauto. i.
+      { exploit COH_CL; eauto. i.
         specialize (MAX mloc_cl). inv MAX. unfold le in *. lia.
-      * inv EID. inv REL. inv H0.
+      }
+      inv EID. obtac. inv H0; cycle 1.
+      { inv H. exploit RF2; eauto. i. des. obtac. labtac.
         exploit EX2.(LABELS); eauto; ss.
         { rewrite List.app_length. s. lia. }
-        rewrite List.nth_error_app2, Nat.sub_diag; ss. i. simplify.
-        rewrite EX2.(XVEXT); cycle 1.
-        { ss. rewrite List.app_length. ss. clear. lia. }
-        destruct (length (ALocal.labels alc1) =? ALocal.next_eid alc1) eqn:Heq; cycle 1.
-        { rewrite Nat.eqb_neq in Heq. unfold ALocal.next_eid in Heq. ss. }
-        funtac.
+        rewrite List.nth_error_app2, Nat.sub_diag; ss. i. simplify. ss.
+      }
+      exploit EX2.(LABELS); eauto; ss.
+      { rewrite List.app_length. s. lia. }
+      rewrite List.nth_error_app2, Nat.sub_diag; ss. i. simplify.
+      rewrite EX2.(XVEXT); cycle 1.
+      { ss. rewrite List.app_length. ss. clear. lia. }
+      destruct (length (ALocal.labels alc1) =? ALocal.next_eid alc1) eqn:Heq; cycle 1.
+      { rewrite Nat.eqb_neq in Heq. unfold ALocal.next_eid in Heq. ss. }
+      funtac.
     + i. rewrite sim_local_vpn_step. rewrite inverse_step.
       rewrite inverse_union. ii. des; [exploit VPN; eauto|].
       inv EID. obtac.
@@ -622,27 +697,71 @@ Proof.
             rewrite H_CL. ss.
           + inversion e. subst.
             rewrite H_CL in CL. ss.
-        - rewrite sim_local_coh_cl2_step. rewrite inverse_step.
+        - rewrite sim_local_coh_cl_step. rewrite inverse_step.
           rewrite ? inverse_union. ii. des.
-          * exploit COH_CL; eauto. intro X. rewrite X.
+          { exploit COH_CL; eauto. intro X. rewrite X.
             funtac. inversion e. subst. rewrite H_CL in CL. ss.
-          * inv EID. inv REL. inv H0.
-            exploit EX2.(LABELS); eauto; ss.
+          }
+          inv EID. obtac. inv H0.
+          + exploit EX2.(LABELS); eauto; ss.
             { rewrite List.app_length. s. lia. }
             rewrite List.nth_error_app2, Nat.sub_diag; ss. i. simplify. ss.
+            inv VLOC. rewrite VAL in *.
+            rewrite H_CL in *. ss.
+          + inv H. exploit RF2; eauto. i. des. obtac. labtac.
+            exploit EX2.(LABELS); eauto; ss.
+            { rewrite List.app_length. s. lia. }
+            rewrite List.nth_error_app2, Nat.sub_diag; ss. i. simplify. ss. eqvtac.
+            inv VLOC. rewrite VAL in *.
+            destruct l0; ss; eqvtac; rewrite H_CL in *; ss.
       }
       inv WRITABLE. inv COHMAX.
       exists (ValA.val (sem_expr rmap2 eloc)). splits; ss.
       { i. funtac. specialize (MAX loc0). inv MAX. unfold le in *. lia. }
       funtac.
-      rewrite sim_local_coh_cl2_step. rewrite inverse_step.
+      rewrite sim_local_coh_cl_step. rewrite inverse_step.
       rewrite ? inverse_union. ii. des.
-      * exploit COH_CL; eauto. i.
+      { exploit COH_CL; eauto. i.
         specialize (MAX mloc_cl). inv MAX. unfold le in *. lia.
-      * inv EID. inv REL. inv H0.
-        exploit EX2.(LABELS); eauto; ss.
+      }
+      inv EID. obtac. inv H0.
+      * exploit EX2.(LABELS); eauto; ss.
         { rewrite List.app_length. s. lia. }
-        rewrite List.nth_error_app2, Nat.sub_diag; ss. i. simplify. ss.
+        rewrite List.nth_error_app2, Nat.sub_diag; ss. i. simplify.
+        rewrite EX2.(XVEXT); cycle 1.
+        { ss. rewrite List.app_length. ss. clear. lia. }
+        destruct (length (ALocal.labels alc1) =? ALocal.next_eid alc1) eqn:Heq; cycle 1.
+        { rewrite Nat.eqb_neq in Heq. unfold ALocal.next_eid in Heq. ss. }
+        funtac.
+      * inv H. exploit RF2; eauto. i. des.
+        destruct x0 as [tid1 eid1]. ss.
+        inv WRITE. inv READ. rename EID0 into WRITE.
+        unfold Execution.label in WRITE. ss.
+        rewrite PRE.(Valid.LABELS) in WRITE.
+        rewrite IdMap.map_spec in WRITE.
+        destruct (IdMap.find tid1 (Valid.aeus PRE)) eqn:FIND1; ss.
+        generalize (ATR tid1). intro ATR1. inv ATR1; try congr. des. simplify.
+        generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
+        exploit sim_trace_last; try exact REL0. i. des. simplify.
+        exploit sim_trace_sim_th; try exact REL0; eauto. intro TH_tmp.
+        exploit TH_tmp; eauto.
+        { instantiate (1 := []). ss. }
+        clear TH_tmp. intro L1.
+        rewrite RF in H0. inv H0. ss. simplify.
+        exploit WPROP3; eauto. i. des. simplify.
+        unfold v_gen. ss. rewrite <- H9. rewrite x2.
+        exploit EX2.(XR); eauto.
+        { instantiate (1 := ALocal.next_eid alc1).
+          ss. rewrite List.app_length. ss. unfold ALocal.next_eid. clear. lia. }
+        condtac; cycle 1.
+        { rewrite Nat.eqb_neq in X. ss. }
+        rewrite fun_add_spec. condtac; cycle 1.
+        { exfalso. apply c. ss. }
+        i. unfold ALocal.next_eid in *.
+        rewrite R in x8. inv x8.
+        etrans.
+        { apply Memory.latest_ts_spec. }
+        unfold le. lia.
     + i. rewrite sim_local_vpn_step. rewrite inverse_step.
       rewrite ? inverse_union. ii. inv EID.
       { exploit VPN; eauto. i. rewrite <- join_l. ss. }
@@ -838,14 +957,23 @@ Proof.
             rewrite H_CL. ss.
           + inversion e. subst.
             rewrite H_CL in CL. ss.
-        - rewrite sim_local_coh_cl2_step. rewrite inverse_step.
+        - rewrite sim_local_coh_cl_step. rewrite inverse_step.
           rewrite ? inverse_union. ii. des.
-          * exploit COH_CL; eauto. intro X. rewrite X.
+          { exploit COH_CL; eauto. intro X. rewrite X.
             funtac. inversion e. subst. rewrite H_CL in CL. ss.
-          * inv EID. inv REL. inv H0.
-            exploit EX2.(LABELS); eauto; ss.
+          }
+          inv EID. obtac. inv H0.
+          { exploit EX2.(LABELS); eauto; ss.
             { rewrite List.app_length. s. lia. }
             rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x0. ss.
+          }
+          inv H. exploit RF2; eauto. i. des. obtac. labtac.
+          exploit EX2.(LABELS); eauto; ss.
+          { rewrite List.app_length. s. lia. }
+          rewrite List.nth_error_app2, Nat.sub_diag; ss. i.
+          inv x1. inv VLOC. rewrite VAL0 in *.
+          inv LABEL1. eqvtac.
+          destruct l0; ss; eqvtac; rewrite H_CL in *; ss.
       }
       destruct (lt_eq_lt_dec old_ts (View.ts (Local.coh lc1 mloc_cl))).
       { (* <= *)
@@ -854,15 +982,43 @@ Proof.
           + viewtac. inv s; ss; lia.
           + apply COH_MAX_CL in CL0.
             inversion e. subst. unfold le in *. inv s; lia.
-        - rewrite sim_local_coh_cl2_step. rewrite inverse_step.
+        - rewrite sim_local_coh_cl_step. rewrite inverse_step.
           rewrite ? inverse_union.
           ii. des; ss.
           + etrans; try eapply COH_CL; eauto.
             funtac. inversion e. ss.
-          + inv EID. inv REL. inv H0.
-            exploit EX2.(LABELS); eauto; ss.
-            { rewrite List.app_length. s. lia. }
-            rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x0. ss.
+          + inv EID. obtac. inv H0.
+            { exploit EX2.(LABELS); eauto; ss.
+              { rewrite List.app_length. s. lia. }
+              rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x0. ss.
+            }
+            inv H. exploit RF2; eauto. i. des. obtac. labtac.
+            destruct x as [tid1 eid1]. rename EID into WRITE.
+            unfold Execution.label in WRITE. ss.
+            rewrite PRE.(Valid.LABELS) in WRITE.
+            rewrite IdMap.map_spec in WRITE.
+            destruct (IdMap.find tid1 (Valid.aeus PRE)) eqn:FIND1; ss.
+            generalize (ATR tid1). intro ATR1. inv ATR1; try congr. des. simplify.
+            generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
+            exploit sim_trace_last; try exact REL0. i. des. simplify.
+            exploit sim_trace_sim_th; try exact REL0; eauto. intro TH_tmp.
+            exploit TH_tmp; eauto.
+            { instantiate (1 := []). ss. }
+            clear TH_tmp. intro L1.
+            rewrite RF in H0. inv H0. ss. simplify.
+            exploit WPROP3; eauto. i. des. simplify.
+            rewrite WRITE in x4. simplify.
+            unfold v_gen. ss. rewrite <- H9. rewrite x2.
+            exploit EX2.(XR); eauto.
+            { instantiate (1 := ALocal.next_eid alc1).
+              ss. rewrite List.app_length. ss. unfold ALocal.next_eid. clear. lia.
+            }
+            condtac; cycle 1.
+            { rewrite Nat.eqb_neq in X. ss. }
+            funtac.
+            { unfold ALocal.next_eid. intro Z. rewrite R in Z. simplify. ss. }
+            unfold ALocal.next_eid. intro Z. rewrite R in Z. simplify.
+            unfold le. inv s; lia.
       }
       { (* > *)
         exploit Local.high_ts_spec_cl; eauto.
@@ -871,15 +1027,41 @@ Proof.
         eexists (ValA.val (sem_expr rmap2 eloc)). splits; ss.
         - i. funtac. rewrite COH_MAX_CL; try lia.
           eapply Loc.cl_trans; eauto. eapply Loc.cl_trans; eauto. eapply Loc.cl_sym. ss.
-        - rewrite sim_local_coh_cl2_step. rewrite inverse_step.
+        - rewrite sim_local_coh_cl_step. rewrite inverse_step.
           rewrite ? inverse_union.
           ii. des; ss.
           + etrans; try eapply COH_CL; eauto.
             funtac. unfold le. lia.
-          + inv EID. inv REL. inv H0.
-            exploit EX2.(LABELS); eauto; ss.
-            { rewrite List.app_length. s. lia. }
-            rewrite List.nth_error_app2, Nat.sub_diag; ss. intro X. inv X. ss.
+          + inv EID. obtac. inv H0.
+            { exploit EX2.(LABELS); eauto; ss.
+              { rewrite List.app_length. s. lia. }
+              rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x0. ss.
+            }
+            inv H. exploit RF2; eauto. i. des. obtac. labtac.
+            destruct x as [tid1 eid1]. rename EID into WRITE.
+            unfold Execution.label in WRITE. ss.
+            rewrite PRE.(Valid.LABELS) in WRITE.
+            rewrite IdMap.map_spec in WRITE.
+            destruct (IdMap.find tid1 (Valid.aeus PRE)) eqn:FIND1; ss.
+            generalize (ATR tid1). intro ATR1. inv ATR1; try congr. des. simplify.
+            generalize (SIM tid1). intro SIM1. inv SIM1; simplify.
+            exploit sim_trace_last; try exact REL0. i. des. simplify.
+            exploit sim_trace_sim_th; try exact REL0; eauto. intro TH_tmp.
+            exploit TH_tmp; eauto.
+            { instantiate (1 := []). ss. }
+            clear TH_tmp. intro L1.
+            rewrite RF in H0. inv H0. ss. simplify.
+            exploit WPROP3; eauto. i. des. simplify.
+            rewrite WRITE in x4. simplify.
+            unfold v_gen. ss. rewrite <- H9. rewrite x2.
+            exploit EX2.(XR); eauto.
+            { instantiate (1 := ALocal.next_eid alc1).
+              ss. rewrite List.app_length. ss. unfold ALocal.next_eid. clear. lia.
+            }
+            condtac; cycle 1.
+            { rewrite Nat.eqb_neq in X. ss. }
+            funtac.
+            unfold ALocal.next_eid. intro Z. rewrite R in Z. simplify. ss.
       }
     + i. rewrite sim_local_vpn_step. rewrite inverse_step.
       rewrite ? inverse_union. ii. des.
@@ -985,12 +1167,20 @@ Proof.
       intro loc. specialize (COH_CL loc). des.
       eexists mloc_cl. splits; ss.
       rewrite List.app_length, Nat.add_1_r.
-      i. rewrite sim_local_coh_cl2_step. rewrite inverse_step.
+      rewrite sim_local_coh_cl_step. rewrite inverse_step.
       rewrite ? inverse_union. ii. des; eauto.
-      inv EID. obtac.
-      exploit EX2.(LABELS); eauto; ss.
-      { rewrite List.app_length. s. lia. }
-      rewrite List.nth_error_app2, Nat.sub_diag; ss. i. simplify. ss.
+      inv EID. obtac. inv H0.
+      * exploit EX2.(LABELS); eauto; ss.
+        { rewrite List.app_length. s. lia. }
+        rewrite List.nth_error_app2, Nat.sub_diag; ss.
+        destruct l; ss.
+      * inv H. exploit RF2; eauto. i. des.
+        inv WRITE. inv READ.
+        rename EID0 into WRITE. rewrite EID in WRITE. inv WRITE.
+        exploit EX2.(LABELS); eauto; ss.
+        { rewrite List.app_length. s. lia. }
+        rewrite List.nth_error_app2, Nat.sub_diag; ss.
+        destruct l1; ss.
     + rewrite List.app_length, Nat.add_1_r.
       i. rewrite sim_local_vpn_step. rewrite inverse_step.
       rewrite ? inverse_union. ii. des.
@@ -1091,12 +1281,20 @@ Proof.
       intro loc. specialize (COH_CL loc). des.
       eexists mloc_cl. splits; ss.
       rewrite List.app_length, Nat.add_1_r.
-      i. rewrite sim_local_coh_cl2_step. rewrite inverse_step.
+      rewrite sim_local_coh_cl_step. rewrite inverse_step.
       rewrite ? inverse_union. ii. des; eauto.
-      inv EID. obtac.
-      exploit EX2.(LABELS); eauto; ss.
-      { rewrite List.app_length. s. lia. }
-      rewrite List.nth_error_app2, Nat.sub_diag; ss. i. simplify. ss.
+      inv EID. obtac. inv H0.
+      * exploit EX2.(LABELS); eauto; ss.
+        { rewrite List.app_length. s. lia. }
+        rewrite List.nth_error_app2, Nat.sub_diag; ss.
+        destruct l; ss.
+      * inv H. exploit RF2; eauto. i. des.
+        inv WRITE. inv READ.
+        rename EID0 into WRITE. rewrite EID in WRITE. inv WRITE.
+        exploit EX2.(LABELS); eauto; ss.
+        { rewrite List.app_length. s. lia. }
+        rewrite List.nth_error_app2, Nat.sub_diag; ss.
+        destruct l1; ss.
     + rewrite List.app_length, Nat.add_1_r.
       i. rewrite sim_local_vpn_step. rewrite inverse_step.
       rewrite ? inverse_union. ii. des.
@@ -1202,12 +1400,20 @@ Proof.
     + move COH_CL at bottom.
       intro loc. specialize (COH_CL loc). des.
       eexists mloc_cl. splits; ss.
-      rewrite sim_local_coh_cl2_step. rewrite inverse_step.
+      rewrite sim_local_coh_cl_step. rewrite inverse_step.
       rewrite ? inverse_union. ii. des; eauto.
-      inv EID. obtac.
-      exploit EX2.(LABELS); eauto; ss.
-      { rewrite List.app_length. s. lia. }
-      rewrite List.nth_error_app2, Nat.sub_diag; ss. i. simplify. ss.
+      inv EID. obtac. inv H0.
+      * exploit EX2.(LABELS); eauto; ss.
+        { rewrite List.app_length. s. lia. }
+        rewrite List.nth_error_app2, Nat.sub_diag; ss.
+        destruct l; ss.
+      * inv H. exploit RF2; eauto. i. des.
+        inv WRITE. inv READ.
+        rename EID0 into WRITE. rewrite EID in WRITE. inv WRITE.
+        exploit EX2.(LABELS); eauto; ss.
+        { rewrite List.app_length. s. lia. }
+        rewrite List.nth_error_app2, Nat.sub_diag; ss.
+        destruct l2; ss.
     + i. rewrite sim_local_vpn_step. rewrite inverse_step.
       rewrite inverse_union. ii. des; [apply VPN|]; eauto.
       inv EID. obtac.
@@ -1235,14 +1441,17 @@ Proof.
       inv H. obtac.
       specialize (COH_CL (ValA.val (sem_expr armap2 eloc))). des.
       inv COHMAX_CL. specialize (MAX mloc_cl). inv MAX. unfold le in *.
-      destruct l; ss.
-      * rewrite <- join_r. apply L. econs; eauto.
-        left. simtac.
-      * rewrite <- join_l. rewrite <- TS.
-        unfold ifc. condtac; ss. apply COH_CL. econs; eauto. econs. simtac.
-        econs; eauto. ss. eapply Loc.cl_trans; try exact LABEL0; eauto. rewrite Loc.cl_sym; ss.
-      * rewrite <- join_r. apply L. econs; eauto.
-        left. simtac.
+      inv H.
+      { destruct l; ss.
+        - rewrite <- join_l. rewrite <- TS.
+          unfold ifc. condtac; ss. apply COH_CL. econs; eauto. econs. simtac.
+          econs; eauto. ss. eapply Loc.cl_trans; try exact LABEL0; eauto. rewrite Loc.cl_sym; ss.
+        - rewrite <- join_r. apply L. econs; eauto.
+          left. simtac.
+      }
+      rewrite <- join_l. rewrite <- TS.
+      unfold ifc. condtac; ss. apply COH_CL. econs; eauto. econs. simtac. econs; eauto.
+      destruct l; ss; eapply Loc.cl_trans; try exact LABEL0; eauto; rewrite Loc.cl_sym; ss.
     + i. rewrite sim_local_lper_end_step. rewrite inverse_step.
       rewrite inverse_union. ii. des.
       * inv EID. inv REL. obtac.
@@ -1322,12 +1531,20 @@ Proof.
     + move COH_CL at bottom.
       intro loc. specialize (COH_CL loc). des.
       eexists mloc_cl. splits; ss.
-      rewrite sim_local_coh_cl2_step. rewrite inverse_step.
+      rewrite sim_local_coh_cl_step. rewrite inverse_step.
       rewrite ? inverse_union. ii. des; eauto.
-      inv EID. obtac.
-      exploit EX2.(LABELS); eauto; ss.
-      { rewrite List.app_length. s. lia. }
-      rewrite List.nth_error_app2, Nat.sub_diag; ss. i. simplify. ss.
+      inv EID. obtac. inv H0.
+      * exploit EX2.(LABELS); eauto; ss.
+        { rewrite List.app_length. s. lia. }
+        rewrite List.nth_error_app2, Nat.sub_diag; ss.
+        destruct l; ss.
+      * inv H. exploit RF2; eauto. i. des.
+        inv WRITE. inv READ.
+        rename EID0 into WRITE. rewrite EID in WRITE. inv WRITE.
+        exploit EX2.(LABELS); eauto; ss.
+        { rewrite List.app_length. s. lia. }
+        rewrite List.nth_error_app2, Nat.sub_diag; ss.
+        destruct l2; ss.
     + i. rewrite sim_local_vpn_step. rewrite inverse_step.
       rewrite inverse_union. ii. des; [apply VPN|]; eauto.
       inv EID. obtac.
