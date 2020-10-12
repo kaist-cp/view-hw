@@ -146,6 +146,13 @@ Module Label.
     | _ => false
     end.
 
+  Definition is_kinda_writing_cl (loc:Loc.t) (label:t): bool :=
+    match label with
+    | write loc' _ => Loc.cl loc loc'
+    | update loc' _ _ => Loc.cl loc loc'
+    | _ => false
+    end.
+
   Definition is_access (label:t): bool :=
     match label with
     | read _ _ => true
