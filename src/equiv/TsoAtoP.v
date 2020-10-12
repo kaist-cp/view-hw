@@ -856,9 +856,29 @@ Proof.
                 rewrite H_CL. ss.
               }
               econs 2; try exact VIEW0; eauto. rewrite COH_MAX_CL; ss.
-            + eapply sim_view_le; [|exact SIM_FWD].
-              i. subst. right. econs; eauto. simtac. econs; eauto. ss.
-              eapply Loc.cl_trans; eauto. eapply Loc.cl_sym. ss.
+            + rewrite NOFWD; [| apply H_CL]. s.
+              destruct n.
+              { econs 1. ss. }
+              exploit MSG; [lia|]. i. des.
+              exploit EX.(Valid.RF1); eauto with tso. i. des.
+              { contradict NORF. econs. eauto. }
+              exploit EX.(Valid.RF_WF); [exact RF|exact RF0|]. i. subst. inv LABEL0.
+              exploit Loc.cl_trans; try exact CL; eauto.
+              { rewrite Loc.cl_sym; ss. apply H_CL. }
+              intro CL0.
+              destruct eid2. destruct (t == tid).
+              { inv e0.
+                econs 2; try exact VIEW0; ss.
+                left. econs; eauto. econs. splits.
+                - simtac. econs; eauto. destruct l0; ss; eqvtac.
+                - econs. splits; eauto.
+                  exploit Valid.rfi_is_po; eauto. econs; eauto.
+              }
+              { econs 2; try exact VIEW0; ss.
+                right. econs; eauto. econs. splits.
+                - simtac. econs; eauto. destruct l0; ss; eqvtac.
+                - econs 2. econs; eauto. econs; eauto.
+              }
         }
       * (* sim_local vpn *)
         i. rewrite List.app_length, Nat.add_1_r.
@@ -967,11 +987,7 @@ Proof.
         }
         exists (ValA.val (sem_expr rmap1 eloc)). splits; ss.
         { eapply Loc.cl_trans; eauto. eapply Loc.cl_sym. ss. }
-        { i. repeat rewrite fun_add_spec. repeat condtac; ss; cycle 2.
-          { exfalso. apply c0. ss. }
-          { exfalso. apply c. ss. }
-          rewrite VWN. lia.
-        }
+        { i. funtac. rewrite VWN. lia. }
         rewrite List.app_length, Nat.add_1_r.
         rewrite sim_local_coh_cl_step. rewrite inverse_step.
         rewrite ? inverse_union, fun_add_spec. condtac; ss; cycle 1.
@@ -1176,11 +1192,7 @@ Proof.
         }
         exists (ValA.val (sem_expr armap2 eloc)). splits; ss.
         { eapply Loc.cl_trans; eauto. eapply Loc.cl_sym. ss. }
-        { i. repeat rewrite fun_add_spec. repeat condtac; ss; cycle 2.
-          { exfalso. apply c0. ss. }
-          { exfalso. apply c. ss. }
-          rewrite VWN. lia.
-        }
+        { i. funtac. rewrite VWN. lia. }
         rewrite List.app_length, Nat.add_1_r.
         rewrite sim_local_coh_cl_step. rewrite inverse_step.
         rewrite ? inverse_union, fun_add_spec. condtac; ss; cycle 1.
@@ -1466,9 +1478,29 @@ Proof.
                 rewrite H_CL. ss.
               }
               econs 2; try exact VIEW0; eauto. rewrite COH_MAX_CL; ss.
-            + eapply sim_view_le; [|exact SIM_FWD].
-              i. subst. right. econs; eauto. simtac. econs; eauto. ss.
-              eapply Loc.cl_trans; eauto. eapply Loc.cl_sym. ss.
+            + rewrite NOFWD; [| apply H_CL]. s.
+              destruct n.
+              { econs 1. ss. }
+              exploit MSG; [lia|]. i. des.
+              exploit EX.(Valid.RF1); eauto with tso. i. des.
+              { contradict NORF. econs. eauto. }
+              exploit EX.(Valid.RF_WF); [exact RF|exact RF0|]. i. subst. inv LABEL0.
+              exploit Loc.cl_trans; try exact CL; eauto.
+              { rewrite Loc.cl_sym; ss. apply H_CL. }
+              intro CL0.
+              destruct eid2. destruct (t == tid).
+              { inv e0.
+                econs 2; try exact VIEW0; ss.
+                left. econs; eauto. econs. splits.
+                - simtac. econs; eauto. destruct l0; ss; eqvtac.
+                - econs. splits; eauto.
+                  exploit Valid.rfi_is_po; eauto. econs; eauto.
+              }
+              { econs 2; try exact VIEW0; ss.
+                right. econs; eauto. econs. splits.
+                - simtac. econs; eauto. destruct l0; ss; eqvtac.
+                - econs 2. econs; eauto. econs; eauto.
+              }
         }
       * (* sim_local vpn *)
         i. rewrite List.app_length, Nat.add_1_r.
@@ -2067,12 +2099,20 @@ Proof.
     + exploit label_mem_of_ex; try exact EID1; eauto. i. des.
       esplits; eauto with tso.
       eapply view_of_eid_ob; eauto.
-      destruct (Label.is_kinda_read l2) eqn:READ.
-      * left. right. left. right. simtac. split; simtac.
-        left. simtac.
-      * left. right. right. destruct l2; ss. simtac.
+      destruct l2; ss.
+      * left. right. right. simtac.
         econs; ss. simtac. destruct l1; ss. econs; eauto with tso.
         eapply Loc.cl_trans; eauto. eapply Loc.cl_sym. ss.
+      * left. right. left. right. simtac. split; simtac.
+        left. simtac.
+    + exploit label_mem_of_ex; try exact EID1; eauto. i. des.
+      esplits; eauto with tso.
+      exploit EX.(Valid.RF2); eauto. i. des. obtac. labtac.
+      exploit label_mem_of_ex; try exact EID4; eauto. i. des.
+      etrans; eapply view_of_eid_ob; eauto.
+      * repeat left. econs; eauto.
+      * left. right. left. right.
+        simtac. split; simtac. left. simtac.
     + exploit label_mem_of_ex; try exact EID1; eauto. i. des.
       esplits; eauto with tso.
       eapply view_of_eid_ob; eauto. inv H.
