@@ -289,8 +289,7 @@ Inductive sim_local (tid:Id.t) (ex:Execution.t) (ob: list eidT) (alocal:ALocal.t
          ex ob
          (inverse (sim_local_vwo ex) (eq (tid, List.length (alocal.(ALocal.labels)))))
          local.(Local.vwo).(View.ts);
-  VCAP:
-       sim_view
+  VCAP: sim_view
          ex ob
          (inverse (sim_local_vcap ex) (eq (tid, List.length (alocal.(ALocal.labels)))))
          local.(Local.vcap).(View.ts);
@@ -329,11 +328,20 @@ Inductive sim_local (tid:Id.t) (ex:Execution.t) (ob: list eidT) (alocal:ALocal.t
           <<N: (length alocal.(ALocal.labels)) <= n>> /\
           <<WRITE: ex.(Execution.label_is) Label.is_write (tid, n)>> /\
           <<VIEW: view_of_eid ex ob (tid, n) = Some view>>);
-  VPN: forall loc,
-       sim_view
+  COH_CL:forall loc,
+          exists mloc_cl,
+          <<CL: Loc.cl loc mloc_cl>> /\
+          <<COH_MAX_CL: forall loc0 (CL: Loc.cl loc0 mloc_cl),
+                         (local.(Local.coh) loc0).(View.ts) <= (local.(Local.coh) mloc_cl).(View.ts)>> /\
+          <<COH_CL:
+              sim_view
+                ex ob
+                (inverse (sim_local_coh_cl ex loc) (eq (tid, List.length (alocal.(ALocal.labels)))))
+                (local.(Local.coh) mloc_cl).(View.ts)>>;
+  VPN: sim_view
          ex ob
-         (inverse (sim_local_vpn ex loc) (eq (tid, List.length (alocal.(ALocal.labels)))))
-         (local.(Local.vpn) loc).(View.ts);
+         (inverse (sim_local_vpn ex) (eq (tid, List.length (alocal.(ALocal.labels)))))
+         local.(Local.vpn).(View.ts);
   LPER: forall loc,
         sim_view
           ex ob
@@ -842,14 +850,70 @@ Proof.
           - esplits; cycle 1; eauto. lia.
         }
         { esplits; cycle 1; eauto. lia. }
+      * (* sim_local coh_cl *)
+        i. generalize SIM_LOCAL.(COH_CL). intro X. specialize (X loc). des.
+        inv WF. generalize (Local.read_spec LOCAL READ_STEP). funtac. i. des.
+        destruct (Loc.cl (ValA.val (sem_expr rmap1 eloc)) mloc_cl) eqn:H_CL; cycle 1.
+        { exists mloc_cl. esplits; ss.
+          - i. funtac.
+            + inversion e. subst. rewrite H_CL in *. ss.
+            + inversion e. subst.
+              exploit Loc.cl_refl. rewrite H_CL. ss.
+          - funtac.
+            + inversion e. subst.
+              exploit Loc.cl_refl. rewrite H_CL. ss.
+            + rewrite List.app_length, Nat.add_1_r.
+              rewrite sim_local_coh_cl_step. rewrite inverse_step.
+              rewrite inverse_union. eapply sim_view_le; [| exact COH_CL0]. eauto.
+        }
+        destruct (lt_eq_lt_dec
+          (join (Local.coh local1 (ValA.val (sem_expr rmap1 eloc)))
+                (join
+                  (View._join (ValA.annot (sem_expr rmap1 eloc))
+                      (View._join (Local.vrn local1)
+                        (View._join
+                            (ifc (OrdR.ge ord OrdR.acquire) (Local.vrel local1))
+                            View._bot)))
+                  (FwdItem.read_view
+                      (Local.fwdbank local1 (ValA.val (sem_expr rmap1 eloc))) n ord))).(View.ts)
+          (Local.coh local1 mloc_cl).(View.ts)).
+        { (* <= *)
+          eexists mloc_cl. splits; ss.
+          - i. funtac.
+            { inv s; lia. }
+            inversion e. subst.
+            rewrite COH_MAX_CL; ss. apply join_l.
+          - rewrite List.app_length, Nat.add_1_r.
+            rewrite sim_local_coh_cl_step. rewrite inverse_step.
+            rewrite inverse_union, fun_add_spec. condtac; cycle 1.
+            { eapply sim_view_le; [|exact COH_CL0]. eauto. }
+            inversion e. subst. inv s; ss.
+            { unfold join in H. unfold Time.join in H. lia. }
+            rewrite H. eapply sim_view_le; [|exact COH_CL0]. eauto.
+        }
+        { (* > *)
+          eexists (ValA.val (sem_expr rmap1 eloc)). splits; ss.
+          - eapply Loc.cl_trans; eauto. eapply Loc.cl_sym. ss.
+          - i. funtac.
+            rewrite COH_MAX_CL; try lia. eapply Loc.cl_trans; eauto.
+          - rewrite List.app_length, Nat.add_1_r.
+            rewrite sim_local_coh_cl_step. rewrite inverse_step.
+            rewrite inverse_union. funtac.
+            apply sim_view_join.
+            + inv COH_CL0.
+              { econs; eauto. apply le_antisym; [| apply bot_spec].
+                rewrite COH_MAX_CL; ss. rewrite VIEW1. ss.
+              }
+              econs 2; try exact VIEW1; eauto. rewrite COH_MAX_CL; ss.
+            + eapply sim_view_le; [|exact SIM_EXT2].
+              i. subst. right. econs; eauto. simtac. econs; eauto. ss.
+              eapply Loc.cl_trans; eauto. eapply Loc.cl_sym. ss.
+        }
       * (* sim_local vpn *)
-        i. rewrite List.app_length, Nat.add_1_r.
+        rewrite List.app_length, Nat.add_1_r.
         rewrite sim_local_vpn_step. rewrite inverse_step.
-        rewrite inverse_union. apply sim_view_join.
-        { eapply sim_view_le; [|exact (SIM_LOCAL.(VPN) loc)]. eauto. }
-        unfold ifc. condtac; [| econs 1]; ss.
-        eapply sim_view_le; [|exact SIM_EXT2].
-        i. subst. right. econs; eauto. left. simtac. econs; eauto. ss. rewrite Loc.cl_sym; ss.
+        rewrite inverse_union.
+        eapply sim_view_le; [|exact SIM_LOCAL.(VPN)]. eauto.
       * (* sim_local lper *)
         i. rewrite List.app_length, Nat.add_1_r.
         rewrite sim_local_lper_step. rewrite inverse_step.
@@ -867,6 +931,34 @@ Proof.
     exploit label_write_mem_of_ex; eauto. i. des.
     exploit sim_rmap_expr; eauto. instantiate (1 := eloc). intro X. inv X.
     exploit sim_rmap_expr; eauto. instantiate (1 := eval). intro X. inv X.
+
+    assert (COH_LT: View.ts (Local.coh local1 (ValA.val (sem_expr rmap1 eloc))) < S n).
+    { (* internal *)
+      rewrite <- VAL.
+      eapply Memory.latest_ts_read_lt; eauto.
+      generalize (SIM_LOCAL.(COH) (ValA.val (sem_expr armap1 eloc))).
+      intro X. inv X.
+      { rewrite VIEW2. clear. unfold bot. unfold Time.bot. lia. }
+      eapply Time.le_lt_trans; eauto. inv EID. inv REL. inv H. inv H0.
+      inv H2. apply Label.is_writing_inv in LABEL0. des. subst.
+      inv H1. des. inv H.
+      { exploit Valid.coherence_ww; try exact H0; eauto.
+        all: try by econs; eauto; eauto using Label.write_is_writing, Label.read_is_reading.
+        i. eapply view_of_eid_ob_write; eauto.
+        - left. left. left. left. left. right. ss.
+        - econs; eauto. apply Label.write_is_writing.
+      }
+      { inv H1.
+        exploit EX.(Valid.RF2); eauto. i. des.
+        rewrite EID in WRITE. inv WRITE.
+        exploit Valid.coherence_rw; try exact H0; eauto.
+        all: try by econs; eauto; eauto using Label.write_is_writing, Label.read_is_reading.
+        i. eapply view_of_eid_ob_write; eauto.
+        - left. left. left. left. left. right. ss.
+        - econs; eauto. apply Label.write_is_writing.
+      }
+    }
+
     eexists (ExecUnit.mk _ _ _). esplits.
     + econs. econs; ss.
       { econs; ss. }
@@ -875,31 +967,7 @@ Proof.
       all: cycle 1.
       { rewrite <- VAL, <- VAL0. eauto. }
       { rewrite SIM_LOCAL.(PROMISES). esplits; eauto. }
-      econs; try refl.
-      * (* internal *)
-        rewrite <- VAL.
-        eapply Memory.latest_ts_read_lt; eauto.
-        generalize (SIM_LOCAL.(COH) (ValA.val (sem_expr armap1 eloc))).
-        intro X. inv X.
-        { rewrite VIEW2. clear. unfold bot. unfold Time.bot. lia. }
-        eapply Time.le_lt_trans; eauto. inv EID. inv REL. inv H. inv H0.
-        inv H2. apply Label.is_writing_inv in LABEL0. des. subst.
-        inv H1. des. inv H.
-        { exploit Valid.coherence_ww; try exact H0; eauto.
-          all: try by econs; eauto; eauto using Label.write_is_writing, Label.read_is_reading.
-          i. eapply view_of_eid_ob_write; eauto.
-          - left. left. left. left. left. right. ss.
-          - econs; eauto. apply Label.write_is_writing.
-        }
-        { inv H1.
-          exploit EX.(Valid.RF2); eauto. i. des.
-          rewrite EID in WRITE. inv WRITE.
-          exploit Valid.coherence_rw; try exact H0; eauto.
-          all: try by econs; eauto; eauto using Label.write_is_writing, Label.read_is_reading.
-          i. eapply view_of_eid_ob_write; eauto.
-          - left. left. left. left. left. right. ss.
-          - econs; eauto. apply Label.write_is_writing.
-        }
+      econs; try refl; ss.
       * (* external *)
         unfold lt. apply le_n_S. s. repeat apply join_spec.
         { inv VIEW0.
@@ -1129,16 +1197,52 @@ Proof.
           - esplits; cycle 1; eauto. lia.
         }
         { esplits; cycle 1; eauto. lia. }
+      * (* sim_local coh_cl *)
+        i. generalize SIM_LOCAL.(COH_CL). intro X. specialize (X loc). des.
+        destruct (Loc.cl (ValA.val (sem_expr rmap1 eloc)) mloc_cl) eqn:H_CL; cycle 1.
+        { exists mloc_cl. esplits; ss.
+          - i. funtac.
+            + inversion e. subst. rewrite H_CL in *. ss.
+            + inversion e. subst.
+              exploit Loc.cl_refl. rewrite H_CL. ss.
+          - funtac.
+            + inversion e. subst.
+              exploit Loc.cl_refl. rewrite H_CL. ss.
+            + rewrite List.app_length, Nat.add_1_r.
+              rewrite sim_local_coh_cl_step. rewrite inverse_step.
+              rewrite inverse_union. eapply sim_view_le; [| exact COH_CL0]. eauto.
+        }
+        destruct (lt_eq_lt_dec (S n) ((Local.coh local1) mloc_cl).(View.ts)).
+        { (* <= *)
+          eexists mloc_cl. splits; ss.
+          - i. funtac.
+            { inv s; lia. }
+            inversion e. subst. inv s; lia.
+          - rewrite List.app_length, Nat.add_1_r.
+            rewrite sim_local_coh_cl_step. rewrite inverse_step.
+            rewrite inverse_union, fun_add_spec. condtac; cycle 1.
+            { eapply sim_view_le; [|exact COH_CL0]. eauto. }
+            inversion e. subst. inv s; ss.
+            { unfold join in H. unfold Time.join in H. lia. }
+            rewrite H. eapply sim_view_le; [|exact COH_CL0]. eauto.
+        }
+        { (* > *)
+          eexists (ValA.val (sem_expr rmap1 eloc)). splits; ss.
+          - eapply Loc.cl_trans; eauto. eapply Loc.cl_sym. ss.
+          - i. funtac.
+            rewrite COH_MAX_CL; try lia. eapply Loc.cl_trans; eauto.
+          - rewrite List.app_length, Nat.add_1_r.
+            rewrite sim_local_coh_cl_step. rewrite inverse_step.
+            rewrite inverse_union. funtac.
+            econs 2; eauto; ss.
+            right. econs; eauto. econs; eauto. econs; eauto. s.
+            eapply Loc.cl_trans; eauto. eapply Loc.cl_sym. rewrite VAL. ss.
+        }
       * (* sim_local vpn *)
-        i. rewrite List.app_length, Nat.add_1_r.
+        rewrite List.app_length, Nat.add_1_r.
         rewrite sim_local_vpn_step. rewrite inverse_step.
-        rewrite ? inverse_union. apply sim_view_join.
-        { eapply sim_view_le; [|exact (SIM_LOCAL.(VPN) loc)]. eauto. }
-        unfold ifc. condtac; [| econs 1]; ss.
-        eapply sim_view_le.
-        { right. left. eauto. }
-        econs 2; eauto; ss. econs; eauto. simtac. econs; eauto. ss.
-        rewrite VAL. rewrite Loc.cl_sym; ss.
+        rewrite inverse_union.
+        eapply sim_view_le; [|exact SIM_LOCAL.(VPN)]. eauto.
       * (* sim_local lper *)
         i. rewrite List.app_length, Nat.add_1_r.
         rewrite sim_local_lper_step. rewrite inverse_step.
@@ -1215,10 +1319,16 @@ Proof.
           - esplits; cycle 1; eauto. lia.
         }
         { esplits; cycle 1; eauto. lia. }
+      * i. generalize SIM_LOCAL.(COH_CL). intro X. specialize (X loc). des.
+        exists mloc_cl. splits; ss.
+        rewrite List.app_length, Nat.add_1_r. s.
+        rewrite sim_local_coh_cl_step. rewrite inverse_step.
+        rewrite inverse_union. eapply sim_view_le; [by left; eauto|].
+        apply COH_CL0.
       * (* sim_local vpn *)
-        i. rewrite List.app_length, Nat.add_1_r.
+        rewrite List.app_length, Nat.add_1_r.
         rewrite sim_local_vpn_step. rewrite inverse_step.
-        rewrite ? inverse_union. eapply sim_view_le; [|exact (SIM_LOCAL.(VPN) loc)]. eauto.
+        rewrite ? inverse_union. eapply sim_view_le; [|exact SIM_LOCAL.(VPN)]. eauto.
       * (* sim_local lper *)
         i. rewrite List.app_length, Nat.add_1_r.
         rewrite sim_local_lper_step. rewrite inverse_step.
@@ -1303,22 +1413,27 @@ Proof.
           - esplits; cycle 1; eauto. lia.
         }
         { esplits; cycle 1; eauto. lia. }
-      * i. rewrite List.app_length, Nat.add_1_r.
+      * i. generalize SIM_LOCAL.(COH_CL). intro X. specialize (X loc). des.
+        exists mloc_cl. splits; ss.
+        rewrite List.app_length, Nat.add_1_r. s.
+        rewrite sim_local_coh_cl_step. rewrite inverse_step.
+        rewrite inverse_union. eapply sim_view_le; [by left; eauto|].
+        apply COH_CL0.
+      * rewrite List.app_length, Nat.add_1_r.
         rewrite sim_local_vpn_step. rewrite inverse_step.
         rewrite inverse_union.
         unfold ifc. condtac; cycle 1.
-        { eapply sim_view_le; [by left; eauto|]. apply SIM_LOCAL. }
+        { eapply sim_view_le; [by left; eauto|]. rewrite bot_join; [|exact Time.order]. apply SIM_LOCAL. }
         destruct rr; destruct rw; destruct wr; destruct ww; ss. cleartriv.
-        eapply sim_view_join.
-        { eapply sim_view_le; [|exact (SIM_LOCAL.(VPN) loc)]. eauto. }
-        eapply sim_view_join.
+        repeat eapply sim_view_join.
+        { eapply sim_view_le; [by left; eauto|]. apply SIM_LOCAL. }
         { eapply sim_view_le; [|exact SIM_LOCAL.(VRO)]. i.
           right. econs; eauto.
-          inv PR. inv REL. obtac. right. simtac.
+          inv PR. inv REL. obtac. simtac.
         }
         { eapply sim_view_le; [|exact SIM_LOCAL.(VWO)]. i.
           right. econs; eauto.
-          inv PR. inv REL. obtac. right. simtac.
+          inv PR. inv REL. obtac. simtac.
         }
       * i. rewrite List.app_length, Nat.add_1_r.
         rewrite sim_local_lper_step. rewrite inverse_step.
@@ -1402,22 +1517,27 @@ Proof.
           - esplits; cycle 1; eauto. lia.
         }
         { esplits; cycle 1; eauto. lia. }
-      * i. rewrite List.app_length, Nat.add_1_r.
+      * i. generalize SIM_LOCAL.(COH_CL). intro X. specialize (X loc). des.
+        exists mloc_cl. splits; ss.
+        rewrite List.app_length, Nat.add_1_r. s.
+        rewrite sim_local_coh_cl_step. rewrite inverse_step.
+        rewrite inverse_union. eapply sim_view_le; [by left; eauto|].
+        apply COH_CL0.
+      * rewrite List.app_length, Nat.add_1_r.
         rewrite sim_local_vpn_step. rewrite inverse_step.
         rewrite inverse_union.
         unfold ifc. condtac; cycle 1.
-        { eapply sim_view_le; [by left; eauto|]. apply SIM_LOCAL. }
+        { eapply sim_view_le; [by left; eauto|]. rewrite bot_join; [|exact Time.order]. apply SIM_LOCAL. }
         destruct rr; destruct rw; destruct wr; destruct ww; ss. cleartriv.
-        eapply sim_view_join.
-        { eapply sim_view_le; [|exact (SIM_LOCAL.(VPN) loc)]. eauto. }
-        eapply sim_view_join.
+        repeat eapply sim_view_join.
+        { eapply sim_view_le; [by left; eauto|]. apply SIM_LOCAL. }
         { eapply sim_view_le; [|exact SIM_LOCAL.(VRO)]. i.
           right. econs; eauto.
-          inv PR. inv REL. obtac. right. simtac.
+          inv PR. inv REL. obtac. simtac.
         }
         { eapply sim_view_le; [|exact SIM_LOCAL.(VWO)]. i.
           right. econs; eauto.
-          inv PR. inv REL. obtac. right. simtac.
+          inv PR. inv REL. obtac. simtac.
         }
       * i. rewrite List.app_length, Nat.add_1_r.
         rewrite sim_local_lper_step. rewrite inverse_step.
@@ -1491,10 +1611,16 @@ Proof.
         - esplits; cycle 1; eauto. lia.
       }
       { esplits; cycle 1; eauto. lia. }
-    * i. rewrite List.app_length, Nat.add_1_r.
+    * i. generalize SIM_LOCAL.(COH_CL). intro X. specialize (X loc). des.
+      exists mloc_cl. splits; ss.
+      rewrite List.app_length, Nat.add_1_r. s.
+      rewrite sim_local_coh_cl_step. rewrite inverse_step.
+      rewrite inverse_union. eapply sim_view_le; [by left; eauto|].
+      apply COH_CL0.
+    * rewrite List.app_length, Nat.add_1_r.
       rewrite sim_local_vpn_step. rewrite inverse_step.
       rewrite inverse_union.
-      eapply sim_view_le; [|exact (SIM_LOCAL.(VPN) loc)]. eauto.
+      eapply sim_view_le; [|exact SIM_LOCAL.(VPN)]. eauto.
     * i. rewrite List.app_length, Nat.add_1_r.
       rewrite sim_local_lper_step. rewrite inverse_step.
       rewrite inverse_union.
@@ -1513,9 +1639,16 @@ Proof.
   - (* flushopt *)
     exploit LABEL.
     { rewrite List.nth_error_app2; ss. rewrite Nat.sub_diag. ss. }
-    intro LABEL_LEN. eexists (ExecUnit.mk _ _ _).
-    esplits.
-    { econs. econs; [econs | econs 9|]; ss. econs; ss. }
+    intro LABEL_LEN.
+    exploit sim_rmap_expr; eauto. instantiate (1 := eloc). intro X. inv X. rewrite VAL in *.
+    generalize (SIM_LOCAL.(COH_CL)). intro H. specialize (H (ValA.val (sem_expr rmap1 eloc))). des.
+    eexists (ExecUnit.mk _ _ _). splits.
+    { econs. econs; ss.
+      - econs; ss.
+      - econs 9; ss. econs; ss. econs; ss. econs; ss.
+        unfold ifc. condtac; [| apply bot_spec]. rewrite CL. rewrite COH_MAX_CL; ss.
+        eapply Loc.cl_trans; eauto. eapply Loc.cl_sym. ss.
+    }
     econs; ss. econs; ss.
     + rewrite List.app_length, Nat.add_1_r. s.
       i. rewrite sim_local_coh_step. rewrite inverse_step.
@@ -1563,6 +1696,12 @@ Proof.
         - esplits; cycle 1; eauto. lia.
       }
       { esplits; cycle 1; eauto. lia. }
+    + i. generalize SIM_LOCAL.(COH_CL). intro X. specialize (X loc). des.
+      exists mloc_cl0. splits; ss.
+      rewrite List.app_length, Nat.add_1_r. s.
+      rewrite sim_local_coh_cl_step. rewrite inverse_step.
+      rewrite inverse_union. eapply sim_view_le; [by left; eauto|].
+      apply COH_CL1.
     + i. rewrite List.app_length, Nat.add_1_r.
       rewrite sim_local_vpn_step. rewrite inverse_step.
       rewrite ? inverse_union. eapply sim_view_le; [by left; eauto|].
@@ -1570,12 +1709,20 @@ Proof.
     + i. rewrite List.app_length, Nat.add_1_r.
       rewrite sim_local_lper_step. rewrite inverse_step.
       rewrite inverse_union. apply sim_view_join.
-      { eapply sim_view_le; [|exact (SIM_LOCAL.(LPER) loc)]. eauto. }
+      { eapply sim_view_le; [by left; eauto|]. apply SIM_LOCAL. }
       exploit sim_rmap_expr; eauto. intro X. inv X. rewrite <- VAL in *.
-      unfold ifc. condtac; [| econs 1]; ss.
-      eapply sim_view_le; [|exact (SIM_LOCAL.(VPN) loc)]. i.
-      right. econs; eauto.
-      inv PR. econs. econs; eauto. simtac. econs; eauto. ss. rewrite Loc.cl_sym; ss.
+      unfold ifc. condtac; [| econs 1]; ss. condtac; ss.
+      apply sim_view_join.
+      * eapply sim_view_le; [|exact COH_CL0]. i.
+        right. econs; ss.
+        inv PR. econs. split; cycle 1.
+        { simtac. econs; eauto. ss. eapply Loc.cl_sym. ss. }
+        left. eapply sim_local_coh_cl_spec; eauto.
+        eapply Loc.cl_sym. ss.
+      * eapply sim_view_le; [|exact SIM_LOCAL.(VPN)]. i.
+        right. econs; eauto.
+        inv PR. econs. econs; [right|]; eauto.
+        simtac. econs; eauto. ss. rewrite Loc.cl_sym; ss.
     + i. rewrite List.app_length, Nat.add_1_r.
       rewrite sim_local_per_step. rewrite inverse_step.
       rewrite inverse_union. eapply sim_view_le; [by left; eauto|].
@@ -1811,6 +1958,7 @@ Proof.
           rewrite VIEW in VIEW0. inv VIEW0.
           unfold Memory.get_msg in MSG. ss. apply Promises.promises_from_mem_spec. eauto.
         }
+      + i. exists loc. splits; eauto. eapply Loc.cl_refl.
   }
   { clear. econs; ss.
     - econs. i. unfold RMap.find, RMap.init.
@@ -1890,7 +2038,8 @@ Proof.
       match goal with
       | [H: sim_local_per _ _ _ _ |- _] => inv H
       | [H: sim_local_lper _ _ _ _ |- _] => inv H
-      | [H: sim_local_vpn _ _ _ _ |- _] => inv H
+      | [H: sim_local_coh_cl _ _ _ _ |- _] => inv H
+      | [H: sim_local_vpn _ _ _ |- _] => inv H
       | [H: rc _ _ |- _] => inv H
       end; obtac).
     + exploit label_mem_of_ex; try exact EID0; eauto. i. des.
