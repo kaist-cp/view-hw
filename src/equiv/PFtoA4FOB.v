@@ -119,13 +119,17 @@ Proof.
     inv VLOC. rewrite <- VAL in *.
   move EID at bottom. move FOB at bottom. unfold Execution.fob in *. des_union.
   - (* W U R; po_cl; FO *)
-    obtac. rewrite L.(LC).(VPN); ss.
-    econs; eauto. unfold sim_local_vpn. left.
-    inv H. obtac. simtac.
-    labtac. eqvtac. econs; eauto.
-    apply Loc.cl_sym in CL. destruct l2; ss; eqvtac; ss.
+    obtac. rewrite <- join_l.
+    generalize L.(LC).(COH_CL). intro Z. specialize (Z (ValA.val vloc)). des.
+    rewrite COH_CL; s.
+    + inv COHMAX_CL.
+      specialize (MAX mloc_cl). inv MAX.
+      rewrite <- TS. rewrite CL. ss.
+    + inv H. obtac. labtac. eqvtac.
+      econs; eauto. econs. simtac.
+      econs; eauto. destruct l2; ss; eqvtac; apply Loc.cl_sym; ss.
   - (* W U R; po; [dmb.sy U dsb.sy]; po; FO *)
-    obtac. rewrite L.(LC).(VPN); ss.
-    econs; eauto. unfold sim_local_vpn. right.
-    simtac.
+    obtac.  rewrite <- join_r.
+    rewrite L.(LC).(VPN); ss.
+    econs; eauto. econs. simtac.
 Qed.

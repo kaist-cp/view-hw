@@ -206,6 +206,9 @@ Proof.
           { etrans; eauto. }
           { apply List.nth_error_Some. congr. }
         * clear. lia.
+      + intro loc. exists loc. splits; ss.
+        { apply Loc.cl_refl. }
+        ii. inv EID. inv REL. obtac; inv_po.
       + ii. inv EID. inv REL; obtac; inv_po.
       + ii. inv EID. inv REL. obtac; inv_po.
       + ii. inv EID. inv REL. obtac. inv_po.
