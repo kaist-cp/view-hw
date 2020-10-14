@@ -1156,9 +1156,13 @@ Proof.
         * econs 9. ss.
       + econs; ss.
     - (* flushopt *)
-      inv STEP. eexists (ExecUnit.mk _ _ _). esplits.
+      inv STEP.
+      inv WF1. inv LOCAL0; ss. generalize (COHMAX_CL0 (ValA.val (sem_expr rmap1 eloc))). intro X. inv X.
+      eexists (ExecUnit.mk _ _ _). esplits.
       + econs 1. econs. econs; ss; cycle 1.
-        * econs 9; eauto. econs; eauto; ss.
+        * econs 9; eauto. econs; eauto; ss. econs; [rewrite CL|]; ss.
+          i. unfold ifc. condtac; [|apply bot_spec].
+          rewrite COHMAX_CL1; ss.
         * econs 10; ss.
       + econs; ss. inv LOCAL. econs; eauto 10 using sim_view_join, sim_view_ifc, sim_view_bot.
   }

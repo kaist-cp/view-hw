@@ -588,8 +588,6 @@ Proof.
       econs; ss.
       + econs. i. unfold RMap.find. rewrite IdMap.gempty. ss. apply bot_spec.
       + econs; ss; i; try by apply bot_spec.
-        (* * unfold bot. unfold fun_bot. unfold bot. unfold Time.bot. lia. *)
-        (* * eexists. unfold bot. unfold fun_bot. unfold Memory.read. ss. *)
         * econs; esplits; ss.
         * destruct ts; ss.
           rewrite Promises.promises_from_mem_spec in IN. des.
@@ -597,6 +595,7 @@ Proof.
         * destruct ts; ss.
           unfold Memory.get_msg in *. ss. destruct msg.
           exploit Promises.promises_from_mem_lookup; eauto. ss. subst. ss.
+        * econs; try rewrite Loc.cl_refl; ss. i. apply bot_spec.
     - rewrite IdMap.mapi_spec, STMT in FIND. inv FIND.
       econs; ss.
       + ii. unfold RMap.init in N. unfold RMap.find in N.
