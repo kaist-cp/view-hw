@@ -221,7 +221,7 @@ Proof.
       econs. splits.
       { destruct l; ss; econs; eauto with tso. }
       inv H1. des. inv H0. des. inv H1.
-      eapply Execution.po_chain. econs; eauto.
+      etrans; eauto.
 Qed.
 
 Definition sim_local_vwn ex :=

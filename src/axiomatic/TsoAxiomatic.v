@@ -1102,13 +1102,6 @@ Module Execution.
     econs 2. ss.
   Qed.
 
-  (* TODO: remove this lemma*)
-  Lemma po_chain: Execution.po ⨾ Execution.po^? ⊆ Execution.po.
-  Proof.
-    ii. inv H. des. inv H0. destruct x, x0, y. ss. subst.
-    inv H1; inv H; ss. subst. econs; ss. lia.
-  Qed.
-
   Inductive i (eid1 eid2:eidT): Prop :=
   | i_intro
       (TID: fst eid1 = fst eid2)
@@ -1604,7 +1597,7 @@ Module Valid.
     destruct (fst eid1 == fst eid3).
     - (* rfi *)
       exfalso. eapply EX.(CORW). econs. instantiate (1 := eid1). esplits; [|by eauto].
-      right. apply Execution.po_chain. econs. splits; eauto.
+      right. rewrite PO.
       inv PO. inv e. rewrite TID in H1. eapply coi_is_po in H0; eauto with tso.
     - (* rfe *)
       exfalso. eapply EX.(EXTERNAL). apply t_step_rt. esplits.
@@ -1774,9 +1767,9 @@ Module Valid.
     inv H; cycle 1.
     { split; eauto. obtac.
       all: splits; [simtac | eauto].
-      all: eapply Execution.po_chain; econs; simtac.
+      all: try by etrans; eauto.
       inv H; inv H2; ss. obtac.
-      eapply Execution.po_chain. econs. simtac.
+      etrans; eauto.
     }
     obtac; labtac.
     all: try by destruct l1; ss.

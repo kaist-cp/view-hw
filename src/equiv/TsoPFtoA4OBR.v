@@ -262,9 +262,7 @@ Proof.
           inv MAX. unfold le in *. lia.
         }
         econs; eauto. unfold sim_local_vwn.
-        exploit Execution.po_chain.
-        { econs. split; try exact H. econs 2. eauto. }
-        i. econs. econs; eauto. econs; eauto with tso.
+        econs. split; [simtac|]. etrans; eauto.
     }
   }
   { (* rmw_failure *)
