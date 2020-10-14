@@ -1701,7 +1701,7 @@ Proof.
         { right. econs; ss. simtac. econs; eauto. apply Loc.cl_sym. ss. }
         inv COH_CL0.
         { rewrite VIEW0. apply bot_spec. }
-        rewrite VIEW0.
+        etrans; eauto.
         inv EID. inv REL. obtac. inv H1.
         { eapply view_of_eid_ob; eauto. destruct l; ss.
           - left. right. right. simtac.
@@ -1720,7 +1720,7 @@ Proof.
         { right. econs; ss. simtac. econs; eauto. apply Loc.cl_sym. ss. }
         generalize (SIM_LOCAL.(VPN)). intro Z. inv Z.
         { rewrite VIEW0. apply bot_spec. }
-        rewrite VIEW0. eapply view_of_eid_ob; eauto.
+        etrans; eauto. eapply view_of_eid_ob; eauto.
         inv EID. inv REL.
         { obtac. left. right. left. right. simtac. split; simtac. left. simtac. }
         inv H. des. inv H1. des. inv H1. des. rename H2 into PBAR. guardH PBAR. obtac.
