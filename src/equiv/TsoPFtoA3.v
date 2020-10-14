@@ -179,7 +179,7 @@ Inductive sim_local (tid:Id.t) (mem: Memory.t) (ex: Execution.t) (vext: eidT -> 
         <<N: (length alocal.(ALocal.labels)) <= n>> /\
         <<WRITE: ex.(Execution.label_is) Label.is_kinda_write (tid, n)>> /\
         <<VIEW: vext (tid, n) = view>>;
-  COH_CL:forall loc,
+  COH_CL: forall loc,
           exists mloc_cl,
           <<CL: Loc.cl loc mloc_cl>> /\
           <<COH_MAX_CL: forall loc0 (CL: Loc.cl loc0 mloc_cl),
