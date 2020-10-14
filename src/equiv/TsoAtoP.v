@@ -1216,7 +1216,7 @@ Proof.
         { eapply sim_view_le; [|exact (SIM_LOCAL.(PER) loc)]. eauto. }
         eapply sim_view_le; [|exact (SIM_LOCAL.(LPER) loc)]. i.
         right. econs; eauto. right.
-        inv PR. econs. econs; eauto. simtac.
+        inv PR. simtac. econs; eauto. simtac.
   - (* rmw_failure *)
     exploit LABEL.
     { rewrite List.nth_error_app2; [|refl]. rewrite Nat.sub_diag. ss. }
@@ -1696,15 +1696,47 @@ Proof.
       { eapply sim_view_le; [|exact (SIM_LOCAL.(LPER) loc)]. eauto. }
       unfold ifc. condtac; [|econs]; ss. condtac; [|econs]; ss.
       apply sim_view_join.
-      * eapply sim_view_le; [|exact COH_CL0]. i. inv PR.
-        right. econs; ss. econs. split.
-        { left. eapply sim_local_coh_cl_spec; eauto.
-          eapply Loc.cl_sym. ss.
+      * hexploit label_mem_of_ex; eauto. i. des.
+        econs 2; eauto.
+        { right. econs; ss. simtac. econs; eauto. apply Loc.cl_sym. ss. }
+        inv COH_CL0.
+        { rewrite VIEW0. apply bot_spec. }
+        rewrite VIEW0.
+        inv EID. inv REL. obtac. inv H1.
+        { eapply view_of_eid_ob; eauto. destruct l; ss.
+          - left. right. right. simtac.
+            econs; ss. econs; eauto. econs; eauto with tso. apply Loc.cl_sym. ss.
+          - left. right. left. right. simtac. split; simtac.
+            left. simtac.
         }
-        simtac. econs; eauto. ss. eapply Loc.cl_sym. ss.
-      * eapply sim_view_le; [|exact SIM_LOCAL.(VPN)]. i. inv PR.
-        right. econs; ss. econs. split; [right|]; eauto.
-        simtac. econs; eauto. ss. eapply Loc.cl_sym. ss.
+        obtac. exploit EX.(Valid.RF2); eauto. i. des. obtac. labtac.
+        hexploit label_mem_of_ex; eauto. i. des.
+        etrans; eapply view_of_eid_ob; eauto.
+        { repeat left. econs; ss. }
+        left. right. left. right. simtac. split; simtac.
+        left. simtac.
+      * hexploit label_mem_of_ex; eauto. i. des.
+        econs 2; eauto.
+        { right. econs; ss. simtac. econs; eauto. apply Loc.cl_sym. ss. }
+        generalize (SIM_LOCAL.(VPN)). intro Z. inv Z.
+        { rewrite VIEW0. apply bot_spec. }
+        rewrite VIEW0. eapply view_of_eid_ob; eauto.
+        inv EID. inv REL.
+        { obtac. left. right. left. right. simtac. split; simtac. left. simtac. }
+        inv H. des. inv H1. des. inv H1. des. rename H2 into PBAR. guardH PBAR. obtac.
+        destruct (Label.is_kinda_read l) eqn:READ.
+        { assert (PO: Execution.po x (tid, length (ALocal.labels alocal1))).
+          { rewrite H. inv PBAR; obtac; ss. }
+          left. right. left. right.
+          econs. split; cycle 1.
+          { econs. split; simtac. eauto. }
+          left. simtac.
+        }
+        destruct l; ss.
+        left. right. left. right.
+        econs. split; cycle 1.
+        { econs. split; simtac. eauto. }
+        right. simtac.
     + i. rewrite List.app_length, Nat.add_1_r.
       rewrite sim_local_per_step. rewrite inverse_step.
       rewrite inverse_union.
@@ -1761,10 +1793,14 @@ Proof.
       rewrite inverse_union. apply sim_view_join.
       { eapply sim_view_le; [|exact (SIM_LOCAL.(PER) loc)]. eauto. }
       unfold ifc. condtac; [|econs]; ss.
-      eapply sim_view_le; [|exact VWN0]. i.
-      right. econs; eauto.
-      inv PR. left. econs. econs; eauto.
-      simtac. econs; eauto. ss. apply Loc.cl_sym. ss.
+      hexploit label_mem_of_ex; eauto. i. des.
+      econs 2; eauto.
+      { right. econs; ss. left. simtac. econs; eauto. apply Loc.cl_sym. ss. }
+      inv VWN0.
+      { rewrite VIEW0. apply bot_spec. }
+      rewrite VIEW0. eapply view_of_eid_ob; eauto.
+      inv EID. inv REL. obtac.
+      left. right. repeat left. simtac.
 Qed.
 
 Lemma sim_eu_rtc_step
@@ -2073,54 +2109,9 @@ Proof.
         right. left. econs; eauto.
     }
 
-    inv EID.
-    repeat (
-      match goal with
-      | [H: sim_local_per _ _ _ _ |- _] => inv H
-      | [H: sim_local_lper _ _ _ _ |- _] => inv H
-      | [H: sim_local_vwn _ _ _ |- _] => inv H
-      | [H: sim_local_coh_cl _ _ _ _ |- _] => inv H
-      | [H: rc _ _ |- _] => inv H
-      end; obtac).
-    + exploit label_mem_of_ex; try exact EID; eauto. i. des.
-      esplits; eauto with tso; cycle 1.
-      { i. obtac. rewrite EID in EID2. inv EID2. destruct l2; ss. }
-      eapply view_of_eid_ob; eauto.
-      left. right. repeat left. simtac.
-    + exploit label_mem_of_ex; try exact EID1; eauto. i. des.
+    inv EID. inv REL1; obtac.
+    + esplits; eauto with tso.
+      i. obtac. labtac. destruct l1; ss.
+    + inv H0. obtac.
       esplits; eauto with tso.
-      eapply view_of_eid_ob; eauto.
-      destruct l2; ss.
-      * left. right. right. simtac.
-        econs; ss. simtac. destruct l1; ss. econs; eauto with tso.
-        eapply Loc.cl_trans; eauto. eapply Loc.cl_sym. ss.
-      * left. right. left. right. simtac. split; simtac.
-        left. simtac.
-    + exploit label_mem_of_ex; try exact EID1; eauto. i. des.
-      esplits; eauto with tso.
-      exploit EX.(Valid.RF2); eauto. i. des. obtac. labtac.
-      exploit label_mem_of_ex; try exact EID4; eauto. i. des.
-      etrans; eapply view_of_eid_ob; eauto.
-      * repeat left. econs; eauto.
-      * left. right. left. right.
-        simtac. split; simtac. left. simtac.
-    + exploit label_mem_of_ex; try exact EID1; eauto. i. des.
-      esplits; eauto with tso.
-      eapply view_of_eid_ob; eauto. inv H2.
-      { obtac.
-        left. right. left. right. econs. econs; [left|]; simtac.
-      }
-      inv H. des. inv H3. des. inv H3. des. rename H4 into PBAR. guardH PBAR. obtac.
-      destruct (Label.is_kinda_read l2) eqn:READ.
-      * assert (PO: Execution.po x x1).
-        { rewrite H. inv PBAR; obtac; ss. }
-        left. right. left. right.
-        econs. split; cycle 1.
-        { econs. split; simtac. eauto. }
-        left. simtac.
-      * destruct l2; ss.
-        left. right. left. right.
-        econs. split; cycle 1.
-        { econs. split; simtac. eauto. }
-        right. simtac.
 Qed.

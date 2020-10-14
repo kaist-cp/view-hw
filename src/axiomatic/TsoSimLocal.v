@@ -449,18 +449,17 @@ Proof.
 Qed.
 
 Definition sim_local_lper ex loc :=
-  ((sim_local_coh_cl ex loc ∪ sim_local_vpn ex) ⨾
-   ⦗ex.(Execution.label_is) (Label.is_flushopting_cl loc)⦘ ⨾
+  (⦗ex.(Execution.label_is) (Label.is_flushopting_cl loc)⦘ ⨾
    Execution.po).
 
 Lemma sim_local_lper_step ex loc:
   sim_local_lper ex loc =
   (sim_local_lper ex loc ∪
-   ((sim_local_coh_cl ex loc ∪ sim_local_vpn ex) ⨾
-     ⦗ex.(Execution.label_is) (Label.is_flushopting_cl loc)⦘)) ⨾
+   (⦗ex.(Execution.label_is) (Label.is_flushopting_cl loc)⦘)) ⨾
   Execution.po_adj.
 Proof.
-  unfold sim_local_lper. rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
+  unfold sim_local_lper.
+  rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
   rewrite Execution.po_po_adj at 1.
   rewrite (clos_refl_union Execution.po).
   replace ((Execution.po ∪ eq) ⨾ Execution.po_adj)
@@ -468,12 +467,19 @@ Proof.
   { rewrite union_seq. ss. }
   rewrite eq_seq.
   rewrite ? (seq_union' (Execution.po ⨾ Execution.po_adj) Execution.po_adj), ? seq_assoc, ? union_assoc.
-  refl.
+  funext. i. funext. i. propext. econs; i.
+  - repeat match goal with
+           | [H: (_ ∪ _) _ _ |- _] => inv H
+           end;
+      eauto 10 using union_l, union_r.
+  - repeat match goal with
+           | [H: (_ ∪ _) _ _ |- _] => inv H
+           end;
+      eauto 10 using union_l, union_r.
 Qed.
 
 Definition sim_local_per ex loc :=
-  (sim_local_vwn ex ⨾
-   ⦗ex.(Execution.label_is) (Label.is_flushing_cl loc)⦘ ⨾
+  (⦗ex.(Execution.label_is) (Label.is_flushing_cl loc)⦘ ⨾
    Execution.po) ∪
 
   (sim_local_lper ex loc ⨾
@@ -483,8 +489,7 @@ Definition sim_local_per ex loc :=
 Lemma sim_local_per_step ex loc:
   sim_local_per ex loc =
   (sim_local_per ex loc ∪
-   ((sim_local_vwn ex ⨾
-     ⦗ex.(Execution.label_is) (Label.is_flushing_cl loc)⦘) ∪
+   ((⦗ex.(Execution.label_is) (Label.is_flushing_cl loc)⦘) ∪
 
     (sim_local_lper ex loc ⨾
      ⦗ex.(Execution.label_is) (Label.is_persist_barrier)⦘))) ⨾
@@ -493,75 +498,6 @@ Proof.
   unfold sim_local_per.
   rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
   rewrite Execution.po_po_adj at 1 2.
-  rewrite (clos_refl_union Execution.po).
-  replace ((Execution.po ∪ eq) ⨾ Execution.po_adj)
-    with (Execution.po ⨾ Execution.po_adj ∪ eq ⨾ Execution.po_adj); cycle 1.
-  { rewrite union_seq. ss. }
-  rewrite eq_seq.
-  rewrite ? (seq_union' (Execution.po ⨾ Execution.po_adj) Execution.po_adj), ? seq_assoc, ? union_assoc.
-  funext. i. funext. i. propext. econs; i.
-  - repeat match goal with
-           | [H: (_ ∪ _) _ _ |- _] => inv H
-           end;
-      eauto 10 using union_l, union_r.
-  - repeat match goal with
-           | [H: (_ ∪ _) _ _ |- _] => inv H
-           end;
-      eauto 10 using union_l, union_r.
-Qed.
-
-Definition sim_local_lper_end ex loc :=
-  (⦗ex.(Execution.label_is) (Label.is_flushopting_cl loc)⦘ ⨾
-   Execution.po).
-
-Lemma sim_local_lper_end_step ex loc:
-  sim_local_lper_end ex loc =
-  (sim_local_lper_end ex loc ∪
-   (⦗ex.(Execution.label_is) (Label.is_flushopting_cl loc)⦘)) ⨾
-  Execution.po_adj.
-Proof.
-  unfold sim_local_lper_end.
-  rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
-  rewrite Execution.po_po_adj at 1.
-  rewrite (clos_refl_union Execution.po).
-  replace ((Execution.po ∪ eq) ⨾ Execution.po_adj)
-    with (Execution.po ⨾ Execution.po_adj ∪ eq ⨾ Execution.po_adj); cycle 1.
-  { rewrite union_seq. ss. }
-  rewrite eq_seq.
-  rewrite ? (seq_union' (Execution.po ⨾ Execution.po_adj) Execution.po_adj), ? seq_assoc, ? union_assoc.
-  funext. i. funext. i. propext. econs; i.
-  - repeat match goal with
-           | [H: (_ ∪ _) _ _ |- _] => inv H
-           end;
-      eauto 10 using union_l, union_r.
-  - repeat match goal with
-           | [H: (_ ∪ _) _ _ |- _] => inv H
-           end;
-      eauto 10 using union_l, union_r.
-Qed.
-
-Definition sim_local_per_end ex loc :=
-  (⦗ex.(Execution.label_is) (Label.is_flushing_cl loc)⦘ ⨾
-   Execution.po) ∪
-
-  (⦗ex.(Execution.label_is) (Label.is_flushopting_cl loc)⦘ ⨾
-   Execution.po ⨾
-   ⦗ex.(Execution.label_is) (Label.is_persist_barrier)⦘ ⨾
-   Execution.po).
-
-Lemma sim_local_per_end_step ex loc:
-  sim_local_per_end ex loc =
-  (sim_local_per_end ex loc ∪
-   ((⦗ex.(Execution.label_is) (Label.is_flushing_cl loc)⦘) ∪
-
-    (⦗ex.(Execution.label_is) (Label.is_flushopting_cl loc)⦘ ⨾
-     Execution.po ⨾
-     ⦗ex.(Execution.label_is) (Label.is_persist_barrier)⦘))) ⨾
-  Execution.po_adj.
-Proof.
-  unfold sim_local_per_end.
-  rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
-  rewrite Execution.po_po_adj at 1 3.
   rewrite (clos_refl_union Execution.po).
   replace ((Execution.po ∪ eq) ⨾ Execution.po_adj)
     with (Execution.po ⨾ Execution.po_adj ∪ eq ⨾ Execution.po_adj); cycle 1.
