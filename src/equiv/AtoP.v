@@ -1645,8 +1645,8 @@ Proof.
     eexists (ExecUnit.mk _ _ _). splits.
     { econs. econs; ss.
       - econs; ss.
-      - econs 9; ss. econs; ss. econs; ss. econs; ss.
-        unfold ifc. condtac; [| apply bot_spec]. rewrite CL. rewrite COH_MAX_CL; ss.
+      - econs 9; ss. econs; ss. econs; [rewrite CL|]; ss.
+        i. unfold ifc. condtac; [| apply bot_spec]. rewrite COH_MAX_CL; ss.
         eapply Loc.cl_trans; eauto. eapply Loc.cl_sym. ss.
     }
     econs; ss. econs; ss.
@@ -1711,7 +1711,7 @@ Proof.
       rewrite inverse_union. apply sim_view_join.
       { eapply sim_view_le; [by left; eauto|]. apply SIM_LOCAL. }
       exploit sim_rmap_expr; eauto. intro X. inv X. rewrite <- VAL in *.
-      unfold ifc. condtac; [| econs 1]; ss. condtac; ss.
+      unfold ifc. condtac; [| econs 1]; ss.
       apply sim_view_join.
       * eapply sim_view_le; [|exact COH_CL0]. i.
         right. econs; ss.
@@ -1970,7 +1970,9 @@ Proof.
         apply lt_le_S. rewrite <- List.nth_error_Some. ii. congr.
       + destruct ts; ss.
         unfold Memory.get_msg in MSG. ss. destruct msg. ss. subst.
-        apply Promises.promises_from_mem_lookup in MSG. auto. }
+        apply Promises.promises_from_mem_lookup in MSG. auto.
+      + econs; try rewrite Loc.cl_refl; ss. i. apply bot_spec.
+  }
   { apply AExecUnit.wf_init. }
   i. des. destruct eu2 as [state2 local2 mem2]. inv SIM. ss. subst.
   esplits; eauto.

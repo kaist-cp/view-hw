@@ -123,8 +123,8 @@ Proof.
     generalize L.(LC).(COH_CL). intro Z. specialize (Z (ValA.val vloc)). des.
     rewrite COH_CL; s.
     + inv COHMAX_CL.
-      specialize (MAX mloc_cl). inv MAX.
-      rewrite <- TS. rewrite CL. ss.
+      specialize (MAX mloc_cl).
+      rewrite CL in MAX. ss.
     + inv H. obtac. labtac. eqvtac.
       econs; eauto. econs. simtac.
       econs; eauto. destruct l2; ss; eqvtac; apply Loc.cl_sym; ss.

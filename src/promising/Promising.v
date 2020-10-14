@@ -390,7 +390,7 @@ Section Local.
   | flushopt_intro
       loc cohmax_cl view_post
       (LOC: loc = vloc.(ValA.val))
-      (COHMAX_CL: fun_max (fun loc' => ifc (Loc.cl loc loc') (lc1.(coh) loc')) cohmax_cl)
+      (COHMAX_CL: fun_max (fun loc' => ifc (Loc.cl loc loc') (lc1.(coh) loc').(View.ts)) cohmax_cl.(View.ts))
       (VIEW_POST: view_post = fun loc' => ifc (Loc.cl loc loc') (join cohmax_cl lc1.(vpn)))
       (LC2: lc2 =
             mk
@@ -462,6 +462,13 @@ Section Local.
       (VAL: exists val, Memory.read eb.(Exbank.loc) eb.(Exbank.ts) mem = Some val)
   .
 
+  Inductive wf_cohmax_cl (loc:Loc.t) (lc:t): Prop :=
+  | wf_cohmax_cl_intro
+      mloc_cl
+      (CL: Loc.cl loc mloc_cl)
+      (COHMAX_CL: forall loc0 (CL: Loc.cl loc loc0), le (lc.(coh) loc0).(View.ts) (lc.(coh) mloc_cl).(View.ts))
+  .
+
   Inductive wf (tid:Id.t) (mem:Memory.t) (lc:t): Prop :=
   | wf_intro
       (COH: forall loc, (lc.(coh) loc).(View.ts) <= List.length mem)
@@ -482,6 +489,7 @@ Section Local.
                    (TID: msg.(Msg.tid) = tid)
                    (TS: (lc.(coh) msg.(Msg.loc)).(View.ts) < ts),
           Promises.lookup ts lc.(promises))
+      (COHMAX_CL: forall loc, wf_cohmax_cl loc lc)
       (LPERCL: forall loc1 loc2 (CL: Loc.cl loc1 loc2), (lc.(lper) loc1).(View.ts) = (lc.(lper) loc2).(View.ts))
       (PERCL: forall loc1 loc2 (CL: Loc.cl loc1 loc2), (lc.(per) loc1).(View.ts) = (lc.(per) loc2).(View.ts))
   .
@@ -493,6 +501,9 @@ Section Local.
     - econs; ss. eexists. ss.
     - destruct ts; ss.
     - destruct ts; ss. destruct ts; ss.
+    - econs. instantiate (1 := loc).
+      { apply Loc.cl_refl. }
+      i. s. apply bot_spec.
   Qed.
 
   Lemma control_bot_inv
@@ -836,6 +847,34 @@ Section ExecUnit.
           }
         * i. eapply PROMISES0; eauto. eapply Time.le_lt_trans; [|by eauto].
           rewrite fun_add_spec. condtac; ss. inversion e. rewrite H2. apply join_l.
+        * intro loc. generalize (COHMAX_CL loc). intro Z. inv Z.
+          destruct (Loc.cl (ValA.val (vloc)) loc) eqn:H_CL; cycle 1.
+          { econs; eauto. s. i.
+            funtac; inversion e; subst; rewrite Loc.cl_sym in H_CL; ss.
+          }
+          destruct (classic
+                      (le (join (Local.coh local1 (ValA.val vloc))
+                              (join
+                                  (View._join (ValA.annot vloc)
+                                              (View._join (Local.vrn local1)
+                                                          (View._join
+                                                              (ifc (OrdR.ge ord OrdR.acquire)
+                                                                (Local.vrel local1)) View._bot)))
+                                  (FwdItem.read_view
+                                      (Local.fwdbank local1 (ValA.val vloc)) ts ord))).(View.ts)
+                          (Local.coh local1 mloc_cl).(View.ts))).
+          { (* <= *)
+            econs; eauto. s. i. funtac; try refl.
+            generalize CL0. intro Z. apply COHMAX_CL0 in Z.
+            inversion e. subst. rewrite <- join_l. ss.
+          }
+          { (* > *)
+            econs.
+            { instantiate (1 := (ValA.val vloc)). apply Loc.cl_sym. ss. }
+            s. i. funtac; try refl.
+            generalize CL0. intro Z. apply COHMAX_CL0 in Z.
+            rewrite Z. apply not_le in H1. unfold le. lia.
+          }
     - inv RES. inv VIEW. inv VVAL. inv VIEW. inv VLOC. inv VIEW.
       inv STEP. inv WRITABLE. econs; ss.
       + apply rmap_add_wf; viewtac.
@@ -864,15 +903,43 @@ Section ExecUnit.
           { eapply PROMISES0; eauto. revert TS2. condtac; ss. i.
             inversion e. rewrite H2. rewrite COH0. ss.
           }
-    - inv STEP. econs; ss. apply rmap_add_wf; viewtac.
-      inv RES. inv VIEW. rewrite TS. s. apply bot_spec.
+        * intro loc. generalize (COHMAX_CL loc). intro Z. inv Z.
+          destruct (Loc.cl (ValA.val (vloc)) loc) eqn:H_CL; cycle 1.
+          { econs; eauto. s. i.
+            funtac; inversion e; subst; rewrite Loc.cl_sym in H_CL; ss.
+          }
+          destruct (classic
+                      (le ts (Local.coh local1 mloc_cl).(View.ts))).
+          { (* <= *)
+            econs; eauto. s. i. funtac; try refl.
+            generalize CL0. intro Z. apply COHMAX_CL0 in Z.
+            inversion e. subst. unfold le in *. lia.
+          }
+          { (* > *)
+            econs.
+            { instantiate (1 := (ValA.val vloc)). apply Loc.cl_sym. ss. }
+            s. i. funtac; try refl.
+            generalize CL0. intro Z. apply COHMAX_CL0 in Z.
+            rewrite Z. apply not_le in H1. unfold le. lia.
+          }
+    - inv STEP. econs; ss.
+      + apply rmap_add_wf; viewtac.
+        inv RES. inv VIEW. rewrite TS. s. apply bot_spec.
+      + econs; ss. intro loc. generalize (COHMAX_CL loc). intro Z. inv Z. econs; eauto.
     - inv STEP. econs; ss. econs; viewtac.
-    - inv STEP. econs; ss. econs; viewtac; i; condtac; ss; viewtac.
-    - inv STEP. econs; ss. econs; viewtac; i; condtac; ss; viewtac.
+      intro loc. generalize (COHMAX_CL loc). intro Z. inv Z. econs; eauto.
+    - inv STEP. econs; ss. econs; viewtac.
+      intro loc. generalize (COHMAX_CL loc). intro Z. inv Z. econs; eauto.
+    - inv STEP. econs; ss.
+      econs; viewtac; i; condtac; ss; viewtac.
+      + generalize (COHMAX_CL loc). intro Z. inv Z. econs; eauto.
+      + generalize (COHMAX_CL loc). intro Z. inv Z. econs; eauto.
     - inv LC. econs; ss. econs; viewtac.
       inv CTRL. rewrite <- TS. eauto using expr_wf.
+      intro loc. generalize (COHMAX_CL loc). intro Z. inv Z. econs; eauto.
     - inv STEP. econs; ss. econs; i; viewtac.
-      + inv COHMAX_CL. unfold ifc. condtac; ss. apply bot_spec.
+      + inv COHMAX_CL0. rewrite <- X. unfold ifc. condtac; ss. apply bot_spec.
+      + generalize (COHMAX_CL loc). intro Z. inv Z. econs; eauto.
       + rewrite LPERCL at 1; eauto. unfold ifc. repeat condtac; ss.
         * exploit Loc.cl_trans; eauto. rewrite X0. ss.
         * apply Loc.cl_sym in X0. exploit Loc.cl_trans; try exact CL; eauto.
@@ -933,6 +1000,7 @@ Section ExecUnit.
         * destruct ts; ss. condtac; ss.
           eapply PROMISES0; eauto.
         * subst. condtac; ss. congr.
+      + intro loc0. generalize (COHMAX_CL loc0). intro Z. inv Z. econs; eauto.
   Qed.
 
   Lemma step_wf tid eu1 eu2

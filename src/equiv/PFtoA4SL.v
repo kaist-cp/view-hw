@@ -1651,8 +1651,8 @@ Proof.
       { rewrite <- join_r. apply L. econs; eauto. }
       inv H0. obtac.
       specialize (COH_CL (ValA.val (sem_expr armap2 eloc))). des.
-      inv COHMAX_CL. specialize (MAX mloc_cl). inv MAX. unfold le in *.
-      rewrite <- join_l. rewrite <- TS.
+      inv COHMAX_CL. specialize (MAX mloc_cl).
+      rewrite <- join_l. rewrite <- MAX.
       unfold ifc. condtac; ss. apply COH_CL. econs; eauto. econs. simtac.
       econs; eauto. destruct l; ss; eapply Loc.cl_trans; try exact LABEL0; eauto; rewrite Loc.cl_sym; ss.
     + rewrite List.app_length, Nat.add_1_r.
