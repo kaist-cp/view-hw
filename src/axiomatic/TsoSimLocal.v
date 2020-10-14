@@ -448,12 +448,7 @@ Proof.
       eauto 10 using union_l, union_r.
 Qed.
 
-(* TODO: remove flush *)
 Definition sim_local_lper ex loc :=
-  (sim_local_vwn ex ⨾
-   ⦗ex.(Execution.label_is) (Label.is_flushing_cl loc)⦘ ⨾
-   Execution.po) ∪
-
   ((sim_local_coh_cl ex loc ∪ sim_local_vpn ex) ⨾
    ⦗ex.(Execution.label_is) (Label.is_flushopting_cl loc)⦘ ⨾
    Execution.po).
@@ -461,29 +456,19 @@ Definition sim_local_lper ex loc :=
 Lemma sim_local_lper_step ex loc:
   sim_local_lper ex loc =
   (sim_local_lper ex loc ∪
-   ((sim_local_vwn ex ⨾
-     ⦗ex.(Execution.label_is) (Label.is_flushing_cl loc)⦘) ∪
-    ((sim_local_coh_cl ex loc ∪ sim_local_vpn ex) ⨾
-     ⦗ex.(Execution.label_is) (Label.is_flushopting_cl loc)⦘))) ⨾
+   ((sim_local_coh_cl ex loc ∪ sim_local_vpn ex) ⨾
+     ⦗ex.(Execution.label_is) (Label.is_flushopting_cl loc)⦘)) ⨾
   Execution.po_adj.
 Proof.
   unfold sim_local_lper. rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
-  rewrite Execution.po_po_adj at 1 2.
+  rewrite Execution.po_po_adj at 1.
   rewrite (clos_refl_union Execution.po).
   replace ((Execution.po ∪ eq) ⨾ Execution.po_adj)
     with (Execution.po ⨾ Execution.po_adj ∪ eq ⨾ Execution.po_adj); cycle 1.
   { rewrite union_seq. ss. }
   rewrite eq_seq.
   rewrite ? (seq_union' (Execution.po ⨾ Execution.po_adj) Execution.po_adj), ? seq_assoc, ? union_assoc.
-  funext. i. funext. i. propext. econs; i.
-  - repeat match goal with
-           | [H: (_ ∪ _) _ _ |- _] => inv H
-           end;
-      eauto 10 using union_l, union_r.
-  - repeat match goal with
-           | [H: (_ ∪ _) _ _ |- _] => inv H
-           end;
-      eauto 10 using union_l, union_r.
+  refl.
 Qed.
 
 Definition sim_local_per ex loc :=

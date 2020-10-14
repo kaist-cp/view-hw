@@ -141,27 +141,16 @@ Proof.
         rewrite L.(LC).(VPN); ss.
         * rewrite <- join_r. unfold ifc. rewrite Loc.cl_refl. s. apply join_r.
         * econs; eauto. unfold sim_local_vpn. right. obtac; simtac; [left|right]; simtac.
-    - obtac. inv H.
-      + (* W; po_cl; FO *)
-        destruct l0; ss. inv H3. obtac. labtac. eqvtac. rewrite H2 in *.
-        unfold ifc. rewrite Loc.cl_refl. s.
-        generalize L.(LC).(COH_CL). intro Z. specialize (Z (ValA.val vloc)). des; ss.
-        rewrite COH_CL.
-        { rewrite <- join_r, <- join_l. inv COHMAX_CL.
-          specialize (MAX mloc_cl). inv MAX. unfold le in *.
-          rewrite CL0 in TS. ss.
-        }
-        econs; ss. econs. simtac. econs; eauto. ss. apply Loc.cl_sym. ss.
-      + (* W; po; FL; po_cl; FO *)
-        (* TODO: remove *)
-        rewrite L.(LC).(LPER); ss.
-        * rewrite <- join_l. ss.
-        * inv H3. obtac. labtac. eqvtac.
-          econs; eauto. unfold sim_local_lper. left.
-          econs. split.
-          { econs. econs; simtac. eauto. }
-          simtac. econs; eauto. destruct l4; ss; eqvtac.
-          apply Loc.cl_sym. ss.
+    - (* W; po_cl; FO *)
+      obtac. inv H. obtac. labtac. destruct l3; ss. eqvtac. rewrite H2 in *.
+      unfold ifc. rewrite Loc.cl_refl. s.
+      generalize L.(LC).(COH_CL). intro Z. specialize (Z (ValA.val vloc)). des; ss.
+      rewrite COH_CL.
+      { rewrite <- join_r, <- join_l. inv COHMAX_CL.
+        specialize (MAX mloc_cl). inv MAX. unfold le in *.
+        rewrite CL0 in TS. ss.
+      }
+      econs; ss. econs. simtac. econs; eauto. ss. apply Loc.cl_sym. ss.
   }
   { (* flush *)
     exploit sim_trace_sim_th; try exact SIMTR; eauto. intro TH_tmp.

@@ -238,8 +238,7 @@ Section Local.
               lc1.(coh)
               lc1.(vrn)
               lc1.(vpn)
-              (* TODO: do not anything about lper *)
-              (fun_join lc1.(lper) view_post)
+              lc1.(lper)
               (fun_join lc1.(per) view_post)
               lc1.(promises))
   .
@@ -829,14 +828,9 @@ Section Local.
       + rewrite VRNVPN. apply join_l.
     - econs; viewtac.
       + i. viewtac. inv COHMAX0. ss.
-      + i. viewtac. inv COHMAX0. ss.
       + econs; s; eauto.
         viewtac. inv COHMAX. inv COHMAX0. inv COHMAX1.
         specialize (MAX x0). inv MAX. unfold Order.le in *. lia.
-      + i. rewrite LPERCL at 1; eauto. unfold ifc. repeat condtac; ss.
-        * exploit Loc.cl_trans; eauto. rewrite X0. ss.
-        * apply Loc.cl_sym in X0. exploit Loc.cl_trans; try exact CL; eauto.
-          intro Z. apply Loc.cl_sym in Z. rewrite X in Z. ss.
       + i. rewrite PERCL at 1; eauto. viewtac. unfold ifc. repeat condtac; ss.
           * exploit Loc.cl_trans; eauto. rewrite X0. ss.
           * apply Loc.cl_sym in X0. exploit Loc.cl_trans; try exact CL; eauto.
@@ -1021,14 +1015,9 @@ Section Local.
       + rewrite VRNVPN. apply join_l.
     - econs; viewtac.
       + i. viewtac. inv COHMAX0. ss.
-      + i. viewtac. inv COHMAX0. ss.
       + econs; s; eauto.
         viewtac. inv COHMAX. inv COHMAX0. inv COHMAX1.
         specialize (MAX x0). inv MAX. unfold Order.le in *. lia.
-      + i. rewrite LPERCL at 1; eauto. unfold ifc. repeat condtac; ss.
-        * exploit Loc.cl_trans; eauto. rewrite X0. ss.
-        * apply Loc.cl_sym in X0. exploit Loc.cl_trans; try exact CL; eauto.
-          intro Z. apply Loc.cl_sym in Z. rewrite X in Z. ss.
       + i. rewrite PERCL at 1; eauto. viewtac. unfold ifc. repeat condtac; ss.
           * exploit Loc.cl_trans; eauto. rewrite X0. ss.
           * apply Loc.cl_sym in X0. exploit Loc.cl_trans; try exact CL; eauto.
