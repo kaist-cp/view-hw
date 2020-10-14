@@ -915,7 +915,7 @@ Proof.
       all: try by right; split; try etrans; eauto.
       * left. etrans; eauto.
       * right. split; try etrans; eauto.
-        left. simtac. eapply Execution.po_chain. econs. simtac.
+        left. simtac. etrans; eauto.
       * inversion IHOB3. inversion IHOB6.
         rewrite EID in EID0. inversion EID0. rewrite H0 in *. destruct l0; ss.
       * inversion IHOB0. inversion IHOB6.

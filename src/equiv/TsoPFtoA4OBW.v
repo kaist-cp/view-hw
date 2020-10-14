@@ -149,9 +149,7 @@ Proof.
       funtac. obtac.
       eapply Nat.le_lt_trans.
       { apply VWN0; ss. econs; ss.
-        exploit Execution.po_chain.
-        { econs. split; try exact H. econs 2. eauto. }
-        i. econs. split; eauto. econs; eauto with tso.
+        econs. split; [simtac|]. etrans; eauto.
       }
       inv WRITABLE. inv COHMAX. specialize (MAX mloc).
       inv MAX. unfold le in *. lia.
@@ -240,9 +238,7 @@ Proof.
       funtac. obtac.
       eapply Nat.le_lt_trans.
       { apply VWN0; ss. econs; ss.
-        exploit Execution.po_chain.
-        { econs. split; try exact H. econs 2. eauto. }
-        i. econs. split; eauto. econs; eauto with tso.
+        econs. split; [simtac|]. etrans; eauto.
       }
       inv WRITABLE. inv COHMAX. specialize (MAX mloc).
       inv MAX. unfold le in *. lia.
