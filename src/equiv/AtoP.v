@@ -1553,7 +1553,7 @@ Proof.
         { eapply sim_view_le; [by left; eauto|]. apply SIM_LOCAL. }
         eapply sim_view_le; [|exact (SIM_LOCAL.(LPER) loc)]. i.
         right. econs; eauto.
-        inv PR. econs. econs; simtac. ss.
+        inv PR. econs. econs; eauto. simtac.
   - (* if *)
     exploit LABEL.
     { rewrite List.nth_error_app2; ss. rewrite Nat.sub_diag. ss. }
@@ -1713,16 +1713,24 @@ Proof.
       exploit sim_rmap_expr; eauto. intro X. inv X. rewrite <- VAL in *.
       unfold ifc. condtac; [| econs 1]; ss.
       apply sim_view_join.
-      * eapply sim_view_le; [|exact COH_CL0]. i.
-        right. econs; ss.
-        inv PR. econs. split; cycle 1.
-        { simtac. econs; eauto. ss. eapply Loc.cl_sym. ss. }
-        left. eapply sim_local_coh_cl_spec; eauto.
-        eapply Loc.cl_sym. ss.
-      * eapply sim_view_le; [|exact SIM_LOCAL.(VPN)]. i.
-        right. econs; eauto.
-        inv PR. econs. econs; [right|]; eauto.
-        simtac. econs; eauto. ss. rewrite Loc.cl_sym; ss.
+      * hexploit label_mem_of_ex; eauto. i. des.
+        econs 2; eauto.
+        { right. econs; ss. simtac. econs; eauto. apply Loc.cl_sym. ss. }
+        inv COH_CL0.
+        { rewrite VIEW2. apply bot_spec. }
+        etrans; eauto.
+        inv EID. inv REL. obtac.
+        eapply view_of_eid_ob; eauto.
+        left. right. left. simtac. econs; ss. simtac.
+        destruct l; ss; econs; eauto with axm; apply Loc.cl_sym; ss.
+      * hexploit label_mem_of_ex; eauto. i. des.
+        econs 2; eauto.
+        { right. econs; ss. simtac. econs; eauto. apply Loc.cl_sym. ss. }
+        generalize (SIM_LOCAL.(VPN)). intro Z. inv Z.
+        { rewrite VIEW2. apply bot_spec. }
+        etrans; eauto. eapply view_of_eid_ob; eauto.
+        inv EID. inv REL.
+        obtac. left. right. right. simtac.
     + i. rewrite List.app_length, Nat.add_1_r.
       rewrite sim_local_per_step. rewrite inverse_step.
       rewrite inverse_union. eapply sim_view_le; [by left; eauto|].
@@ -2035,23 +2043,6 @@ Proof.
         right. left. econs; eauto.
     }
 
-    inv EID.
-    repeat (
-      match goal with
-      | [H: sim_local_per _ _ _ _ |- _] => inv H
-      | [H: sim_local_lper _ _ _ _ |- _] => inv H
-      | [H: sim_local_coh_cl _ _ _ _ |- _] => inv H
-      | [H: sim_local_vpn _ _ _ |- _] => inv H
-      | [H: rc _ _ |- _] => inv H
-      end; obtac).
-    + exploit label_mem_of_ex; try exact EID0; eauto. i. des.
-      esplits; eauto with axm.
-      eapply view_of_eid_ob; eauto.
-      left. right. left. simtac. econs; eauto. simtac.
-      destruct l0; destruct l1; ss; econs; eauto with axm;
-      apply Loc.cl_sym in LABEL2; eapply Loc.cl_trans; eauto.
-    + exploit label_mem_of_ex; try exact EID0; eauto. i. des.
-      esplits; eauto with axm.
-      eapply view_of_eid_ob; eauto.
-      left. right. right. simtac.
+    inv EID. inv REL1. obtac. inv H. obtac.
+    esplits; eauto.
 Qed.

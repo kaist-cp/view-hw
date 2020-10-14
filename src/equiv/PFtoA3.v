@@ -250,16 +250,11 @@ Inductive sim_local (tid:Id.t) (mem: Memory.t) (ex: Execution.t) (vext: eidT -> 
           vext
           (local.(Local.lper) loc).(View.ts)
           (inverse (sim_local_lper ex loc) (eq (tid, List.length (alocal.(ALocal.labels)))));
-  LPER_END: forall loc,
-        sim_view
-          vext
-          (local.(Local.lper) loc).(View.ts)
-          (inverse (sim_local_lper_end ex loc) (eq (tid, List.length (alocal.(ALocal.labels)))));
-  PER_END: forall loc,
+  PER: forall loc,
         sim_view
           vext
           (local.(Local.per) loc).(View.ts)
-          (inverse (sim_local_per_end ex loc) (eq (tid, List.length (alocal.(ALocal.labels)))));
+          (inverse (sim_local_per ex loc) (eq (tid, List.length (alocal.(ALocal.labels)))));
 }.
 Hint Constructors sim_local.
 

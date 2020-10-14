@@ -210,7 +210,6 @@ Proof.
         { apply Loc.cl_refl. }
         ii. inv EID. inv REL. obtac; inv_po.
       + ii. inv EID. inv REL; obtac; inv_po.
-      + ii. inv EID. inv REL. obtac; inv_po.
       + ii. inv EID. inv REL. obtac. inv_po.
       + ii. inv EID. inv REL. obtac. inv_po.
     - ii. ss. lia.
@@ -571,8 +570,8 @@ Proof.
   { s. instantiate (1 := length tr'0). lia. }
   all: try rewrite lastn_all; s; eauto; try lia.
   intro TH'.
-  eapply TH'.(LC).(PER_END). econs; eauto.
-  econs. simtac.
+  eapply TH'.(LC).(PER). econs; eauto.
+  econs. split; econs; simtac.
   econs; eauto. apply List.nth_error_Some. ss. rewrite EID3. ss.
 Qed.
 

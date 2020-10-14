@@ -559,18 +559,17 @@ Proof.
 Qed.
 
 Definition sim_local_lper ex loc :=
-  ((sim_local_coh_cl ex loc ∪ sim_local_vpn ex) ⨾
-    ⦗ex.(Execution.label_is) (Label.is_flushopting_cl loc)⦘ ⨾
-    Execution.po).
+  (⦗ex.(Execution.label_is) (Label.is_flushopting_cl loc)⦘ ⨾
+   Execution.po).
 
 Lemma sim_local_lper_step ex loc:
   sim_local_lper ex loc =
   (sim_local_lper ex loc ∪
-   ((sim_local_coh_cl ex loc ∪ sim_local_vpn ex) ⨾
-     ⦗ex.(Execution.label_is) (Label.is_flushopting_cl loc)⦘)) ⨾
+   (⦗ex.(Execution.label_is) (Label.is_flushopting_cl loc)⦘)) ⨾
   Execution.po_adj.
 Proof.
-  unfold sim_local_lper. rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
+  unfold sim_local_lper.
+  rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
   rewrite Execution.po_po_adj at 1.
   rewrite (clos_refl_union Execution.po).
   replace ((Execution.po ∪ eq) ⨾ Execution.po_adj)
@@ -589,61 +588,13 @@ Definition sim_local_per ex loc :=
 Lemma sim_local_per_step ex loc:
   sim_local_per ex loc =
   (sim_local_per ex loc ∪
-   (sim_local_lper ex loc ⨾
-    ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dsb_full)⦘)) ⨾
+   ((sim_local_lper ex loc ⨾
+     ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dsb_full)⦘))) ⨾
   Execution.po_adj.
 Proof.
   unfold sim_local_per.
   rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
   rewrite Execution.po_po_adj at 1.
-  rewrite (clos_refl_union Execution.po).
-  replace ((Execution.po ∪ eq) ⨾ Execution.po_adj)
-    with (Execution.po ⨾ Execution.po_adj ∪ eq ⨾ Execution.po_adj); cycle 1.
-  { rewrite union_seq. ss. }
-  rewrite eq_seq.
-  rewrite ? (seq_union' (Execution.po ⨾ Execution.po_adj) Execution.po_adj), ? seq_assoc, ? union_assoc.
-  refl.
-Qed.
-
-Definition sim_local_lper_end ex loc :=
-  (⦗ex.(Execution.label_is) (Label.is_flushopting_cl loc)⦘ ⨾
-   Execution.po).
-
-Lemma sim_local_lper_end_step ex loc:
-  sim_local_lper_end ex loc =
-  (sim_local_lper_end ex loc ∪
-   (⦗ex.(Execution.label_is) (Label.is_flushopting_cl loc)⦘)) ⨾
-  Execution.po_adj.
-Proof.
-  unfold sim_local_lper_end.
-  rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
-  rewrite Execution.po_po_adj at 1.
-  rewrite (clos_refl_union Execution.po).
-  replace ((Execution.po ∪ eq) ⨾ Execution.po_adj)
-    with (Execution.po ⨾ Execution.po_adj ∪ eq ⨾ Execution.po_adj); cycle 1.
-  { rewrite union_seq. ss. }
-  rewrite eq_seq.
-  rewrite ? (seq_union' (Execution.po ⨾ Execution.po_adj) Execution.po_adj), ? seq_assoc, ? union_assoc.
-  refl.
-Qed.
-
-Definition sim_local_per_end ex loc :=
-  (⦗ex.(Execution.label_is) (Label.is_flushopting_cl loc)⦘ ⨾
-   Execution.po ⨾
-   ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dsb_full)⦘ ⨾
-   Execution.po).
-
-Lemma sim_local_per_end_step ex loc:
-  sim_local_per_end ex loc =
-  (sim_local_per_end ex loc ∪
-   ((⦗ex.(Execution.label_is) (Label.is_flushopting_cl loc)⦘ ⨾
-     Execution.po ⨾
-     ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_dsb_full)⦘))) ⨾
-  Execution.po_adj.
-Proof.
-  unfold sim_local_per_end.
-  rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
-  rewrite Execution.po_po_adj at 2.
   rewrite (clos_refl_union Execution.po).
   replace ((Execution.po ∪ eq) ⨾ Execution.po_adj)
     with (Execution.po ⨾ Execution.po_adj ∪ eq ⨾ Execution.po_adj); cycle 1.
