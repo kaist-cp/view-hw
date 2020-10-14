@@ -1425,11 +1425,6 @@ Proof.
       rewrite inverse_union. ii. des.
       { exploit LPER; eauto. i. rewrite <- join_l. ss. }
       inv EID. inv REL.
-      { obtac.
-        exploit EX2.(LABELS); eauto; ss.
-        { rewrite List.app_length. s. lia. }
-        rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x0. ss.
-      }
       inv H. des. inv H1. inv H2.
       exploit EX2.(LABELS); eauto; ss.
       { rewrite List.app_length. s. lia. }
@@ -1553,25 +1548,14 @@ Proof.
       all: try rewrite List.nth_error_app2, Nat.sub_diag; ss.
       all: destruct l; ss.
     + i. rewrite sim_local_lper_step. rewrite inverse_step.
-      rewrite inverse_union. ii. des.
-      { exploit LPER; eauto. i. rewrite <- join_l. ss. }
-      inv EID. inv REL; cycle 1.
-      { inv H. des. inv H1. inv H2.
-        exploit EX2.(LABELS); eauto; ss.
-        { rewrite List.app_length. s. lia. }
-        rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x0. ss.
-      }
-      obtac.
+      rewrite inverse_union. ii. des; [exploit LPER; eauto|].
+      inv EID. inv REL.
+      inv H. des. inv H1. inv H2.
       exploit EX2.(LABELS); eauto; ss.
       { rewrite List.app_length. s. lia. }
-      rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x0. ss. eqvtac.
-      unfold ifc. inv VLOC. rewrite VAL. rewrite Loc.cl_sym; ss.
-      rewrite <- join_r.
-      inv COHMAX. specialize (MAX mloc). inv MAX. unfold le in *. rewrite <- TS.
-      apply VWN0. econs; eauto.
+      rewrite List.nth_error_app2, Nat.sub_diag; ss. i. inv x0. ss.
     + i. rewrite sim_local_lper_end_step. rewrite inverse_step.
-      rewrite inverse_union. ii. des.
-      { exploit LPER_END; eauto. i. rewrite <- join_l. ss. }
+      rewrite inverse_union. ii. des; [exploit LPER_END; eauto|].
       inv EID. obtac.
       exploit EX2.(LABELS); eauto; ss.
       { rewrite List.app_length; s; lia. }

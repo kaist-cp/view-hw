@@ -164,14 +164,20 @@ Proof.
     clear TH_tmp. intro TH.
     inv x0.
     unfold Machine.init_with_promises in FIND. ss. rewrite IdMap.mapi_spec, STMT in FIND. inv FIND.
+
+    Ltac inv_po :=
+      repeat match goal with
+             | [H: Execution.po ?a ?b |- _] => inv H; ss; try lia
+      end.
+
     econs; ss.
     all: try by ii; ss; lia.
     - econs; ss. econs. ii. unfold RMap.init. rewrite ? IdMap.gempty. ss.
     - econs; ss.
-      + ii. inv EID. inv REL. obtac. inv H7. ss. lia.
-      + ii. inv EID. inv REL; obtac; inv H1; ss; lia.
+      + ii. inv EID. inv REL. obtac. inv_po.
+      + ii. inv EID. inv REL; obtac; inv_po.
       + exists Loc.default. split; ss.
-        ii. inv EID. inv REL. obtac. inv H7. ss. lia.
+        ii. inv EID. inv REL. obtac. inv_po.
       + i. destruct view; ss. exploit Promises.promises_from_mem_inv; eauto. i. des.
         hexploit sim_traces_ex; try exact SIM.
         all: try rewrite lastn_all; ss.
@@ -199,11 +205,11 @@ Proof.
         * clear. lia.
       + intro loc. exists loc. splits; ss.
         { apply Loc.cl_refl. }
-        ii. inv EID. inv REL. obtac. inv H7. ss. lia.
-      + ii. inv EID. inv REL; obtac; try inv H1; try inv H7; ss; lia.
-      + ii. inv EID. inv REL; obtac; inv H1; ss; lia.
-      + ii. inv EID. inv REL. obtac. inv H7. ss. lia.
-      + ii. inv EID. inv REL; obtac; inv H1; ss; lia.
+        ii. inv EID. inv REL. obtac. inv_po.
+      + ii. inv EID. inv REL; obtac; inv_po.
+      + ii. inv EID. inv REL; obtac; inv_po.
+      + ii. inv EID. inv REL. obtac. inv_po.
+      + ii. inv EID. inv REL; obtac; inv_po.
   }
   i. simplify.
   exploit sim_trace_length; eauto. intro LEN. guardH LEN.
