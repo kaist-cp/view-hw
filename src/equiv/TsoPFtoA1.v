@@ -505,6 +505,13 @@ Inductive sim_th
       <<PO_LOC_READ:
         Label.is_read label2 ->
         cov iid1 <= cov iid2>>;
+  PO_FL: forall iid1 iid2 label1 label2
+     (PO: iid1 < iid2)
+     (LABEL1: List.nth_error aeu.(AExecUnit.local).(ALocal.labels) iid1 = Some label1)
+     (LABEL2: List.nth_error aeu.(AExecUnit.local).(ALocal.labels) iid2 = Some label2)
+     (WR: Label.is_write label1)
+     (FL: Label.is_flush label2),
+    vext iid1 <= vext iid2;
   EU_WF: ExecUnit.wf tid eu;
   AEU_WF: AExecUnit.wf aeu;
   MEM: eu.(ExecUnit.mem) = mem;
@@ -701,7 +708,8 @@ Proof.
       + destruct ts; ss.
         unfold Memory.get_msg in *. ss. destruct msg.
         exploit Promises.promises_from_mem_lookup; eauto. ss. subst. ss.
-      + econs; s; [|apply bot_spec]. econs; ss. instantiate (1 := Loc.default). econs; ss.
+      + econs; viewtac; try by i; apply bot_spec.
+        econs; ss. instantiate (1 := Loc.default). econs; ss.
       + rewrite TS. ss.
   }
   i. simplify.
@@ -832,6 +840,15 @@ Proof.
             lia.
         + subst. repeat condtac; ss.
           all: try apply Nat.eqb_eq in X; ss; try lia.
+      - i. i. unfold ALocal.next_eid in *.
+        apply nth_error_snoc_inv in LABEL1. apply nth_error_snoc_inv in LABEL2. des.
+        + repeat condtac.
+          all: try apply Nat.eqb_eq in X; ss; subst; try lia.
+          all: try apply Nat.eqb_eq in X0; ss; subst; try lia.
+          eapply IH.(PO_FL); eauto.
+        + lia.
+        + subst. ss.
+        + subst. ss.
     }
     { (* rmw_fail *)
       generalize IH.(EU_WF). i. inv H.
@@ -939,6 +956,15 @@ Proof.
             lia.
         + subst. repeat condtac; ss.
           all: try apply Nat.eqb_eq in X; ss; try lia.
+      - i. unfold ALocal.next_eid in *.
+        apply nth_error_snoc_inv in LABEL1. apply nth_error_snoc_inv in LABEL2. des.
+        + repeat condtac.
+          all: try apply Nat.eqb_eq in X; ss; subst; try lia.
+          all: try apply Nat.eqb_eq in X0; ss; subst; try lia.
+          eapply IH.(PO_FL); eauto.
+        + lia.
+        + subst. ss.
+        + subst. ss.
     }
   }
   { (* write *)
@@ -1096,6 +1122,15 @@ Proof.
           unfold le in *. lia.
       + subst. repeat condtac; ss.
         all: try apply Nat.eqb_eq in X; ss; try lia.
+    - i. unfold ALocal.next_eid in *.
+      apply nth_error_snoc_inv in LABEL1. apply nth_error_snoc_inv in LABEL2. des.
+      + repeat condtac.
+        all: try apply Nat.eqb_eq in X; ss; subst; try lia.
+        all: try apply Nat.eqb_eq in X0; ss; subst; try lia.
+        eapply IH.(PO_FL); eauto.
+      + lia.
+      + subst. ss.
+      + subst. ss.
   }
   { (* rmw *)
     inv LOCAL; ss.
@@ -1282,6 +1317,15 @@ Proof.
           unfold le in *. lia.
       + subst. repeat condtac; ss.
         all: try apply Nat.eqb_eq in X; ss; try lia.
+    - i. unfold ALocal.next_eid in *.
+      apply nth_error_snoc_inv in LABEL1. apply nth_error_snoc_inv in LABEL2. des.
+      + repeat condtac.
+        all: try apply Nat.eqb_eq in X; ss; subst; try lia.
+        all: try apply Nat.eqb_eq in X0; ss; subst; try lia.
+        eapply IH.(PO_FL); eauto.
+      + lia.
+      + subst. ss.
+      + subst. ss.
   }
   { (* mfence *)
     inv LOCAL; ss; cycle 1.
@@ -1315,6 +1359,15 @@ Proof.
       apply nth_error_snoc_inv in LABEL2. des; cycle 1.
       { subst. inv REL. inv Y. }
       eapply IH.(PO); eauto.
+    - i. unfold ALocal.next_eid in *.
+      apply nth_error_snoc_inv in LABEL1. apply nth_error_snoc_inv in LABEL2. des.
+      + repeat condtac.
+        all: try apply Nat.eqb_eq in X; ss; subst; try lia.
+        all: try apply Nat.eqb_eq in X0; ss; subst; try lia.
+        eapply IH.(PO_FL); eauto.
+      + lia.
+      + subst. ss.
+      + subst. ss.
   }
   { (* sfence *)
     inv LOCAL; ss.
@@ -1348,6 +1401,15 @@ Proof.
       apply nth_error_snoc_inv in LABEL2. des; cycle 1.
       { subst. inv REL. inv Y. }
       eapply IH.(PO); eauto.
+    - i. unfold ALocal.next_eid in *.
+      apply nth_error_snoc_inv in LABEL1. apply nth_error_snoc_inv in LABEL2. des.
+      + repeat condtac.
+        all: try apply Nat.eqb_eq in X; ss; subst; try lia.
+        all: try apply Nat.eqb_eq in X0; ss; subst; try lia.
+        eapply IH.(PO_FL); eauto.
+      + lia.
+      + subst. ss.
+      + subst. ss.
   }
   { (* flush *)
     inv LOCAL; ss.
@@ -1429,6 +1491,26 @@ Proof.
       + lia.
       + subst. repeat condtac; ss.
       + subst. repeat condtac; ss.
+    - i. unfold ALocal.next_eid in *.
+      apply nth_error_snoc_inv in LABEL1. apply nth_error_snoc_inv in LABEL2. des.
+      + repeat condtac.
+        all: try apply Nat.eqb_eq in X; ss; subst; try lia.
+        all: try apply Nat.eqb_eq in X0; ss; subst; try lia.
+        eapply IH.(PO_FL); eauto.
+      + lia.
+      + subst. condtac.
+        { apply Nat.eqb_eq in X. lia. }
+        condtac; cycle 1.
+        { assert (length (ALocal.labels alc1) =? length (ALocal.labels alc1)); try apply Nat.eqb_eq; ss.
+          rewrite H in *. ss.
+        }
+        destruct label1; ss.
+        exploit IH.(WPROP2); eauto with tso. i. des.
+        exploit IH.(WPROP3); eauto. s. i. des. subst.
+        rewrite x4. etrans; eauto.
+        rewrite <- join_r. rewrite Loc.cl_refl. s.
+        inv COHMAX. specialize (MAX loc). inv MAX. unfold le in *. ss.
+      + subst. lia.
   }
   { (* flushopt *)
     inv LOCAL; ss.
@@ -1510,6 +1592,15 @@ Proof.
       + lia.
       + subst. repeat condtac; ss.
       + subst. repeat condtac; ss.
+    - i. unfold ALocal.next_eid in *.
+      apply nth_error_snoc_inv in LABEL1. apply nth_error_snoc_inv in LABEL2. des.
+      + repeat condtac.
+        all: try apply Nat.eqb_eq in X; ss; subst; try lia.
+        all: try apply Nat.eqb_eq in X0; ss; subst; try lia.
+        eapply IH.(PO_FL); eauto.
+      + lia.
+      + subst. ss.
+      + subst. ss.
   }
 
   Grab Existential Variables.

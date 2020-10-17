@@ -238,7 +238,7 @@ Section Local.
               lc1.(coh)
               lc1.(vrn)
               lc1.(vpn)
-              lc1.(lper)
+              (fun_join lc1.(lper) view_post)
               (fun_join lc1.(per) view_post)
               lc1.(promises))
   .
@@ -360,6 +360,9 @@ Section Local.
       cohmax
       (COHMAX: fun_max lc.(coh) cohmax)
       (VRN: lc.(vrn).(View.ts) <= cohmax.(View.ts))
+      (VPN: lc.(vpn).(View.ts) <= cohmax.(View.ts))
+      (LPER: forall loc, (lc.(lper) loc).(View.ts) <= cohmax.(View.ts))
+      (PER: forall loc, (lc.(per) loc).(View.ts) <= cohmax.(View.ts))
   .
 
   Inductive wf (tid:Id.t) (mem:Memory.t) (lc:t): Prop :=
@@ -394,7 +397,7 @@ Section Local.
     - econs; ss. eexists. ss.
     - destruct ts; ss.
     - destruct ts; ss. destruct ts; ss.
-    - econs; [|apply bot_spec].
+    - econs; try i; try apply bot_spec.
       econs; ss. i. instantiate (1 := Loc.default). apply bot_spec.
     - rewrite TS. ss.
   Qed.
@@ -679,7 +682,7 @@ Section Local.
         rewrite fun_add_spec. condtac; ss. inversion e. rewrite H0. unfold Order.le in COH0. ss.
       + inv COHMAX. inv COHMAX0. rename x0 into mloc.
         destruct (lt_eq_lt_dec ts (View.ts (coh lc1 mloc))).
-        { econs; ss. instantiate (1 := coh lc1 mloc).
+        { econs; ss.
           - econs; cycle 1.
             { i. funtac. econs; ss. unfold Order.le. inv s; lia. }
             funtac. inv s; ss.
@@ -687,11 +690,13 @@ Section Local.
             + destruct (coh lc1 mloc). s. destruct annot. ss.
           - viewtac. unfold read_view.
             condtac; [apply bot_spec | inv s; ss; lia].
+          - viewtac. unfold read_view.
+            condtac; [apply bot_spec | inv s; ss; lia].
         }
         { exploit high_ts_spec; eauto.
           { i. eapply le_lt_trans; try exact l. specialize (MAX loc). inv MAX. viewtac. }
           i. des.
-          econs; ss. instantiate (1 := (View.mk ts bot)).
+          econs. instantiate (1 := (View.mk ts bot)).
           - econs; ss.
             { funtac. exfalso. apply c. ss. }
             i. funtac; econs; ss.
@@ -699,6 +704,11 @@ Section Local.
           - viewtac.
             { rewrite VRN0. lia. }
             unfold read_view. condtac; [apply bot_spec | ss].
+          - viewtac.
+            { rewrite VPN0. lia. }
+            unfold read_view. condtac; [apply bot_spec | ss].
+          - i. ss. rewrite LPER0. lia.
+          - i. ss. rewrite PER0. lia.
         }
       + i. revert TS. funtac; cycle 1.
         { i. rewrite <- join_l. eapply NFWD; eauto. }
@@ -731,9 +741,10 @@ Section Local.
           { exfalso. apply c. ss. }
           { econs; ss. unfold Order.le. etrans; [apply MAX|]. lia. }
           { exfalso. apply c0. ss. }
-        * rewrite fun_add_spec. condtac; ss; cycle 1.
-          { exfalso. apply c. ss. }
-          specialize (MAX x0). inv MAX. unfold Order.le in TS. lia.
+        * funtac. specialize (MAX x0). inv MAX. unfold Order.le in TS. lia.
+        * funtac. specialize (MAX x0). inv MAX. unfold Order.le in TS. lia.
+        * i. ss. funtac. rewrite LPER0. specialize (MAX x0). inv MAX. unfold Order.le in TS. lia.
+        * i. ss. funtac. rewrite PER0. specialize (MAX x0). inv MAX. unfold Order.le in TS. lia.
       + i. eapply NFWD; eauto.
         rewrite fun_add_spec in TS. eqvtac.
         rewrite MSG in MSG0. inv MSG0. ss.
@@ -765,6 +776,13 @@ Section Local.
         * rewrite fun_add_spec. condtac; ss; cycle 1.
           { exfalso. apply c. ss. }
           viewtac. specialize (MAX x0). inv MAX. unfold Order.le in TS. lia.
+        * rewrite fun_add_spec. condtac; ss; cycle 1.
+          { exfalso. apply c. ss. }
+          viewtac. specialize (MAX x0). inv MAX. unfold Order.le in TS. lia.
+        * i. ss. funtac. rewrite LPER0. specialize (MAX x0). inv MAX. unfold Order.le in TS. lia.
+        * i. ss. funtac. viewtac.
+          { rewrite PER0. specialize (MAX x0). inv MAX. unfold Order.le in TS. lia. }
+          rewrite LPER0. specialize (MAX x0). inv MAX. unfold Order.le in TS. lia.
       + i. rewrite <- join_l. eapply NFWD; eauto.
         rewrite fun_add_spec in TS. eqvtac.
         rewrite MSG in MSG0. inv MSG0. ss.
@@ -781,7 +799,7 @@ Section Local.
         rewrite fun_add_spec. condtac; ss. inversion e. rewrite H0. unfold Order.le in COH0. ss.
       + inv COHMAX. inv COHMAX0. rename x0 into mloc.
         destruct (lt_eq_lt_dec old_ts (View.ts (coh lc1 mloc))).
-        { econs; ss. instantiate (1 := coh lc1 mloc).
+        { econs; ss.
           - econs; cycle 1.
             { i. funtac. econs; ss. unfold Order.le. inv s; lia. }
             funtac. inv s; ss.
@@ -789,11 +807,13 @@ Section Local.
             + destruct (coh lc1 mloc). s. destruct annot. ss.
           - viewtac. unfold read_view.
             condtac; [apply bot_spec | inv s; ss; lia].
+          - viewtac. unfold read_view.
+            condtac; [apply bot_spec | inv s; ss; lia].
         }
         { exploit high_ts_spec; eauto.
           { i. eapply le_lt_trans; try exact l. specialize (MAX loc). inv MAX. viewtac. }
           i. des.
-          econs; ss. instantiate (1 := (View.mk old_ts bot)).
+          econs. instantiate (1 := (View.mk old_ts bot)).
           - econs; ss.
             { funtac. exfalso. apply c. ss. }
             i. funtac; econs; ss.
@@ -801,6 +821,11 @@ Section Local.
           - viewtac.
             { rewrite VRN0. lia. }
             unfold read_view. condtac; [apply bot_spec | ss].
+          - viewtac.
+            { rewrite VPN0. lia. }
+            unfold read_view. condtac; [apply bot_spec | ss].
+          - i. ss. rewrite LPER0. lia.
+          - i. ss. rewrite PER0. lia.
         }
       + i. revert TS. funtac; cycle 1.
         { i. rewrite <- join_l. eapply NFWD; eauto. }
@@ -813,31 +838,41 @@ Section Local.
       + inv COHMAX0. ss.
       + inv COHMAX0. ss.
       + i. viewtac.
-      + econs; s; eauto.
-        viewtac. inv COHMAX. inv COHMAX0. inv COHMAX1.
-        specialize (MAX x0). inv MAX. unfold Order.le in *. lia.
+      + inv COHMAX. inv COHMAX0. inv COHMAX1. econs; s; eauto.
+        * viewtac. specialize (MAX0 x). inv MAX0. unfold Order.le in *. lia.
+        * viewtac. specialize (MAX0 x). inv MAX0. unfold Order.le in *. lia.
+        * i. viewtac.
       + i. rewrite <- join_l. eapply NFWD; eauto.
       + rewrite VRNVPN. apply join_l.
       + apply join_r.
     - econs; viewtac.
       + inv COHMAX0. ss.
       + i. viewtac.
-      + econs; s; eauto.
-        viewtac. inv COHMAX. inv COHMAX0. inv COHMAX1.
-        specialize (MAX x0). inv MAX. unfold Order.le in *. lia.
+      + inv COHMAX. inv COHMAX0. inv COHMAX1. econs; s; eauto.
+        * viewtac. specialize (MAX0 x). inv MAX0. unfold Order.le in *. lia.
+        * i. viewtac.
       + rewrite VRNVPN. apply join_l.
     - econs; viewtac.
       + i. viewtac. inv COHMAX0. ss.
-      + econs; s; eauto.
-        viewtac. inv COHMAX. inv COHMAX0. inv COHMAX1.
-        specialize (MAX x0). inv MAX. unfold Order.le in *. lia.
+      + i. viewtac. inv COHMAX0. ss.
+      + inv COHMAX. inv COHMAX0. inv COHMAX1. econs; s; eauto.
+        * i. viewtac.
+          specialize (MAX0 x). inv MAX0. unfold Order.le in *. lia.
+        * i. viewtac.
+          specialize (MAX0 x). inv MAX0. unfold Order.le in *. lia.
+      + i. rewrite LPERCL at 1; eauto. viewtac. unfold ifc. repeat condtac; ss.
+        * exploit Loc.cl_trans; eauto. rewrite X0. ss.
+        * apply Loc.cl_sym in X0. exploit Loc.cl_trans; try exact CL; eauto.
+          intro Z. apply Loc.cl_sym in Z. rewrite X in Z. ss.
       + i. rewrite PERCL at 1; eauto. viewtac. unfold ifc. repeat condtac; ss.
-          * exploit Loc.cl_trans; eauto. rewrite X0. ss.
-          * apply Loc.cl_sym in X0. exploit Loc.cl_trans; try exact CL; eauto.
-            intro Z. apply Loc.cl_sym in Z. rewrite X in Z. ss.
+        * exploit Loc.cl_trans; eauto. rewrite X0. ss.
+        * apply Loc.cl_sym in X0. exploit Loc.cl_trans; try exact CL; eauto.
+          intro Z. apply Loc.cl_sym in Z. rewrite X in Z. ss.
     - econs; viewtac.
       + i. viewtac. inv COHMAX_CL. unfold ifc. condtac; ss. apply bot_spec.
-      + inv COHMAX. econs; eauto.
+      + inv COHMAX. inv COHMAX0. econs; s; eauto. i. viewtac.
+        inv COHMAX_CL. unfold ifc. condtac; [|apply bot_spec].
+        specialize (MAX x0). inv MAX. unfold Order.le in *. ss.
       + i. rewrite LPERCL at 1; eauto. unfold ifc. repeat condtac; ss.
         * exploit Loc.cl_trans; eauto. rewrite X0. ss.
         * apply Loc.cl_sym in X0. exploit Loc.cl_trans; try exact CL; eauto.
@@ -867,7 +902,7 @@ Section Local.
         rewrite fun_add_spec. condtac; ss. inversion e. rewrite H0. unfold Order.le in COH0. ss.
       + inv COHMAX. inv COHMAX0. rename x0 into mloc.
         destruct (lt_eq_lt_dec ts (View.ts (coh lc1 mloc))).
-        { econs; ss. instantiate (1 := coh lc1 mloc).
+        { econs; ss.
           - econs; cycle 1.
             { i. funtac. econs; ss. unfold Order.le. inv s; lia. }
             funtac. inv s; ss.
@@ -875,11 +910,13 @@ Section Local.
             + destruct (coh lc1 mloc). s. destruct annot. ss.
           - viewtac. unfold read_view.
             condtac; [apply bot_spec | inv s; ss; lia].
+          - viewtac. unfold read_view.
+            condtac; [apply bot_spec | inv s; ss; lia].
         }
         { exploit high_ts_spec; eauto.
           { i. eapply le_lt_trans; try exact l. specialize (MAX loc). inv MAX. viewtac. }
           i. des.
-          econs; ss. instantiate (1 := (View.mk ts bot)).
+          econs. instantiate (1 := (View.mk ts bot)).
           - econs; ss.
             { funtac. exfalso. apply c. ss. }
             i. funtac; econs; ss.
@@ -887,6 +924,11 @@ Section Local.
           - viewtac.
             { rewrite VRN0. lia. }
             unfold read_view. condtac; [apply bot_spec | ss].
+          - viewtac.
+            { rewrite VPN0. lia. }
+            unfold read_view. condtac; [apply bot_spec | ss].
+          - i. ss. rewrite LPER0. lia.
+          - i. ss. rewrite PER0. lia.
         }
       + i. revert TS. funtac; cycle 1.
         { i. rewrite <- join_l. eapply NFWD; eauto. }
@@ -915,8 +957,8 @@ Section Local.
           exfalso. apply c. inv X0. ss.
         * revert TS. funtac. i.
           etrans; try exact TS; eauto. eapply le_lt_trans; [rewrite COH; eauto | lia].
-      + econs; cycle 1. instantiate (1 := (View.mk (S (length mem1)) bot)).
-        { viewtac. }
+      + econs. instantiate (1 := (View.mk (S (length mem1)) bot)).
+        all: viewtac.
         econs; ss.
         { funtac. exfalso. apply c. ss. }
         i. funtac; econs; ss.
@@ -945,8 +987,8 @@ Section Local.
           exfalso. apply c. inv X0. ss.
         * revert TS. funtac. i.
           etrans; try exact TS; eauto. eapply le_lt_trans; [rewrite COH; eauto | lia].
-      + econs; cycle 1. instantiate (1 := (View.mk (S (length mem1)) bot)).
-        { viewtac. }
+      + econs. instantiate (1 := (View.mk (S (length mem1)) bot)).
+        all: try i; viewtac.
         econs; ss.
         { funtac. exfalso. apply c. ss. }
         i. funtac; econs; ss.
@@ -968,7 +1010,7 @@ Section Local.
         rewrite fun_add_spec. condtac; ss. inversion e. rewrite H0. unfold Order.le in COH0. ss.
       + inv COHMAX. inv COHMAX0. rename x0 into mloc.
         destruct (lt_eq_lt_dec old_ts (View.ts (coh lc1 mloc))).
-        { econs; ss. instantiate (1 := coh lc1 mloc).
+        { econs; ss.
           - econs; cycle 1.
             { i. funtac. econs; ss. unfold Order.le. inv s; lia. }
             funtac. inv s; ss.
@@ -976,11 +1018,13 @@ Section Local.
             + destruct (coh lc1 mloc). s. destruct annot. ss.
           - viewtac. unfold read_view.
             condtac; [apply bot_spec | inv s; ss; lia].
+          - viewtac. unfold read_view.
+            condtac; [apply bot_spec | inv s; ss; lia].
         }
         { exploit high_ts_spec; eauto.
           { i. eapply le_lt_trans; try exact l. specialize (MAX loc). inv MAX. viewtac. }
           i. des.
-          econs; ss. instantiate (1 := (View.mk old_ts bot)).
+          econs. instantiate (1 := (View.mk old_ts bot)).
           - econs; ss.
             { funtac. exfalso. apply c. ss. }
             i. funtac; econs; ss.
@@ -988,6 +1032,11 @@ Section Local.
           - viewtac.
             { rewrite VRN0. lia. }
             unfold read_view. condtac; [apply bot_spec | ss].
+          - viewtac.
+            { rewrite VPN0. lia. }
+            unfold read_view. condtac; [apply bot_spec | ss].
+          - i. ss. rewrite LPER0. lia.
+          - i. ss. rewrite PER0. lia.
         }
       + i. revert TS. funtac; cycle 1.
         { i. rewrite <- join_l. eapply NFWD; eauto. }
@@ -1000,31 +1049,41 @@ Section Local.
       + inv COHMAX0. ss.
       + inv COHMAX0. ss.
       + i. viewtac.
-      + econs; s; eauto.
-        viewtac. inv COHMAX. inv COHMAX0. inv COHMAX1.
-        specialize (MAX x0). inv MAX. unfold Order.le in *. lia.
+      + inv COHMAX. inv COHMAX0. inv COHMAX1. econs; s; eauto.
+        * viewtac. specialize (MAX0 x). inv MAX0. unfold Order.le in *. lia.
+        * viewtac. specialize (MAX0 x). inv MAX0. unfold Order.le in *. lia.
+        * i. viewtac.
       + i. rewrite <- join_l. eapply NFWD; eauto.
       + rewrite VRNVPN. apply join_l.
       + apply join_r.
     - econs; viewtac.
       + inv COHMAX0. ss.
       + i. viewtac.
-      + econs; s; eauto.
-        viewtac. inv COHMAX. inv COHMAX0. inv COHMAX1.
-        specialize (MAX x0). inv MAX. unfold Order.le in *. lia.
+      + inv COHMAX. inv COHMAX0. inv COHMAX1. econs; s; eauto.
+        * viewtac. specialize (MAX0 x). inv MAX0. unfold Order.le in *. lia.
+        * i. viewtac.
       + rewrite VRNVPN. apply join_l.
     - econs; viewtac.
       + i. viewtac. inv COHMAX0. ss.
-      + econs; s; eauto.
-        viewtac. inv COHMAX. inv COHMAX0. inv COHMAX1.
-        specialize (MAX x0). inv MAX. unfold Order.le in *. lia.
+      + i. viewtac. inv COHMAX0. ss.
+      + inv COHMAX. inv COHMAX0. inv COHMAX1. econs; s; eauto.
+        * i. viewtac.
+          specialize (MAX0 x). inv MAX0. unfold Order.le in *. lia.
+        * i. viewtac.
+          specialize (MAX0 x). inv MAX0. unfold Order.le in *. lia.
+      + i. rewrite LPERCL at 1; eauto. viewtac. unfold ifc. repeat condtac; ss.
+        * exploit Loc.cl_trans; eauto. rewrite X0. ss.
+        * apply Loc.cl_sym in X0. exploit Loc.cl_trans; try exact CL; eauto.
+          intro Z. apply Loc.cl_sym in Z. rewrite X in Z. ss.
       + i. rewrite PERCL at 1; eauto. viewtac. unfold ifc. repeat condtac; ss.
           * exploit Loc.cl_trans; eauto. rewrite X0. ss.
           * apply Loc.cl_sym in X0. exploit Loc.cl_trans; try exact CL; eauto.
             intro Z. apply Loc.cl_sym in Z. rewrite X in Z. ss.
     - econs; viewtac.
       + i. viewtac. inv COHMAX_CL. unfold ifc. condtac; ss. apply bot_spec.
-      + inv COHMAX. econs; eauto.
+      + inv COHMAX. inv COHMAX0. econs; s; eauto. i. viewtac.
+        inv COHMAX_CL. unfold ifc. condtac; [|apply bot_spec].
+        specialize (MAX x0). inv MAX. unfold Order.le in *. ss.
       + i. rewrite LPERCL at 1; eauto. unfold ifc. repeat condtac; ss.
         * exploit Loc.cl_trans; eauto. rewrite X0. ss.
         * apply Loc.cl_sym in X0. exploit Loc.cl_trans; try exact CL; eauto.
@@ -1140,7 +1199,7 @@ Section ExecUnit.
       + destruct ts; ss. condtac; ss.
         eapply PROMISES0; eauto.
       + subst. condtac; ss. congr.
-    - inv COHMAX. inv COHMAX0. econs; [econs|]; ss.
+    - inv COHMAX. inv COHMAX0. econs; viewtac.
     - i. apply Memory.get_msg_snoc_inv in MSG. des.
       + eapply NFWD; eauto.
       + rewrite <- MSG0 in TID. ss.

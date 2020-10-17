@@ -449,18 +449,21 @@ Proof.
 Qed.
 
 Definition sim_local_lper ex loc :=
+  (⦗ex.(Execution.label_is) (Label.is_flushing_cl loc)⦘ ⨾
+   Execution.po) ∪
   (⦗ex.(Execution.label_is) (Label.is_flushopting_cl loc)⦘ ⨾
    Execution.po).
 
 Lemma sim_local_lper_step ex loc:
   sim_local_lper ex loc =
   (sim_local_lper ex loc ∪
-   (⦗ex.(Execution.label_is) (Label.is_flushopting_cl loc)⦘)) ⨾
+   (⦗ex.(Execution.label_is) (Label.is_flushing_cl loc)⦘ ∪
+    ⦗ex.(Execution.label_is) (Label.is_flushopting_cl loc)⦘)) ⨾
   Execution.po_adj.
 Proof.
   unfold sim_local_lper.
   rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
-  rewrite Execution.po_po_adj at 1.
+  rewrite Execution.po_po_adj at 1 2.
   rewrite (clos_refl_union Execution.po).
   replace ((Execution.po ∪ eq) ⨾ Execution.po_adj)
     with (Execution.po ⨾ Execution.po_adj ∪ eq ⨾ Execution.po_adj); cycle 1.

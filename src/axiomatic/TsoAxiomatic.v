@@ -1177,6 +1177,8 @@ Module Execution.
      po ⨾
      ⦗ex.(label_is) Label.is_flushopt⦘) ∪
     (⦗ex.(label_is) Label.is_write⦘ ⨾
+     (po ⨾
+      ⦗ex.(label_is) Label.is_flush⦘)^? ⨾
      (po_cl ex) ⨾
      ⦗ex.(label_is) Label.is_flushopt⦘).
 
@@ -1766,7 +1768,8 @@ Module Valid.
     { split; eauto. obtac.
       all: splits; [simtac | eauto].
       all: try by etrans; eauto.
-      inv H. ss.
+      inv H; inv H2; ss. obtac.
+      etrans; eauto.
     }
     obtac; labtac.
     all: try by destruct l1; ss.
