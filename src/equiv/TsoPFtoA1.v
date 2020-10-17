@@ -71,12 +71,12 @@ Inductive sim_trace (p: program) (mem: Memory.t) (tid: Id.t):
                | Event.flush vloc =>
                  (fun eid => if Nat.eqb eid (ALocal.next_eid aeu1.(AExecUnit.local))
                             then Some (vloc.(ValA.val),
-                                       (eu2.(ExecUnit.local).(Local.per) vloc.(ValA.val)).(View.ts))
+                                       (eu2.(ExecUnit.local).(Local.vpc) vloc.(ValA.val)).(View.ts))
                             else f1 eid)
                | Event.flushopt vloc =>
                  (fun eid => if Nat.eqb eid (ALocal.next_eid aeu1.(AExecUnit.local))
                             then Some (vloc.(ValA.val),
-                                       (eu2.(ExecUnit.local).(Local.lper) vloc.(ValA.val)).(View.ts))
+                                       (eu2.(ExecUnit.local).(Local.vpa) vloc.(ValA.val)).(View.ts))
                             else f1 eid)
                | _ => f1
                end)
@@ -89,11 +89,11 @@ Inductive sim_trace (p: program) (mem: Memory.t) (tid: Id.t):
                               else cov1 eid)
                  | Event.flush vloc =>
                    (fun eid => if Nat.eqb eid (ALocal.next_eid aeu1.(AExecUnit.local))
-                               then (eu2.(ExecUnit.local).(Local.per) vloc.(ValA.val)).(View.ts)
+                               then (eu2.(ExecUnit.local).(Local.vpc) vloc.(ValA.val)).(View.ts)
                                else cov1 eid)
                  | Event.flushopt vloc =>
                    (fun eid => if Nat.eqb eid (ALocal.next_eid aeu1.(AExecUnit.local))
-                               then (eu2.(ExecUnit.local).(Local.lper) vloc.(ValA.val)).(View.ts)
+                               then (eu2.(ExecUnit.local).(Local.vpa) vloc.(ValA.val)).(View.ts)
                                else cov1 eid)
                  | _ => cov1
                  end)
@@ -109,11 +109,11 @@ Inductive sim_trace (p: program) (mem: Memory.t) (tid: Id.t):
                                 else vext1 eid)
                    | Event.flush vloc =>
                      (fun eid => if Nat.eqb eid (ALocal.next_eid aeu1.(AExecUnit.local))
-                                 then (eu2.(ExecUnit.local).(Local.per) vloc.(ValA.val)).(View.ts)
+                                 then (eu2.(ExecUnit.local).(Local.vpc) vloc.(ValA.val)).(View.ts)
                                  else vext1 eid)
                    | Event.flushopt vloc =>
                      (fun eid => if Nat.eqb eid (ALocal.next_eid aeu1.(AExecUnit.local))
-                                 then (eu2.(ExecUnit.local).(Local.lper) vloc.(ValA.val)).(View.ts)
+                                 then (eu2.(ExecUnit.local).(Local.vpa) vloc.(ValA.val)).(View.ts)
                                  else vext1 eid)
                    | _ => vext1
                    end)

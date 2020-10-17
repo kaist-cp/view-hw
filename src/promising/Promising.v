@@ -155,10 +155,9 @@ Section Local.
     vwo: View.t (A:=A);
     vcap: View.t (A:=A);
     vrel: View.t (A:=A);
-    (* TODO: change name? *)
-    vpn: View.t (A:=A);
-    lper: Loc.t -> View.t (A:=A);
-    per: Loc.t -> View.t (A:=A);
+    vpr: View.t (A:=A);
+    vpa: Loc.t -> View.t (A:=A);
+    vpc: Loc.t -> View.t (A:=A);
     fwdbank: Loc.t -> (FwdItem.t (A:=A));
     exbank: option (Exbank.t (A:=A));
     promises: Promises.t;
@@ -181,9 +180,9 @@ Section Local.
               lc1.(vwo)
               lc1.(vcap)
               lc1.(vrel)
-              lc1.(vpn)
-              lc1.(lper)
-              lc1.(per)
+              lc1.(vpr)
+              lc1.(vpa)
+              lc1.(vpc)
               lc1.(fwdbank)
               lc1.(exbank)
               (Promises.set ts lc1.(promises)))
@@ -202,9 +201,9 @@ Section Local.
               lc1.(vwo)
               (join lc1.(vcap) ctrl)
               lc1.(vrel)
-              lc1.(vpn)
-              lc1.(lper)
-              lc1.(per)
+              lc1.(vpr)
+              lc1.(vpa)
+              lc1.(vpc)
               lc1.(fwdbank)
               lc1.(exbank)
               lc1.(promises))
@@ -233,9 +232,9 @@ Section Local.
               lc1.(vwo)
               (join lc1.(vcap) view)
               lc1.(vrel)
-              lc1.(vpn)
-              lc1.(lper)
-              lc1.(per)
+              lc1.(vpr)
+              lc1.(vpa)
+              lc1.(vpc)
               lc1.(fwdbank)
               (if ex then Some (Exbank.mk loc ts view_post) else lc1.(exbank))
               lc1.(promises))
@@ -289,9 +288,9 @@ Section Local.
               (join lc1.(vwo) (View.mk ts bot))
               (join lc1.(vcap) view_loc)
               (join lc1.(vrel) (View.mk (ifc (OrdW.ge ord OrdW.release) ts) bot))
-              lc1.(vpn)
-              lc1.(lper)
-              lc1.(per)
+              lc1.(vpr)
+              lc1.(vpa)
+              lc1.(vpc)
               (fun_add loc (FwdItem.mk ts (join view_loc view_val) ex) lc1.(fwdbank))
               (if ex then None else lc1.(exbank))
               (Promises.unset ts lc1.(promises)))
@@ -311,9 +310,9 @@ Section Local.
               lc1.(vwo)
               lc1.(vcap)
               lc1.(vrel)
-              lc1.(vpn)
-              lc1.(lper)
-              lc1.(per)
+              lc1.(vpr)
+              lc1.(vpa)
+              lc1.(vpc)
               lc1.(fwdbank)
               None
               lc1.(promises))
@@ -331,9 +330,9 @@ Section Local.
               lc1.(vwo)
               lc1.(vcap)
               lc1.(vrel)
-              lc1.(vpn)
-              lc1.(lper)
-              lc1.(per)
+              lc1.(vpr)
+              lc1.(vpa)
+              lc1.(vpc)
               lc1.(fwdbank)
               lc1.(exbank)
               lc1.(promises))
@@ -353,9 +352,9 @@ Section Local.
               lc1.(vwo)
               lc1.(vcap)
               lc1.(vrel)
-              (join lc1.(vpn) (ifc persist (join lc1.(vro) lc1.(vwo))))
-              lc1.(lper)
-              lc1.(per)
+              (join lc1.(vpr) (ifc persist (join lc1.(vro) lc1.(vwo))))
+              lc1.(vpa)
+              lc1.(vpc)
               lc1.(fwdbank)
               lc1.(exbank)
               lc1.(promises))
@@ -375,11 +374,11 @@ Section Local.
               lc1.(vwo)
               lc1.(vcap)
               lc1.(vrel)
-              (join lc1.(vpn) (ifc persist (join lc1.(vro) lc1.(vwo))))
-              lc1.(lper)
+              (join lc1.(vpr) (ifc persist (join lc1.(vro) lc1.(vwo))))
+              lc1.(vpa)
               (if persist
-               then fun_join lc1.(per) lc1.(lper)
-               else lc1.(per))
+               then fun_join lc1.(vpc) lc1.(vpa)
+               else lc1.(vpc))
               lc1.(fwdbank)
               lc1.(exbank)
               lc1.(promises))
@@ -391,7 +390,7 @@ Section Local.
       loc cohmax_cl view_post
       (LOC: loc = vloc.(ValA.val))
       (COHMAX_CL: fun_max (fun loc' => ifc (Loc.cl loc loc') (lc1.(coh) loc').(View.ts)) cohmax_cl.(View.ts))
-      (VIEW_POST: view_post = fun loc' => ifc (Loc.cl loc loc') (join cohmax_cl lc1.(vpn)))
+      (VIEW_POST: view_post = fun loc' => ifc (Loc.cl loc loc') (join cohmax_cl lc1.(vpr)))
       (LC2: lc2 =
             mk
               lc1.(coh)
@@ -401,9 +400,9 @@ Section Local.
               lc1.(vwo)
               lc1.(vcap)
               lc1.(vrel)
-              lc1.(vpn)
-              (fun_join lc1.(lper) view_post)
-              lc1.(per)
+              lc1.(vpr)
+              (fun_join lc1.(vpa) view_post)
+              lc1.(vpc)
               lc1.(fwdbank)
               lc1.(exbank)
               lc1.(promises))
@@ -478,9 +477,9 @@ Section Local.
       (VWO: lc.(vwo).(View.ts) <= List.length mem)
       (VCAP: lc.(vcap).(View.ts) <= List.length mem)
       (VREL: lc.(vrel).(View.ts) <= List.length mem)
-      (VPN: lc.(vpn).(View.ts) <= List.length mem)
-      (LPER: forall loc, (lc.(lper) loc).(View.ts) <= List.length mem)
-      (PER: forall loc, (lc.(per) loc).(View.ts) <= List.length mem)
+      (VPR: lc.(vpr).(View.ts) <= List.length mem)
+      (VPA: forall loc, (lc.(vpa) loc).(View.ts) <= List.length mem)
+      (VPC: forall loc, (lc.(vpc) loc).(View.ts) <= List.length mem)
       (FWDBANK: forall loc, wf_fwdbank loc mem (lc.(coh) loc).(View.ts) (lc.(fwdbank) loc))
       (EXBANK: forall eb, lc.(exbank) = Some eb -> wf_exbank mem (lc.(coh) eb.(Exbank.loc)).(View.ts) eb)
       (PROMISES: forall ts (IN: Promises.lookup ts lc.(promises)), ts <= List.length mem)
@@ -490,8 +489,8 @@ Section Local.
                    (TS: (lc.(coh) msg.(Msg.loc)).(View.ts) < ts),
           Promises.lookup ts lc.(promises))
       (COHMAX_CL: forall loc, wf_cohmax_cl loc lc)
-      (LPERCL: forall loc1 loc2 (CL: Loc.cl loc1 loc2), (lc.(lper) loc1).(View.ts) = (lc.(lper) loc2).(View.ts))
-      (PERCL: forall loc1 loc2 (CL: Loc.cl loc1 loc2), (lc.(per) loc1).(View.ts) = (lc.(per) loc2).(View.ts))
+      (VPACL: forall loc1 loc2 (CL: Loc.cl loc1 loc2), (lc.(vpa) loc1).(View.ts) = (lc.(vpa) loc2).(View.ts))
+      (VPCCL: forall loc1 loc2 (CL: Loc.cl loc1 loc2), (lc.(vpc) loc1).(View.ts) = (lc.(vpc) loc2).(View.ts))
   .
   Hint Constructors wf.
 
@@ -588,8 +587,8 @@ Section Local.
     all: try lia.
     all: try apply WF; ss.
     - rewrite COH. lia.
-    - rewrite LPER. lia.
-    - rewrite PER. lia.
+    - rewrite VPA. lia.
+    - rewrite VPC. lia.
     - destruct (FWDBANK loc). des. econs; esplits; eauto.
       + rewrite TS, Memory.latest_ts_append. ss.
       + apply Memory.read_mon. eauto.
@@ -622,9 +621,9 @@ Section Local.
       (VWO: Order.le lhs.(vwo).(View.ts) rhs.(vwo).(View.ts))
       (VCAP: Order.le lhs.(vcap).(View.ts) rhs.(vcap).(View.ts))
       (VREL: Order.le lhs.(vrel).(View.ts) rhs.(vrel).(View.ts))
-      (VPN: Order.le lhs.(vpn).(View.ts) rhs.(vpn).(View.ts))
-      (LPER: forall loc, Order.le (lhs.(lper) loc).(View.ts) (rhs.(lper) loc).(View.ts))
-      (PER: forall loc, Order.le (lhs.(per) loc).(View.ts) (rhs.(per) loc).(View.ts))
+      (VPR: Order.le lhs.(vpr).(View.ts) rhs.(vpr).(View.ts))
+      (VPA: forall loc, Order.le (lhs.(vpa) loc).(View.ts) (rhs.(vpa) loc).(View.ts))
+      (VPC: forall loc, Order.le (lhs.(vpc) loc).(View.ts) (rhs.(vpc) loc).(View.ts))
   .
 
   Global Program Instance le_partial_order: PreOrder le.
@@ -940,7 +939,7 @@ Section ExecUnit.
     - inv STEP. econs; ss. econs; i; viewtac.
       + inv COHMAX_CL0. rewrite <- X. unfold ifc. condtac; ss. apply bot_spec.
       + generalize (COHMAX_CL loc). intro Z. inv Z. econs; eauto.
-      + rewrite LPERCL at 1; eauto. unfold ifc. repeat condtac; ss.
+      + rewrite VPACL at 1; eauto. unfold ifc. repeat condtac; ss.
         * exploit Loc.cl_trans; eauto. rewrite X0. ss.
         * apply Loc.cl_sym in X0. exploit Loc.cl_trans; try exact CL; eauto.
           intro Z. apply Loc.cl_sym in Z. rewrite X in Z. ss.
@@ -984,8 +983,8 @@ Section ExecUnit.
     - econs; eauto.
       all: try rewrite List.app_length; s; try lia.
       + i. rewrite COH. lia.
-      + i. rewrite LPER. lia.
-      + i. rewrite PER. lia.
+      + i. rewrite VPA. lia.
+      + i. rewrite VPC. lia.
       + i. destruct (FWDBANK loc0). des. econs; esplits; ss.
         * rewrite TS. apply Memory.latest_ts_append.
         * apply Memory.read_mon; eauto.
@@ -1192,8 +1191,8 @@ Module Machine.
       + inv LOCAL. econs; eauto.
         all: try rewrite List.app_length; s; try lia.
         * i. rewrite COH. lia.
-        * i. rewrite LPER. lia.
-        * i. rewrite PER. lia.
+        * i. rewrite VPA. lia.
+        * i. rewrite VPC. lia.
         * i. destruct (FWDBANK loc0). des. econs; esplits; ss.
           { rewrite TS. apply Memory.latest_ts_append. }
           { apply Memory.read_mon; eauto. }
@@ -1286,7 +1285,7 @@ Module Machine.
       ts
       (TS: Memory.read loc ts m.(mem) = Some val)
       (LATEST: IdMap.Forall (fun _ sl =>
-                 Memory.latest loc ts ((snd sl).(Local.per) loc).(View.ts) m.(mem))
+                 Memory.latest loc ts ((snd sl).(Local.vpc) loc).(View.ts) m.(mem))
                  m.(tpool))
   .
   Hint Constructors persisted_loc.
@@ -1309,34 +1308,6 @@ Module Machine.
     specialize (TPOOL tid). rewrite FIND in TPOOL.
     eapply PROMISES. eauto.
   Qed.
-
-  (* Lemma unlift_step_state_step *)
-  (*       m1 m2 tid st1 lc1 *)
-  (*       (STEPS: rtc (step ExecUnit.state_step) m1 m2) *)
-  (*       (TPOOL: IdMap.find tid m1.(tpool) = Some (st1, lc1)): *)
-  (*   exists st2 lc2, *)
-  (*     <<TPOOL: IdMap.find tid m2.(tpool) = Some (st2, lc2)>> /\ *)
-  (*     <<STEPS: rtc (ExecUnit.state_step tid) *)
-  (*                  (ExecUnit.mk st1 lc1 m1.(per) m1.(mem)) *)
-  (*                  (ExecUnit.mk st2 lc2 m2.(per) m2.(mem))>>. *)
-  (* Proof. *)
-  (*   revert st1 lc1 TPOOL. induction STEPS; eauto. i. *)
-  (*   destruct x as [tpool1 per1 mem1]. *)
-  (*   destruct y as [tpool2 per2 mem2]. *)
-  (*   destruct z as [tpool3 per3 mem3]. *)
-  (*   inv H. ss. *)
-  (*   assert (mem2 = mem1). *)
-  (*   { inv STEP. inv STEP0. ss. } *)
-  (*   subst. exploit IHSTEPS. *)
-  (*   { rewrite IdMap.add_spec, TPOOL. *)
-  (*     instantiate (1 := if equiv_dec tid tid0 then lc2 else lc1). *)
-  (*     instantiate (1 := if equiv_dec tid tid0 then st2 else st1). *)
-  (*     condtac; ss. *)
-  (*   } *)
-  (*   i. des. *)
-  (*   esplits; eauto. rewrite <- STEPS0. condtac; eauto. *)
-  (*   inversion e. subst. rewrite TPOOL in FIND. inv FIND. econs; eauto. *)
-  (* Qed. *)
 
   Lemma step_get_msg_tpool
         p m ts msg

@@ -48,9 +48,9 @@ Proof.
                        Local.mk
                          lc0.(Local.coh)
                          lc0.(Local.vrn)
-                         lc0.(Local.vpn)
-                         lc0.(Local.lper)
-                         lc0.(Local.per)
+                         lc0.(Local.vpr)
+                         lc0.(Local.vpa)
+                         lc0.(Local.vpc)
                          (Promises.set (S (length mem1)) lc0.(Local.promises))).
         inv LOCAL0.
         { econs 1; eauto. }

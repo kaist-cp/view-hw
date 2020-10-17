@@ -36,9 +36,9 @@ Inductive sim_local (n: nat) (lc_pf lc_v: Local.t): Prop :=
 | sim_local_intro
     (COH: lc_pf.(Local.coh) = lc_v.(Local.coh))
     (VRN: lc_pf.(Local.vrn) = lc_v.(Local.vrn))
-    (VPN: lc_pf.(Local.vpn) = lc_v.(Local.vpn))
-    (LPER: lc_pf.(Local.lper) = lc_v.(Local.lper))
-    (PER: lc_pf.(Local.per) = lc_v.(Local.per))
+    (VPR: lc_pf.(Local.vpr) = lc_v.(Local.vpr))
+    (VPA: lc_pf.(Local.vpa) = lc_v.(Local.vpa))
+    (VPC: lc_pf.(Local.vpc) = lc_v.(Local.vpc))
     (PROMISES_PF: forall ts (PROMISE: Promises.lookup ts lc_pf.(Local.promises) = true), ts > n)
     (PROMISES_V: lc_v.(Local.promises) = fun _ => false)
 .
@@ -453,8 +453,8 @@ Lemma sim_step
   (exists loc,
       <<COH: (lc2_pf.(Local.coh) loc).(View.ts) > n>>).
 Proof.
-  destruct lc1_pf as [coh_pf vrn_pf lper_pf per_pf promises_pf].
-  destruct lc1_v as [coh_v vrn_v lper_v per_v promises_v].
+  destruct lc1_pf as [coh_pf vrn_pf vpa_pf per_pf promises_pf].
+  destruct lc1_v as [coh_v vrn_v vpa_v per_v promises_v].
   dup LOCAL1. inv LOCAL0. ss. subst.
   inv STEP_PF.
   - (* internal *)
@@ -526,8 +526,8 @@ Lemma sim_fulfill
     (<<MEMORY2: sim_memory (n + 1) mem_pf mem2_v>>) /\
     (<<PROMISES_PF: lc2_pf.(Local.promises) = Promises.unset (n + 1) lc1_pf.(Local.promises)>>).
 Proof.
-  destruct lc1_pf as [coh_pf vrn_pf lper_pf per_pf promises_pf].
-  destruct lc1_v as [coh_v vrn_v lper_v per_v promises_v].
+  destruct lc1_pf as [coh_pf vrn_pf vpa_pf per_pf promises_pf].
+  destruct lc1_v as [coh_v vrn_v vpa_v per_v promises_v].
   inv LOCAL1. inv MEMORY1. inv STEP_PF. ss. subst.
   esplits.
   - econs; eauto.
@@ -561,8 +561,8 @@ Lemma sim_rmw
     (<<MEMORY2: sim_memory (n + 1) mem_pf mem2_v>>) /\
     (<<PROMISES_PF: lc2_pf.(Local.promises) = Promises.unset (n + 1) lc1_pf.(Local.promises)>>).
 Proof.
-  destruct lc1_pf as [coh_pf vrn_pf lper_pf per_pf promises_pf].
-  destruct lc1_v as [coh_v vrn_v lper_v per_v promises_v].
+  destruct lc1_pf as [coh_pf vrn_pf vpa_pf per_pf promises_pf].
+  destruct lc1_v as [coh_v vrn_v vpa_v per_v promises_v].
   inv LOCAL1. dup MEMORY1. inv MEMORY0. inv STEP_PF. ss. subst.
   esplits.
   - econs.

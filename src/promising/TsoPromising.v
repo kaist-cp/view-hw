@@ -25,10 +25,9 @@ Section Local.
   Inductive t := mk {
     coh: Loc.t -> View.t (A:=unit);
     vrn: View.t (A:=unit);
-    (* TODO: change name? *)
-    vpn: View.t (A:=unit);
-    lper: Loc.t -> View.t (A:=unit);
-    per: Loc.t -> View.t (A:=unit);
+    vpr: View.t (A:=unit);
+    vpa: Loc.t -> View.t (A:=unit);
+    vpc: Loc.t -> View.t (A:=unit);
     promises: Promises.t;
   }.
   Hint Constructors t.
@@ -49,9 +48,9 @@ Section Local.
             mk
               lc1.(coh)
               lc1.(vrn)
-              lc1.(vpn)
-              lc1.(lper)
-              lc1.(per)
+              lc1.(vpr)
+              lc1.(vpa)
+              lc1.(vpc)
               (Promises.set ts lc1.(promises)))
       (MEM2: Memory.append (Msg.mk loc val tid) mem1 = (ts, mem2))
   .
@@ -72,9 +71,9 @@ Section Local.
             mk
               (fun_add loc (View.mk ts bot) lc1.(coh))
               (join lc1.(vrn) view_post)
-              (join lc1.(vpn) view_post)
-              lc1.(lper)
-              lc1.(per)
+              (join lc1.(vpr) view_post)
+              lc1.(vpa)
+              lc1.(vpc)
               lc1.(promises))
   .
   Hint Constructors read.
@@ -101,9 +100,9 @@ Section Local.
             mk
               (fun_add loc (View.mk ts bot) lc1.(coh))
               lc1.(vrn)
-              lc1.(vpn)
-              lc1.(lper)
-              lc1.(per)
+              lc1.(vpr)
+              lc1.(vpa)
+              lc1.(vpc)
               (Promises.unset ts lc1.(promises)))
   .
   Hint Constructors fulfill.
@@ -126,9 +125,9 @@ Section Local.
             mk
               (fun_add loc (View.mk ts bot) lc1.(coh))
               (join lc1.(vrn) view_post)
-              (join lc1.(vpn) view_post)
-              lc1.(lper)
-              (fun_join lc1.(per) lc1.(lper))
+              (join lc1.(vpr) view_post)
+              lc1.(vpa)
+              (fun_join lc1.(vpc) lc1.(vpa))
               (Promises.unset ts lc1.(promises)))
   .
   Hint Constructors rmw.
@@ -149,9 +148,9 @@ Section Local.
             mk
               (fun_add loc (View.mk old_ts bot) lc1.(coh))
               (join lc1.(vrn) view_post)
-              (join lc1.(vpn) view_post)
-              lc1.(lper)
-              lc1.(per)
+              (join lc1.(vpr) view_post)
+              lc1.(vpa)
+              lc1.(vpc)
               lc1.(promises))
   .
   Hint Constructors rmw_failure.
@@ -164,9 +163,9 @@ Section Local.
             mk
               lc1.(coh)
               (join lc1.(vrn) cohmax)
-              (join lc1.(vpn) cohmax)
-              lc1.(lper)
-              (fun_join lc1.(per) lc1.(lper))
+              (join lc1.(vpr) cohmax)
+              lc1.(vpa)
+              (fun_join lc1.(vpc) lc1.(vpa))
               lc1.(promises))
   .
   Hint Constructors mfence.
@@ -179,9 +178,9 @@ Section Local.
             mk
               lc1.(coh)
               lc1.(vrn)
-              (join lc1.(vpn) cohmax)
-              lc1.(lper)
-              (fun_join lc1.(per) lc1.(lper))
+              (join lc1.(vpr) cohmax)
+              lc1.(vpa)
+              (fun_join lc1.(vpc) lc1.(vpa))
               lc1.(promises))
   .
   Hint Constructors sfence.
@@ -197,9 +196,9 @@ Section Local.
             mk
               (fun_add loc (View.mk ts bot) lc1.(coh))
               lc1.(vrn)
-              lc1.(vpn)
-              lc1.(lper)
-              lc1.(per)
+              lc1.(vpr)
+              lc1.(vpa)
+              lc1.(vpc)
               lc1.(promises))
   .
   Hint Constructors write.
@@ -220,9 +219,9 @@ Section Local.
             mk
               (fun_add loc (View.mk ts bot) lc1.(coh))
               (join lc1.(vrn) view_post)
-              (join lc1.(vpn) view_post)
-              lc1.(lper)
-              (fun_join lc1.(per) lc1.(lper))
+              (join lc1.(vpr) view_post)
+              lc1.(vpa)
+              (fun_join lc1.(vpc) lc1.(vpa))
               lc1.(promises))
   .
   Hint Constructors rmw.
@@ -237,9 +236,9 @@ Section Local.
             mk
               lc1.(coh)
               lc1.(vrn)
-              lc1.(vpn)
-              (fun_join lc1.(lper) view_post)
-              (fun_join lc1.(per) view_post)
+              lc1.(vpr)
+              (fun_join lc1.(vpa) view_post)
+              (fun_join lc1.(vpc) view_post)
               lc1.(promises))
   .
   Hint Constructors flush.
@@ -249,14 +248,14 @@ Section Local.
       loc cohmax_cl view_post
       (LOC: loc = vloc.(ValA.val))
       (COHMAX_CL: fun_max (fun loc' => ifc (Loc.cl loc loc') (lc1.(coh) loc')) cohmax_cl)
-      (VIEW_POST: view_post = fun loc' => ifc (Loc.cl loc loc') (join cohmax_cl lc1.(vpn)))
+      (VIEW_POST: view_post = fun loc' => ifc (Loc.cl loc loc') (join cohmax_cl lc1.(vpr)))
       (LC2: lc2 =
             mk
               lc1.(coh)
               lc1.(vrn)
-              lc1.(vpn)
-              (fun_join lc1.(lper) view_post)
-              lc1.(per)
+              lc1.(vpr)
+              (fun_join lc1.(vpa) view_post)
+              lc1.(vpc)
               lc1.(promises))
   .
   Hint Constructors flushopt.
@@ -360,18 +359,18 @@ Section Local.
       cohmax
       (COHMAX: fun_max lc.(coh) cohmax)
       (VRN: lc.(vrn).(View.ts) <= cohmax.(View.ts))
-      (VPN: lc.(vpn).(View.ts) <= cohmax.(View.ts))
-      (LPER: forall loc, (lc.(lper) loc).(View.ts) <= cohmax.(View.ts))
-      (PER: forall loc, (lc.(per) loc).(View.ts) <= cohmax.(View.ts))
+      (VPR: lc.(vpr).(View.ts) <= cohmax.(View.ts))
+      (VPA: forall loc, (lc.(vpa) loc).(View.ts) <= cohmax.(View.ts))
+      (VPC: forall loc, (lc.(vpc) loc).(View.ts) <= cohmax.(View.ts))
   .
 
   Inductive wf (tid:Id.t) (mem:Memory.t) (lc:t): Prop :=
   | wf_intro
       (COH: forall loc, (lc.(coh) loc).(View.ts) <= List.length mem)
       (VRN: lc.(vrn).(View.ts) <= List.length mem)
-      (VPN: lc.(vpn).(View.ts) <= List.length mem)
-      (LPER: forall loc, (lc.(lper) loc).(View.ts) <= List.length mem)
-      (PER: forall loc, (lc.(per) loc).(View.ts) <= List.length mem)
+      (VPR: lc.(vpr).(View.ts) <= List.length mem)
+      (VPA: forall loc, (lc.(vpa) loc).(View.ts) <= List.length mem)
+      (VPC: forall loc, (lc.(vpc) loc).(View.ts) <= List.length mem)
       (FWDBANK: forall loc, wf_fwdbank loc mem (lc.(coh) loc).(View.ts))
       (PROMISES: forall ts (IN: Promises.lookup ts lc.(promises)), ts <= List.length mem)
       (PROMISES: forall ts msg
@@ -385,9 +384,9 @@ Section Local.
                 (TID: msg.(Msg.tid) <> tid)
                 (TS: (lc.(coh) msg.(Msg.loc)).(View.ts) = ts),
           ts <= lc.(vrn).(View.ts))
-      (VRNVPN: lc.(vrn).(View.ts) <= lc.(vpn).(View.ts))
-      (LPERCL: forall loc1 loc2 (CL: Loc.cl loc1 loc2), (lc.(lper) loc1).(View.ts) = (lc.(lper) loc2).(View.ts))
-      (PERCL: forall loc1 loc2 (CL: Loc.cl loc1 loc2), (lc.(per) loc1).(View.ts) = (lc.(per) loc2).(View.ts))
+      (VRNVPR: lc.(vrn).(View.ts) <= lc.(vpr).(View.ts))
+      (VPACL: forall loc1 loc2 (CL: Loc.cl loc1 loc2), (lc.(vpa) loc1).(View.ts) = (lc.(vpa) loc2).(View.ts))
+      (VPCCL: forall loc1 loc2 (CL: Loc.cl loc1 loc2), (lc.(vpc) loc1).(View.ts) = (lc.(vpc) loc2).(View.ts))
   .
   Hint Constructors wf.
 
@@ -470,8 +469,8 @@ Section Local.
     all: try lia.
     all: try apply WF; ss.
     - rewrite COH. lia.
-    - rewrite LPER. lia.
-    - rewrite PER. lia.
+    - rewrite VPA. lia.
+    - rewrite VPC. lia.
     - destruct (FWDBANK loc). des. econs; esplits; eauto.
       apply Memory.read_mon. eauto.
     - exploit PROMISES; eauto. lia.
@@ -498,9 +497,9 @@ Section Local.
   | le_intro
       (COH: forall loc, Order.le (lhs.(coh) loc).(View.ts) (rhs.(coh) loc).(View.ts))
       (VRN: Order.le lhs.(vrn).(View.ts) rhs.(vrn).(View.ts))
-      (VRN: Order.le lhs.(vpn).(View.ts) rhs.(vpn).(View.ts))
-      (LPER: forall loc, Order.le (lhs.(lper) loc).(View.ts) (rhs.(lper) loc).(View.ts))
-      (PER: forall loc, Order.le (lhs.(per) loc).(View.ts) (rhs.(per) loc).(View.ts))
+      (VRN: Order.le lhs.(vpr).(View.ts) rhs.(vpr).(View.ts))
+      (VPA: forall loc, Order.le (lhs.(vpa) loc).(View.ts) (rhs.(vpa) loc).(View.ts))
+      (VPC: forall loc, Order.le (lhs.(vpc) loc).(View.ts) (rhs.(vpc) loc).(View.ts))
   .
 
   Global Program Instance le_partial_order: PreOrder le.
@@ -705,17 +704,17 @@ Section Local.
             { rewrite VRN0. lia. }
             unfold read_view. condtac; [apply bot_spec | ss].
           - viewtac.
-            { rewrite VPN0. lia. }
+            { rewrite VPR0. lia. }
             unfold read_view. condtac; [apply bot_spec | ss].
-          - i. ss. rewrite LPER0. lia.
-          - i. ss. rewrite PER0. lia.
+          - i. ss. rewrite VPA0. lia.
+          - i. ss. rewrite VPC0. lia.
         }
       + i. revert TS. funtac; cycle 1.
         { i. rewrite <- join_l. eapply NFWD; eauto. }
         i. subst. unfold read_view. condtac; ss.
         * rewrite <- join_l. eapply NFWD; eauto. inversion e0. inversion e. ss.
         * viewtac; rewrite <- join_r; ss.
-      + rewrite VRNVPN. apply join_l.
+      + rewrite VRNVPR. apply join_l.
       + apply join_r.
     - inversion WRITABLE.
       econs; viewtac; rewrite <- ? TS0, <- ? TS1.
@@ -743,8 +742,8 @@ Section Local.
           { exfalso. apply c0. ss. }
         * funtac. specialize (MAX x0). inv MAX. unfold Order.le in TS. lia.
         * funtac. specialize (MAX x0). inv MAX. unfold Order.le in TS. lia.
-        * i. ss. funtac. rewrite LPER0. specialize (MAX x0). inv MAX. unfold Order.le in TS. lia.
-        * i. ss. funtac. rewrite PER0. specialize (MAX x0). inv MAX. unfold Order.le in TS. lia.
+        * i. ss. funtac. rewrite VPA0. specialize (MAX x0). inv MAX. unfold Order.le in TS. lia.
+        * i. ss. funtac. rewrite VPC0. specialize (MAX x0). inv MAX. unfold Order.le in TS. lia.
       + i. eapply NFWD; eauto.
         rewrite fun_add_spec in TS. eqvtac.
         rewrite MSG in MSG0. inv MSG0. ss.
@@ -779,14 +778,14 @@ Section Local.
         * rewrite fun_add_spec. condtac; ss; cycle 1.
           { exfalso. apply c. ss. }
           viewtac. specialize (MAX x0). inv MAX. unfold Order.le in TS. lia.
-        * i. ss. funtac. rewrite LPER0. specialize (MAX x0). inv MAX. unfold Order.le in TS. lia.
+        * i. ss. funtac. rewrite VPA0. specialize (MAX x0). inv MAX. unfold Order.le in TS. lia.
         * i. ss. funtac. viewtac.
-          { rewrite PER0. specialize (MAX x0). inv MAX. unfold Order.le in TS. lia. }
-          rewrite LPER0. specialize (MAX x0). inv MAX. unfold Order.le in TS. lia.
+          { rewrite VPC0. specialize (MAX x0). inv MAX. unfold Order.le in TS. lia. }
+          rewrite VPA0. specialize (MAX x0). inv MAX. unfold Order.le in TS. lia.
       + i. rewrite <- join_l. eapply NFWD; eauto.
         rewrite fun_add_spec in TS. eqvtac.
         rewrite MSG in MSG0. inv MSG0. ss.
-      + rewrite VRNVPN. apply join_l.
+      + rewrite VRNVPR. apply join_l.
       + apply join_r.
     - exploit FWDVIEW; eauto.
       { eapply Memory.read_wf. eauto. }
@@ -822,17 +821,17 @@ Section Local.
             { rewrite VRN0. lia. }
             unfold read_view. condtac; [apply bot_spec | ss].
           - viewtac.
-            { rewrite VPN0. lia. }
+            { rewrite VPR0. lia. }
             unfold read_view. condtac; [apply bot_spec | ss].
-          - i. ss. rewrite LPER0. lia.
-          - i. ss. rewrite PER0. lia.
+          - i. ss. rewrite VPA0. lia.
+          - i. ss. rewrite VPC0. lia.
         }
       + i. revert TS. funtac; cycle 1.
         { i. rewrite <- join_l. eapply NFWD; eauto. }
         i. subst. unfold read_view. condtac; ss.
         * rewrite <- join_l. eapply NFWD; eauto. inversion e0. inversion e. ss.
         * viewtac; rewrite <- join_r; ss.
-      + rewrite VRNVPN. apply join_l.
+      + rewrite VRNVPR. apply join_l.
       + apply join_r.
     - econs; viewtac.
       + inv COHMAX0. ss.
@@ -843,7 +842,7 @@ Section Local.
         * viewtac. specialize (MAX0 x). inv MAX0. unfold Order.le in *. lia.
         * i. viewtac.
       + i. rewrite <- join_l. eapply NFWD; eauto.
-      + rewrite VRNVPN. apply join_l.
+      + rewrite VRNVPR. apply join_l.
       + apply join_r.
     - econs; viewtac.
       + inv COHMAX0. ss.
@@ -851,7 +850,7 @@ Section Local.
       + inv COHMAX. inv COHMAX0. inv COHMAX1. econs; s; eauto.
         * viewtac. specialize (MAX0 x). inv MAX0. unfold Order.le in *. lia.
         * i. viewtac.
-      + rewrite VRNVPN. apply join_l.
+      + rewrite VRNVPR. apply join_l.
     - econs; viewtac.
       + i. viewtac. inv COHMAX0. ss.
       + i. viewtac. inv COHMAX0. ss.
@@ -860,11 +859,11 @@ Section Local.
           specialize (MAX0 x). inv MAX0. unfold Order.le in *. lia.
         * i. viewtac.
           specialize (MAX0 x). inv MAX0. unfold Order.le in *. lia.
-      + i. rewrite LPERCL at 1; eauto. viewtac. unfold ifc. repeat condtac; ss.
+      + i. rewrite VPACL at 1; eauto. viewtac. unfold ifc. repeat condtac; ss.
         * exploit Loc.cl_trans; eauto. rewrite X0. ss.
         * apply Loc.cl_sym in X0. exploit Loc.cl_trans; try exact CL; eauto.
           intro Z. apply Loc.cl_sym in Z. rewrite X in Z. ss.
-      + i. rewrite PERCL at 1; eauto. viewtac. unfold ifc. repeat condtac; ss.
+      + i. rewrite VPCCL at 1; eauto. viewtac. unfold ifc. repeat condtac; ss.
         * exploit Loc.cl_trans; eauto. rewrite X0. ss.
         * apply Loc.cl_sym in X0. exploit Loc.cl_trans; try exact CL; eauto.
           intro Z. apply Loc.cl_sym in Z. rewrite X in Z. ss.
@@ -873,7 +872,7 @@ Section Local.
       + inv COHMAX. inv COHMAX0. econs; s; eauto. i. viewtac.
         inv COHMAX_CL. unfold ifc. condtac; [|apply bot_spec].
         specialize (MAX x0). inv MAX. unfold Order.le in *. ss.
-      + i. rewrite LPERCL at 1; eauto. unfold ifc. repeat condtac; ss.
+      + i. rewrite VPACL at 1; eauto. unfold ifc. repeat condtac; ss.
         * exploit Loc.cl_trans; eauto. rewrite X0. ss.
         * apply Loc.cl_sym in X0. exploit Loc.cl_trans; try exact CL; eauto.
           intro Z. apply Loc.cl_sym in Z. rewrite X in Z. ss.
@@ -925,23 +924,23 @@ Section Local.
             { rewrite VRN0. lia. }
             unfold read_view. condtac; [apply bot_spec | ss].
           - viewtac.
-            { rewrite VPN0. lia. }
+            { rewrite VPR0. lia. }
             unfold read_view. condtac; [apply bot_spec | ss].
-          - i. ss. rewrite LPER0. lia.
-          - i. ss. rewrite PER0. lia.
+          - i. ss. rewrite VPA0. lia.
+          - i. ss. rewrite VPC0. lia.
         }
       + i. revert TS. funtac; cycle 1.
         { i. rewrite <- join_l. eapply NFWD; eauto. }
         i. subst. unfold read_view. condtac; ss.
         * rewrite <- join_l. eapply NFWD; eauto. inversion e0. inversion e. ss.
         * viewtac; rewrite <- join_r; ss.
-      + rewrite VRNVPN. apply join_l.
+      + rewrite VRNVPR. apply join_l.
       + apply join_r.
     - inversion MEM. subst. econs; try rewrite app_length; viewtac; ss.
       all: try by lia.
       + i. funtac; try rewrite COH; lia.
-      + i. rewrite LPER. lia.
-      + i. rewrite PER. lia.
+      + i. rewrite VPA. lia.
+      + i. rewrite VPC. lia.
       + i. funtac; cycle 1.
         { apply wf_fwdbank_mon. specialize (FWDBANK loc). ss. }
         inversion e. subst. econs.
@@ -970,8 +969,8 @@ Section Local.
     - inversion MEM. subst. econs; try rewrite app_length; viewtac; ss.
       all: try by lia.
       + i. funtac; try rewrite COH; lia.
-      + i. rewrite LPER. lia.
-      + i. viewtac; [rewrite PER|rewrite LPER]; lia.
+      + i. rewrite VPA. lia.
+      + i. viewtac; [rewrite VPC|rewrite VPA]; lia.
       + i. funtac; cycle 1.
         { apply wf_fwdbank_mon. specialize (FWDBANK loc). ss. }
         inversion e. subst. econs.
@@ -997,7 +996,7 @@ Section Local.
         eapply Memory.get_msg_snoc_inv in MSG. revert MSG. funtac.
         * i. des; [lia |]. inv MSG0. ss.
         * i. rewrite <- join_l. des; [eapply NFWD; eauto |]. inv MSG0. ss.
-      + rewrite VRNVPN. apply join_l.
+      + rewrite VRNVPR. apply join_l.
       + apply join_r.
     - exploit FWDVIEW; eauto.
       { eapply Memory.read_wf. eauto. }
@@ -1033,17 +1032,17 @@ Section Local.
             { rewrite VRN0. lia. }
             unfold read_view. condtac; [apply bot_spec | ss].
           - viewtac.
-            { rewrite VPN0. lia. }
+            { rewrite VPR0. lia. }
             unfold read_view. condtac; [apply bot_spec | ss].
-          - i. ss. rewrite LPER0. lia.
-          - i. ss. rewrite PER0. lia.
+          - i. ss. rewrite VPA0. lia.
+          - i. ss. rewrite VPC0. lia.
         }
       + i. revert TS. funtac; cycle 1.
         { i. rewrite <- join_l. eapply NFWD; eauto. }
         i. subst. unfold read_view. condtac; ss.
         * rewrite <- join_l. eapply NFWD; eauto. inversion e0. inversion e. ss.
         * viewtac; rewrite <- join_r; ss.
-      + rewrite VRNVPN. apply join_l.
+      + rewrite VRNVPR. apply join_l.
       + apply join_r.
     - econs; viewtac.
       + inv COHMAX0. ss.
@@ -1054,7 +1053,7 @@ Section Local.
         * viewtac. specialize (MAX0 x). inv MAX0. unfold Order.le in *. lia.
         * i. viewtac.
       + i. rewrite <- join_l. eapply NFWD; eauto.
-      + rewrite VRNVPN. apply join_l.
+      + rewrite VRNVPR. apply join_l.
       + apply join_r.
     - econs; viewtac.
       + inv COHMAX0. ss.
@@ -1062,7 +1061,7 @@ Section Local.
       + inv COHMAX. inv COHMAX0. inv COHMAX1. econs; s; eauto.
         * viewtac. specialize (MAX0 x). inv MAX0. unfold Order.le in *. lia.
         * i. viewtac.
-      + rewrite VRNVPN. apply join_l.
+      + rewrite VRNVPR. apply join_l.
     - econs; viewtac.
       + i. viewtac. inv COHMAX0. ss.
       + i. viewtac. inv COHMAX0. ss.
@@ -1071,11 +1070,11 @@ Section Local.
           specialize (MAX0 x). inv MAX0. unfold Order.le in *. lia.
         * i. viewtac.
           specialize (MAX0 x). inv MAX0. unfold Order.le in *. lia.
-      + i. rewrite LPERCL at 1; eauto. viewtac. unfold ifc. repeat condtac; ss.
+      + i. rewrite VPACL at 1; eauto. viewtac. unfold ifc. repeat condtac; ss.
         * exploit Loc.cl_trans; eauto. rewrite X0. ss.
         * apply Loc.cl_sym in X0. exploit Loc.cl_trans; try exact CL; eauto.
           intro Z. apply Loc.cl_sym in Z. rewrite X in Z. ss.
-      + i. rewrite PERCL at 1; eauto. viewtac. unfold ifc. repeat condtac; ss.
+      + i. rewrite VPCCL at 1; eauto. viewtac. unfold ifc. repeat condtac; ss.
           * exploit Loc.cl_trans; eauto. rewrite X0. ss.
           * apply Loc.cl_sym in X0. exploit Loc.cl_trans; try exact CL; eauto.
             intro Z. apply Loc.cl_sym in Z. rewrite X in Z. ss.
@@ -1084,7 +1083,7 @@ Section Local.
       + inv COHMAX. inv COHMAX0. econs; s; eauto. i. viewtac.
         inv COHMAX_CL. unfold ifc. condtac; [|apply bot_spec].
         specialize (MAX x0). inv MAX. unfold Order.le in *. ss.
-      + i. rewrite LPERCL at 1; eauto. unfold ifc. repeat condtac; ss.
+      + i. rewrite VPACL at 1; eauto. unfold ifc. repeat condtac; ss.
         * exploit Loc.cl_trans; eauto. rewrite X0. ss.
         * apply Loc.cl_sym in X0. exploit Loc.cl_trans; try exact CL; eauto.
           intro Z. apply Loc.cl_sym in Z. rewrite X in Z. ss.
@@ -1188,8 +1187,8 @@ Section ExecUnit.
     econs; eauto.
     all: try rewrite List.app_length; s; try lia.
     - i. rewrite COH. lia.
-    - i. rewrite LPER. lia.
-    - i. rewrite PER. lia.
+    - i. rewrite VPA. lia.
+    - i. rewrite VPC. lia.
     - i. destruct (FWDBANK loc0). des. econs; esplits; ss.
       apply Memory.read_mon; eauto.
     - i. revert IN. rewrite Promises.set_o. condtac.
@@ -1540,8 +1539,8 @@ Module Machine.
       inv LOCAL. econs; eauto.
       all: try rewrite List.app_length; s; try lia.
       + i. rewrite COH. lia.
-      + i. rewrite LPER. lia.
-      + i. rewrite PER. lia.
+      + i. rewrite VPA. lia.
+      + i. rewrite VPC. lia.
       + i. destruct (FWDBANK loc0). des. econs; esplits; ss.
         apply Memory.read_mon; eauto.
       + i. exploit PROMISES; eauto. lia.
@@ -1602,8 +1601,8 @@ Module Machine.
         * i. rewrite COH. rewrite app_length. lia.
         * rewrite app_length. lia.
         * rewrite app_length. lia.
-        * i. rewrite LPER. rewrite app_length. lia.
-        * i. rewrite PER. rewrite app_length. lia.
+        * i. rewrite VPA. rewrite app_length. lia.
+        * i. rewrite VPC. rewrite app_length. lia.
         * i. apply Local.wf_fwdbank_mon. ss.
         * i. exploit PROMISES; eauto. rewrite List.app_length. lia.
         * i. apply Memory.get_msg_snoc_inv in MSG. des.
@@ -1616,8 +1615,8 @@ Module Machine.
         * i. rewrite COH. rewrite app_length. lia.
         * rewrite app_length. lia.
         * rewrite app_length. lia.
-        * i. rewrite LPER. rewrite app_length. lia.
-        * i. rewrite PER. rewrite app_length. lia.
+        * i. rewrite VPA. rewrite app_length. lia.
+        * i. rewrite VPC. rewrite app_length. lia.
         * i. apply Local.wf_fwdbank_mon. ss.
         * i. exploit PROMISES; eauto. rewrite List.app_length. lia.
         * i. apply Memory.get_msg_snoc_inv in MSG. des.
@@ -1715,7 +1714,7 @@ Module Machine.
       ts
       (TS: Memory.read loc ts m.(mem) = Some val)
       (LATEST: IdMap.Forall (fun _ sl =>
-                 Memory.latest loc ts ((snd sl).(Local.per) loc).(View.ts) m.(mem))
+                 Memory.latest loc ts ((snd sl).(Local.vpc) loc).(View.ts) m.(mem))
                  m.(tpool))
   .
   Hint Constructors persisted_loc.

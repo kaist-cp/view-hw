@@ -611,7 +611,7 @@ Proof.
   - destruct t; simtac. ss.
 Qed.
 
-Lemma sim_traces_valid_per
+Lemma sim_traces_valid_vpc
       p trs atrs ws rs fs covs vexts
       m ex smem
       (STEP: Machine.pf_exec p m)
@@ -642,7 +642,7 @@ Lemma sim_traces_valid_per
       <<SL: IdMap.find tid m.(Machine.tpool) = Some sl>> /\
       <<MSG: Memory.get_msg ((v_gen vexts) eid) m.(Machine.mem) = Some msg>> /\
       msg.(Msg.loc) = loc /\
-      Time.le ((v_gen vexts) eid) ((snd sl).(Local.per) loc).(View.ts).
+      Time.le ((v_gen vexts) eid) ((snd sl).(Local.vpc) loc).(View.ts).
 Proof.
   i. destruct eid as [tid iid]. obtac.
   generalize EID0. unfold Execution.label. s. rewrite PRE.(Valid.LABELS), IdMap.map_spec.
@@ -679,7 +679,7 @@ Proof.
     { s. instantiate (1 := length tr'0). lia. }
     all: try rewrite lastn_all; s; eauto; try lia.
     intro TH'.
-    eapply TH'.(LC).(PER). econs; eauto.
+    eapply TH'.(LC).(VPC). econs; eauto.
     left. econs. split; simtac.
     econs; eauto. apply List.nth_error_Some. ss. rewrite EID2. ss.
   - (* flushopt *)
@@ -703,7 +703,7 @@ Proof.
     { s. instantiate (1 := length tr'0). lia. }
     all: try rewrite lastn_all; s; eauto; try lia.
     intro TH'.
-    eapply TH'.(LC).(PER). econs; eauto.
+    eapply TH'.(LC).(VPC). econs; eauto.
     right. econs. split.
     { right. simtac. }
     simtac. econs; eauto. apply List.nth_error_Some. ss. rewrite EID3. ss.
@@ -738,7 +738,7 @@ Proof.
   ii. generalize (PMEM loc). intro X. inv X.
   exploit Memory.read_get_msg; eauto. i. des.
   - econs; eauto. i. inversion PEID.
-    exploit sim_traces_valid_per; eauto. i. des.
+    exploit sim_traces_valid_vpc; eauto. i. des.
     specialize (LATEST tid sl). eapply LATEST in SL.
     unfold Memory.get_msg in MSG. destruct (v_gen vexts eid); ss. eapply SL; try exact MSG; eauto.
     subst. unfold Time.bot. lia.
@@ -766,7 +766,7 @@ Proof.
     { econs 2. ss. }
     exfalso.
     exploit sim_traces_vext_co; eauto; try by (subst; ss). i.
-    exploit sim_traces_valid_per; eauto with tso. i. des.
+    exploit sim_traces_valid_vpc; eauto with tso. i. des.
     move LATEST at bottom. eapply LATEST in SL.
     unfold Memory.get_msg in MSG. destruct (v_gen vexts eid0); ss.
     eapply SL; try exact MSG; eauto.
