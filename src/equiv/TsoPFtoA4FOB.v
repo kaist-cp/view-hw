@@ -134,13 +134,13 @@ Proof.
       obtac. destruct l2; ss; congr.
     - inv H1. des. inv H.
       + (* U U R; po; FO *)
-        obtac. rewrite L.(LC).(VPN); ss.
+        obtac. rewrite L.(LC).(VPR); ss.
         * rewrite <- join_r. unfold ifc. rewrite Loc.cl_refl. s. apply join_r.
-        * econs; eauto. unfold sim_local_vpn. left. econs. econs; eauto. simtac.
+        * econs; eauto. unfold sim_local_vpr. left. econs. econs; eauto. simtac.
       + (* W; po; [MF U SF]; po; FO *)
-        rewrite L.(LC).(VPN); ss.
+        rewrite L.(LC).(VPR); ss.
         * rewrite <- join_r. unfold ifc. rewrite Loc.cl_refl. s. apply join_r.
-        * econs; eauto. unfold sim_local_vpn. right. obtac; simtac; [left|right]; simtac.
+        * econs; eauto. unfold sim_local_vpr. right. obtac; simtac; [left|right]; simtac.
     - obtac. inv H3. obtac. labtac.
       destruct l0; ss. eqvtac. rewrite H3 in *.
       unfold ifc. rewrite Loc.cl_refl. s.
@@ -171,8 +171,8 @@ Proof.
           i. exploit L'.(PO_FL); try exact N; eauto.
           repeat condtac; ss.
         }
-        generalize L.(LC).(LPER). intro LPER. specialize (LPER (ValA.val vloc)).
-        rewrite LPER; [apply join_l|].
+        generalize L.(LC).(VPA). intro VPA. specialize (VPA (ValA.val vloc)).
+        rewrite VPA; [apply join_l|].
         econs; ss. left. simtac. econs; eauto.
         ss. apply Loc.cl_sym. ss.
   }

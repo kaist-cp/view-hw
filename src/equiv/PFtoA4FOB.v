@@ -130,6 +130,6 @@ Proof.
       econs; eauto. destruct l2; ss; eqvtac; apply Loc.cl_sym; ss.
   - (* W U R; po; [dmb.sy U dsb.sy]; po; FO *)
     obtac.  rewrite <- join_r.
-    rewrite L.(LC).(VPN); ss.
+    rewrite L.(LC).(VPR); ss.
     econs; eauto. econs. simtac.
 Qed.

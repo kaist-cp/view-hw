@@ -412,7 +412,7 @@ Proof.
     destruct l; ss; eapply Loc.cl_trans; eauto; eapply Loc.cl_sym; ss.
 Qed.
 
-Definition sim_local_vpn ex :=
+Definition sim_local_vpr ex :=
   (⦗ex.(Execution.label_is) Label.is_kinda_read⦘ ⨾
    Execution.po) ∪
 
@@ -422,9 +422,9 @@ Definition sim_local_vpn ex :=
     ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_sfence)⦘) ⨾
    Execution.po).
 
-Lemma sim_local_vpn_step ex:
-  sim_local_vpn ex =
-  (sim_local_vpn ex ∪
+Lemma sim_local_vpr_step ex:
+  sim_local_vpr ex =
+  (sim_local_vpr ex ∪
    ((⦗ex.(Execution.label_is) Label.is_kinda_read⦘) ∪
 
     (⦗ex.(Execution.label_is) (Label.is_access)⦘ ⨾
@@ -433,7 +433,7 @@ Lemma sim_local_vpn_step ex:
       ⦗ex.(Execution.label_is) (Label.is_barrier_c Barrier.is_sfence)⦘)))) ⨾
   Execution.po_adj.
 Proof.
-  unfold sim_local_vpn. rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
+  unfold sim_local_vpr. rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
   rewrite Execution.po_po_adj at 1 3.
   rewrite (clos_refl_union Execution.po), union_seq, eq_seq.
   rewrite ? (seq_union' (Execution.po ⨾ Execution.po_adj) Execution.po_adj), ? seq_assoc, ? union_assoc.
@@ -448,20 +448,20 @@ Proof.
       eauto 10 using union_l, union_r.
 Qed.
 
-Definition sim_local_lper ex loc :=
+Definition sim_local_vpa ex loc :=
   (⦗ex.(Execution.label_is) (Label.is_flushing_cl loc)⦘ ⨾
    Execution.po) ∪
   (⦗ex.(Execution.label_is) (Label.is_flushopting_cl loc)⦘ ⨾
    Execution.po).
 
-Lemma sim_local_lper_step ex loc:
-  sim_local_lper ex loc =
-  (sim_local_lper ex loc ∪
+Lemma sim_local_vpa_step ex loc:
+  sim_local_vpa ex loc =
+  (sim_local_vpa ex loc ∪
    (⦗ex.(Execution.label_is) (Label.is_flushing_cl loc)⦘ ∪
     ⦗ex.(Execution.label_is) (Label.is_flushopting_cl loc)⦘)) ⨾
   Execution.po_adj.
 Proof.
-  unfold sim_local_lper.
+  unfold sim_local_vpa.
   rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
   rewrite Execution.po_po_adj at 1 2.
   rewrite (clos_refl_union Execution.po).
@@ -481,24 +481,24 @@ Proof.
       eauto 10 using union_l, union_r.
 Qed.
 
-Definition sim_local_per ex loc :=
+Definition sim_local_vpc ex loc :=
   (⦗ex.(Execution.label_is) (Label.is_flushing_cl loc)⦘ ⨾
    Execution.po) ∪
 
-  (sim_local_lper ex loc ⨾
+  (sim_local_vpa ex loc ⨾
    ⦗ex.(Execution.label_is) (Label.is_persist_barrier)⦘ ⨾
    Execution.po).
 
-Lemma sim_local_per_step ex loc:
-  sim_local_per ex loc =
-  (sim_local_per ex loc ∪
+Lemma sim_local_vpc_step ex loc:
+  sim_local_vpc ex loc =
+  (sim_local_vpc ex loc ∪
    ((⦗ex.(Execution.label_is) (Label.is_flushing_cl loc)⦘) ∪
 
-    (sim_local_lper ex loc ⨾
+    (sim_local_vpa ex loc ⨾
      ⦗ex.(Execution.label_is) (Label.is_persist_barrier)⦘))) ⨾
   Execution.po_adj.
 Proof.
-  unfold sim_local_per.
+  unfold sim_local_vpc.
   rewrite ? (union_seq' Execution.po_adj), ? seq_assoc, ? union_assoc.
   rewrite Execution.po_po_adj at 1 2.
   rewrite (clos_refl_union Execution.po).

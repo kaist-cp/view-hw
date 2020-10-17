@@ -977,11 +977,11 @@ Module Execution.
   (* let aob = [range(rmw)]; rfi; [A | Q] *)
 
   (* let bob = *)
-  (* 	| [R|W]; po; [dmb.full]; po; [R|W] *)
+  (* 	| [R|W]; po; [(dmb|dsb).full]; po; [R|W] *)
   (* 	| [L]; po; [A] *)
-  (* 	| [R]; po; [dmb.ld]; po; [R|W] *)
+  (* 	| [R]; po; [(dmb|dsb).ld]; po; [R|W] *)
   (* 	| [A | Q]; po; [R|W] *)
-  (* 	| [W]; po; [dmb.st]; po; [W] *)
+  (* 	| [W]; po; [(dmb|dsb).st]; po; [W] *)
   (* 	| [R|W]; po; [L] *)
 
   (* let fob = *)
