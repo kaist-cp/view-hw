@@ -141,16 +141,40 @@ Proof.
         rewrite L.(LC).(VPN); ss.
         * rewrite <- join_r. unfold ifc. rewrite Loc.cl_refl. s. apply join_r.
         * econs; eauto. unfold sim_local_vpn. right. obtac; simtac; [left|right]; simtac.
-    - (* W; po_cl; FO *)
-      obtac. inv H. obtac. labtac. destruct l3; ss. eqvtac. rewrite H2 in *.
+    - obtac. inv H3. obtac. labtac.
+      destruct l0; ss. eqvtac. rewrite H3 in *.
       unfold ifc. rewrite Loc.cl_refl. s.
-      generalize L.(LC).(COH_CL). intro Z. specialize (Z (ValA.val vloc)). des; ss.
-      rewrite COH_CL.
-      { rewrite <- join_r, <- join_l. inv COHMAX_CL.
-        specialize (MAX mloc_cl). inv MAX. unfold le in *.
-        rewrite CL0 in TS. ss.
-      }
-      econs; ss. econs. simtac. econs; eauto. ss. apply Loc.cl_sym. ss.
+      inv H.
+      + (* W; po_cl; FO *)
+        generalize L.(LC).(COH_CL). intro Z. specialize (Z (ValA.val vloc)). des; ss.
+        rewrite COH_CL.
+        { rewrite <- join_r, <- join_l. inv COHMAX_CL.
+          specialize (MAX mloc_cl). inv MAX. unfold le in *.
+          rewrite CL0 in TS. ss.
+        }
+        econs; ss. econs. simtac. econs; eauto.
+        labtac. eqvtac. apply Loc.cl_sym. ss.
+      + (* W; po; FL; po_cl; FO *)
+        obtac. destruct l0; ss. labtac. eqvtac.
+        etrans.
+        { instantiate (1 := v_gen vexts x2).
+          destruct x. destruct x2.
+          inv H. inv H1. ss. subst.
+          repeat rewrite EX2.(XVEXT); s; try by rewrite List.app_length; s; lia.
+          repeat condtac; ss.
+          { apply Nat.eqb_eq in X1. lia. }
+          { apply Nat.eqb_eq in X2. lia. }
+          exploit EX2.(LABELS); try exact EID0; eauto; ss.
+          { rewrite List.app_length. s. lia. }
+          exploit EX2.(LABELS); eauto; ss.
+          { rewrite List.app_length. s. lia. }
+          i. exploit L'.(PO_FL); try exact N; eauto.
+          repeat condtac; ss.
+        }
+        generalize L.(LC).(LPER). intro LPER. specialize (LPER (ValA.val vloc)).
+        rewrite LPER; [apply join_l|].
+        econs; ss. left. simtac. econs; eauto.
+        ss. apply Loc.cl_sym. ss.
   }
   { (* flush *)
     exploit sim_trace_sim_th; try exact SIMTR; eauto. intro TH_tmp.

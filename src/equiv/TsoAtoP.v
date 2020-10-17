@@ -1698,7 +1698,7 @@ Proof.
       apply sim_view_join.
       * hexploit label_mem_of_ex; eauto. i. des.
         econs 2; eauto.
-        { right. econs; ss. simtac. econs; eauto. apply Loc.cl_sym. ss. }
+        { right. econs; ss. right. simtac. econs; eauto. ss. apply Loc.cl_sym. ss. }
         inv COH_CL0.
         { rewrite VIEW0. apply bot_spec. }
         etrans; eauto.
@@ -1717,7 +1717,7 @@ Proof.
         left. simtac.
       * hexploit label_mem_of_ex; eauto. i. des.
         econs 2; eauto.
-        { right. econs; ss. simtac. econs; eauto. apply Loc.cl_sym. ss. }
+        { right. econs; ss. right. simtac. econs; eauto. ss. apply Loc.cl_sym. ss. }
         generalize (SIM_LOCAL.(VPN)). intro Z. inv Z.
         { rewrite VIEW0. apply bot_spec. }
         etrans; eauto. eapply view_of_eid_ob; eauto.
@@ -1786,8 +1786,17 @@ Proof.
       eapply sim_view_le; [|exact SIM_LOCAL.(VPN)]. eauto.
     + i. rewrite List.app_length, Nat.add_1_r.
       rewrite sim_local_lper_step. rewrite inverse_step.
-      rewrite inverse_union.
-      eapply sim_view_le; [|exact (SIM_LOCAL.(LPER) loc)]. eauto.
+      rewrite inverse_union. apply sim_view_join.
+      { eapply sim_view_le; [|exact (SIM_LOCAL.(LPER) loc)]. eauto. }
+      unfold ifc. condtac; [|econs]; ss.
+      hexploit label_mem_of_ex; eauto. i. des.
+      econs 2; eauto.
+      { right. econs; ss. left. simtac. econs; eauto. ss. apply Loc.cl_sym. ss. }
+      inv VWN0.
+      { rewrite VIEW0. apply bot_spec. }
+      etrans; eauto. eapply view_of_eid_ob; eauto.
+      inv EID. inv REL. obtac.
+      left. right. repeat left. simtac.
     + i. rewrite List.app_length, Nat.add_1_r.
       rewrite sim_local_per_step. rewrite inverse_step.
       rewrite inverse_union. apply sim_view_join.
@@ -2038,7 +2047,8 @@ Proof.
     - destruct ts; ss.
       unfold Memory.get_msg in MSG. ss. destruct msg. ss. subst.
       apply Promises.promises_from_mem_lookup in MSG. auto.
-    - econs; ss; [|apply bot_spec]. econs; ss. instantiate (1 := Loc.default). econs; ss.
+    - econs; viewtac; try by i; apply bot_spec.
+      econs; ss. instantiate (1 := Loc.default). econs; ss.
     - rewrite TS. ss.
   }
   { apply AExecUnit.wf_init. }
@@ -2112,6 +2122,5 @@ Proof.
     inv EID. inv REL1; obtac.
     + esplits; eauto with tso.
       i. obtac. labtac. destruct l1; ss.
-    + inv H0. obtac.
-      esplits; eauto with tso.
+    + inv H0; obtac; esplits; eauto with tso.
 Qed.
