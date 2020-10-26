@@ -1053,7 +1053,7 @@ Module Execution.
   (* irrefl po; fr as cowr *)
   (* acyclic ob as external *)
 
-  (* let per = [D]; pf; ([FL] U ([FO]; po; [MF U SF U U])) *)
+  (* let per = pf; ([FL] U ([FO]; po; [MF U SF U U])) *)
 
   (* P = dom(per) *)
   (* forall l, exists w, M(l)=Val(w) /\ (P x {w})&Loc <= co? *)

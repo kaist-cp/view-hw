@@ -994,7 +994,7 @@ Module Execution.
   (* acyclic ob as external *)
   (* empty rmw & (fre; coe) as atomic *)
 
-  (* let per = [D]; pf; [FO]; po; [dsb.full] *)
+  (* let per = pf; [FO]; po; [dsb.full] *)
 
   (* P = dom(per) *)
   (* forall l, exists w, M(l)=Val(w) /\ (P x {w})&Loc <= co? *)
