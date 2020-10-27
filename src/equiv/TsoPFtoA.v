@@ -523,6 +523,7 @@ Proof.
       destruct l0; ss; congr.
     + exploit CO2; eauto. i. des. obtac.
       destruct l; ss; congr.
+    + exploit PF2; eauto. i. des. obtac. labtac.
     + obtac; cycle 1.
       { destruct l; ss; congr. }
       exploit CO2; eauto. i. des. obtac.
@@ -530,13 +531,15 @@ Proof.
   - (* write *)
     left.
     des_union; [exploit FRE | exploit sim_traces_vext_co |..]; eauto with tso.
-    exploit Execution.fob_persist; eauto. intro FEID.
-    inv FEID. rewrite EID in EID0. simplify. ss.
+    + exploit Execution.fob_persist; eauto. intro FEID.
+      inv FEID. labtac.
+    + exploit PF2; eauto. i. des. obtac. labtac.
   - (* update *)
     left.
     des_union; [exploit FRE | exploit sim_traces_vext_co |..]; eauto with tso.
-    exploit Execution.fob_persist; eauto. intro FEID.
-    inv FEID. rewrite EID in EID0. simplify. ss.
+    + exploit Execution.fob_persist; eauto. intro FEID.
+      inv FEID. labtac.
+    + exploit PF2; eauto. i. des. obtac. labtac.
   - (* flush *)
     repeat right.
     des_union; eauto with tso.
@@ -546,6 +549,7 @@ Proof.
       destruct l0; ss; congr.
     + exploit CO2; eauto. i. des. obtac.
       destruct l; ss; congr.
+    + exploit sim_traces_vext_pf; eauto with tso.
     + obtac; cycle 1.
       { destruct l; ss; congr. }
       exploit CO2; eauto. i. des. obtac.
@@ -560,6 +564,7 @@ Proof.
       destruct l0; ss; congr.
     + exploit CO2; eauto. i. des. obtac.
       destruct l; ss; congr.
+    + exploit sim_traces_vext_pf; eauto with tso.
     + obtac; cycle 1.
       { destruct l; ss; congr. }
       exploit CO2; eauto. i. des. obtac.
@@ -906,7 +911,7 @@ Proof.
     i. induction OB.
     + inversion H. inversion H1.
       exploit EXTERNAL; eauto with tso. i. des; eauto; cycle 1.
-      { right. exploit Valid.ob_persist_spec; eauto. i. des. eauto. }
+      { right. exploit Valid.ob_persist_spec; eauto. }
       right. splits; eauto.
       inversion x1. destruct l; ss.
       destruct (Label.is_persist l1) eqn:LAB.
@@ -975,8 +980,8 @@ Grab Existential Variables.
   exploit EXTERNAL; eauto. i. des.
   - inv x; lia.
   - inv x0. lia.
-  - obtac. destruct l; destruct l0; ss; congr.
-  - obtac. destruct l; destruct l0; ss; congr.
+  - obtac. labtac. destruct l0; ss.
+  - obtac. labtac. destruct l0; ss.
 }
 { (* corw *)
   eapply corw_irrefl; eauto.

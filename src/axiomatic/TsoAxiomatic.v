@@ -1047,7 +1047,7 @@ Module Execution.
       | ([U U R] U ([W]; po; [MF U SF])); po; [FO]
       | [W]; (po; [FL])?; po_cl; [FO]
   *)
-  (* let ob = obs | dob | bob | fob | fp *)
+  (* let ob = obs | dob | bob | fob | pf | fp *)
 
   (* irrefl po?; rf as corw *)
   (* irrefl po; fr as cowr *)
@@ -1183,7 +1183,7 @@ Module Execution.
      ⦗ex.(label_is) Label.is_flushopt⦘).
 
   Definition ob (ex:t): relation eidT :=
-    (obs ex) ∪ (dob ex) ∪ (bob ex) ∪ (fob ex) ∪ (fp ex).
+    (obs ex) ∪ (dob ex) ∪ (bob ex) ∪ (fob ex) ∪ (pf ex) ∪ (fp ex).
 
   Definition per (ex:t): relation eidT :=
     ex.(pf) ⨾
@@ -1441,10 +1441,10 @@ Module Valid.
     inv I. ss. subst.
     destruct (lt_eq_lt_dec iid2 iid1); ss.
     exfalso. eapply EX.(EXTERNAL). apply t_step_rt. esplits.
-    { left. left. left. left. right. eauto. }
+    { left. left. left. left. left. right. eauto. }
     exploit EX.(CO2); eauto. i. des. inv LABEL. inv LABEL0.
     destruct s.
-    + econs 1.  left. left. left. right. right. econs. esplits.
+    + econs 1.  left. left. left. left. right. right. econs. esplits.
       * econs; eauto with tso.
       * econs. esplits; cycle 1.
         { econs; eauto with tso. }
@@ -1484,8 +1484,8 @@ Module Valid.
     i. des; ss.
     { subst. apply po_irrefl in PO. inv PO. }
     exfalso. eapply EX.(EXTERNAL). apply t_step_rt. esplits.
-    - left. left. left. left. right. eauto.
-    - econs. left. left. left. right. right. econs. esplits.
+    - left. left. left. left. left. right. eauto.
+    - econs. left. left. left. left. right. right. econs. esplits.
       + econs; eauto with tso.
       + econs. esplits; eauto. econs; eauto with tso.
   Qed.
@@ -1560,10 +1560,10 @@ Module Valid.
       + exfalso. exploit EX.(EXTERNAL); eauto. instantiate (1 := (tid3, iid3)).
         apply t_step_rt. econs; eauto. esplits; [|etrans; [econs|econs]].
         * repeat left. econs; eauto with tso.
-        * left. left. left. right. left. econs. esplits.
+        * left. left. left. left. right. left. econs. esplits.
           -- econs; eauto with tso.
           -- econs. esplits; eauto. econs; eauto with tso.
-        * left. left. left. left. left. right. split; ss. right. econs.
+        * left. left. left. left. left. left. right. split; ss. right. econs.
           -- econs; eauto with tso.
           -- econs; eauto with tso. econs; eauto with tso.
       + inv LABEL0. rename eid2 into eid4. exploit EX.(CO1).
@@ -1572,10 +1572,10 @@ Module Valid.
         exfalso. exploit EX.(EXTERNAL); eauto. instantiate (1 := (tid3, iid3)).
         apply t_step_rt. econs; eauto. esplits; [|etrans; [econs|econs]].
         * repeat left. econs; eauto with tso.
-        * left. left. left. right. left. econs. esplits.
+        * left. left. left. left. right. left. econs. esplits.
           -- econs; eauto with tso.
           -- econs. esplits; eauto. econs; eauto with tso.
-        * left. left. left. left. left. right. split; ss. econs. econs. econs; eauto.
+        * left. left. left. left. left. left. right. split; ss. econs. econs. econs; eauto.
   Qed.
 
   Lemma coherence_rw
@@ -1603,10 +1603,10 @@ Module Valid.
       exfalso. eapply EX.(EXTERNAL). apply t_step_rt. esplits.
       { repeat left. econs; eauto with tso. }
       etrans.
-      + instantiate (1 := eid2). econs. left. left. left. right. left. econs. econs.
+      + instantiate (1 := eid2). econs. left. left. left. left. right. left. econs. econs.
         * econs; eauto with tso.
         * econs; eauto. econs; eauto. econs; eauto with tso.
-      + econs. left. left. left. left. right. eauto.
+      + econs. left. left. left. left. left. right. eauto.
   Qed.
 
   Lemma rf_inv_write
@@ -1634,17 +1634,12 @@ Module Valid.
     False.
   Proof.
     inv EID1. destruct l; ss. unfold co2, rf2 in *.
-    obtac; ss.
-    all: try by destruct l; ss; congr.
-    all: try by destruct l0; ss; congr.
-    - exploit RF2; eauto. i. des. inv WRITE. inv READ.
-      destruct l; ss. destruct l0; ss. congr. congr.
-      destruct l0; ss. congr. congr.
-    - exploit RF2; eauto. i. des.
-      inv READ. destruct l; ss; try congr.
-    - inv H0. destruct l1; ss; try congr.
-    - exploit CO2; eauto. i. des; obtac; destruct l; destruct l0; ss; congr.
-    - exploit PF2; eauto. i. des; obtac; destruct l; destruct l0; ss; congr.
+    obtac; labtac; ss.
+    - exploit RF2; eauto. i. des. obtac. labtac.
+    - exploit RF2; eauto. i. des. obtac. labtac.
+    - exploit CO2; eauto. i. des. obtac. labtac.
+    - exploit PF2; eauto. i. des. obtac. labtac.
+    - exploit PF2; eauto. i. des. obtac. labtac.
   Qed.
 
   Lemma ob_label
@@ -1667,8 +1662,9 @@ Module Valid.
     - exploit RF2. eauto. i. des. inv WRITE. inv READ.
       destruct l; ss. destruct l0; ss. congr. congr.
       destruct l0; ss. congr. congr.
-    - exploit CO2. eauto. i. des; obtac; destruct l; destruct l0; ss; congr.
-    - exploit PF2. eauto. i. des; obtac; destruct l; destruct l0; ss; congr.
+    - exploit CO2; eauto. i. des. obtac. congr.
+    - exploit PF2; eauto. i. des. obtac. congr.
+    - exploit PF2; eauto. i. des. obtac. congr.
   Qed.
 
   Lemma ob_cycle
@@ -1721,6 +1717,8 @@ Module Valid.
     - etrans; eauto.
     - exploit PF2; eauto. i. des.
       obtac. labtac.
+    - exploit PF2; eauto. i. des.
+      obtac. labtac.
   Qed.
 
   Lemma persist_ob_write
@@ -1728,6 +1726,7 @@ Module Valid.
         eid1 eid2
         (CO2: co2 ex)
         (RF2: rf2 ex)
+        (PF2: pf2 ex)
         (OB: Execution.ob ex eid1 eid2)
         (EID1: ex.(Execution.label_is) Label.is_persist eid1):
     ex.(Execution.label_is) Label.is_kinda_write eid2.
@@ -1741,6 +1740,8 @@ Module Valid.
       obtac. labtac. destruct l1; ss.
     - exploit CO2; eauto. i. des.
       obtac. labtac. destruct l1; ss.
+    - exploit PF2; eauto. i. des.
+      obtac. labtac. destruct l0; ss.
     - exploit CO2; eauto. i. des.
       obtac. simtac.
     - simtac.
@@ -1754,9 +1755,7 @@ Module Valid.
         (PF2: pf2 ex)
         (OB: Execution.ob ex eid1 eid2)
         (EID1: ex.(Execution.label_is) Label.is_persist eid2):
-    <<FOB: Execution.fob ex eid1 eid2>> /\
-    <<ACCESS: ex.(Execution.label_is) Label.is_access eid1>> /\
-    <<PO: Execution.po eid1 eid2>>.
+    <<ACCESS: ex.(Execution.label_is) Label.is_access eid1>>.
   Proof.
     inv OB; cycle 1.
     { obtac.
@@ -1765,12 +1764,11 @@ Module Valid.
       - destruct l; destruct l1; ss; congr.
     }
     inv H; cycle 1.
-    { split; eauto. obtac.
-      all: splits; [simtac | eauto].
-      all: try by etrans; eauto.
-      inv H; inv H2; ss. obtac.
-      etrans; eauto.
+    { exploit PF2; eauto. i. des.
+      obtac. econs; eauto with tso.
     }
+    inv H0; cycle 1.
+    { obtac; econs; eauto with tso. }
     obtac; labtac.
     all: try by destruct l1; ss.
     all: try by destruct l2; ss.
