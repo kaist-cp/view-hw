@@ -485,6 +485,7 @@ Proof.
         { destruct l; ss. congr. }
         exploit CO2; eauto. i. des. congr.
       * exploit CO2; eauto. i. des. congr.
+      * exploit PF2; eauto. i. des. obtac. labtac.
       * obtac; cycle 1.
         { destruct l; ss. congr. }
         exploit CO2; eauto. i. des. congr.
@@ -492,11 +493,13 @@ Proof.
       * exploit sim_traces_vext_co; eauto.
       * exploit Execution.fob_flushopt; eauto. intro Z. inv Z.
         destruct l; ss. congr.
+      * exploit PF2; eauto. i. des. obtac. labtac.
     + repeat right. rewrite ob_ob' in OB. des_union; eauto.
       * obtac; cycle 1.
         { destruct l; ss. congr. }
         exploit CO2; eauto. i. des. congr.
       * exploit CO2; eauto. i. des. congr.
+      * exploit sim_traces_vext_pf; eauto.
       * obtac; cycle 1.
         { destruct l; ss. congr. }
         exploit CO2; eauto. i. des. congr.
@@ -762,7 +765,7 @@ Proof.
   - clear INTERNAL'. i. induction OB.
     + inversion H. inversion H1.
       exploit EXTERNAL; eauto. i. des; eauto; cycle 1.
-      { right. exploit Valid.ob_persist_spec; eauto. i. des. eauto. }
+      { right. exploit Valid.ob_persist_spec; eauto. }
       right. splits; eauto.
       inversion x1. destruct l; ss.
       destruct (Label.is_flushopt l1) eqn:LAB.
