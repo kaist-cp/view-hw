@@ -18,6 +18,7 @@ Require Import PromisingArch.lib.Time.
 Require Import PromisingArch.lib.Lang.
 Require Import PromisingArch.promising.CommonPromising.
 Require Import PromisingArch.promising.TsoPromising.
+Require Import PromisingArch.equiv.TsoPtoPF.
 
 Set Implicit Arguments.
 
@@ -1016,4 +1017,17 @@ Proof.
     }
     i. des.
     esplits; try exact SIM2; eauto. etrans; eauto.
+Qed.
+
+Theorem promising_to_view
+        p m_pf smem
+        (EXEC: Machine.exec p m_pf)
+        (PMEM: Machine.persisted m_pf smem):
+  exists m_v,
+    <<EXEC_V: Machine.view_exec p m_v>> /\
+    <<EQUIV: Machine.equiv m_pf m_v>> /\
+    <<PMEM: Machine.persisted m_v smem>>.
+Proof.
+  apply promising_to_promising_pf in EXEC.
+  apply promising_pf_to_view; auto.
 Qed.
