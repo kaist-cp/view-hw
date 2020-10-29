@@ -1,10 +1,4 @@
-# Promising-ARM/RISC-V: a simpler and faster operational concurrency model
-
-Christopher Pulte, Jean Pichon-Pharabod, Jeehoon Kang, Sung-Hwan Lee, Chung-Kil Hur.
-
-40th annual ACM SIGPLAN conference on Programming Languages Design and Implementation ([PLDI 2019](https://pldi19.sigplan.org/)).
-
-Please visit the [project website](https://sf.snu.ac.kr/promising-arm-riscv/) for more information.
+# View-based Operational Models for Intel-x86 and ARMv8 Relaxed Persistency
 
 ## Build
 
@@ -37,40 +31,60 @@ Please visit the [project website](https://sf.snu.ac.kr/promising-arm-riscv/) fo
 ### Model
 
 - `lib` and `src/lib` contains libraries not necessarily related to
-  relaxed-memory concurrency.
+  relaxed-memory concurrency and persistency.
 
-- `src/lib/Lang.v`: Definition of assembly-like language and its interpretation
+- `src/lib/Lang.v`: Definition of assembly-like language and its interpretation for both x86 and ARMv8 (corresponding to the rules on Figure N) // TODO: 제출 전 figure 번호 확정
 
-- `src/promising/Promising.v`: Definition of Promising-ARM/RISC-V without
-  certification (corresponding to the rules on Figure 3)
+- `src/promising/TsoPromising.v`: Definition of Px86-view and Px86-prom (corresponding to the rules on Figure N) // TODO: 제출 전 figure 번호 확정
 
-- `src/axiomatic/Axiomatic.v`: Definition of Axiomatic
+- `src/axiomatic/TsoAxiomatic.v`: Definition of Px86-axiom (corresponding to the rules on Figure N) // TODO: 제출 전 figure 번호 확정
+
+- `src/promising/Promising.v`: Definition of PARMv8-view without
+  certification (corresponding to the rules on Figure N) // TODO: 제출 전 figure 번호 확정
+
+- `src/axiomatic/Axiomatic.v`: Definition of PARMv8-axiom (corresponding to the rules on Figure N) // TODO: 제출 전 figure 번호 확정
 
 - `src/lcertify`: Thread-local certification
 
 ### Results
 
-- Theorem 6.1: Equivalence between Promising-ARM/RISC-V and Axiomatic
+- Theorem N: Equivalence between Px86-prom and Px86-axiom // TODO: 제출 전 figure 번호 확정
+  + Theorem `axiomatic_to_promising` in `src/axiomatic/TsoAtoP.v`:
+    Px86-axiom refines Px86-prom.
+  + Theorem `promising_to_axiomatic` in `src/axiomatic/TsoPFtoA.v`:
+    Px86-prom refines Px86-axiom.
+    * `TsoPFtoA1.v`: construction of axiomatic execution from promising execution
+    * `TsoPFtoA2.v`, `TsoPFtoA3.v`: definitions and lemmas for main proof
+    * `TsoPFtoA4*.v`: proof for validity of constructed axiomatic execution
+      * `TsoPFtoA4SL.v`: simulation between promising and axiomatic execution
+      * `TsoPFtoA4OBR.v`, `TsoPFtoA4OBW.v`, `TsoPFtoA4FR.v`, `TsoPFtoA4FOB.v`, `TsoPFtoA4FP.v`: proof for "external" axiom
+  + Lemma N: Equivalence between Px86-prom and Px86-view // CHECK: 논문에는 Px86이 아니라 x86임 // TODO: 제출 전 figure 번호 확정
+    * Theorem `promising_to_view` in `src/axiomatic/TsoPFtoV.v`:
+      Px86-prom refines Px86-view.
+    * Theorem `view_to_promising` in `src/axiomatic/TsoVtoP.v`:
+      Px86-view refines Px86-prom.
+
+- Theorem N: Equivalence between PARMv8-view and PARMv8-axiom // TODO: 제출 전 figure 번호 확정
   + Theorem `axiomatic_to_promising` in `src/axiomatic/AtoP.v`:
-    Axiomatic refines Promising-ARM/RISC-V without certification.
+    PARMv8-axiom refines PARMv8-view without certification.
   + Theorem `promising_to_axiomatic` in `src/axiomatic/PFtoA.v`:
-    Promising-ARM/RISC-V without certification refines Axiomatic.
+    PARMv8-view without certification refines PARMv8-axiom.
     * `PFtoA1.v`: construction of axiomatic execution from promising execution
     * `PFtoA2.v`, `PFtoA3.v`: definitions and lemmas for main proof
     * `PFtoA4*.v`: proof for validity of constructed axiomatic execution
       * `PFtoA4SL.v`: simulation between promising and axiomatic execution
       * `PFtoA4OBR.v`, `PFtoA4OBW.v`, `PFtoA4FR.v`: proof for "external" axiom
       * `PFtoA4Atomic.v`: proof for "atomic" axiom
-  + Since Promising-ARM/RISC-V without certification is equivalent to
-    Promising-ARM/RISC-V by Theorem 6.2, Promising-ARM/RISC-V is equivalent to
-    Axiomatic.
+  + Equivalence between PARMv8-view and PARMv8-view without certification
+    + Theorem `certified_exec_equivalent` in `src/lcertify/CertifyComplete.v`:
+      PARMv8-view and PARMv8-view without certification are equivalent.
 
-- Theorem 6.2: Equivalence between Promising-ARM/RISC-V and Promising-ARM/RISC-V
-  without certification
+// TODO: 지움 (위에다 포함했음)
+- Equivalence between PARMv8-view and PARMv8-view without certification
   + Theorem `certified_exec_equivalent` in `src/lcertify/CertifyComplete.v`:
-    Promising-ARM/RISC-V and Promising-ARM/RISC-V without certification are
-    equivalent.
+    PARMv8-view and PARMv8-view without certification are equivalent.
 
+// TODO: 이 아래부터는 우리 컨트리뷰션 아님 (리드미에서 제거?)
 - Theorem 6.3: Deadlock freedom of Promising-RISC-V
   + Theorem `certified_deadlock_free` in `src/lcertify/CertifyProgressRiscV.v`:
     Promising-RISC-V is deadlock-free.
