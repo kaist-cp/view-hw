@@ -19,9 +19,6 @@ Require Import HahnRelationsBasic.
 Set Implicit Arguments.
 
 
-Axiom devil: False.
-Ltac admit := exfalso; clear; case devil.
-
 Ltac refl := reflexivity.
 Ltac congr := congruence.
 Ltac etrans := etransitivity.
