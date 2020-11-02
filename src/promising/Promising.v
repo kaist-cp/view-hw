@@ -664,7 +664,6 @@ Section Local.
     inv LC. econs; ss; try refl; i; try apply join_l.
     i. rewrite fun_add_spec. condtac; try refl.
     clear X. inv e. s.
-    (* TODO: fulfill should update COH's taint, too. *)
     inv WRITABLE. unfold Order.le. clear -COH. lia.
   Qed.
 
