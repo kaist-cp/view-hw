@@ -10,7 +10,7 @@
 
 - Initialization
 
-        cd promising-hw
+        cd promising-hw // TODO: view-hw로 바꾸고 디렉토리도 view로
         git submodule init
         git submodule update
 
@@ -49,25 +49,27 @@
 ### Results
 
 - Theorem N: Equivalence between Px86-prom and Px86-axiom // TODO: 제출 전 figure 번호 확정
-  + Theorem `axiomatic_to_promising` in `src/axiomatic/TsoAtoP.v`:
+  + Theorem `axiomatic_to_promising` in `src/equiv/TsoAtoP.v`:
     Px86-axiom refines Px86-prom.
-  + Theorem `promising_to_axiomatic` in `src/axiomatic/TsoPFtoA.v`:
+  + Theorem `promising_to_axiomatic` in `src/equiv/TsoPFtoA.v`:
     Px86-prom refines Px86-axiom.
     * `TsoPFtoA1.v`: construction of axiomatic execution from promising execution
     * `TsoPFtoA2.v`, `TsoPFtoA3.v`: definitions and lemmas for main proof
     * `TsoPFtoA4*.v`: proof for validity of constructed axiomatic execution
       * `TsoPFtoA4SL.v`: simulation between promising and axiomatic execution
       * `TsoPFtoA4OBR.v`, `TsoPFtoA4OBW.v`, `TsoPFtoA4FR.v`, `TsoPFtoA4FOB.v`, `TsoPFtoA4FP.v`: proof for "external" axiom
-  + Lemma N: Equivalence between Px86-prom and Px86-view // CHECK: 논문에는 Px86이 아니라 x86임 // TODO: 제출 전 figure 번호 확정
-    * Theorem `promising_to_view` in `src/axiomatic/TsoPFtoV.v`:
+  + Lemma N: Equivalence between Px86-prom and Px86-view // TODO: 제출 전 figure 번호 확정
+    * The paper says that after the x86-prom and x86-view have been proven to be equivalent
+      and then extended to persistency, the proof in Coq was done right away.
+    * Theorem `promising_to_view` in `src/equiv/TsoPFtoV.v`:
       Px86-prom refines Px86-view.
-    * Theorem `view_to_promising` in `src/axiomatic/TsoVtoP.v`:
+    * Theorem `view_to_promising` in `src/equiv/TsoVtoP.v`:
       Px86-view refines Px86-prom.
 
 - Theorem N: Equivalence between PARMv8-view and PARMv8-axiom // TODO: 제출 전 figure 번호 확정
-  + Theorem `axiomatic_to_promising` in `src/axiomatic/AtoP.v`:
+  + Theorem `axiomatic_to_promising` in `src/equiv/AtoP.v`:
     PARMv8-axiom refines PARMv8-view without certification.
-  + Theorem `promising_to_axiomatic` in `src/axiomatic/PFtoA.v`:
+  + Theorem `promising_to_axiomatic` in `src/equiv/PFtoA.v`:
     PARMv8-view without certification refines PARMv8-axiom.
     * `PFtoA1.v`: construction of axiomatic execution from promising execution
     * `PFtoA2.v`, `PFtoA3.v`: definitions and lemmas for main proof
