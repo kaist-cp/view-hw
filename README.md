@@ -2,11 +2,11 @@
 
 ## Build
 
-- Requirement: [Coq 8.11.2](https://coq.inria.fr/download), Make, Rsync.
+- Requirement: [Coq 8.12.0](https://coq.inria.fr/download), Make, Rsync.
 
         apt install -y build-essential rsync opam
         opam init
-        opam install coq.8.11.2
+        opam install coq.8.12.0
 
 - Initialization
 
