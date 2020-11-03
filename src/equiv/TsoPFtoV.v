@@ -1020,12 +1020,12 @@ Proof.
 Qed.
 
 Theorem promising_to_view
-        p m_pf smem
-        (EXEC: Machine.exec p m_pf)
-        (PMEM: Machine.persisted m_pf smem):
+        p m_p smem
+        (EXEC: Machine.exec p m_p)
+        (PMEM: Machine.persisted m_p smem):
   exists m_v,
     <<EXEC_V: Machine.view_exec p m_v>> /\
-    <<EQUIV: Machine.equiv m_pf m_v>> /\
+    <<EQUIV: Machine.equiv m_p m_v>> /\
     <<PMEM: Machine.persisted m_v smem>>.
 Proof.
   apply promising_to_promising_pf in EXEC.
