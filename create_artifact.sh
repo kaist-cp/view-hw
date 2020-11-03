@@ -16,6 +16,7 @@ coqin+=" ../lib"
 coqin+=" ../Makefile"
 coqin+=" ../build.sh"
 coqin+=" ../README.md"
+coqin+=" ../status.sh"
 
 coqex="*.vio"
 coqex+=" *.vos"
