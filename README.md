@@ -26,7 +26,7 @@ View-based and Axiomatic Persistency Models for Intel-x86 and ARMv8
 
 ## Results of the existing work
 
-- Our proofs are based on [the existing work](https://github.com/snu-sf/promising-arm) for ARMv8-view, originally named "Promising-ARMv8".
+- Our proofs are based on [the existing work](https://github.com/snu-sf/promising-arm) for ARMv8-view, originally named "Promising-ARMv8". The existing work contains 1) the proof of the equivalence between ARMv8-view and ARMv8-axiom, and 2) some proofs about certification. On the other hand, We have extended the existing proofs of ARMv8 to hold persistency as well. In addition, we newly proved the theories of Px86-view and Px86-axiom.
 
 - Theories included in the code but not directly related to what we did are:
   + Theorem `certified_deadlock_free` in `src/lcertify/CertifyProgressRiscV.v`:
