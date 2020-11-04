@@ -15,7 +15,6 @@ coqin="../src"
 coqin+=" ../lib"
 coqin+=" ../Makefile"
 coqin+=" ../build.sh"
-coqin+=" ../README.md"
 coqin+=" ../status.sh"
 
 coqex="*.vio"
@@ -35,7 +34,7 @@ unzip ${coqdir}.zip -d ${coqdir}
 
 # 4. Making artifact.zip file
 filename="artifact.zip"
-zip -r ${filename} ${coqdir}
+zip -r ${filename} ${coqdir} ../README.md
 mv ${filename} ../
 
 
