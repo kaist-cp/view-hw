@@ -1,8 +1,10 @@
-# Revamping Hardware Persistency Models
+# Revamping Hardware Persistency Models (View-based and Axiomatic Persistency Models for Intel-x86 and ARMv8)
 
-View-based and Axiomatic Persistency Models for Intel-x86 and ARMv8
+This supplementary material provides mechanized proofs and a model checker mentioned in the paper.
 
-## Build
+## Mechanized proofs
+
+### Build
 
 - Requirement: [Coq 8.12.0](https://coq.inria.fr/download), Make, Rsync.
 
@@ -24,9 +26,11 @@ View-based and Axiomatic Persistency Models for Intel-x86 and ARMv8
     + CoqIDE: configure it to use `_CoqProject`: `Edit` > `Preferences` > `Project`: change
       `ignored` to `appended to arguments`.
 
-## Results of the existing work
+### Results of prior work
 
-- Our proofs are based on [the existing work](https://github.com/snu-sf/promising-arm) for ARMv8-view, originally named "Promising-ARMv8". The existing work contains 1) the proof of the equivalence between ARMv8-view and ARMv8-axiom, and 2) some proofs about certification. On the other hand, We have extended the existing proofs of ARMv8 to hold persistency as well. In addition, we newly proved the theories of Px86-view and Px86-axiom.
+- Our proofs are based on [a prior work](https://github.com/snu-sf/promising-arm) for ARMv8-view, originally named "Promising-ARMv8". The prior work contains:
+    1. the proof of the equivalence between ARMv8-view and ARMv8-axiom
+    2. some proofs about certification
 
 - Theories included in the code but not directly related to what we did are:
   + Theorem `certified_deadlock_free` in `src/lcertify/CertifyProgressRiscV.v`:
@@ -42,9 +46,11 @@ View-based and Axiomatic Persistency Models for Intel-x86 and ARMv8
       `p` leads to `<T', M'>`. Then `p` is in `find_and_certify <T, M>` if
       `<T', M'>` is certified.
 
-## Our results
+### Our results
 
-### Model
+We have extended the existing proofs of ARMv8 to hold persistency as well. In addition, we newly proved the theories of Px86-view and Px86-axiom.
+
+#### Model
 
 - `lib` and `src/lib` contains libraries not necessarily related to
   relaxed-memory concurrency and persistency.
@@ -62,7 +68,7 @@ View-based and Axiomatic Persistency Models for Intel-x86 and ARMv8
 
 - `src/lcertify`: Thread-local certification
 
-### Results
+#### Results
 
 - Theorem TODO: Equivalence between Px86-prom and Px86-axiom
   + Theorem `axiomatic_to_promising` in `src/equiv/TsoAtoP.v`:
@@ -91,8 +97,11 @@ View-based and Axiomatic Persistency Models for Intel-x86 and ARMv8
     * `PFtoA2.v`, `PFtoA3.v`: definitions and lemmas for main proof
     * `PFtoA4*.v`: proof for validity of constructed axiomatic execution
       * `PFtoA4SL.v`: simulation between promising and axiomatic execution
-      * `PFtoA4OBR.v`, `PFtoA4OBW.v`, `PFtoA4FR.v`: proof for "external" axiom
+      * `PFtoA4OBR.v`, `PFtoA4OBW.v`, `PFtoA4FR.v`, `PFtoA4FOB.v`, `PFtoA4FP.v`: proof for "external" axiom
       * `PFtoA4Atomic.v`: proof for "atomic" axiom
-  + Equivalence between PARMv8-view and PARMv8-view without certification
-    + Theorem `certified_exec_equivalent` in `src/lcertify/CertifyComplete.v`:
-      PARMv8-view and PARMv8-view without certification are equivalent.
+  + Theorem `certified_exec_equivalent` in `src/lcertify/CertifyComplete.v`:
+    PARMv8-view and PARMv8-view without certification are equivalent.
+
+## Model Checker
+
+TODO
