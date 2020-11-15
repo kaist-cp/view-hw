@@ -5,7 +5,7 @@
 # - proof dir
 # - model checker dir
 
-# 1. Making a temporary directory
+# Making a temporary directory
 tmpdir="artifact_tmp"
 set -e
 mkdir ${tmpdir}
@@ -13,7 +13,7 @@ set +e
 cd ${tmpdir}
 
 
-# 2. Making proof directory
+# Making proof directory
 coqrepo="promising-hw"
 coqdir="proof"
 
@@ -35,16 +35,29 @@ unzip ${coqdir}.zip -d ../${coqdir} # making output directory
 cd ..
 
 
-# 3. Making model checker directory
-# TODO: assuming the model checker dir is at ../
+# Making model checker directory
+rmemrepo="rmem-persistency"
+rmemdir="model-checker"
+
+git clone git@github.com:kaist-cp/${rmemrepo}.git ${rmemdir}
+
+rm -rf ${rmemdir}/.git* # anonymizing
+
+# Importing model-checked examples
+paperrepo="persistent-mem-paper"
+git clone git@github.com:kaist-cp/${paperrepo}.git
+
+rm -rf ${paperrepo}/experiment/queue # not mentioned in the paper
+mv ${paperrepo}/experiment ${rmemdir}/parmv8-view-examples
 
 
-# 4. Making artifact.zip file
+# Making artifact.zip file
 filename="artifact.zip"
-zip -r ${filename} ${coqdir} ../README.md
+# TODO: add supplementary_text.pdf
+zip -r ${filename} ../README.md ${coqdir} ${rmemdir}
 mv ${filename} ../
 
 
-# 5. Removing the temporary directory
+# Removing the temporary directory
 cd ..
 rm -rf ${tmpdir}
