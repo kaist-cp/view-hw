@@ -55,22 +55,22 @@ We have extended the existing proofs of ARMv8 to hold persistency as well. In ad
 - `lib` and `src/lib` contains libraries not necessarily related to
   relaxed-memory concurrency and persistency.
 
-- `src/lib/Lang.v`: Definition of assembly-like language and its interpretation for both x86 and ARMv8 (corresponding to the rules on Figure TODO)
+- `src/lib/Lang.v`: Definition of assembly-like language and its interpretation for both x86 and ARMv8 (corresponding to Figure 13)
 
-- `src/promising/TsoPromising.v`: Definition of Px86-view and Px86-prom (corresponding to the rules on Figure TODO)
+- `src/promising/TsoPromising.v`: Definition of Px86-view and Px86-prom (corresponding to Figure 11 and 12)
 
-- `src/axiomatic/TsoAxiomatic.v`: Definition of Px86-axiom (corresponding to the rules on Figure TODO)
+- `src/axiomatic/TsoAxiomatic.v`: Definition of Px86-axiom (corresponding to Figure 7)
 
 - `src/promising/Promising.v`: Definition of PARMv8-view without
-  certification (corresponding to the rules on Figure TODO)
+  certification (corresponding to Figure 14, 15 and 16)
 
-- `src/axiomatic/Axiomatic.v`: Definition of PARMv8-axiom (corresponding to the rules on Figure TODO)
+- `src/axiomatic/Axiomatic.v`: Definition of PARMv8-axiom (corresponding to Figure 9)
 
 - `src/lcertify`: Thread-local certification
 
 #### Results
 
-- Theorem TODO: Equivalence between Px86-prom and Px86-axiom
+- Theorem 5.3: Equivalence between Px86-view and Px86-axiom
   + Theorem `axiomatic_to_promising` in `src/equiv/TsoAtoP.v`:
     Px86-axiom refines Px86-prom.
   + Theorem `promising_to_axiomatic` in `src/equiv/TsoPFtoA.v`:
@@ -80,15 +80,15 @@ We have extended the existing proofs of ARMv8 to hold persistency as well. In ad
     * `TsoPFtoA4*.v`: proof for validity of constructed axiomatic execution
       * `TsoPFtoA4SL.v`: simulation between promising and axiomatic execution
       * `TsoPFtoA4OBR.v`, `TsoPFtoA4OBW.v`, `TsoPFtoA4FR.v`, `TsoPFtoA4FOB.v`, `TsoPFtoA4FP.v`: proof for "external" axiom
-  + Lemma TODO: Equivalence between Px86-prom and Px86-view
-    * The paper says that after the x86-prom and x86-view have been proven to be equivalent
+  + Lemma 5.1: Equivalence between Px86-prom and Px86-view
+    * The paper says that after the x86-prom and x86-view have been proven to be equivalent (Theorem 5.2)
       and then extended to persistency, the proof in Coq was done right away.
     * Theorem `promising_to_view` in `src/equiv/TsoPFtoV.v`:
       Px86-prom refines Px86-view.
     * Theorem `view_to_promising` in `src/equiv/TsoVtoP.v`:
       Px86-view refines Px86-prom.
 
-- Theorem TODO: Equivalence between PARMv8-view and PARMv8-axiom
+- Theorem 6.2: Equivalence between PARMv8-view and PARMv8-axiom
   + Theorem `axiomatic_to_promising` in `src/equiv/AtoP.v`:
     PARMv8-axiom refines PARMv8-view without certification.
   + Theorem `promising_to_axiomatic` in `src/equiv/PFtoA.v`:
