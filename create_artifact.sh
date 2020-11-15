@@ -1,31 +1,38 @@
 #!/usr/bin/env bash
 
-# This script makes artifact.zip that contains proof dir and model checker dir
+# This script makes artifact.zip that contains:
+# - README.md
+# - proof dir
+# - model checker dir
 
 # 1. Making a temporary directory
 tmpdir="artifact_tmp"
+set -e
 mkdir ${tmpdir}
+set +e
 cd ${tmpdir}
 
 
 # 2. Making proof directory
+coqrepo="promising-hw"
 coqdir="proof"
 
-coqin="../src"
-coqin+=" ../lib"
-coqin+=" ../Makefile"
-coqin+=" ../build.sh"
-coqin+=" ../status.sh"
+git clone git@github.com:kaist-cp/${coqrepo}.git
+cd ${coqrepo}
 
-coqex="*.vio"
-coqex+=" *.vos"
-coqex+=" *.coq"
-coqex+=" *.conf"
-coqex+=" *.git"
-coqex+=" *.d"
+git submodule init
+git submodule update
 
-zip -FSr ${coqdir}.zip ${coqin} -x ${coqex}
-unzip ${coqdir}.zip -d ${coqdir}
+coqin="src"
+coqin+=" lib"
+coqin+=" Makefile"
+coqin+=" build.sh"
+coqin+=" status.sh"
+
+zip -FSr ${coqdir}.zip ${coqin}
+unzip ${coqdir}.zip -d ../${coqdir} # making output directory
+
+cd ..
 
 
 # 3. Making model checker directory
