@@ -208,8 +208,7 @@ Section Local.
       loc old new
       view_post
       (LOC: loc = vloc.(ValA.val))
-      (COH: le (lc1.(coh) loc).(View.ts) old_ts)
-      (EX: Memory.exclusive tid loc old_ts ts mem2)
+      (NOWR: Memory.latest loc old_ts (pred ts) mem1)
       (OLD_MSG: Memory.read loc old_ts mem1 = Some old)
       (OLD: old = vold.(ValA.val))
       (NEW: new = vnew.(ValA.val))
