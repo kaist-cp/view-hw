@@ -548,9 +548,14 @@ Proof.
 Qed.
 
 Lemma sim_rmw
+      p m_pf st_last lc_last
       n tid
-      vloc vold vnew old_ts lc1_pf mem_pf lc2_pf
+      vloc vold vnew old_ts st1_pf lc1_pf mem_pf st2_pf lc2_pf
       lc1_v mem1_v
+      (EXEC_PF: Machine.pf_exec p m_pf)
+      (EU_LAST: IdMap.find tid m_pf.(Machine.tpool) = Some (st_last, lc_last))
+      (EU_STEP: ExecUnit.state_step tid (ExecUnit.mk st1_pf lc1_pf mem_pf) (ExecUnit.mk st2_pf lc2_pf mem_pf))
+      (RTC: rtc (ExecUnit.state_step tid) (ExecUnit.mk st2_pf lc2_pf mem_pf) (ExecUnit.mk st_last lc_last mem_pf))
       (LOCAL1: sim_local n lc1_pf lc1_v)
       (MEMORY1: sim_memory n mem_pf mem1_v)
       (WF1_PF: Local.wf tid mem_pf lc1_pf)
@@ -562,26 +567,21 @@ Lemma sim_rmw
     (<<MEMORY2: sim_memory (n + 1) mem_pf mem2_v>>) /\
     (<<PROMISES_PF: lc2_pf.(Local.promises) = Promises.unset (n + 1) lc1_pf.(Local.promises)>>).
 Proof.
-  destruct lc1_pf as [coh_pf vrn_pf vpa_pf per_pf promises_pf].
-  destruct lc1_v as [coh_v vrn_v vpa_v per_v promises_v].
+  hexploit ExecUnit.no_promise_rmw_spec; cycle 2.
+  { instantiate (1 := (ExecUnit.mk st2_pf lc2_pf mem_pf)). s. instantiate (1 := (ExecUnit.mk st1_pf lc1_pf mem_pf)). eauto. }
+  all: eauto; ss.
+  { inv EXEC_PF. inv NOPROMISE. eapply PROMISES; eauto. }
+  intro OLD_TS_LATEST. guardH OLD_TS_LATEST.
+
+  destruct lc1_pf as [coh_pf vrn_pf vpr_pf vpa_pf vpc_pf promises_pf].
+  destruct lc1_v as [coh_v vrn_v vpr_v vpa_v vpc_v promises_v].
   inv LOCAL1. dup MEMORY1. inv MEMORY0. inv STEP_PF. ss. subst.
   esplits.
-  - econs.
-    + ss.
-    + ss.
-    + instantiate (1 := mem1_v ++ [Msg.mk vloc.(ValA.val) vnew.(ValA.val) tid]).
-      eapply sim_memory_exclusive; eauto.
-      rewrite app_length.
-      destruct mem_post; s; try nia.
-      rewrite Nat.add_1_r, app_nil_r in MSG.
-      unfold Memory.get_msg in *. ss.
-      exploit nth_error_some; eauto. i. nia.
+  - econs; ss.
+    + eapply Memory.latest_ts_latest. rewrite OLD_TS_LATEST.
+      erewrite Memory.latest_ts_upper; eauto. nia.
     + eapply sim_memory_read; eauto. nia.
-    + ss.
-    + ss.
-    + ss.
     + unfold Memory.append. rewrite Nat.add_1_r. refl.
-    + ss.
   - econs; eauto; s. i.
     revert PROMISE0. rewrite Promises.unset_o. condtac; ss. i.
     exploit PROMISES_PF; eauto. i.
@@ -648,10 +648,15 @@ Proof.
 Qed.
 
 Lemma sim_next_rmw
+      p m_pf st_last lc_last
       n tid
       mem_pf mem1_v
       st1 lc1_pf st2 lc2_pf st3 lc3_pf ordr ordw vloc vold vnew old_ts
       lc1_v
+      (EXEC_PF: Machine.pf_exec p m_pf)
+      (EU_LAST: IdMap.find tid m_pf.(Machine.tpool) = Some (st_last, lc_last))
+      (EU_STEP: ExecUnit.state_step tid (ExecUnit.mk st2 lc2_pf mem_pf) (ExecUnit.mk st3 lc3_pf mem_pf))
+      (RTC: rtc (ExecUnit.state_step tid) (ExecUnit.mk st3 lc3_pf mem_pf) (ExecUnit.mk st_last lc_last mem_pf))
       (MEMORY1: sim_memory n mem_pf mem1_v)
       (LOCAL1: sim_local n lc1_pf lc1_v)
       (WF1_PF: Local.wf tid mem_pf lc1_pf)
@@ -671,9 +676,9 @@ Lemma sim_next_rmw
     (<<PROMISES2_PF: lc2_pf.(Local.promises) = lc1_pf.(Local.promises)>>) /\
     (<<PROMISES3_PF: lc3_pf.(Local.promises) = Promises.unset (n + 1) lc1_pf.(Local.promises)>>).
 Proof.
-  revert n mem1_v st3 lc3_pf ordr ordw vloc vold vnew lc1_v MEMORY1 LOCAL1 WF1_PF WF1_V STEP_ST STEP_LC.
+  revert n mem1_v st3 lc3_pf ordr ordw vloc vold vnew lc1_v EU_STEP RTC MEMORY1 LOCAL1 WF1_PF WF1_V STEP_ST STEP_LC.
   dependent induction STEPS; i.
-  { exploit sim_rmw; eauto. i. des.
+  { exploit sim_rmw; try exact STEP_LC; eauto. i. des.
     esplits; eauto.
     econs. econs; eauto. econs 4; eauto. }
   inv H. inv STEP.
@@ -898,12 +903,13 @@ Proof.
     rewrite <- MEM. ss.
   }
 
+  generalize EXEC_PF. intro EXEC_PF'.
   inv EXEC_PF. specialize (init_sim p). i. des.
   specialize (Machine.init_wf p). intro WF_V.
   exploit rtc_promise_step_sim; eauto. i. des.
   exploit Machine.rtc_step_promise_step_wf; eauto. intro WF_PF.
   remember (Machine.init p) as m1_v.
-  clear p Heqm1_v STEP1 SIM PROMISES_WF.
+  clear Heqm1_v STEP1 SIM PROMISES_WF.
 
   remember (length m_pf.(Machine.mem) - 0) as n.
   replace 0 with (length m_pf.(Machine.mem) - n) in SIM2, PROMISES_WF2 by nia.
@@ -975,7 +981,16 @@ Proof.
     }
     i. des.
     esplits; try exact SIM2; eauto. etrans; eauto.
-  - exploit sim_next_rmw; try exact LOCAL; eauto; try apply x; try apply x1. i. des.
+  - inv EXEC_PF. specialize (TPOOL tid). inv TPOOL; try congr. destruct b as (st_last, lc_last). symmetry in H3.
+    clear REL H1 a MEM.
+    exploit sim_next_rmw; try exact EXEC_PF'; try exact H3; try exact LOCAL; try exact STEP_LC; eauto; try apply x; try apply x1.
+    { econs. econs; eauto. econs 4; eauto. }
+    { inv EXEC2. specialize (TPOOL tid). inv TPOOL; try congr; ss.
+      rewrite IdMap.add_spec in *. des_ifs; try congr.
+      rewrite H3 in H4. inv H4. ss.
+    }
+    clear H3 st_last lc_last.
+    i. des.
     exploit Machine.rtc_eu_step_step; [exact FIND|refl|..]; i.
     { etrans; [eauto|]. econs 2; [|refl].
       econs. econs; [eauto|econs 4; eauto|]; ss. }
@@ -985,7 +1000,6 @@ Proof.
     exploit Machine.rtc_step_view_step_wf; try exact x3; eauto. i.
     exploit (IHn (Machine.mk (IdMap.add tid (st3, lc3) m1.(Machine.tpool)) m1.(Machine.mem))
                  (Machine.mk (IdMap.add tid (st3, lc3_v) m1_v.(Machine.tpool)) mem3_v)); eauto.
-    { inv EXEC2. econs; ss. }
     { replace (length (Machine.mem m_pf) - S n + 1) with (length (Machine.mem m_pf) - n) in * by nia.
       econs; ss; i.
       repeat rewrite IdMap.add_spec. condtac; ss.

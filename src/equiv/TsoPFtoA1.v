@@ -711,6 +711,7 @@ Proof.
       + econs; viewtac; try by i; apply bot_spec.
         econs; ss. instantiate (1 := Loc.default). econs; ss.
       + rewrite TS. ss.
+      + left. apply bot_spec.
   }
   i. simplify.
   destruct eu1 as [st1 lc1 mem1] eqn: EU1. guardH EU1.

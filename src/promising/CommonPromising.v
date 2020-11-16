@@ -245,6 +245,15 @@ Module Memory.
     eapply lt_le_trans; eauto.
   Qed.
 
+  Lemma latest_app_inv
+        loc from to mem1 mem2
+        (LATEST: latest loc from to (mem1 ++ mem2)):
+    latest loc from to mem1.
+  Proof.
+    ii. eapply LATEST; eauto.
+    apply nth_error_app_mon. ss.
+  Qed.
+
   Lemma latest_join
         loc ts ts1 ts2 mem
         (LATEST1: latest loc ts ts1 mem)
@@ -298,6 +307,15 @@ Module Memory.
     - destruct (nth_error (mem1++mem2) to); ss.
       destruct t0. condtac; ss.
       exploit latest_ts_spec. i. des. rewrite LE. lia.
+  Qed.
+
+  Lemma latest_ts_upper
+        loc to mem1 mem2
+        (LE: to <= length mem1):
+    latest_ts loc to mem1 = latest_ts loc to (mem1++mem2).
+  Proof.
+    induction to; ss.
+    rewrite nth_error_app1; eauto. des_ifs; apply IHto; lia.
   Qed.
 
   Lemma latest_ts_join

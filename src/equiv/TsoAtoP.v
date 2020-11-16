@@ -2050,6 +2050,7 @@ Proof.
     - econs; viewtac; try by i; apply bot_spec.
       econs; ss. instantiate (1 := Loc.default). econs; ss.
     - rewrite TS. ss.
+    - left. apply bot_spec.
   }
   { apply AExecUnit.wf_init. }
   i. des. destruct eu2 as [state2 local2 mem2]. inv SIM. ss. subst.

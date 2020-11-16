@@ -208,8 +208,7 @@ Section Local.
       loc old new
       view_post
       (LOC: loc = vloc.(ValA.val))
-      (COH: le (lc1.(coh) loc).(View.ts) old_ts)
-      (EX: Memory.exclusive tid loc old_ts ts mem2)
+      (NINTERVENING: Memory.latest loc old_ts (pred ts) mem1)
       (OLD_MSG: Memory.read loc old_ts mem1 = Some old)
       (OLD: old = vold.(ValA.val))
       (NEW: new = vnew.(ValA.val))
@@ -384,6 +383,9 @@ Section Local.
                 (TID: msg.(Msg.tid) <> tid)
                 (TS: (lc.(coh) msg.(Msg.loc)).(View.ts) = ts),
           ts <= lc.(vrn).(View.ts))
+      (NINTERVENING: forall loc from to
+                       (LATEST: Memory.latest loc from to mem),
+          (lc.(coh) loc).(View.ts) <= from \/ to < (lc.(coh) loc).(View.ts))
       (VRNVPR: lc.(vrn).(View.ts) <= lc.(vpr).(View.ts))
       (VPACL: forall loc1 loc2 (CL: Loc.cl loc1 loc2), (lc.(vpa) loc1).(View.ts) = (lc.(vpa) loc2).(View.ts))
       (VPCCL: forall loc1 loc2 (CL: Loc.cl loc1 loc2), (lc.(vpc) loc1).(View.ts) = (lc.(vpc) loc2).(View.ts))
@@ -399,6 +401,7 @@ Section Local.
     - econs; try i; try apply bot_spec.
       econs; ss. i. instantiate (1 := Loc.default). apply bot_spec.
     - rewrite TS. ss.
+    - left. apply bot_spec.
   Qed.
 
   Lemma fwd_read_view_le
@@ -481,6 +484,7 @@ Section Local.
     - apply Memory.get_msg_app_inv in MSG. des.
       + eapply NFWD; eauto.
       + subst. specialize (COH (Msg.loc msg)). lia.
+    - eapply Memory.latest_app_inv. eauto.
   Qed.
 
   Lemma wf_promises_above
@@ -714,6 +718,11 @@ Section Local.
         i. subst. unfold read_view. condtac; ss.
         * rewrite <- join_l. eapply NFWD; eauto. inversion e0. inversion e. ss.
         * viewtac; rewrite <- join_r; ss.
+      + i. funtac. inversion e. subst.
+        destruct (le_dec ts from); eauto. apply not_le in n.
+        destruct (lt_dec to ts); eauto. apply not_lt in n0.
+        unfold Memory.read in MSG. destruct ts; try lia. ss. des_ifs.
+        exfalso. eapply LATEST0; eauto.
       + rewrite VRNVPR. apply join_l.
       + apply join_r.
     - inversion WRITABLE.
@@ -747,6 +756,11 @@ Section Local.
       + i. eapply NFWD; eauto.
         rewrite fun_add_spec in TS. eqvtac.
         rewrite MSG in MSG0. inv MSG0. ss.
+      + i. funtac. inversion e. subst.
+        destruct (le_dec ts from); eauto. apply not_le in n.
+        destruct (lt_dec to ts); eauto. apply not_lt in n0.
+        unfold Memory.get_msg in MSG. destruct ts; try lia. ss.
+        exfalso. eapply LATEST; eauto.
     - inversion WRITABLE.
       econs; viewtac; rewrite <- ? TS0, <- ? TS1.
       + i. rewrite fun_add_spec. condtac; viewtac.
@@ -785,6 +799,11 @@ Section Local.
       + i. rewrite <- join_l. eapply NFWD; eauto.
         rewrite fun_add_spec in TS. eqvtac.
         rewrite MSG in MSG0. inv MSG0. ss.
+      + i. funtac. inversion e. subst.
+        destruct (le_dec ts from); eauto. apply not_le in n.
+        destruct (lt_dec to ts); eauto. apply not_lt in n0.
+        unfold Memory.get_msg in MSG. destruct ts; try lia. ss.
+        exfalso. eapply LATEST; eauto.
       + rewrite VRNVPR. apply join_l.
       + apply join_r.
     - exploit FWDVIEW; eauto.
@@ -831,6 +850,11 @@ Section Local.
         i. subst. unfold read_view. condtac; ss.
         * rewrite <- join_l. eapply NFWD; eauto. inversion e0. inversion e. ss.
         * viewtac; rewrite <- join_r; ss.
+      + i. funtac. inversion e. subst.
+        destruct (le_dec old_ts from); eauto. apply not_le in n.
+        destruct (lt_dec to old_ts); eauto. apply not_lt in n0.
+        unfold Memory.read in OLD_MSG. destruct old_ts; try lia. ss. des_ifs.
+        exfalso. eapply LATEST0; eauto.
       + rewrite VRNVPR. apply join_l.
       + apply join_r.
     - econs; viewtac.
@@ -934,6 +958,11 @@ Section Local.
         i. subst. unfold read_view. condtac; ss.
         * rewrite <- join_l. eapply NFWD; eauto. inversion e0. inversion e. ss.
         * viewtac; rewrite <- join_r; ss.
+      + i. funtac. inversion e. subst.
+        destruct (le_dec ts from); eauto. apply not_le in n.
+        destruct (lt_dec to ts); eauto. apply not_lt in n0.
+        unfold Memory.read in MSG. destruct ts; try lia. ss. des_ifs.
+        exfalso. eapply LATEST0; eauto.
       + rewrite VRNVPR. apply join_l.
       + apply join_r.
     - inversion MEM. subst. econs; try rewrite app_length; viewtac; ss.
@@ -966,6 +995,12 @@ Section Local.
         eapply Memory.get_msg_snoc_inv in MSG. revert MSG. funtac.
         * i. des; [lia |]. inv MSG0. ss.
         * i. des; [eapply NFWD; eauto |]. inv MSG0. ss.
+      + i. funtac; cycle 1.
+        { apply NINTERVENING. eapply Memory.latest_app_inv. eauto. }
+        inversion e. subst.
+        destruct (le_dec (S (length mem1)) from); eauto. apply not_le in n.
+        destruct (lt_dec to (S (length mem1))); eauto. apply not_lt in n0.
+        exfalso. eapply LATEST; eauto; try rewrite nth_error_last; ss.
     - inversion MEM. subst. econs; try rewrite app_length; viewtac; ss.
       all: try by lia.
       + i. funtac; try rewrite COH; lia.
@@ -996,6 +1031,12 @@ Section Local.
         eapply Memory.get_msg_snoc_inv in MSG. revert MSG. funtac.
         * i. des; [lia |]. inv MSG0. ss.
         * i. rewrite <- join_l. des; [eapply NFWD; eauto |]. inv MSG0. ss.
+      + i. funtac; cycle 1.
+        { apply NINTERVENING. eapply Memory.latest_app_inv. eauto. }
+        inversion e. subst.
+        destruct (le_dec (S (length mem1)) from); eauto. apply not_le in n.
+        destruct (lt_dec to (S (length mem1))); eauto. apply not_lt in n0.
+        exfalso. eapply LATEST; eauto; try rewrite nth_error_last; ss.
       + rewrite VRNVPR. apply join_l.
       + apply join_r.
     - exploit FWDVIEW; eauto.
@@ -1042,6 +1083,11 @@ Section Local.
         i. subst. unfold read_view. condtac; ss.
         * rewrite <- join_l. eapply NFWD; eauto. inversion e0. inversion e. ss.
         * viewtac; rewrite <- join_r; ss.
+      + i. funtac. inversion e. subst.
+        destruct (le_dec old_ts from); eauto. apply not_le in n.
+        destruct (lt_dec to old_ts); eauto. apply not_lt in n0.
+        unfold Memory.read in OLD_MSG. destruct old_ts; try lia. ss. des_ifs.
+        exfalso. eapply LATEST0; eauto.
       + rewrite VRNVPR. apply join_l.
       + apply join_r.
     - econs; viewtac.
@@ -1202,6 +1248,7 @@ Section ExecUnit.
     - i. apply Memory.get_msg_snoc_inv in MSG. des.
       + eapply NFWD; eauto.
       + rewrite <- MSG0 in TID. ss.
+    - i. apply NINTERVENING. eapply Memory.latest_app_inv. eauto.
   Qed.
 
   Lemma step_wf tid eu1 eu2
@@ -1550,6 +1597,7 @@ Module Machine.
       + i. apply Memory.get_msg_snoc_inv in MSG. des.
         * eapply NFWD; eauto.
         * rewrite MSG in TS. specialize (COH (Msg.loc msg)). lia.
+      + i. apply NINTERVENING. eapply Memory.latest_app_inv. eauto.
   Qed.
 
   Lemma rtc_step_promise_step_wf
@@ -1611,6 +1659,7 @@ Module Machine.
         * i. apply Memory.get_msg_snoc_inv in MSG. des.
           { eapply NFWD; eauto. }
           { rewrite MSG in TS. specialize (COH (Msg.loc msg)). lia. }
+        * i. apply NINTERVENING. eapply Memory.latest_app_inv. eauto.
       + inv STEP. inv MEM. econs; ss.
         * i. rewrite COH. rewrite app_length. lia.
         * rewrite app_length. lia.
@@ -1625,6 +1674,7 @@ Module Machine.
         * i. apply Memory.get_msg_snoc_inv in MSG. des.
           { eapply NFWD; eauto. }
           { rewrite MSG in TS. specialize (COH (Msg.loc msg)). lia. }
+        * i. apply NINTERVENING. eapply Memory.latest_app_inv. eauto.
   Qed.
 
   Lemma rtc_step_view_step_wf
