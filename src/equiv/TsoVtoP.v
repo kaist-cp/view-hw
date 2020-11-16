@@ -105,11 +105,19 @@ Proof.
       inv LOCAL. inv COHMAX. inv COHMAX0; ss. rewrite COH in *.
       inv PROMISE. inv MEM.
       esplits. econs; eauto; s.
+      - move NINTERVENING at bottom. apply NINTERVENING0 in NINTERVENING. des; ss.
+        specialize (COH (ValA.val (sem_expr rmap eloc))). lia.
       - exploit Memory.read_spec; eauto. lia.
-      - rewrite <- H1 in *. ss.
+      - ii. des. eapply NINTERVENING; eauto.
+        + destruct (lt_eq_lt_dec (S (length (Machine.mem m1))) (S ts)); try lia. inv s; try lia. inv H2.
+          exploit nth_error_snoc_inv_last; eauto. intro X. inv X. ss.
+        + destruct (lt_eq_lt_dec (S (length (Machine.mem m1))) (S ts)); try inv s.
+          * exploit nth_error_some; eauto. lia.
+          * inv H2. exploit nth_error_snoc_inv_last; eauto. intro X. inv X. ss.
+          * rewrite <- MSG. rewrite nth_error_app1; eauto. lia.
       - eapply Memory.read_mon. ss.
       - econs; eauto; ss.
-        specialize (COH0 x). lia.
+        specialize (COH x). lia.
       - eapply Memory.append_spec; eauto. ss.
       - ss. rewrite Promises.set_o. condtac; [|congr]. ss.
       - unguardH Heqt. subst.
