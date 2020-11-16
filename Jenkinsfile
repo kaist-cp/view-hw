@@ -7,7 +7,7 @@ pipeline {
                 stage('Quick') {
                     agent {
                         docker {
-                            image 'coqorg/coq:8.11.2'
+                            image 'coqorg/coq:8.12.0'
                         }
                     }
                     steps {
@@ -18,7 +18,7 @@ pipeline {
                 stage('Full') {
                     agent {
                         docker {
-                            image 'coqorg/coq:8.11.2'
+                            image 'coqorg/coq:8.12.0'
                         }
                     }
                     steps {
