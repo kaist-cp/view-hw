@@ -102,9 +102,9 @@ Proof.
     assert (PRMW: Local.rmw (sem_expr rmap eloc) vold vnew old_ts ts tid lcmid (Machine.mem m2) lc2).
     { generalize FIND. intro PWF.
       inv WF. apply WF0 in PWF. inv PWF.
-      inv LOCAL. inv COHMAX. inv COHMAX0; ss. rewrite COH0 in *.
+      inv LOCAL. inv COHMAX. inv COHMAX0; ss. rewrite COH in *.
       inv PROMISE. inv MEM.
-      esplits. econs; eauto.
+      esplits. econs; eauto; s.
       - exploit Memory.read_spec; eauto. lia.
       - rewrite <- H1 in *. ss.
       - eapply Memory.read_mon. ss.
