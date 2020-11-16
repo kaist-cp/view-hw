@@ -116,6 +116,8 @@ We extends the original checker to the PARMv8 model checker by supporting:
 ### Build
 
 ```
+opam repository add rems https://github.com/rems-project/opam-repository.git
+opam install --deps-only .
 make -j MODE=opt ISA=AArch64
 ```
 
