@@ -6,7 +6,7 @@
 # - proof dir
 # - model checker dir
 
-artifactname="pldi2021-21-artifact"
+artifactname="pldi2021-paper21-artifact"
 
 # Making a temporary directory
 tmpdir="artifact_tmp"
