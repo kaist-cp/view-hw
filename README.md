@@ -113,11 +113,29 @@ We extends the original checker to the PARMv8 model checker by supporting:
 - persistency views of PARMv8-view (i.e., VpReady, VpAsync, VpCommit)
 - enumeration of states of when crash occurs at arbitrary point
 
-### Build
+### Install
+
+#### Requirements
+
+Before building rmem, please make sure that the following programs are installed:
 
 ```
-opam repository add rems https://github.com/rems-project/opam-repository.git
+opam 2.0
+ocaml 4.10.0
+```
+
+In addition, a debian based Linux system also need the following packages:
+
+```
+sudo apt install findutils libgmp-dev m4 perl pkg-config zlib1g-dev
+```
+
+#### Build
+
+```
+opam repository add rems https://github.com/rems-project/opam-repository.git#opam2
 opam install --deps-only .
+ulimit -s unlimited
 make -j MODE=opt ISA=AArch64
 ```
 
