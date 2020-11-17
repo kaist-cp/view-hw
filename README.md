@@ -1,6 +1,6 @@
 # Revamping Hardware Persistency Models (View-based and Axiomatic Persistency Models for Intel-x86 and ARMv8)
 
-This supplementary material provides mechanized proofs, a model checker and the paper's appendix.
+This supplementary material provides mechanized proofs and a model checker mentioned in the paper.
 
 ## Mechanized proofs
 
@@ -208,7 +208,3 @@ Runtime: 0.033494 sec
 ```
 
 We can conclude the invariant *"commit=1 ⇒ data=42"* holds in this case because there is no NVM state other than *data=42(0x2a)* when *commit=1*.
-
-## Appendix
-
-`supplementary_text.pdf` contains the paper's appendix.

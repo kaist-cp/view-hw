@@ -2,7 +2,6 @@
 
 # This script makes artifact.zip that contains:
 # - README.md
-# - supplementary_text.pdf
 # - proof dir
 # - model checker dir
 
@@ -63,9 +62,6 @@ mv ${rmemdir} ${artifactname}
 
 # Adding README.md
 cp ../README.md ${artifactname}
-
-
-# TODO: Adding supplementary_text.pdf
 
 
 # Making artifact.zip file
