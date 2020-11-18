@@ -60,8 +60,9 @@ mv ${paperrepo}/experiment ${rmemdir}/parmv8-view-examples
 mv ${rmemdir} ${artifactname}
 
 
-# Adding README.md
+# copying some files from this repo
 cp ../README.md ${artifactname}
+cp ../run_parmv8_all.p ${artifactname}
 
 
 # Making artifact.zip file

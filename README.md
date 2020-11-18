@@ -2,17 +2,28 @@
 
 This supplementary material provides mechanized proofs and a model checker mentioned in the paper.
 
+## Installation
+
+We assume that the OS where our proof and model checker are built is **Ubuntu 20.04**.
+
+### Common requirement: Make, Rsync and [opam](https://opam.ocaml.org/doc/Install.html#Ubuntu)
+
+```
+apt install -y build-essential rsync opam
+opam init
+opam switch create 4.10.0  # or later
+```
+
 ## Mechanized proofs
 
 ### Build
 
-- Requirement: [Coq 8.12.0](https://coq.inria.fr/download), Make, Rsync.
+- Requirement: [Coq 8.12.0](https://coq.inria.fr/download).
 
-        apt install -y build-essential rsync opam
-        opam init
+        cd proof
         opam install coq.8.12.0
 
-- `make`: quickly build without checking the proofs.
+- `make -j`: quickly build without checking the proofs.
 
 - `./build.sh`: build with checking all the proofs.  It will incrementally copy the development to
   `.build` sub-directory, and then build there.
@@ -26,33 +37,18 @@ This supplementary material provides mechanized proofs and a model checker menti
     + CoqIDE: configure it to use `_CoqProject`: `Edit` > `Preferences` > `Project`: change
       `ignored` to `appended to arguments`.
 
-### Results of prior work
-
-- Our proofs are based on [a prior work](https://github.com/snu-sf/promising-arm) for ARMv8-view, originally named "Promising-ARMv8". The prior work contains:
-    1. the proof of the equivalence between ARMv8-view and ARMv8-axiom
-    2. some proofs about certification
-
-- Theories included in the code but not directly related to what we did are:
-  + Theorem `certified_deadlock_free` in `src/lcertify/CertifyProgressRiscV.v`:
-    Promising-RISC-V is deadlock-free.
-  + Theorem `certified_promise_correct` in `src/lcertify/FindCertify.v`:
-    `find_and_certify` is correct.
-    * Theorem `certified_promise_sound` in `src/lcertify/FindCertify.v`:
-      Assume the thread configuration `<T, M>` is certified, and promising
-      `p` leads to `<T', M'>`. Then `<T'. M'>` is certified if `p` is in
-      `find_and_certify <T, M>`.
-    * Theorem `certified_promise_complete` in `src/lcertify/FindCertify.v`:
-      Assume the thread configuration `<T, M>` is certified, and promising
-      `p` leads to `<T', M'>`. Then `p` is in `find_and_certify <T, M>` if
-      `<T', M'>` is certified.
-
 ### Our results
 
-We have extended the existing proofs of ARMv8 to hold persistency as well. In addition, we newly proved the theories of Px86-view and Px86-axiom.
+Our proofs are based on [a prior work](https://github.com/snu-sf/promising-arm) for ARMv8-view, originally named "Promising-ARMv8". The prior work contains:
+
+- the proof of the equivalence between ARMv8-view and ARMv8-axiom
+- some proofs about certification
+
+We extend the existing proofs of ARMv8 to hold persistency as well. In addition, we newly define Px86-view/Px86-axiom and prove some theorems of it mentioned in the paper.
 
 #### Model
 
-- `lib` and `src/lib` contains libraries not necessarily related to
+- `lib`(open source) and `src/lib` contain libraries not necessarily related to
   relaxed-memory concurrency and persistency.
 
 - `src/lib/Lang.v`: Definition of assembly-like language and its interpretation for both x86 and ARMv8 (corresponding to Figure 13)
@@ -102,37 +98,39 @@ We have extended the existing proofs of ARMv8 to hold persistency as well. In ad
   + Theorem `certified_exec_equivalent` in `src/lcertify/CertifyComplete.v`:
     PARMv8-view and PARMv8-view without certification are equivalent.
 
+### Results of prior work
+
+Theories included in the code but not directly related to what we did are:
+- Theorem `certified_deadlock_free` in `src/lcertify/CertifyProgressRiscV.v`:
+    Promising-RISC-V is deadlock-free.
+- Theorem `certified_promise_correct` in `src/lcertify/FindCertify.v`:
+    `find_and_certify` is correct.
+    + Theorem `certified_promise_sound` in `src/lcertify/FindCertify.v`:
+        Assume the thread configuration `<T, M>` is certified, and promising
+        `p` leads to `<T', M'>`. Then `<T'. M'>` is certified if `p` is in
+        `find_and_certify <T, M>`.
+    + Theorem `certified_promise_complete` in `src/lcertify/FindCertify.v`:
+        Assume the thread configuration `<T, M>` is certified, and promising
+        `p` leads to `<T', M'>`. Then `p` is in `find_and_certify <T, M>` if
+        `<T', M'>` is certified.
+
 ## Model Checker
 
-This model checker is based on [rmem](https://github.com/rems-project/rmem), executable concurrency models for ARMv8, RISC-V, Power, and x86. In particular, this model checker basically uses the Promising model for ARMv8 and RISC-V by Christopher Pulte, ARMv8-view.
+This model checker is based on [rmem](https://github.com/rems-project/rmem), executable concurrency models for ARMv8, RISC-V, Power, and x86. In particular, this model checker basically uses the Promising model for ARMv8 and RISC-V by Pulte et al.
 
 ### Our extension
 
 We extends the original checker to the PARMv8 model checker by supporting:
+
 - ARMv8 instruction for persistency (i.e., DC CVAP)
 - persistency views of PARMv8-view (i.e., VpReady, VpAsync, VpCommit)
 - enumeration of states of when crash occurs at arbitrary point
 
-### Install
-
-#### Requirements
-
-Before building rmem, please make sure that the following programs are installed:
+### Build
 
 ```
-opam 2.0
-ocaml 4.10.0
-```
-
-In addition, a debian based Linux system also need the following packages:
-
-```
+cd model-checker
 sudo apt install findutils libgmp-dev m4 perl pkg-config zlib1g-dev
-```
-
-#### Build
-
-```
 opam repository add rems https://github.com/rems-project/opam-repository.git#opam2
 opam install --deps-only .
 ulimit -s unlimited
