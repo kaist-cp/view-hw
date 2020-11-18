@@ -100,7 +100,7 @@ We extend the existing proofs for ARMv8 to persistency. In addition, we newly de
 
 ### Results of prior work
 
-Theories included in the code but not directly related to what we did are:
+Theorems included in the code but not directly related to what we did are:
 - Theorem `certified_deadlock_free` in `src/lcertify/CertifyProgressRiscV.v`:
     Promising-RISC-V is deadlock-free.
 - Theorem `certified_promise_correct` in `src/lcertify/FindCertify.v`:
@@ -120,7 +120,7 @@ This model checker is based on [rmem](https://github.com/rems-project/rmem), exe
 
 ### Our extension
 
-We extends the original checker to the PARMv8 model checker by supporting:
+We extend the original checker to the PARMv8 model checker by supporting:
 
 - ARMv8 instruction for persistency (i.e., DC CVAP)
 - persistency views of PARMv8-view (i.e., VpReady, VpAsync, VpCommit)
