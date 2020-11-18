@@ -56,13 +56,13 @@ git clone git@github.com:kaist-cp/${paperrepo}.git
 rm -rf ${paperrepo}/experiment/queue # not mentioned in the paper
 rm -rf ${paperrepo}/experiment/scripts # not used
 mv ${paperrepo}/experiment ${rmemdir}/parmv8-view-examples
+cp ../run_parmv8_all.p ${rmemdir}
 
 mv ${rmemdir} ${artifactname}
 
 
-# copying some files from this repo
+# Copying README.md
 cp ../README.md ${artifactname}
-cp ../run_parmv8_all.p ${artifactname}
 
 
 # Making artifact.zip file
