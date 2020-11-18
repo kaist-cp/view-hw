@@ -139,7 +139,7 @@ make -j MODE=opt ISA=AArch64
 
 If it doesn't work, please read `model-checker/README.md` for more details.
 
-### Run examples
+### Run an example
 
 We use our model checker to verify several representative persistent synchronization examples, including *all* examples presented in the paper (modulo architectural differences) and the "Atomic Persists" example in [Raad et al. (Example 3)](http://plv.mpi-sws.org/pog/paper.pdf) for modeling persistent transaction. All of these examples are in `parmv8-view-examples`.
 
@@ -206,3 +206,11 @@ Runtime: 0.033494 sec
 ```
 
 We can conclude the invariant *"commit=1 ⇒ data=42"* holds in this case because there is no NVM state other than *data=42(0x2a)* when *commit=1*.
+
+### Run all examples
+
+You can run all PARMv8-view examples in `parmv8-view-examples` by executing this script:
+
+```
+./run_parmv8_all.p
+```
