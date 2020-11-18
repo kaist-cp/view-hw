@@ -4,14 +4,14 @@ This supplementary material provides mechanized proofs and a model checker menti
 
 ## Installation
 
-We assume that the OS where our proof and model checker are built is **Ubuntu 20.04**.
+We assume you are on **Ubuntu 20.04**.
 
-### Common requirement: Make, Rsync and [opam](https://opam.ocaml.org/doc/Install.html#Ubuntu)
+### Common requirement
 
 ```
 apt install -y build-essential rsync opam
 opam init
-opam switch create 4.10.0  # or later
+opam switch create 4.10.0  # or later. If your system OCaml version is >= 4.10.0, you can use it.
 ```
 
 ## Mechanized proofs
@@ -44,7 +44,7 @@ Our proofs are based on [a prior work](https://github.com/snu-sf/promising-arm) 
 - the proof of the equivalence between ARMv8-view and ARMv8-axiom
 - some proofs about certification
 
-We extend the existing proofs of ARMv8 to hold persistency as well. In addition, we newly define Px86-view/Px86-axiom and prove some theorems of it mentioned in the paper.
+We extend the existing proofs for ARMv8 to persistency. In addition, we newly define Px86-view/Px86-axiom and prove the theorems of it mentioned in the paper.
 
 #### Model
 
