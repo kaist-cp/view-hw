@@ -18,10 +18,10 @@ opam switch create 4.10.0  # or later. If your system OCaml version is >= 4.10.0
 
 ### Build
 
-- Requirement: [Coq 8.12.0](https://coq.inria.fr/download).
+- Requirement: [Coq 8.12.1](https://coq.inria.fr/download).
 
         cd proof
-        opam install coq.8.12.0
+        opam install coq.8.12.1
 
 - `make -j`: quickly build without checking the proofs.
 
