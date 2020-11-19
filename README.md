@@ -6,12 +6,13 @@ This supplementary material provides mechanized proofs and a model checker menti
 
 We assume you are on **Ubuntu 20.04**.
 
-### Common requirement
+### Common requirements
 
 ```
-apt install -y build-essential rsync opam
+sudo apt install -y build-essential rsync opam
 opam init
 opam switch create 4.10.0  # or later. If your system OCaml version is >= 4.10.0, you can use it.
+opam update
 ```
 
 ## Mechanized proofs
@@ -130,11 +131,11 @@ We extend the original checker to the PARMv8 model checker by supporting:
 
 ```
 cd model-checker
-sudo apt install findutils libgmp-dev m4 perl pkg-config zlib1g-dev
+sudo apt install -y findutils libgmp-dev m4 perl pkg-config zlib1g-dev z3
 opam repository add rems https://github.com/rems-project/opam-repository.git#opam2
 opam install --deps-only .
-ulimit -s unlimited
-make -j MODE=opt ISA=AArch64
+ulimit -s unlimited  #  Without this, a stack overflow may occur during build.
+make MODE=opt ISA=AArch64
 ```
 
 If it doesn't work, please read `model-checker/README.md` for more details.
