@@ -12,6 +12,7 @@ We assume you are on **Ubuntu 20.04**.
 sudo apt install -y build-essential rsync opam
 opam init
 opam switch create 4.10.0  # or later. If your system OCaml version is >= 4.10.0, you can use it.
+eval $(opam env)
 opam update
 ```
 
