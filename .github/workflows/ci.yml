@@ -19,19 +19,19 @@ jobs:
     strategy:
       matrix:
         coq_version:
-          - '8.12'
-          # - 'dev'
+          - "8.12"
+          # - "dev"
         ocaml_version:
-          - '4.07-flambda'
+          - "4.07-flambda"
       fail-fast: false  # don't stop jobs if one fails
     steps:
       - uses: actions/checkout@v2
       - uses: coq-community/docker-coq-action@v1
         with:
-          opam_file: 'promising-hw.opam'
+          opam_file: "promising-hw.opam"
           coq_version: ${{ matrix.coq_version }}
           ocaml_version: ${{ matrix.ocaml_version }}
       - name: Submodule
         run: git submodule update --init
       - name: Build
-        run: ./build.sh
+        run: make -j
