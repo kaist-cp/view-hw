@@ -15,7 +15,7 @@ synopsis: "Promising semantics for hardware"
 description: """
 Promising semantics for hardware."""
 
-build: [make "-j%{jobs}%" ]
+build: [make "-j%{jobs}%" build]
 install: [make "install"]
 depends: [
   "coq" {(>= "8.12.1" & < "8.14~") | (= "dev")}

@@ -23,11 +23,9 @@ jobs:
       fail-fast: false  # don't stop jobs if one fails
     steps:
       - uses: actions/checkout@v2
+      - name: Submodule
+        run: git submodule update --init
       - uses: coq-community/docker-coq-action@v1
         with:
           opam_file: 'promising-hw.opam'
           custom_image: ${{ matrix.image }}
-      - name: Submodule
-        run: git submodule update --init
-      - name: Build
-        run: make -j
