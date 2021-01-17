@@ -20,8 +20,9 @@ jobs:
       matrix:
         coq_version:
           - '8.12'
-          # - dev
-        ocaml_version: ['4.11-flambda']
+          # - 'dev'
+        ocaml_version:
+          - '4.07-flambda'
       fail-fast: false  # don't stop jobs if one fails
     steps:
       - uses: actions/checkout@v2
