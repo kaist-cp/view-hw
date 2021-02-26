@@ -20,10 +20,10 @@ opam update
 
 ### Build
 
-- Requirement: [Coq 8.12.1](https://coq.inria.fr/download).
+- Requirement: [Coq 8.13.1](https://coq.inria.fr/download).
 
         cd proof
-        opam install coq.8.12.1
+        opam install coq.8.13.1
 
 - `make -j`: quickly build without checking the proofs.
 
@@ -76,8 +76,8 @@ We extend the existing proofs for ARMv8 to persistency. In addition, we newly de
     * `TsoPFtoA1.v`: construction of axiomatic execution from promising execution
     * `TsoPFtoA2.v`, `TsoPFtoA3.v`: definitions and lemmas for main proof
     * `TsoPFtoA4*.v`: proof for validity of constructed axiomatic execution
-      * `TsoPFtoA4SL.v`: simulation between promising and axiomatic execution
-      * `TsoPFtoA4OBR.v`, `TsoPFtoA4OBW.v`, `TsoPFtoA4FR.v`, `TsoPFtoA4FOB.v`, `TsoPFtoA4FP.v`: proof for "external" axiom
+    * `TsoPFtoA4SL.v`: simulation between promising and axiomatic execution
+    * `TsoPFtoA4OBR.v`, `TsoPFtoA4OBW.v`, `TsoPFtoA4FR.v`, `TsoPFtoA4FOB.v`, `TsoPFtoA4FP.v`: proof for "external" axiom
   + Lemma 5.1: Equivalence between Px86-prom and Px86-view
     * The paper says that after the x86-prom and x86-view have been proven to be equivalent (Theorem 5.2)
       and then extended to persistency, the proof in Coq was done right away.
@@ -94,9 +94,9 @@ We extend the existing proofs for ARMv8 to persistency. In addition, we newly de
     * `PFtoA1.v`: construction of axiomatic execution from promising execution
     * `PFtoA2.v`, `PFtoA3.v`: definitions and lemmas for main proof
     * `PFtoA4*.v`: proof for validity of constructed axiomatic execution
-      * `PFtoA4SL.v`: simulation between promising and axiomatic execution
-      * `PFtoA4OBR.v`, `PFtoA4OBW.v`, `PFtoA4FR.v`, `PFtoA4FOB.v`, `PFtoA4FP.v`: proof for "external" axiom
-      * `PFtoA4Atomic.v`: proof for "atomic" axiom
+    * `PFtoA4SL.v`: simulation between promising and axiomatic execution
+    * `PFtoA4OBR.v`, `PFtoA4OBW.v`, `PFtoA4FR.v`, `PFtoA4FOB.v`, `PFtoA4FP.v`: proof for "external" axiom
+    * `PFtoA4Atomic.v`: proof for "atomic" axiom
   + Theorem `certified_exec_equivalent` in `src/lcertify/CertifyComplete.v`:
     PARMv8-view and PARMv8-view without certification are equivalent.
 
