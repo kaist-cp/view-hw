@@ -1,6 +1,6 @@
 # Revamping Hardware Persistency Models (View-based and Axiomatic Persistency Models for Intel-x86 and ARMv8)
 
-This supplementary material provides mechanized proofs and a model checker mentioned in the paper.
+This is the artifact for a paper, Kyeongmin Cho, Sung-Hwan Lee, Azalea Raad, and Jeehoon Kang, "Revamping Hardware Persistency Models (View-based and Axiomatic Persistency Models for Intel-x86 and ARMv8)", PLDI 2021 (conditionally accepted). This artifact provides mechanized proofs and a model checker mentioned in the paper.
 
 ## Installation
 
