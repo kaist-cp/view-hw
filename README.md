@@ -1,6 +1,31 @@
-# Revamping Hardware Persistency Models (View-based and Axiomatic Persistency Models for Intel-x86 and ARMv8)
+<!---
+This file was generated from `meta.yml`, please do not edit manually.
+Follow the instructions on https://github.com/coq-community/templates to regenerate.
+--->
+# View-based Semantics for Hardware
 
-This is the artifact for a paper, Kyeongmin Cho, Sung-Hwan Lee, Azalea Raad, and Jeehoon Kang, "Revamping Hardware Persistency Models (View-based and Axiomatic Persistency Models for Intel-x86 and ARMv8)", PLDI 2021 (conditionally accepted). This artifact provides mechanized proofs and a model checker mentioned in the paper.
+
+
+
+
+
+This is the artifact for a paper, Kyeongmin Cho, Sung-Hwan Lee, Azalea Raad, and Jeehoon Kang,
+"Revamping Hardware Persistency Models (View-based and Axiomatic Persistency Models for Intel-x86
+and ARMv8)", PLDI 2021 (conditionally accepted).
+This artifact provides mechanized proofs and a model checker mentioned in the paper.
+
+## Meta
+
+- Author(s):
+  - Kyeongmin Cho
+  - Sung-Hwan Lee
+  - Azalea Raad
+  - Jeehoon Kang
+- License: [MIT](LICENSE)
+- Compatible Coq versions: 8.13 or later
+- Additional dependencies: none
+- Related publication(s):
+  - [Revamping Hardware Persistency Models (View-based and Axiomatic Persistency Models for Intel-x86 and ARMv8)](TODO) 
 
 ## Installation
 
