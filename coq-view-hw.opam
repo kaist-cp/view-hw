@@ -1,0 +1,36 @@
+# This file was generated from `meta.yml`, please do not edit manually.
+# Follow the instructions on https://github.com/coq-community/templates to regenerate.
+
+opam-version: "2.0"
+maintainer: "kyeongmin.cho@kaist.ac.kr"
+version: "dev"
+
+homepage: "https://github.com/kaist-cp/view-hw"
+dev-repo: "git+https://github.com/kaist-cp/view-hw.git"
+bug-reports: "https://github.com/kaist-cp/view-hw/issues"
+license: "LICENSE"
+
+synopsis: "View-based semantics for hardware"
+description: """
+This is the artifact for a paper, Kyeongmin Cho, Sung-Hwan Lee, Azalea Raad, and Jeehoon Kang,
+"Revamping Hardware Persistency Models (View-based and Axiomatic Persistency Models for Intel-x86
+and ARMv8)", PLDI 2021 (conditionally accepted).
+This artifact provides mechanized proofs and a model checker mentioned in the paper."""
+
+build: [make "-j%{jobs}%" ]
+install: [make "install"]
+depends: [
+  "coq" {(>= "8.13" & < "8.14~") | (= "dev")}
+]
+
+tags: [
+  "category:Computer Science/Equivalence proofs of semantics"
+  "keyword:proof automation"
+  "logpath:"
+]
+authors: [
+  "Kyeongmin Cho"
+  "Sung-Hwan Lee"
+  "Azalea Raad"
+  "Jeehoon Kang"
+]
