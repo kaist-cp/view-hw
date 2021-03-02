@@ -27,5 +27,5 @@ jobs:
         run: git submodule update --init
       - uses: coq-community/docker-coq-action@v1
         with:
-          opam_file: 'promising-hw.opam'
+          opam_file: 'coq-view-hw.opam'
           custom_image: ${{ matrix.image }}

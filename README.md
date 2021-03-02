@@ -10,8 +10,8 @@ Follow the instructions on https://github.com/coq-community/templates to regener
 
 
 This is the artifact for a paper, Kyeongmin Cho, Sung-Hwan Lee, Azalea Raad, and Jeehoon Kang,
-"Revamping Hardware Persistency Models (View-based and Axiomatic Persistency Models for Intel-x86
-and ARMv8)", PLDI 2021 (conditionally accepted).
+"Revamping Hardware Persistency Models: View-based and Axiomatic Persistency Models for Intel-x86
+and ARMv8", PLDI 2021 (conditionally accepted).
 This artifact provides mechanized proofs in the paper.
 
 ## Meta

@@ -9,8 +9,8 @@ synopsis: View-based semantics for hardware
 
 description: |-
   This is the artifact for a paper, Kyeongmin Cho, Sung-Hwan Lee, Azalea Raad, and Jeehoon Kang,
-  "Revamping Hardware Persistency Models (View-based and Axiomatic Persistency Models for Intel-x86
-  and ARMv8)", PLDI 2021 (conditionally accepted).
+  "Revamping Hardware Persistency Models: View-based and Axiomatic Persistency Models for Intel-x86
+  and ARMv8", PLDI 2021 (conditionally accepted).
   This artifact provides mechanized proofs in the paper.
 
 publications:
@@ -36,14 +36,16 @@ license:
 
 supported_coq_versions:
   text: 8.13 or later
-  opam: '{(>= "8.13" & < "8.14~") | (= "dev")}'
+  opam: '{ >= "8.13" & < "8.14~" }'
 
 tested_coq_opam_versions:
-- version: dev
 - version: '8.13'
 
 keywords:
 - name: proof automation
+
+make_target: |-
+  -f Makefile build
 
 build: |-
   ## Installation
