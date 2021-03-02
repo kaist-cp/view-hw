@@ -21,7 +21,7 @@ This artifact provides mechanized proofs in the paper.
   - Sung-Hwan Lee
   - Azalea Raad
   - Jeehoon Kang
-- License: [MIT](LICENSE)
+- License: [BSD License 2.0](LICENSE)
 - Compatible Coq versions: 8.13 or later
 - Additional dependencies: none
 - Related publication(s):
