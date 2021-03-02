@@ -31,7 +31,7 @@ opam-file-maintainer: kyeongmin.cho@kaist.ac.kr
 opam-file-version: dev
 
 license:
-  fullname: MIT
+  fullname: BSD License 2.0
   identifier: LICENSE
 
 supported_coq_versions:
