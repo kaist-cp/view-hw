@@ -1,7 +1,7 @@
 ---
 # Usage: https://github.com/coq-community/templates#generating-configuration-files-using-the-generatesh-script
 
-fullname: View-based Semantics for Hardware
+fullname: View-based semantics for hardware
 shortname: view-hw
 organization: kaist-cp
 
@@ -11,10 +11,10 @@ description: |-
   This is the artifact for a paper, Kyeongmin Cho, Sung-Hwan Lee, Azalea Raad, and Jeehoon Kang,
   "Revamping Hardware Persistency Models (View-based and Axiomatic Persistency Models for Intel-x86
   and ARMv8)", PLDI 2021 (conditionally accepted).
-  This artifact provides mechanized proofs and a model checker mentioned in the paper.
+  This artifact provides mechanized proofs in the paper.
 
 publications:
-- pub_url: TODO
+- pub_url: TBA
   pub_title: Revamping Hardware Persistency Models (View-based and Axiomatic Persistency Models for Intel-x86 and ARMv8)
 
 authors:
@@ -50,33 +50,27 @@ build: |-
 
   We assume you are on **Ubuntu 20.04**.
 
-  ### Common requirements
+  ### Requirements
 
-  ```
-  sudo apt install -y build-essential rsync opam
-  opam init
-  opam switch create 4.10.0  # or later. If your system OCaml version is >= 4.10.0, you can use it.
-  eval $(opam env)
-  opam update
-  ```
+  - [opam](https://opam.ocaml.org/)
+    ```
+    sudo apt install -y build-essential rsync opam
+    opam init
+    opam switch create 4.10.0  # or later. If your system OCaml version is >= 4.10.0, you can use it.
+    eval $(opam env)
+    opam update
+    ```
 
-categories:
-- name: Computer Science/Equivalence proofs of semantics
-
-documentation: |-
-  ## Mechanized proofs
+  - [Coq 8.13.1](https://coq.inria.fr/)
+    ```
+    opam install coq.8.13.1
+    ```
 
   ### Build
 
-  - Requirement: [Coq 8.13.1](https://coq.inria.fr/download).
-
-          cd proof
-          opam install coq.8.13.1
-
   - `make -j`: quickly build without checking the proofs.
 
-  - `./build.sh`: build with checking all the proofs.  It will incrementally copy the development to
-    `.build` sub-directory, and then build there.
+  - `./build.sh`: build with checking all the proofs.  It will incrementally copy the development to `.build` sub-directory, and then build there.
 
   - `./status.sh`: check if there is any `admit` in the proofs. (It will print a single result, which is tactic in the library used for development and has nothing to do with the proofs.)
 
@@ -87,6 +81,10 @@ documentation: |-
       + CoqIDE: configure it to use `_CoqProject`: `Edit` > `Preferences` > `Project`: change
         `ignored` to `appended to arguments`.
 
+categories:
+- name: Computer Science/Equivalence proofs of semantics
+
+documentation: |-
   ### Our results
 
   Our proofs are based on [a prior work](https://github.com/snu-sf/promising-arm) for ARMv8-view, originally named "Promising-ARMv8". The prior work contains:
@@ -98,8 +96,7 @@ documentation: |-
 
   #### Model
 
-  - `lib`(open source) and `src/lib` contain libraries not necessarily related to
-    relaxed-memory concurrency and persistency.
+  - `lib`(open source) and `src/lib` contain libraries not necessarily related to relaxed-memory concurrency and persistency.
 
   - `src/lib/Lang.v`: Definition of assembly-like language and its interpretation for both x86 and ARMv8 (corresponding to Figure 13)
 
@@ -163,105 +160,4 @@ documentation: |-
           Assume the thread configuration `<T, M>` is certified, and promising
           `p` leads to `<T', M'>`. Then `p` is in `find_and_certify <T, M>` if
           `<T', M'>` is certified.
-
-  ## Model Checker
-
-  This model checker is based on [rmem](https://github.com/rems-project/rmem), executable concurrency models for ARMv8, RISC-V, Power, and x86. In particular, this model checker basically uses the Promising model for ARMv8 and RISC-V by Pulte et al.
-
-  ### Our extension
-
-  We extend the original checker to the PARMv8 model checker by supporting:
-
-  - ARMv8 instruction for persistency (i.e., DC CVAP)
-  - persistency views of PARMv8-view (i.e., VpReady, VpAsync, VpCommit)
-  - enumeration of states of when crash occurs at arbitrary point
-
-  ### Build
-
-  ```
-  cd model-checker
-  sudo apt install -y findutils libgmp-dev m4 perl pkg-config zlib1g-dev z3
-  opam repository add rems https://github.com/rems-project/opam-repository.git#opam2
-  opam install --deps-only .
-  ulimit -s unlimited  #  Without this, a stack overflow may occur during build.
-  make MODE=opt ISA=AArch64
-  ```
-
-  If it doesn't work, please read `model-checker/README.md` for more details.
-
-  ### Run an example
-
-  We use our model checker to verify several representative persistent synchronization examples, including *all* examples presented in the paper (modulo architectural differences) and the "Atomic Persists" example in [Raad et al. (Example 3)](http://plv.mpi-sws.org/pog/paper.pdf) for modeling persistent transaction. All of these examples are in `parmv8-view-examples`.
-
-  To run one of examples:
-
-  ```
-  ./run.p [litmus file]
-  ```
-
-  A Litmus file and the corresponding `shared_memory.txt` must be in the same directory.
-
-  For example, the following command is to enumerate every states that the **(COMMIT WEAK)** example can be reachable in case of either normal termination or an unexpected crash:
-
-  ```
-  ./run.p parmv8-view-examples/commit_weak/commit_weak.litmus
-  ```
-
-  Then the output is printed out like below:
-
-  ```
-  Test commit_weak Allowed
-  Shared-memory=0x0000000000001000 (data)/8; 0x0000000000001100 (commit)/8;
-  Memory-writes=
-  States 3
-  1     *>data=0x0; commit=0x0;  via "0"
-  1     :>data=0x2a; commit=0x0;  via "1;0"
-  2     :>data=0x2a; commit=0x1;  via "1;1;0"
-  NVM States 4
-  4     :>data=0x0; commit=0x0;
-  2     :>data=0x0; commit=0x1;
-  3     :>data=0x2a; commit=0x0;
-  2     :>data=0x2a; commit=0x1;
-  Deadlock states 1  via "2;0"
-  Unhandled exceptions 0
-  Ok
-  Condition exists (data=0x0 /\ commit=0x0)
-  Hash=98aca2103a7db7335c83aa17e3f47b8c
-  Observation commit_weak Sometimes 1 2 with deadlocks
-  Runtime: 0.034074 sec
-  ```
-
-  `NVM States` in the middle is a list of all the reachable states of NVM when a program crashes while running or when the program ends. In this case, we can conclude that the desired invariant *"commit=1 ⇒ data=42"* doesn't hold because the state `data=0x0; commit=0x1;` denoting *"data=0 ∧ commit=1"* is on the list.
-
-  On the other hand, the output from the command `./run.p parmv8-view-examples/commit1/commit1.litmus` to check the **(COMMIT1)** example is like below:
-
-  ```
-  Test commit1 Allowed
-  Shared-memory=0x0000000000001000 (data)/8; 0x0000000000001100 (commit)/8;
-  Memory-writes=
-  States 3
-  1     *>data=0x0; commit=0x0;  via "0"
-  1     :>data=0x2a; commit=0x0;  via "1;0"
-  1     :>data=0x2a; commit=0x1;  via "1;1;0;0"
-  NVM States 3
-  2     :>data=0x0; commit=0x0;
-  2     :>data=0x2a; commit=0x0;
-  1     :>data=0x2a; commit=0x1;
-  Unhandled exceptions 0
-  Ok
-  Condition exists (data=0x0 /\ commit=0x0)
-  Hash=d126aef71c01c0b3308c22bd06292d09
-  Observation commit1 Sometimes 1 2
-  Runtime: 0.033494 sec
-  ```
-
-  We can conclude the invariant *"commit=1 ⇒ data=42"* holds in this case because there is no NVM state other than *data=42(0x2a)* when *commit=1*.
-
-  ### Run all examples
-
-  You can run all PARMv8-view examples in `parmv8-view-examples` by executing this script:
-
-  ```
-  ./run_parmv8_all.p
-  ```
 ---
