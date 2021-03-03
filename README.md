@@ -4,7 +4,10 @@ Follow the instructions on https://github.com/coq-community/templates to regener
 --->
 # View-based semantics for hardware
 
+[![Docker CI][docker-action-shield]][docker-action-link]
 
+[docker-action-shield]: https://github.com/kaist-cp/view-hw/workflows/Docker%20CI/badge.svg?branch=master
+[docker-action-link]: https://github.com/kaist-cp/view-hw/actions?query=workflow:"Docker%20CI"
 
 
 

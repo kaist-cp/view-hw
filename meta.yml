@@ -4,6 +4,8 @@
 fullname: View-based semantics for hardware
 shortname: view-hw
 organization: kaist-cp
+action: true
+submodule: true
 
 synopsis: View-based semantics for hardware
 
@@ -36,16 +38,13 @@ license:
 
 supported_coq_versions:
   text: 8.13 or later
-  opam: '{ >= "8.13" & < "8.14~" }'
+  opam: '{ >= "8.13" }'
 
 tested_coq_opam_versions:
 - version: '8.13'
 
 keywords:
 - name: proof automation
-
-make_target: |-
-  -f Makefile build
 
 build: |-
   ## Installation
