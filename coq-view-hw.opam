@@ -19,7 +19,7 @@ This artifact provides mechanized proofs in the paper."""
 
 build: [
   ["git" "submodule" "update --init"]
-  [make "-j%{jobs}%"]
+  [make "-j%{jobs}%" "-f Makefile build"]
 ]
 install: [make "install"]
 depends: [

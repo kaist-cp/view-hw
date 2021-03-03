@@ -22,6 +22,8 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: true
       - uses: coq-community/docker-coq-action@v1
         with:
           opam_file: 'coq-view-hw.opam'
