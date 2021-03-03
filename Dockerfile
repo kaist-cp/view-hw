@@ -6,4 +6,4 @@ USER coq
 WORKDIR view-hw
 RUN git submodule update --init \
     && make -j \
-    && ./build.sh
+    && make install
