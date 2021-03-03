@@ -16,13 +16,9 @@ jobs:
   ci:
     name: ci
     runs-on: [self-hosted, ubuntu-20.04]
-    strategy:
-      matrix:
-        image:
-          - 'coqorg/coq'
-      fail-fast: false  # don't stop jobs if one fails
     steps:
       - uses: actions/checkout@v2
+      - uses: avsm/setup-ocaml@v1
       - name: Coq
         run: opam install coq.8.13.1
       - name: Submodule
