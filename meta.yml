@@ -44,9 +44,6 @@ tested_coq_opam_versions:
 keywords:
 - name: proof automation
 
-make_target: |-
-  -f Makefile build
-
 build: |-
   ## Installation
 
