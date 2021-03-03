@@ -6,7 +6,7 @@ COQTHEORIES  := lib/sflib/*.v lib/hahn/*.v $(foreach dir, $(COQDIRS), src/$(dir)
 
 all: quick
 
-build: sflib hahn Makefile.coq
+install: sflib hahn Makefile.coq
 	$(MAKE) -f Makefile.coq all
 
 quick: sflib-quick hahn-quick Makefile.coq

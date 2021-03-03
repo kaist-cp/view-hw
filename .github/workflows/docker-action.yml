@@ -17,13 +17,12 @@ jobs:
     strategy:
       matrix:
         image:
-          - 'coqorg/coq:dev'
           - 'coqorg/coq:8.13'
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-        with:
-          submodules: true
+      - name: Checkout submodules
+        uses: textbook/git-checkout-submodule-action@2.1.1
       - uses: coq-community/docker-coq-action@v1
         with:
           opam_file: 'coq-view-hw.opam'
