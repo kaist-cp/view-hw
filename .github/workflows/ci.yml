@@ -14,16 +14,33 @@ defaults:
 
 jobs:
   ci:
-    name: ci
-    runs-on: [self-hosted, ubuntu-20.04]
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+        ocaml-version:
+          - 4.10.0
+
+    runs-on: ${{ matrix.os }}
+
     steps:
-      - uses: actions/checkout@v2
-      - uses: avsm/setup-ocaml@v1
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Use OCaml ${{ matrix.ocaml-version }}
+        uses: avsm/setup-ocaml@v1
+        with:
+          ocaml-version: ${{ matrix.ocaml-version }}
+
       - name: Coq
         run: opam install coq.8.13.1
+
       - name: Submodule
         run: git submodule update --init
+
       - name: Make
         run: make -j
+
       - name: Build
         run: ./build.sh
