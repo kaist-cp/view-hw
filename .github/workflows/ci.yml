@@ -19,13 +19,15 @@ jobs:
     strategy:
       matrix:
         image:
-          - 'coqorg/coq:8.12.2'
+          - 'coqorg/coq'
       fail-fast: false  # don't stop jobs if one fails
     steps:
       - uses: actions/checkout@v2
+      - name: Coq
+        run: opam install coq.8.13.1
       - name: Submodule
         run: git submodule update --init
-      - uses: coq-community/docker-coq-action@v1
-        with:
-          opam_file: 'coq-view-hw.opam'
-          custom_image: ${{ matrix.image }}
+      - name: Make
+        run: make -j
+      - name: Build
+        run: ./build.sh
