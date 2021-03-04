@@ -4,6 +4,8 @@
 fullname: View-based semantics for hardware
 shortname: view-hw
 organization: kaist-cp
+action: true
+submodule: true
 
 synopsis: View-based semantics for hardware
 
@@ -31,21 +33,18 @@ opam-file-maintainer: kyeongmin.cho@kaist.ac.kr
 opam-file-version: dev
 
 license:
-  fullname: BSD License 2.0
+  fullname: BSD 2-Clause
   identifier: LICENSE
 
 supported_coq_versions:
   text: 8.13 or later
-  opam: '{ >= "8.13" & < "8.14~" }'
+  opam: '{ >= "8.13" }'
 
 tested_coq_opam_versions:
 - version: '8.13'
 
 keywords:
 - name: proof automation
-
-make_target: |-
-  -f Makefile build
 
 build: |-
   ## Installation
@@ -70,7 +69,7 @@ build: |-
 
   ### Build
 
-  - `make -j`: quickly build without checking the proofs.
+  - `make -j quick`: quickly build without checking the proofs.
 
   - `./build.sh`: build with checking all the proofs.  It will incrementally copy the development to `.build` sub-directory, and then build there.
 

@@ -17,10 +17,10 @@ This is the artifact for a paper, Kyeongmin Cho, Sung-Hwan Lee, Azalea Raad, and
 and ARMv8", PLDI 2021 (conditionally accepted).
 This artifact provides mechanized proofs in the paper."""
 
-build: [make "-j%{jobs}%" -f Makefile build]
-install: [make "install"]
+build: [make "-j%{jobs}%" ]
+
 depends: [
-  "coq" { >= "8.13" & < "8.14~" }
+  "coq" { >= "8.13" }
 ]
 
 tags: [
