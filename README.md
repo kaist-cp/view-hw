@@ -28,7 +28,7 @@ This artifact provides mechanized proofs in the paper.
 - Compatible Coq versions: 8.13 or later
 - Additional dependencies: none
 - Related publication(s):
-  - [Revamping Hardware Persistency Models (View-based and Axiomatic Persistency Models for Intel-x86 and ARMv8)](TBA) 
+  - [Revamping Hardware Persistency Models (View-based and Axiomatic Persistency Models for Intel-x86 and ARMv8)](TBA)
 
 ## Installation
 
