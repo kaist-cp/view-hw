@@ -5,7 +5,7 @@ rsync -avl --delete --exclude '*.vo' --exclude '*.vio' --exclude '*.v.d' --exclu
 cd .build
 if [ -z $* ]
 then
-  make -j -f Makefile install
+  make -j -f Makefile all
 else
   make -j -f Makefile $*
 fi

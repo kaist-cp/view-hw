@@ -69,7 +69,7 @@ build: |-
 
   ### Build
 
-  - `make -j`: quickly build without checking the proofs.
+  - `make -j quick`: quickly build without checking the proofs.
 
   - `./build.sh`: build with checking all the proofs.  It will incrementally copy the development to `.build` sub-directory, and then build there.
 

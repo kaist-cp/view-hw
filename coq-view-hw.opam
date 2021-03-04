@@ -18,7 +18,7 @@ and ARMv8", PLDI 2021 (conditionally accepted).
 This artifact provides mechanized proofs in the paper."""
 
 build: [make "-j%{jobs}%" ]
-install: [make "install"]
+
 depends: [
   "coq" { >= "8.13" }
 ]
