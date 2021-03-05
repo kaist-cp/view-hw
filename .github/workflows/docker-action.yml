@@ -13,6 +13,7 @@ on:
 jobs:
   build:
     # the OS must be GNU/Linux to be able to use the docker-coq-action
+    name: Docker CI
     runs-on: ubuntu-latest
     strategy:
       matrix:
