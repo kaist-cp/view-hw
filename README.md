@@ -2,37 +2,28 @@
 This file was generated from `meta.yml`, please do not edit manually.
 Follow the instructions on https://github.com/coq-community/templates to regenerate.
 --->
+
 # View-based semantics for hardware
 
-[![Docker CI][docker-action-shield]][docker-action-link]
+[![CI][docker-action-shield]][docker-action-link]
 
 [docker-action-shield]: https://github.com/kaist-cp/view-hw/workflows/Docker%20CI/badge.svg?branch=master
 [docker-action-link]: https://github.com/kaist-cp/view-hw/actions?query=workflow:"Docker%20CI"
 
 
+Related publications:
 
+- Christopher Pulte, Jean Pichon-Pharabod, Jeehoon Kang, Sung-Hwan Lee, Chung-Kil Hur.  Promising-ARM/RISC-V: a simpler and faster operational concurrency model.  PLDI 2019.
 
-This is the artifact for a paper, Kyeongmin Cho, Sung-Hwan Lee, Azalea Raad, and Jeehoon Kang,
-"Revamping Hardware Persistency Models: View-based and Axiomatic Persistency Models for Intel-x86
-and ARMv8", PLDI 2021 (conditionally accepted).
-This artifact provides mechanized proofs in the paper.
+  This repository is a fork of [this paper's artifact](https://github.com/snu-sf/promising-arm).
 
-## Meta
+- Kyeongmin Cho, Sung-Hwan Lee, Azalea Raad, and Jeehoon Kang.  Revamping Hardware Persistency Models: View-based and Axiomatic Persistency Models for Intel-x86 and ARMv8.  PLDI 2021 (conditionally accepted).
 
-- Author(s):
-  - Kyeongmin Cho
-  - Sung-Hwan Lee
-  - Azalea Raad
-  - Jeehoon Kang
-- License: [BSD License 2.0](LICENSE)
-- Compatible Coq versions: 8.13 or later
-- Additional dependencies: none
-- Related publication(s):
-  - [Revamping Hardware Persistency Models (View-based and Axiomatic Persistency Models for Intel-x86 and ARMv8)](TBA)
 
 ## Installation
 
-We assume you are on **Ubuntu 20.04**.
+We assume you use **Ubuntu 20.04** and **Coq 8.13.1 or later**.
+
 
 ### Requirements
 
@@ -50,6 +41,7 @@ We assume you are on **Ubuntu 20.04**.
   opam install coq.8.13.1
   ```
 
+
 ### Build
 
 - `make -j`: quickly build without checking the proofs.
@@ -65,6 +57,7 @@ We assume you are on **Ubuntu 20.04**.
     + CoqIDE: configure it to use `_CoqProject`: `Edit` > `Preferences` > `Project`: change
       `ignored` to `appended to arguments`.
 
+
 ### Our results
 
 Our proofs are based on [a prior work](https://github.com/snu-sf/promising-arm) for ARMv8-view, originally named "Promising-ARMv8". The prior work contains:
@@ -73,6 +66,7 @@ Our proofs are based on [a prior work](https://github.com/snu-sf/promising-arm) 
 - some proofs about certification
 
 We extend the existing proofs for ARMv8 to persistency. In addition, we newly define Px86-view/Px86-axiom and prove the theorems of it mentioned in the paper.
+
 
 #### Model
 
