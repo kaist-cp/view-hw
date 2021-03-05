@@ -1,6 +1,6 @@
 # This file was generated from `meta.yml`, please do not edit manually.
 # Follow the instructions on https://github.com/coq-community/templates to regenerate.
-name: Docker CI
+name: ci
 
 on:
   push:
@@ -12,6 +12,7 @@ on:
 
 jobs:
   build:
+    name: ci
     # the OS must be GNU/Linux to be able to use the docker-coq-action
     runs-on: ubuntu-latest
     strategy:
@@ -21,12 +22,6 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - name: Checkout submodules
-        uses: textbook/git-checkout-submodule-action@2.1.1
-      - uses: coq-community/docker-coq-action@v1
-        with:
-          opam_file: 'coq-view-hw.opam'
-          custom_image: ${{ matrix.image }}
 
 # See also:
 # https://github.com/coq-community/docker-coq-action#readme
