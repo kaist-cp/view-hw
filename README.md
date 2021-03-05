@@ -54,7 +54,7 @@ We assume you are on **Ubuntu 20.04**.
 
 - `make -j`: quickly build without checking the proofs.
 
-- `./build.sh`: build with checking all the proofs.  It will incrementally copy the development to `.build` sub-directory, and then build there.
+- `./build.sh`: build with checking all the proofs. It will incrementally copy the development to `.build` sub-directory, and then build there.
 
 - `./status.sh`: check if there is any `admit` in the proofs. (It will print a single result, which is tactic in the library used for development and has nothing to do with the proofs.)
 
