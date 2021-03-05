@@ -21,12 +21,6 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v2
-      - name: Checkout submodules
-        uses: textbook/git-checkout-submodule-action@2.1.1
-      - uses: coq-community/docker-coq-action@v1
-        with:
-          opam_file: 'coq-view-hw.opam'
-          custom_image: ${{ matrix.image }}
 
 # See also:
 # https://github.com/coq-community/docker-coq-action#readme
