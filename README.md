@@ -87,6 +87,15 @@ We extend the existing proofs for ARMv8 to persistency. In addition, we newly de
 
 #### Results
 
+- Background definitions
+
+    + The **behaviors** of a program is the set of **post-crash memories** resulting from an execution of the program.
+      This is the simplest possible definition of behaviors for NVM; we may refine the concept by incorporating I/O or other kinds of externally visible interactions.
+      We believe it is straightforward to incorporate such interactions in the definition of behaviors in the future.
+    + A behavior is **allowed** in a program iff the behavior is in the set of behaviors of the program.
+    + A model, say X, **refines** another model, say Y, iff the set of behaviors according to X, is a subset of that according to Y.
+    + A model, say X, is **equivalent** to another model, say Y, iff the set of behaviors according to X coincides with that according to Y.
+
 - Theorem 5.3: Equivalence between Px86-view and Px86-axiom
   + Theorem `axiomatic_to_promising` in `src/equiv/TsoAtoP.v`:
     Px86-axiom refines Px86-prom.
@@ -97,6 +106,7 @@ We extend the existing proofs for ARMv8 to persistency. In addition, we newly de
     * `TsoPFtoA4*.v`: proof for validity of constructed axiomatic execution
     * `TsoPFtoA4SL.v`: simulation between promising and axiomatic execution
     * `TsoPFtoA4OBR.v`, `TsoPFtoA4OBW.v`, `TsoPFtoA4FR.v`, `TsoPFtoA4FOB.v`, `TsoPFtoA4FP.v`: proof for "external" axiom
+
   + Lemma 5.1: Equivalence between Px86-prom and Px86-view
     * The paper says that after the x86-prom and x86-view have been proven to be equivalent (Theorem 5.2)
       and then extended to persistency, the proof in Coq was done right away.
