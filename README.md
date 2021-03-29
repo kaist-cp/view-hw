@@ -89,9 +89,10 @@ We extend the existing proofs for ARMv8 to persistency. In addition, we newly de
 
 - Background definitions
 
-    + The **behaviors** of a program is the set of **post-crash memories** resulting from an execution of the program.
+    + A **behavior** is either (1) post-crash image of memory or (2) non-crash terminal image of memory.
       This is the simplest possible definition of behaviors for NVM; we may refine the concept by incorporating I/O or other kinds of externally visible interactions.
-      We believe it is straightforward to incorporate such interactions in the definition of behaviors in the future.
+      We believe it is straightforward to incorporate such interactions in the definition of behaviors as future work.
+    + The **behaviors** of a program is (1) the set of **post-crash memories** and (2) the set of **non-crash terminal memories** resulting from an execution of the program.
     + A behavior is **allowed** in a program iff the behavior is in the set of behaviors of the program.
     + A model, say X, **refines** another model, say Y, iff the set of behaviors according to X, is a subset of that according to Y.
     + A model, say X, is **equivalent** to another model, say Y, iff the set of behaviors according to X coincides with that according to Y.
