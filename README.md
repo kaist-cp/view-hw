@@ -17,7 +17,7 @@ Related publications:
 
   This repository is a fork of [this paper's artifact](https://github.com/snu-sf/promising-arm).
 
-- Kyeongmin Cho, Sung-Hwan Lee, Azalea Raad, and Jeehoon Kang.  Revamping Hardware Persistency Models: View-based and Axiomatic Persistency Models for Intel-x86 and ARMv8.  PLDI 2021 (conditionally accepted).
+- Kyeongmin Cho, Sung-Hwan Lee, Azalea Raad, and Jeehoon Kang.  Revamping Hardware Persistency Models: View-based and Axiomatic Persistency Models for Intel-x86 and Armv8.  PLDI 2021 (conditionally accepted).
 
 
 ## Installation
@@ -60,28 +60,28 @@ We assume you use **Ubuntu 20.04** and **Coq 8.13.1 or later**.
 
 ### Our results
 
-Our proofs are based on [a prior work](https://github.com/snu-sf/promising-arm) for ARMv8-view, originally named "Promising-ARMv8". The prior work contains:
+Our proofs are based on [a prior work](https://github.com/snu-sf/promising-arm) for Armv8-view, originally named "Promising-ARMv8". The prior work contains:
 
-- the proof of the equivalence between ARMv8-view and ARMv8-axiom
+- the proof of the equivalence between Armv8-view and Armv8-axiom
 - some proofs about certification
 
-We extend the existing proofs for ARMv8 to persistency. In addition, we newly define Px86-view/Px86-axiom and prove the theorems of it mentioned in the paper.
+We extend the existing proofs for Armv8 to persistency. In addition, we newly define Px86-view/Px86-axiom and prove the theorems of it mentioned in the paper.
 
 
 #### Model
 
 - `lib`(open source) and `src/lib` contain libraries not necessarily related to relaxed-memory concurrency and persistency.
 
-- `src/lib/Lang.v`: Definition of assembly-like language and its interpretation for both x86 and ARMv8 (corresponding to Figure 13)
+- `src/lib/Lang.v`: Definition of assembly-like language and its interpretation for both x86 and Armv8 (corresponding to Figure 13)
 
 - `src/promising/TsoPromising.v`: Definition of Px86-view and Px86-prom (corresponding to Figure 11 and 12)
 
 - `src/axiomatic/TsoAxiomatic.v`: Definition of Px86-axiom (corresponding to Figure 7)
 
-- `src/promising/Promising.v`: Definition of PARMv8-view without
+- `src/promising/Promising.v`: Definition of PArmv8-view without
   certification (corresponding to Figure 14, 15 and 16)
 
-- `src/axiomatic/Axiomatic.v`: Definition of PARMv8-axiom (corresponding to Figure 9)
+- `src/axiomatic/Axiomatic.v`: Definition of PArmv8-axiom (corresponding to Figure 9)
 
 - `src/lcertify`: Thread-local certification
 
@@ -116,11 +116,11 @@ We extend the existing proofs for ARMv8 to persistency. In addition, we newly de
     * Theorem `view_to_promising` in `src/equiv/TsoVtoP.v`:
       Px86-view refines Px86-prom.
 
-- Theorem 6.2: Equivalence between PARMv8-view and PARMv8-axiom
+- Theorem 6.2: Equivalence between PArmv8-view and PArmv8-axiom
   + Theorem `axiomatic_to_promising` in `src/equiv/AtoP.v`:
-    PARMv8-axiom refines PARMv8-view without certification.
+    PArmv8-axiom refines PArmv8-view without certification.
   + Theorem `promising_to_axiomatic` in `src/equiv/PFtoA.v`:
-    PARMv8-view without certification refines PARMv8-axiom.
+    PArmv8-view without certification refines PArmv8-axiom.
     * `PFtoA1.v`: construction of axiomatic execution from promising execution
     * `PFtoA2.v`, `PFtoA3.v`: definitions and lemmas for main proof
     * `PFtoA4*.v`: proof for validity of constructed axiomatic execution
@@ -128,7 +128,7 @@ We extend the existing proofs for ARMv8 to persistency. In addition, we newly de
     * `PFtoA4OBR.v`, `PFtoA4OBW.v`, `PFtoA4FR.v`, `PFtoA4FOB.v`, `PFtoA4FP.v`: proof for "external" axiom
     * `PFtoA4Atomic.v`: proof for "atomic" axiom
   + Theorem `certified_exec_equivalent` in `src/lcertify/CertifyComplete.v`:
-    PARMv8-view and PARMv8-view without certification are equivalent.
+    PArmv8-view and PArmv8-view without certification are equivalent.
 
 ### Results of prior work
 
