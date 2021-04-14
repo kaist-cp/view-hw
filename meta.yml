@@ -12,7 +12,7 @@ synopsis: View-based semantics for hardware
 description: |-
   This is the artifact for a paper, Kyeongmin Cho, Sung-Hwan Lee, Azalea Raad, and Jeehoon Kang,
   "Revamping Hardware Persistency Models: View-Based and Axiomatic Persistency Models for Intel-x86
-  and Armv8", PLDI 2021 (conditionally accepted).
+  and Armv8", PLDI 2021.
   This artifact provides mechanized proofs in the paper.
 
 publications:
