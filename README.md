@@ -17,7 +17,7 @@ Related publications:
 
   This repository is a fork of [this paper's artifact](https://github.com/snu-sf/promising-arm).
 
-- Kyeongmin Cho, Sung-Hwan Lee, Azalea Raad, and Jeehoon Kang.  Revamping Hardware Persistency Models: View-based and Axiomatic Persistency Models for Intel-x86 and Armv8.  PLDI 2021 (conditionally accepted).
+- Kyeongmin Cho, Sung-Hwan Lee, Azalea Raad, and Jeehoon Kang.  Revamping Hardware Persistency Models: View-Based and Axiomatic Persistency Models for Intel-x86 and Armv8.  PLDI 2021 (conditionally accepted).
 
 
 ## Installation
